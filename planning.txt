@@ -1,0 +1,11 @@
+Mission: A physically-based rendering system, with flexibility for experimentation
+of different rendering and other real-time techniques.
+
+Foundation: The game architecture framework.
+
+Epics:
+	* Convert ga framework to new naming conventions.
+	* DX12 implementation.
+	* Vulkan implementation.
+	* PBR ray tracer.
+	* PBR rasterizer.

@@ -1,0 +1,46 @@
+<CoordinateSystem> { Y-Up }
+
+<Comment> {
+  "maya2egg2011 -a chan -cn bar -o bar-bend.egg bar.mb"
+}
+<Table> {
+  <Bundle> bar {
+    <Table> "<skeleton>" {
+      <Table> joint1 {
+        <Xfm$Anim_S$> xform {
+          <Scalar> fps { 24 }
+          <Char*> order { srpht }
+          <S$Anim> r { <V> { -90 } }
+          <S$Anim> y { <V> { 4 } }
+        }
+        <Table> joint2 {
+          <Xfm$Anim_S$> xform {
+            <Scalar> fps { 24 }
+            <Char*> order { srpht }
+            <S$Anim> r {
+              <V> {
+                0 7.38921 15.6809 24.5367 33.6181 42.5867 51.104
+                58.8316 65.4312 70.5641 73.8921 75.0766 74.0773
+                71.2533 66.8651 61.1735 54.4392 46.9229 38.8852
+                30.5868 22.2884 14.2506 6.73431 0
+              }
+            }
+            <S$Anim> x { <V> { 4 } }
+            <S$Anim> y { <V> { -0.10582 } }
+          }
+          <Table> joint3 {
+            <Xfm$Anim_S$> xform {
+              <Scalar> fps { 24 }
+              <Char*> order { srpht }
+              <S$Anim> r { <V> { 90 } }
+              <S$Anim> x { <V> { 4 } }
+              <S$Anim> y { <V> { 0.106 } }
+            }
+          }
+        }
+      }
+    }
+    <Table> morph {
+    }
+  }
+}
