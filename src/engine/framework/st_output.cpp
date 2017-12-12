@@ -10,27 +10,26 @@
 
 #include "graphics/st_material.h"
 #include "graphics/st_program.h"
+#include "graphics/st_render_context.h"
 #include "graphics/st_render_marker.h"
 #include "graphics/st_scene_render_pass.h"
 #include "graphics/st_ui_render_pass.h"
 #include "math/st_mat4f.h"
 #include "math/st_quatf.h"
+#include "system/st_window.h"
 
 #include <cassert>
 #include <iostream>
-#include <SDL.h>
 
 #include <windows.h>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
 
-st_output::st_output(void* win) : _window(win)
+st_output::st_output(const st_window* window, st_render_context* render_context) :
+	_window(window), _render_context(render_context)
 {
-	int width, height;
-	SDL_GetWindowSize(static_cast<SDL_Window* >(_window), &width, &height);
-
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, _window->get_width(), _window->get_height());
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
@@ -43,9 +42,12 @@ st_output::~st_output()
 
 void st_output::update(st_frame_params* params)
 {
+	// Acquire the render context.
+	_render_context->acquire();
+
 	// Update viewport in case window was resized:
-	int width, height;
-	SDL_GetWindowSize(static_cast<SDL_Window* >(_window), &width, &height);
+	uint32_t width = _window->get_width();
+	uint32_t height = _window->get_height();
 	glViewport(0, 0, width, height);
 	params->_width = width;
 	params->_height = height;
@@ -66,6 +68,8 @@ void st_output::update(st_frame_params* params)
 	GLenum error = glGetError();
 	assert(error == GL_NONE);
 
-	// Swap frame buffers:
-	SDL_GL_SwapWindow(static_cast<SDL_Window* >(_window));
+	// Swap the frame buffers and release the context.
+	SwapBuffers(_render_context->get_device_context());
+
+	_render_context->release();
 }

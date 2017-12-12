@@ -1,22 +1,6 @@
 cmake_minimum_required (VERSION 3.7)
 project (stratos)
 
-# SDL: for windowing and input:
-set(SDL_AUDIO_ENABLED_BY_DEFAULT OFF)
-set(SDL_ATOMIC_ENABLED_BY_DEFAULT OFF)
-set(SDL_DLOPEN_ENABLED_BY_DEFAULT OFF)
-set(SDL_FILE_ENABLED_BY_DEFAULT OFF)
-set(SDL_FILESYSTEM_ENABLED_BY_DEFAULT OFF)
-set(SDL_RENDER_ENABLED_BY_DEFAULT OFF)
-set(SDL_THREADS_ENABLED_BY_DEFAULT OFF)
-set(SDL_TIMER_ENABLED_BY_DEFAULT OFF)
-set(SDL_SHARED_ENABLED_BY_DEFAULT OFF)
-set(SDL_STATIC_ENABLED_BY_DEFAULT OFF)
-
-add_subdirectory (${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/SDL2-2.0.5 ${PROJECT_BINARY_DIR}/SDL2-2.0.5)
-include_directories ("${PROJECT_BINARY_DIR}/SDL2-2.0.5/include")
-include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/SDL2-2.0.5/include")
-
 # STB: for image loading and font:
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/stb")
 
@@ -48,7 +32,7 @@ if (MINGW)
 endif()
 
 add_executable(stratos ${ST_SOURCE_FILES} always_copy_data.h)
-target_link_libraries (stratos SDL2-static glew32s opengl32 lua53)
+target_link_libraries (stratos glew32s opengl32 lua53)
 if (MSVC)
 	set_target_properties(stratos PROPERTIES LINK_FLAGS "/ignore:4098 /ignore:4099")
 endif()

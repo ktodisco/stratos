@@ -23,12 +23,14 @@
 #include "graphics/st_ply_parser.h"
 #include "graphics/st_geometry.h"
 #include "graphics/st_program.h"
+#include "graphics/st_render_context.h"
 #include "gui/st_font.h"
 #include "physics/st_physics_component.h"
 #include "physics/st_playermove_component.h"
 #include "physics/st_physics_world.h"
 #include "physics/st_rigid_body.h"
 #include "physics/st_shape.h"
+#include "system/st_window.h"
 
 #include "gui/st_button.h"
 #include "gui/st_checkbox.h"
@@ -54,11 +56,18 @@ int main(int argc, const char** argv)
 
 	st_job::startup(0xffff, 256, 256);
 
-	// Create objects for three phases of the frame: input, sim and output.
 	st_input* input = new st_input();
+
+	// Create a window.
+	st_window* window = new st_window("Stratos", 1280, 720, input);
+
+	// Create the rendering context for the window.
+	st_render_context* render = new st_render_context(GetDC(window->get_window_handle()));
+
+	// Create objects for phases of the frame: sim, physics, and output.
 	st_sim* sim = new st_sim();
 	st_physics_world* world = new st_physics_world();
-	st_output* output = new st_output(input->get_window());
+	st_output* output = new st_output(window, render);
 
 	// Create camera.
 	st_camera* camera = new st_camera({ 0.0f, 7.0f, 20.0f });
@@ -83,17 +92,22 @@ int main(int argc, const char** argv)
 	// The bunny is rather small, so scale.
 	test_entity.scale(40.0f);
 
+	window->show();
+
 	// Main loop:
 	while (true)
 	{
+		// Pump messages.
+		if (!window->update())
+		{
+			break;
+		}
+
 		// We pass frame state through the 3 phases using a params object.
 		st_frame_params params;
 
 		// Gather user input and current time.
-		if (!input->update(&params))
-		{
-			break;
-		}
+		input->update(&params);
 
 		// Update the camera.
 		camera->update(&params);

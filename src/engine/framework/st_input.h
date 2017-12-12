@@ -19,23 +19,22 @@ public:
 	st_input();
 	~st_input();
 
-	bool update(struct st_frame_params* params);
-
-	void* get_window() const { return _window; }
+	void update(struct st_frame_params* params);
+	void handle_key_press(int key_code, int info);
+	void handle_key_release(int key_code, int info);
 
 private:
-	uint64_t _button_mask;
-	uint64_t _pressed_mask;
-	uint64_t _released_mask;
+	uint64_t _button_mask = 0;
+	uint64_t _previous_button_mask = 0;
+	uint64_t _pressed_mask = 0;
+	uint64_t _released_mask = 0;
 
-	uint64_t _mouse_button_mask;
+	uint64_t _mouse_button_mask = 0;
 
-	float _mouse_x;
-	float _mouse_y;
+	float _mouse_x = 0.0f;
+	float _mouse_y = 0.0f;
 
 	std::chrono::high_resolution_clock::time_point _last_time;
-
-	void* _window;
 
 	bool _paused;
 };
