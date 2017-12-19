@@ -7,23 +7,35 @@
 #include "st_egg_parser.h"
 
 #include "st_animation.h"
-#include "st_geometry.h"
+#include "st_model_data.h"
+#include "st_vertex_attribute.h"
 
 #include "math/st_mat4f.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <istream>
 
+enum e_egg_vertex_attribute
+{
+	egg_vertex_attribute_position = 1,
+	egg_vertex_attribute_normal = 2,
+	egg_vertex_attribute_color = 4,
+	egg_vertex_attribute_uv = 8,
+	egg_vertex_attribute_joints = 16,
+	egg_vertex_attribute_weights = 32
+};
+
 void parse_coordinate_system(std::ifstream &file, st_egg_parser_state* state);
-void parse_texture_data(std::ifstream &file, st_model* model, st_egg_parser_state* state);
-void parse_vertex_data(std::ifstream &file, st_model* model, st_egg_parser_state* state);
-void parse_poly_data(std::ifstream &file, st_model* model, st_egg_parser_state* state);
-void parse_joint_data(std::ifstream &file, st_model* model, st_egg_parser_state* state, uint32_t depth = 0);
-void parse_joint_anim_data(std::ifstream &file, st_animation* animation, st_model* model, st_egg_parser_state* state, uint32_t depth = 0);
+void parse_texture_data(std::ifstream &file, st_model_data* model, st_egg_parser_state* state);
+void parse_vertex_data(std::ifstream &file, st_model_data* model, st_egg_parser_state* state);
+void parse_poly_data(std::ifstream &file, st_model_data* model, st_egg_parser_state* state);
+void parse_joint_data(std::ifstream &file, st_model_data* model, st_egg_parser_state* state, uint32_t depth = 0);
+void parse_joint_anim_data(std::ifstream &file, st_animation* animation, st_model_data* model, st_egg_parser_state* state, uint32_t depth = 0);
 
 void convert_vec3_z_up_to_y_up(st_vec3f& input)
 {
@@ -52,7 +64,7 @@ void convert_mat4_z_up_to_y_up(st_mat4f& input)
 	input.data[3][1] = tz;
 }
 
-void egg_to_model(const char* filename, st_model* model)
+void egg_to_model(const char* filename, st_model_data* model)
 {
 	extern char g_root_path[256];
 	std::string fullpath = g_root_path;
@@ -82,7 +94,8 @@ void egg_to_model(const char* filename, st_model* model)
 		}
 		else if (strcmp(data, "<Joint>") == 0)
 		{
-			model->_vertex_format |= k_vertex_attribute_weight;
+			state._vertex_format |= egg_vertex_attribute_joints;
+			state._vertex_format |= egg_vertex_attribute_weights;
 			if (!model->_skeleton)
 			{
 				model->_skeleton = new st_skeleton();
@@ -96,6 +109,22 @@ void egg_to_model(const char* filename, st_model* model)
 
 		file >> data;
 	}
+
+	// Sort out the model's vertex format.
+	if (state._vertex_format & egg_vertex_attribute_position)
+		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
+	if (state._vertex_format & egg_vertex_attribute_normal)
+		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
+	if (state._vertex_format & egg_vertex_attribute_color)
+		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 2));
+	if (state._vertex_format & egg_vertex_attribute_uv)
+		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 3));
+	if (state._vertex_format & egg_vertex_attribute_joints)
+		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_joints, 4));
+	if (state._vertex_format & egg_vertex_attribute_weights)
+		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_weights, 5));
+
+	model->_vertex_format.finalize();
 }
 
 void parse_coordinate_system(std::ifstream &file, st_egg_parser_state* state)
@@ -114,7 +143,7 @@ void parse_coordinate_system(std::ifstream &file, st_egg_parser_state* state)
 	file >> data;
 }
 
-void parse_texture_data(std::ifstream &file, st_model* model, st_egg_parser_state* state)
+void parse_texture_data(std::ifstream &file, st_model_data* model, st_egg_parser_state* state)
 {
 	char data[128];
 	file >> data;
@@ -141,7 +170,7 @@ void parse_texture_data(std::ifstream &file, st_model* model, st_egg_parser_stat
 	}
 }
 
-void parse_vertex_data(std::ifstream &file, st_model* model, st_egg_parser_state* state)
+void parse_vertex_data(std::ifstream &file, st_model_data* model, st_egg_parser_state* state)
 {
 	st_vertex v;
 
@@ -165,12 +194,14 @@ void parse_vertex_data(std::ifstream &file, st_model* model, st_egg_parser_state
 	file >> data; v._position.y = (float)atof(data);
 	file >> data; v._position.z = (float)atof(data);
 
+	state->_vertex_format |= egg_vertex_attribute_position;
+
 	while (open_parens > 0)
 	{
 		file >> data;
 		if (strcmp(data, "<Normal>") == 0)
 		{
-			model->_vertex_format |= k_vertex_attribute_normal;
+			state->_vertex_format |= egg_vertex_attribute_normal;
 
 			file >> data; open_parens += 1;
 			file >> data; v._normal.x = (float)atof(data);
@@ -180,7 +211,7 @@ void parse_vertex_data(std::ifstream &file, st_model* model, st_egg_parser_state
 		}
 		else if (strcmp(data, "<UV>") == 0)
 		{
-			model->_vertex_format |= k_vertex_attribute_uv;
+			state->_vertex_format |= egg_vertex_attribute_uv;
 
 			file >> data; open_parens += 1;
 			file >> data; v._uv.x = (float)atof(data);
@@ -189,7 +220,7 @@ void parse_vertex_data(std::ifstream &file, st_model* model, st_egg_parser_state
 		}
 		else if (strcmp(data, "<RGBA>") == 0)
 		{
-			model->_vertex_format |= k_vertex_attribute_color;
+			state->_vertex_format |= egg_vertex_attribute_color;
 
 			file >> data; open_parens += 1;
 			file >> data; v._color.x = (float)atof(data);
@@ -210,7 +241,7 @@ void parse_vertex_data(std::ifstream &file, st_model* model, st_egg_parser_state
 	model->_vertices.push_back(v);
 }
 
-void parse_poly_data(std::ifstream &file, st_model* model, st_egg_parser_state* state)
+void parse_poly_data(std::ifstream &file, st_model_data* model, st_egg_parser_state* state)
 {
 	int vertex_count = 0;
 	uint32_t indices[4];
@@ -262,7 +293,7 @@ void parse_poly_data(std::ifstream &file, st_model* model, st_egg_parser_state* 
 	}
 }
 
-void parse_joint_data(std::ifstream &file, st_model* model, st_egg_parser_state* state, uint32_t depth)
+void parse_joint_data(std::ifstream &file, st_model_data* model, st_egg_parser_state* state, uint32_t depth)
 {
 	st_joint* j = new st_joint;
 	j->_parent = depth > 0 ? depth - 1 : INT_MAX;
@@ -379,7 +410,7 @@ void parse_joint_data(std::ifstream &file, st_model* model, st_egg_parser_state*
 	j->_skin = j->_inv_bind * j->_world;
 }
 
-void egg_to_animation(const char* filename, st_animation* animation, st_model* model)
+void egg_to_animation(const char* filename, st_animation* animation, st_model_data* model)
 {
 	extern char g_root_path[256];
 	std::string fullpath = g_root_path;
@@ -426,7 +457,7 @@ void egg_to_animation(const char* filename, st_animation* animation, st_model* m
 	}
 }
 
-void parse_joint_anim_data(std::ifstream& file, st_animation* animation, st_model* model, st_egg_parser_state* state, uint32_t depth)
+void parse_joint_anim_data(std::ifstream& file, st_animation* animation, st_model_data* model, st_egg_parser_state* state, uint32_t depth)
 {
 	char data[128];
 	int open_parens = 0;

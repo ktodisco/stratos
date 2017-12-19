@@ -6,8 +6,8 @@
 
 #include "st_widget.h"
 
-#include "framework/st_drawcall.h"
 #include "framework/st_frame_params.h"
+#include "graphics/st_drawcall.h"
 
 const st_vec3f st_widget::k_button_color = { 0.25f, 0.25f, 1.0f };
 const st_vec3f st_widget::k_button_hover_color = { 0.75f, 0.75f, 1.0f };
@@ -35,7 +35,7 @@ void st_widget::draw_outline(st_frame_params* params, const st_vec2f& min, const
 	drawcall._indices.push_back(0);
 
 	drawcall._color = color;
-	drawcall._draw_mode = GL_LINES;
+	drawcall._draw_mode = st_primitive_topology_lines;
 	drawcall._transform.make_identity();
 	drawcall._material = nullptr;
 
@@ -59,7 +59,7 @@ void st_widget::draw_check(st_frame_params* params, const st_vec2f& min, const s
 	drawcall._indices.push_back(1);
 
 	drawcall._color = color;
-	drawcall._draw_mode = GL_LINES;
+	drawcall._draw_mode = st_primitive_topology_lines;
 	drawcall._transform.make_identity();
 	drawcall._material = nullptr;
 
@@ -85,7 +85,7 @@ void st_widget::draw_fill(st_frame_params* params, const st_vec2f& min, const st
 	drawcall._indices.push_back(2);
 
 	drawcall._color = color;
-	drawcall._draw_mode = GL_TRIANGLES;
+	drawcall._draw_mode = st_primitive_topology_triangles;
 	drawcall._transform.make_identity();
 	drawcall._material = nullptr;
 

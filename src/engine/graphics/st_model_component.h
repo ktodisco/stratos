@@ -16,14 +16,12 @@
 class st_model_component : public st_component
 {
 public:
-	st_model_component(class st_entity* ent, struct st_model* model, class st_material* material);
+	st_model_component(class st_entity* ent, struct st_model_data* model, class st_material* material);
 	virtual ~st_model_component();
 
 	virtual void update(struct st_frame_params* params) override;
 
 private:
 	class st_material* _material;
-	uint32_t _vao;
-	uint32_t _vbos[4];
-	uint32_t _index_count;
+	class st_geometry* _geometry;
 };

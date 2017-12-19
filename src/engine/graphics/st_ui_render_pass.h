@@ -17,10 +17,11 @@ public:
 	st_ui_render_pass();
 	~st_ui_render_pass();
 
-	void render(const struct st_frame_params* params);
+	void render(class st_render_context* context, const struct st_frame_params* params);
 
 private:
 	void draw_dynamic(
+		class st_render_context* context,
 		const std::vector<struct st_dynamic_drawcall>& drawcalls,
 		const class st_mat4f& proj,
 		const class st_mat4f& view);

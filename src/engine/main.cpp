@@ -12,16 +12,14 @@
 #include "jobs/st_job.h"
 
 #include "entity/st_entity.h"
-#include "entity/st_hello_component.h"
 #include "entity/st_lua_component.h"
 #include "graphics/st_animation.h"
 #include "graphics/st_animation_component.h"
-#include "graphics/st_cube_component.h"
 #include "graphics/st_egg_parser.h"
 #include "graphics/st_material.h"
 #include "graphics/st_model_component.h"
 #include "graphics/st_ply_parser.h"
-#include "graphics/st_geometry.h"
+#include "graphics/st_model_data.h"
 #include "graphics/st_program.h"
 #include "graphics/st_render_context.h"
 #include "gui/st_font.h"
@@ -42,7 +40,7 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
 
-#if defined(st_MINGW)
+#if defined(ST_MINGW)
 #include <unistd.h>
 #endif
 
@@ -80,7 +78,7 @@ int main(int argc, const char** argv)
 	// Create the default font:
 	g_font = new st_font("VeraMono.ttf", 16.0f, 512, 512);
 
-	st_model test_model;
+	st_model_data test_model;
 	ply_to_model("data/models/bunny_med_res.ply", &test_model);
 
 	st_entity test_entity;
@@ -139,7 +137,7 @@ int main(int argc, const char** argv)
 char g_root_path[256];
 static void set_root_path(const char* exepath)
 {
-#if defined(st_MSVC)
+#if defined(ST_MSVC)
 	strcpy_s(g_root_path, sizeof(g_root_path), exepath);
 
 	// Strip the executable file name off the end of the path:
@@ -152,7 +150,7 @@ static void set_root_path(const char* exepath)
 	{
 		slash[1] = '\0';
 	}
-#elif defined(st_MINGW)
+#elif defined(ST_MINGW)
 	char* cwd;
 	char buf[PATH_MAX + 1];
 	cwd = getcwd(buf, PATH_MAX + 1);

@@ -6,51 +6,42 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <cstdint>
-#include <string>
+#include <graphics/st_graphics.h>
 
-#define GLEW_STATIC
-#include <GL/glew.h>
+#include <cstdint>
+
+#if defined(ST_GRAPHICS_API_OPENGL)
+#include <graphics/opengl/st_gl_program.h>
+
+typedef st_gl_uniform st_platform_uniform;
+typedef st_gl_shader st_platform_shader;
+typedef st_gl_program st_platform_program;
+#elif defined(ST_GRAPHICS_API_DX12)
+#error DX12 not implemented.
+#elif defined(ST_GRAPHICS_API_VULKAN)
+#error Vulkan not implemented.
+#else
+#error Graphics API not defined.
+#endif
 
 /*
 ** Represents a shader uniform (constant).
 ** @see st_shader
 */
-class st_uniform
+class st_uniform : public st_platform_uniform
 {
-	friend class st_program;
-
 public:
-	void set(const struct st_vec3f& vec);
-	void set(const struct st_mat4f& mat);
-	void set(const struct st_mat4f* mats, uint32_t count);
-	void set(const class st_texture& tex, uint32_t unit);
-
-private:
-	st_uniform(int32_t location);
-
-	const int32_t _location;
+	st_uniform(int32_t location) : st_platform_uniform(location) {}
 };
 
 /*
 ** Represents a shader.
 ** @see st_program
 */
-class st_shader
+class st_shader : public st_platform_shader
 {
-	friend class st_program;
-
 public:
-	st_shader(const char* source, GLenum type);
-	~st_shader();
-
-	bool compile();
-
-	std::string get_compile_log() const;
-
-private:
-	uint32_t _handle;
-	const char* _source;
+	st_shader(const char* source, uint32_t type) : st_platform_shader(source, type) {}
 };
 
 /*
@@ -58,23 +49,8 @@ private:
 ** Vertex shader and fragment shader linked together.
 ** @see st_shader
 */
-class st_program
+class st_program : public st_platform_program
 {
 public:
-	st_program();
-	~st_program();
-
-	void attach(const st_shader& shader);
-	void detach(const st_shader& shader);
-
-	bool link();
-
-	std::string get_link_log() const;
-
-	st_uniform get_uniform(const char* name);
-
-	void use();
-
-private:
-	uint32_t _handle;
+	st_program() : st_platform_program() {}
 };

@@ -6,14 +6,16 @@
 
 #include "st_ply_parser.h"
 
-#include "st_geometry.h"
+#include "st_model_data.h"
+#include "graphics/st_vertex_attribute.h"
+#include "graphics/st_vertex_format.h"
 
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-void ply_to_model(const char* filename, struct st_model* model)
+void ply_to_model(const char* filename, struct st_model_data* model)
 {
 	extern char g_root_path[256];
 	std::string fullpath = g_root_path;
@@ -134,5 +136,8 @@ void ply_to_model(const char* filename, struct st_model* model)
 		model->_vertices[i]._normal.normalize();
 	}
 
-	model->_vertex_format |= k_vertex_attribute_normal;
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
+
+	model->_vertex_format.finalize();
 }

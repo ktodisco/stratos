@@ -5,8 +5,9 @@
 */
 
 #include "st_shape.h"
-#include "framework/st_drawcall.h"
+
 #include "graphics/st_debug_geometry.h"
+#include "graphics/st_drawcall.h"
 #include "math/st_math.h"
 
 #include <vector>
@@ -45,7 +46,7 @@ void st_plane::get_debug_draw(const st_mat4f& transform, st_dynamic_drawcall* dr
 	}
 
 	drawcall->_color = { 0.2f, 0.2f, 0.2f };
-	drawcall->_draw_mode = GL_TRIANGLES;
+	drawcall->_draw_mode = st_primitive_topology_triangles;
 	drawcall->_transform = transform;
 	drawcall->_material = nullptr;
 }
@@ -110,7 +111,7 @@ void st_aabb::get_debug_draw(const st_mat4f& transform, st_dynamic_drawcall* dra
 	}
 
 	drawcall->_color = { 0.0f, 1.0f, 0.0f };
-	drawcall->_draw_mode = GL_LINES;
+	drawcall->_draw_mode = st_primitive_topology_lines;
 	drawcall->_transform = transform;
 	drawcall->_material = nullptr;
 }
@@ -176,7 +177,7 @@ void st_oobb::get_debug_draw(const st_mat4f& transform, st_dynamic_drawcall* dra
 	}
 
 	drawcall->_color = { 0.0f, 1.0f, 0.0f };
-	drawcall->_draw_mode = GL_LINES;
+	drawcall->_draw_mode = st_primitive_topology_lines;
 	drawcall->_transform = transform;
 	drawcall->_material = nullptr;
 }

@@ -9,8 +9,8 @@
 #include "st_rigid_body.h"
 #include "st_shape.h"
 
-#include "framework/st_drawcall.h"
 #include "framework/st_frame_params.h"
+#include "graphics/st_drawcall.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -111,7 +111,7 @@ void st_physics_world::test_intersections(st_frame_params* params)
 				collision_draw._indices.push_back(0);
 				collision_draw._indices.push_back(1);
 				collision_draw._color = { 1.0f, 1.0f, 0.0f };
-				collision_draw._draw_mode = GL_LINES;
+				collision_draw._draw_mode = st_primitive_topology_lines;
 				collision_draw._material = nullptr;
 				collision_draw._transform.make_translation(info._point);
 

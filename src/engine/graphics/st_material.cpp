@@ -4,58 +4,16 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_material.h"
+#include <graphics/st_material.h>
 
-#include "st_animation.h"
+#include <graphics/st_animation.h>
+#include <graphics/st_program.h>
+#include <graphics/st_render_context.h>
 
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <string>
-
-void load_shader(const char* filename, std::string& contents)
-{
-	extern char g_root_path[256];
-	std::string fullpath = g_root_path;
-	fullpath += filename;
-
-	std::ifstream file(fullpath);
-
-	assert(file.is_open());
-
-	contents.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-}
-
-bool st_material::init_shaders(const char* vs, const char* fs)
-{
-	std::string source_vs;
-	load_shader(vs, source_vs);
-
-	std::string source_fs;
-	load_shader(fs, source_fs);
-
-	_vs = new st_shader(source_vs.c_str(), GL_VERTEX_SHADER);
-	if (!_vs->compile())
-	{
-		std::cerr << "Failed to compile vertex shader:" << std::endl << _vs->get_compile_log() << std::endl;
-	}
-
-	_fs = new st_shader(source_fs.c_str(), GL_FRAGMENT_SHADER);
-	if (!_fs->compile())
-	{
-		std::cerr << "Failed to compile fragment shader:\n\t" << std::endl << _fs->get_compile_log() << std::endl;
-	}
-
-	_program = new st_program();
-	_program->attach(*_vs);
-	_program->attach(*_fs);
-	if (!_program->link())
-	{
-		std::cerr << "Failed to link shader program:\n\t" << std::endl << _program->get_link_log() << std::endl;
-	}
-
-	return true;
-}
 
 st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	_texture_file(texture_file)
@@ -73,7 +31,11 @@ bool st_unlit_texture_material::init()
 		"data/shaders/st_unlit_texture_frag.glsl");
 }
 
-void st_unlit_texture_material::bind(const st_mat4f& proj, const st_mat4f& view, const st_mat4f& transform)
+void st_unlit_texture_material::bind(
+	st_render_context* context,
+	const st_mat4f& proj,
+	const st_mat4f& view,
+	const st_mat4f& transform)
 {
 	st_uniform mvp_uniform = _program->get_uniform("u_mvp");
 	st_uniform texture_uniform = _program->get_uniform("u_texture");
@@ -83,9 +45,9 @@ void st_unlit_texture_material::bind(const st_mat4f& proj, const st_mat4f& view,
 	mvp_uniform.set(transform * view * proj);
 	texture_uniform.set(*_texture, 0);
 
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	context->set_blend_state(false, k_st_src_alpha, k_st_one_minus_src_alpha);
+	context->set_depth_state(true, k_st_depth_less);
+	context->set_depth_mask(true);
 }
 
 st_constant_color_material::st_constant_color_material()
@@ -103,7 +65,11 @@ bool st_constant_color_material::init()
 		"data/shaders/st_constant_color_frag.glsl");
 }
 
-void st_constant_color_material::bind(const st_mat4f& proj, const st_mat4f& view, const st_mat4f& transform)
+void st_constant_color_material::bind(
+	st_render_context* context,
+	const st_mat4f& proj,
+	const st_mat4f& view,
+	const st_mat4f& transform)
 {
 	st_uniform mvp_uniform = _program->get_uniform("u_mvp");
 	st_uniform color_uniform = _program->get_uniform("u_color");
@@ -113,9 +79,9 @@ void st_constant_color_material::bind(const st_mat4f& proj, const st_mat4f& view
 	mvp_uniform.set(transform * view * proj);
 	color_uniform.set(_color);
 
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	context->set_blend_state(false, k_st_src_alpha, k_st_one_minus_src_alpha);
+	context->set_depth_state(true, k_st_depth_less);
+	context->set_depth_mask(true);
 }
 
 st_phong_material::st_phong_material()
@@ -133,7 +99,11 @@ bool st_phong_material::init()
 		"data/shaders/st_phong_frag.glsl");
 }
 
-void st_phong_material::bind(const st_mat4f& proj, const st_mat4f& view, const st_mat4f& transform)
+void st_phong_material::bind(
+	st_render_context* context,
+	const st_mat4f& proj,
+	const st_mat4f& view,
+	const st_mat4f& transform)
 {
 	st_uniform mvp_uniform = _program->get_uniform("u_mvp");
 	st_uniform eye_uniform = _program->get_uniform("u_eye");
@@ -143,9 +113,9 @@ void st_phong_material::bind(const st_mat4f& proj, const st_mat4f& view, const s
 	mvp_uniform.set(transform * view * proj);
 	eye_uniform.set(view.get_translation());
 
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	context->set_blend_state(false, k_st_src_alpha, k_st_one_minus_src_alpha);
+	context->set_depth_state(true, k_st_depth_less);
+	context->set_depth_mask(true);
 }
 
 st_animated_material::st_animated_material(st_skeleton* skeleton) : _skeleton(skeleton)
@@ -163,7 +133,11 @@ bool st_animated_material::init()
 		"data/shaders/st_animated_frag.glsl");
 }
 
-void st_animated_material::bind(const st_mat4f& proj, const st_mat4f& view, const st_mat4f& transform)
+void st_animated_material::bind(
+	st_render_context* context,
+	const st_mat4f& proj,
+	const st_mat4f& view,
+	const st_mat4f& transform)
 {
 	st_uniform mvp_uniform = _program->get_uniform("u_mvp");
 	st_uniform skin_uniform = _program->get_uniform("u_skin");
@@ -181,9 +155,9 @@ void st_animated_material::bind(const st_mat4f& proj, const st_mat4f& view, cons
 	}
 	skin_uniform.set(skin, st_skeleton::k_max_skeleton_joints);
 
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	context->set_blend_state(false, k_st_src_alpha, k_st_one_minus_src_alpha);
+	context->set_depth_state(true, k_st_depth_less);
+	context->set_depth_mask(true);
 }
 
 st_animated_unlit_texture_material::st_animated_unlit_texture_material(st_skeleton* skeleton, const char* texture_file) :
@@ -203,7 +177,11 @@ bool st_animated_unlit_texture_material::init()
 		"data/shaders/st_animated_unlit_texture_frag.glsl");
 }
 
-void st_animated_unlit_texture_material::bind(const st_mat4f& proj, const st_mat4f& view, const st_mat4f& transform)
+void st_animated_unlit_texture_material::bind(
+	st_render_context* context,
+	const st_mat4f& proj,
+	const st_mat4f& view,
+	const st_mat4f& transform)
 {
 	st_uniform mvp_uniform = _program->get_uniform("u_mvp");
 	st_uniform skin_uniform = _program->get_uniform("u_skin");
@@ -224,7 +202,7 @@ void st_animated_unlit_texture_material::bind(const st_mat4f& proj, const st_mat
 
 	texture_uniform.set(*_texture, 0);
 
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	context->set_blend_state(false, k_st_src_alpha, k_st_one_minus_src_alpha);
+	context->set_depth_state(true, k_st_depth_less);
+	context->set_depth_mask(true);
 }

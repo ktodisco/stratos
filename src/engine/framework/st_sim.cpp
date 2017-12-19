@@ -11,7 +11,7 @@
 #include "entity/st_entity.h"
 #include "jobs/st_job.h"
 
-#if defined(st_MINGW)
+#if defined(ST_MINGW)
 #include <malloc.h>
 #endif
 

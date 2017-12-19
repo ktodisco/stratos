@@ -27,8 +27,8 @@ public:
 		float x,
 		float y,
 		const struct st_vec3f& color,
-		struct st_vec2f* min = nullptr,
-		struct st_vec2f* max = nullptr);
+		struct st_vec2f* extent_min = nullptr,
+		struct st_vec2f* extent_max = nullptr);
 
 private:
 	class st_texture* _texture;
@@ -52,7 +52,11 @@ public:
 
 	virtual bool init() override;
 
-	virtual void bind(const struct st_mat4f& proj, const struct st_mat4f& view, const struct st_mat4f& transform) override;
+	virtual void bind(
+		class st_render_context* context,
+		const struct st_mat4f& proj,
+		const struct st_mat4f& view,
+		const struct st_mat4f& transform) override;
 
 	virtual void set_color(const struct st_vec3f& color) override { _color = color; }
 

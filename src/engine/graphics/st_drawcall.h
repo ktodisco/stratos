@@ -6,15 +6,14 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include "graphics/st_graphics.h"
 #include "math/st_mat4f.h"
 #include "math/st_vec2f.h"
 #include "math/st_vec3f.h"
 
+#include <cstdint>
 #include <string>
 #include <vector>
-
-#define GLEW_STATIC
-#include <GL/glew.h>
 
 /*
 ** A draw emitted from the simulation phase and rendered in the output phase.
@@ -24,7 +23,7 @@ struct st_drawcall
 {
 	std::string _name;
 	st_mat4f _transform;
-	GLenum _draw_mode;
+	e_st_primitive_topology _draw_mode;
 	class st_material* _material = 0;
 };
 
@@ -35,8 +34,8 @@ struct st_drawcall
 */
 struct st_static_drawcall : st_drawcall
 {
-	GLuint _vao;
-	GLsizei _index_count;
+	uint32_t _vao;
+	int32_t _index_count;
 };
 
 /*

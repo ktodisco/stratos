@@ -6,7 +6,21 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <graphics/st_graphics.h>
+
 #include <string>
+
+#if defined(ST_GRAPHICS_API_OPENGL)
+#include <graphics/opengl/st_gl_render_marker.h>
+
+typedef st_gl_render_marker st_platform_render_marker;
+#elif defined(ST_GRAPHICS_API_DX12)
+#error DX12 not implemented.
+#elif defined(ST_GRAPHICS_API_VULKAN)
+#error Vulkan not implemented.
+#else
+#error Graphics API not defined.
+#endif
 
 /*
 ** A class that manages a scoped render group, for profiling.
@@ -18,9 +32,8 @@
 **
 ** The marker will clean itself up when it goes out of scope.
 */
-class st_render_marker
+class st_render_marker : public st_platform_render_marker
 {
 public:
-	st_render_marker(const std::string& message);
-	~st_render_marker();
+	st_render_marker(const std::string& message) : st_platform_render_marker(message) {}
 };

@@ -10,7 +10,7 @@
 
 #include <cassert>
 #include <cstdio>
-#if defined(st_MINGW)
+#if defined(ST_MINGW)
 #include <unistd.h>
 #else
 #include <thread>
@@ -136,7 +136,7 @@ void st_input::update(st_frame_params* params)
 	auto max_delta_time = std::chrono::milliseconds(32);
 	if (delta_time < min_delta_time)
 	{
-#if defined(st_MINGW) && defined(st_32_BIT)
+#if defined(ST_MINGW) && defined(ST_32_BIT)
 		uint32_t ms = std::chrono::duration_cast<std::chrono::duration<float>>(min_delta_time - delta_time).count();
 		usleep(ms * 1000);
 #else

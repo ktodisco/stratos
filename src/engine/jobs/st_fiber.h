@@ -8,7 +8,7 @@
 
 #include "framework/st_compiler_defines.h"
 
-#if defined(st_MINGW)
+#if defined(ST_MINGW)
 #include <sys/types.h>
 #endif
 

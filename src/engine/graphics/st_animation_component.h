@@ -16,7 +16,7 @@
 class st_animation_component : public st_component
 {
 public:
-	st_animation_component(class st_entity* ent, struct st_model* model);
+	st_animation_component(class st_entity* ent, struct st_model_data* model);
 	virtual ~st_animation_component();
 
 	virtual void update(struct st_frame_params* params) override;

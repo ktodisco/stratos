@@ -21,19 +21,13 @@
 #include <cassert>
 #include <iostream>
 
-#include <windows.h>
-
-#define GLEW_STATIC
-#include <GL/glew.h>
+#include <Windows.h>
 
 st_output::st_output(const st_window* window, st_render_context* render_context) :
 	_window(window), _render_context(render_context)
 {
-	glViewport(0, 0, _window->get_width(), _window->get_height());
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-
-	glEnable(GL_DEBUG_OUTPUT);
+	_render_context->set_viewport(0, 0, _window->get_width(), _window->get_height());
+	_render_context->set_depth_state(true, k_st_depth_less);
 }
 
 st_output::~st_output()
@@ -45,31 +39,28 @@ void st_output::update(st_frame_params* params)
 	// Acquire the render context.
 	_render_context->acquire();
 
-	// Update viewport in case window was resized:
+	// Update viewport in case window was resized.
 	uint32_t width = _window->get_width();
 	uint32_t height = _window->get_height();
-	glViewport(0, 0, width, height);
+	_render_context->set_viewport(0, 0, width, height);
 	params->_width = width;
 	params->_height = height;
 
-	// Clear viewport:
-	glDepthMask(GL_TRUE);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// Clear viewport.
+	_render_context->set_depth_mask(true);
+	_render_context->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+	_render_context->clear(st_clear_flag_color | st_clear_flag_depth);
 
-	glEnable(GL_CULL_FACE);
+	_render_context->set_cull_state(true);
 
 	st_scene_render_pass scene_pass;
-	scene_pass.render(params);
+	scene_pass.render(_render_context, params);
 
 	st_ui_render_pass ui_pass;
-	ui_pass.render(params);
-
-	GLenum error = glGetError();
-	assert(error == GL_NONE);
+	ui_pass.render(_render_context, params);
 
 	// Swap the frame buffers and release the context.
-	SwapBuffers(_render_context->get_device_context());
+	_render_context->swap();
 
 	_render_context->release();
 }

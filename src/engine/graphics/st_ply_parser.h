@@ -16,4 +16,4 @@ struct st_ply_parser_state
 /*
 ** Read a PLY file, get the model data.
 */
-void ply_to_model(const char* filename, struct st_model* model);
+void ply_to_model(const char* filename, struct st_model_data* model);

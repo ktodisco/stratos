@@ -4,16 +4,19 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_font.h"
+#include <gui/st_font.h>
 
-#include "framework/st_compiler_defines.h"
-#include "framework/st_frame_params.h"
-#include "math/st_vec2f.h"
+#include <framework/st_compiler_defines.h>
+#include <framework/st_frame_params.h>
+#include <graphics/st_material.h>
+#include <graphics/st_program.h>
+#include <graphics/st_render_context.h>
+#include <math/st_vec2f.h>
 
 #include <algorithm>
 #include <iostream>
 
-#if defined(st_MINGW)
+#if defined(ST_MINGW)
 #include <stdio.h>
 #endif
 
@@ -79,21 +82,21 @@ void st_font::print(
 	float x,
 	float y,
 	const st_vec3f& color,
-	st_vec2f* min,
-	st_vec2f* max)
+	st_vec2f* extent_min,
+	st_vec2f* extent_max)
 {
-	if (min)
+	if (extent_min)
 	{
-		*min = { x, y };
+		*extent_min = { x, y };
 	}
-	if (max)
+	if (extent_max)
 	{
-		*max = { x, y };
+		*extent_max = { x, y };
 	}
 
 	st_dynamic_drawcall drawcall;
 	drawcall._color = color;
-	drawcall._draw_mode = GL_TRIANGLES;
+	drawcall._draw_mode = st_primitive_topology_triangles;
 	drawcall._material = _material;
 	drawcall._transform.make_identity();
 
@@ -105,15 +108,15 @@ void st_font::print(
 			stbtt_aligned_quad q;
 			stbtt_GetBakedQuad(_characters, _image_width, _image_height, *text - k_character_start, &x, &y, &q, 1);
 
-			if (min)
+			if (extent_min)
 			{
-				min->x = std::min(min->x, q.x0);
-				min->y = std::min(min->y, q.y0);
+				extent_min->x = min(extent_min->x, q.x0);
+				extent_min->y = min(extent_min->y, q.y0);
 			}
-			if (max)
+			if (extent_max)
 			{
-				max->x = std::max(max->x, q.x1);
-				max->y = std::max(max->y, q.y1);
+				extent_max->x = max(extent_max->x, q.x1);
+				extent_max->y = max(extent_max->y, q.y1);
 			}
 
 			drawcall._positions.push_back({ q.x0, q.y0, 0.0f });
@@ -152,52 +155,16 @@ st_font_material::~st_font_material()
 
 bool st_font_material::init()
 {
-	const char* source_vs =
-		"#version 400\n"
-		"\n"
-		"uniform mat4 u_mvp;\n"
-		"layout(location = 0) in vec3 in_vertex;\n"
-		"layout(location = 1) in vec2 in_texcood0;\n"
-		"out vec2 texcoord0;\n"
-		"void main(void) {\n"
-		"	gl_Position = vec4(in_vertex, 1.0) * u_mvp;\n"
-		"	texcoord0 = in_texcood0;\n"
-		"}\n";
-
-	const char* source_fs =
-		"#version 400\n"
-		"\n"
-		"uniform vec3 u_color;\n"
-		"uniform sampler2D u_texture;\n"
-		"in vec2 texcoord0;\n"
-		"void main(void) {\n"
-		"	gl_FragColor = vec4(u_color, texture(u_texture, texcoord0).x);\n"
-		"}\n";
-
-	_vs = new st_shader(source_vs, GL_VERTEX_SHADER);
-	if (!_vs->compile())
-	{
-		std::cerr << "Failed to compile vertex shader:" << std::endl << _vs->get_compile_log() << std::endl;
-	}
-
-	_fs = new st_shader(source_fs, GL_FRAGMENT_SHADER);
-	if (!_fs->compile())
-	{
-		std::cerr << "Failed to compile fragment shader:\n\t" << std::endl << _fs->get_compile_log() << std::endl;
-	}
-
-	_program = new st_program();
-	_program->attach(*_vs);
-	_program->attach(*_fs);
-	if (!_program->link())
-	{
-		std::cerr << "Failed to link shader program:\n\t" << std::endl << _program->get_link_log() << std::endl;
-	}
-
-	return true;
+	return st_material::init_shaders(
+		"data/shaders/st_font_simple_vert.glsl",
+		"data/shaders/st_font_simple_frag.glsl");
 }
 
-void st_font_material::bind(const st_mat4f& proj, const st_mat4f& view, const st_mat4f& transform)
+void st_font_material::bind(
+	st_render_context* context,
+	const st_mat4f& proj,
+	const st_mat4f& view,
+	const st_mat4f& transform)
 {
 	st_uniform mvp_uniform = _program->get_uniform("u_mvp");
 	st_uniform color_uniform = _program->get_uniform("u_color");
@@ -208,6 +175,10 @@ void st_font_material::bind(const st_mat4f& proj, const st_mat4f& view, const st
 	mvp_uniform.set(transform * view * proj);
 	color_uniform.set(_color);
 	texture_uniform.set(*_texture, 0);
+
+	context->set_blend_state(true, k_st_src_alpha, k_st_one_minus_src_alpha);
+	context->set_depth_state(true, k_st_depth_less);
+	context->set_depth_mask(true);
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

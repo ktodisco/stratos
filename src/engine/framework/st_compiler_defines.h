@@ -8,25 +8,25 @@
 
 // Compilers.
 #if defined(_MSC_VER)
-#define st_MSVC
+#define ST_MSVC
 #elif defined(__MINGW32__)
-#define st_MINGW
+#define ST_MINGW
 #endif
 
 // Architecture.
-#if defined(st_MSVC)
+#if defined(ST_MSVC)
 #if defined(_WIN64)
-#define st_64_BIT
+#define ST_64_BIT
 #elif defined(_WIN32)
-#define st_32_BIT
+#define ST_32_BIT
 #endif
 #endif
 
 #if defined(__MINGW32__)
 #include <_mingw.h>
 #if defined(__MINGW64_VERSION_MAJOR)
-#define st_64_BIT
+#define ST_64_BIT
 #else
-#define st_32_BIT
+#define ST_32_BIT
 #endif
 #endif

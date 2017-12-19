@@ -8,12 +8,12 @@
 
 #include "st_animation.h"
 #include "st_debug_geometry.h"
-#include "st_geometry.h"
+#include "st_model_data.h"
 #include "entity/st_entity.h"
 
 #include <cassert>
 
-st_animation_component::st_animation_component(st_entity* ent, st_model* model) : st_component(ent)
+st_animation_component::st_animation_component(st_entity* ent, st_model_data* model) : st_component(ent)
 {
 	_skeleton = model->_skeleton;
 	assert(_skeleton != 0);

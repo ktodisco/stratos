@@ -6,7 +6,7 @@
 
 #include "st_debug_geometry.h"
 
-#include "framework/st_drawcall.h"
+#include "graphics/st_drawcall.h"
 
 #include "math/st_mat4f.h"
 #include "math/st_math.h"
@@ -56,7 +56,7 @@ void draw_debug_sphere(float radius, const st_mat4f& transform, st_dynamic_drawc
 		drawcall->_indices.push_back((uint16_t)(drawcall->_positions.size() - k_line_segments));
 	}
 
-	drawcall->_draw_mode = GL_LINES;
+	drawcall->_draw_mode = st_primitive_topology_lines;
 	drawcall->_color = { 0.0f, 0.0f, 1.0f };
 	drawcall->_transform = transform;
 }
