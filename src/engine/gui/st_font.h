@@ -59,7 +59,7 @@ public:
 		const struct st_mat4f& transform) override;
 
 	void get_pipeline_state(
-		struct st_dx12_pipeline_state_desc* state_desc) override {}
+		struct st_pipeline_state_desc* state_desc) override {}
 
 	//virtual void set_color(const struct st_vec3f& color) override { _color = color; }
 

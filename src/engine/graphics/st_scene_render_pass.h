@@ -28,5 +28,5 @@ private:
 		const class st_mat4f& view);
 
 	std::unique_ptr<class st_phong_material> _default_material;
-	std::unique_ptr<class st_dx12_pipeline_state> _pipeline_state;
+	std::unique_ptr<class st_pipeline_state> _pipeline_state;
 };

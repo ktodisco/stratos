@@ -8,11 +8,10 @@
 
 #include <graphics/st_animation.h>
 #include <graphics/st_constant_buffer.h>
+#include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_vertex_format.h>
-
-#include <graphics/dx12/st_dx12_pipeline_state.h>
 
 #include <cassert>
 #include <fstream>
@@ -129,7 +128,7 @@ void st_phong_material::bind(
 }
 
 void st_phong_material::get_pipeline_state(
-	st_dx12_pipeline_state_desc* state_desc)
+	st_pipeline_state_desc* state_desc)
 {
 	state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_phong);
 

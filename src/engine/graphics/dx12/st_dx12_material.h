@@ -30,5 +30,5 @@ public:
 		const st_mat4f& transform) = 0;
 
 	virtual void get_pipeline_state(
-		struct st_dx12_pipeline_state_desc* state_desc) = 0;
+		struct st_pipeline_state_desc* state_desc) = 0;
 };

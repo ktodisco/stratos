@@ -10,11 +10,12 @@
 #include <graphics/dx12/st_dx12_shader.h>
 #include <graphics/dx12/st_dx12_vertex_format.h>
 
+#include <graphics/st_pipeline_state.h>
 #include <graphics/st_shader.h>
 
 #include <graphics/dx12/d3dx12.h>
 
-st_dx12_pipeline_state::st_dx12_pipeline_state(const st_dx12_pipeline_state_desc& desc)
+st_dx12_pipeline_state::st_dx12_pipeline_state(const st_pipeline_state_desc& desc)
 {
 	// Construct the DX12 pipeline state description using our internal representation.
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_desc = {};

@@ -9,23 +9,22 @@
 #include "framework/st_frame_params.h"
 #include "graphics/st_drawcall.h"
 #include "graphics/st_material.h"
+#include "graphics/st_pipeline_state.h"
 #include "graphics/st_render_context.h"
 #include "graphics/st_render_marker.h"
-
-#include <graphics/dx12/st_dx12_pipeline_state.h>
 
 st_scene_render_pass::st_scene_render_pass()
 {
 	_default_material = std::make_unique<st_phong_material>();
 
-	st_dx12_pipeline_state_desc state_desc;
+	st_pipeline_state_desc state_desc;
 	_default_material->get_pipeline_state(&state_desc);
 
 	state_desc._render_target_count = 1;
 	state_desc._render_target_formats[0] = st_texture_format_r8g8b8a8_unorm;
 	state_desc._depth_stencil_format = st_texture_format_d24_unorm_s8_uint;
 
-	_pipeline_state = std::make_unique<st_dx12_pipeline_state>(state_desc);
+	_pipeline_state = std::make_unique<st_pipeline_state>(state_desc);
 }
 
 st_scene_render_pass::~st_scene_render_pass()

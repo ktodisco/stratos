@@ -81,7 +81,7 @@ public:
 		const st_mat4f& transform) override;
 
 	void get_pipeline_state(
-		struct st_dx12_pipeline_state_desc* state_desc) override {}
+		struct st_pipeline_state_desc* state_desc) override {}
 
 	//virtual void set_color(const st_vec3f& color) override { _color = color; }
 
@@ -105,7 +105,7 @@ public:
 		const st_mat4f& transform) override;
 
 	void get_pipeline_state(
-		struct st_dx12_pipeline_state_desc* state_desc) override;
+		struct st_pipeline_state_desc* state_desc) override;
 
 	struct st_phong_cb
 	{
