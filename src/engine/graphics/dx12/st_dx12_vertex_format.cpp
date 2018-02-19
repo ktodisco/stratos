@@ -82,7 +82,7 @@ void st_dx12_vertex_format::platform_finalize()
 			semantic_name,
 			0,
 			format,
-			attr->_unit,
+			0,
 			(UINT)offset,
 			classification,
 			0
