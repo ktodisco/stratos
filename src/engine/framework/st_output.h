@@ -9,6 +9,7 @@
 #include "graphics/st_drawcall.h"
 #include "math/st_mat4f.h"
 
+#include <memory>
 #include <vector>
 
 class st_window;
@@ -31,4 +32,7 @@ private:
 
 	const st_window* _window;
 	st_render_context* _render_context;
+
+	std::unique_ptr<class st_scene_render_pass> _scene_pass;
+	std::unique_ptr<class st_ui_render_pass> _ui_pass;
 };

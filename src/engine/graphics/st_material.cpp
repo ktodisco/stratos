@@ -7,6 +7,7 @@
 #include <graphics/st_material.h>
 
 #include <graphics/st_animation.h>
+#include <graphics/st_constant_buffer.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_vertex_format.h>
@@ -87,15 +88,7 @@ void st_constant_color_material::bind(
 
 st_phong_material::st_phong_material()
 {
-	// TEMP: Create the constant buffer upload heap and map it.
-	st_dx12_render_context::get()->create_buffer(sizeof(st_phong_cb), _constant_buffer.GetAddressOf());
-	st_dx12_render_context::get()->create_constant_buffer(
-		_constant_buffer->GetGPUVirtualAddress(),
-		sizeof(st_phong_cb),
-		&_constant_buffer_offset);
-
-	D3D12_RANGE range = {};
-	_constant_buffer->Map(0, &range, reinterpret_cast<void**>(&_constant_buffer_head));
+	_phong_buffer = std::make_unique<st_constant_buffer>(sizeof(st_phong_cb));
 
 	_vertex_format = std::make_unique<st_vertex_format>();
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
@@ -105,8 +98,6 @@ st_phong_material::st_phong_material()
 
 st_phong_material::~st_phong_material()
 {
-	// TEMP: Unmap the constant buffer upload heap.
-	_constant_buffer->Unmap(0, nullptr);
 }
 
 void st_phong_material::bind(
@@ -115,13 +106,14 @@ void st_phong_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	// TEMP: Set the constant buffer data.
 	st_mat4f mvp = transform * view * proj;
 	mvp.transpose();
-	memcpy(_constant_buffer_head, &mvp, sizeof(st_phong_cb));
 
-	// TEMP: Set the CBV's offset on the root descriptor table.
-	context->set_constant_buffer_table(0, _constant_buffer_offset);
+	st_phong_cb cb_data{};
+	cb_data._mvp = mvp;
+	_phong_buffer->update(context, &cb_data);
+
+	_phong_buffer->commit(context);
 
 	//st_uniform mvp_uniform = _program->get_uniform("u_mvp");
 	//st_uniform eye_uniform = _program->get_uniform("u_eye");

@@ -28,6 +28,9 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 	_render_context->set_viewport(0, 0, _window->get_width(), _window->get_height());
 	_render_context->set_scissor(0, 0, window->get_width(), window->get_height());
 	_render_context->set_depth_state(true, k_st_depth_less);
+
+	_scene_pass = std::make_unique<st_scene_render_pass>();
+	_ui_pass = std::make_unique<st_ui_render_pass>();
 }
 
 st_output::~st_output()
@@ -58,11 +61,9 @@ void st_output::update(st_frame_params* params)
 
 	_render_context->set_cull_state(true);
 
-	st_scene_render_pass scene_pass;
-	scene_pass.render(_render_context, params);
+	_scene_pass->render(_render_context, params);
 
-	st_ui_render_pass ui_pass;
-	ui_pass.render(_render_context, params);
+	_ui_pass->render(_render_context, params);
 
 	// Swap the frame buffers and release the context.
 	_render_context->transition_backbuffer_to_present();

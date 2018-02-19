@@ -16,12 +16,6 @@
 
 st_dx12_render_context* st_dx12_render_context::_this = nullptr;
 
-template<typename T>
-static T align_value(T value, uint32_t alignment)
-{
-	return (value + ((T)alignment - 1)) & ~((T)alignment - 1);
-}
-
 st_dx12_render_context::st_dx12_render_context(const st_window* window)
 {
 	UINT dxgi_factory_flags = 0;

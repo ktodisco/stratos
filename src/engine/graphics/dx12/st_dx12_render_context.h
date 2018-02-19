@@ -24,6 +24,12 @@
 #define k_max_shader_resources 1024
 #define k_max_samplers 1024
 
+template<typename T>
+static T align_value(T value, uint32_t alignment)
+{
+	return (value + ((T)alignment - 1)) & ~((T)alignment - 1);
+}
+
 class st_dx12_render_context
 {
 public:

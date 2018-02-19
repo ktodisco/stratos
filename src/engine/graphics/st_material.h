@@ -38,13 +38,6 @@ typedef st_dx12_material st_platform_material;
 */
 class st_material : public st_platform_material
 {
-	// TODO: How do we define the pipeline state a material needs at construction?
-	// Duh, in the constructor, create the platform agnostic pipeline state object and fill it out.
-	// bind() becomes a simple matter of binding the pipeline state in DirectX, and making
-	// individual state calls in OpenGL.
-
-	// TODO: Shader files for each material also need to be specified by a single name.
-	// OpenGL implementation can append .vert/.frag at initialization time.
 };
 
 // TODO: These should be moved into their own files.
@@ -117,15 +110,10 @@ public:
 	struct st_phong_cb
 	{
 		st_mat4f _mvp;
-		// This is necessary to keep the CB size at 256 bytes.
-		float padding[48];
 	};
 
 private:
-	// TEMP: Constant buffer tracking.
-	Microsoft::WRL::ComPtr<ID3D12Resource> _constant_buffer;
-	uint32_t _constant_buffer_offset = 0;
-	uint8_t* _constant_buffer_head = nullptr;
+	std::unique_ptr<class st_constant_buffer> _phong_buffer = nullptr;
 	std::unique_ptr<class st_vertex_format> _vertex_format = nullptr;
 };
 
