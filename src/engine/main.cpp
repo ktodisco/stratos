@@ -20,8 +20,8 @@
 #include "graphics/st_model_component.h"
 #include "graphics/st_ply_parser.h"
 #include "graphics/st_model_data.h"
-#include "graphics/st_program.h"
 #include "graphics/st_render_context.h"
+#include "graphics/st_shader_manager.h"
 #include "gui/st_font.h"
 #include "physics/st_physics_component.h"
 #include "physics/st_playermove_component.h"
@@ -33,6 +33,8 @@
 #include "gui/st_button.h"
 #include "gui/st_checkbox.h"
 #include "gui/st_label.h"
+
+#include <memory>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -60,7 +62,11 @@ int main(int argc, const char** argv)
 	st_window* window = new st_window("Stratos", 1280, 720, input);
 
 	// Create the rendering context for the window.
-	st_render_context* render = new st_render_context(GetDC(window->get_window_handle()));
+	st_render_context* render = new st_render_context(window);
+
+	// TODO: Create the shader manager, loading all the shaders.
+	std::unique_ptr<st_shader_manager> shader_manager =
+		std::make_unique<st_shader_manager>();
 
 	// Create objects for phases of the frame: sim, physics, and output.
 	st_sim* sim = new st_sim();
@@ -83,7 +89,7 @@ int main(int argc, const char** argv)
 
 	st_entity test_entity;
 	st_phong_material* test_material = new st_phong_material();
-	test_material->set_color({0.5f, 0.5f, 0.5f});
+	//test_material->set_color({0.5f, 0.5f, 0.5f});
 	st_model_component model_component(&test_entity, &test_model, test_material);
 	sim->add_entity(&test_entity);
 
@@ -91,6 +97,8 @@ int main(int argc, const char** argv)
 	test_entity.scale(40.0f);
 
 	window->show();
+
+	st_render_context::get()->end_loading();
 
 	// Main loop:
 	while (true)

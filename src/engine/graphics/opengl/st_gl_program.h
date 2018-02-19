@@ -21,7 +21,7 @@ public:
 	void set(const struct st_vec3f& vec);
 	void set(const struct st_mat4f& mat);
 	void set(const struct st_mat4f* mats, uint32_t count);
-	void set(const class st_texture& tex, uint32_t unit);
+	void set(const class st_gl_texture& tex, uint32_t unit);
 
 protected:
 	st_gl_uniform(int32_t location);
@@ -31,7 +31,6 @@ protected:
 
 /*
 ** Represents a shader.
-** @see st_program
 */
 class st_gl_shader
 {
@@ -68,7 +67,7 @@ public:
 
 	std::string get_link_log() const;
 
-	class st_uniform get_uniform(const char* name);
+	class st_gl_uniform get_uniform(const char* name);
 
 	void use();
 

@@ -23,13 +23,8 @@ class st_gl_render_context
 {
 public:
 
-	st_gl_render_context(HDC device_context);
+	st_gl_render_context(const class st_window* window);
 	~st_gl_render_context();
-
-	HDC get_device_context() const
-	{
-		return _device_context;
-	}
 
 	void acquire();
 	void release();
@@ -43,8 +38,8 @@ public:
 	void set_clear_color(float r, float g, float b, float a);
 
 	void clear(unsigned int clear_flags);
-	void draw(const struct st_static_drawcall& drawcall);
-	void draw(const struct st_dynamic_drawcall& drawcall);
+	void draw(const struct st_gl_static_drawcall& drawcall);
+	void draw(const struct st_gl_dynamic_drawcall& drawcall);
 
 	void swap();
 

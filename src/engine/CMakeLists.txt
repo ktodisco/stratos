@@ -32,7 +32,7 @@ if (MINGW)
 endif()
 
 add_executable(stratos ${ST_SOURCE_FILES} always_copy_data.h)
-target_link_libraries (stratos glew32s opengl32 lua53)
+target_link_libraries (stratos glew32s opengl32 lua53 d3d12 dxgi D3DCompiler)
 if (MSVC)
 	set_target_properties(stratos PROPERTIES LINK_FLAGS "/ignore:4098 /ignore:4099")
 endif()

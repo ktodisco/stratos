@@ -6,7 +6,7 @@
 
 #include <graphics/opengl/st_gl_geometry.h>
 
-#include <graphics/st_drawcall.h>
+#include <graphics/opengl/st_gl_drawcall.h>
 #include <graphics/st_vertex_attribute.h>
 #include <graphics/st_vertex_format.h>
 
@@ -102,7 +102,7 @@ st_gl_geometry::~st_gl_geometry()
 	glDeleteVertexArrays(1, &_vao);
 }
 
-void st_gl_geometry::draw(st_static_drawcall& draw_call)
+void st_gl_geometry::draw(st_gl_static_drawcall& draw_call)
 {
 	draw_call._vao = _vao;
 	draw_call._index_count = _index_count;

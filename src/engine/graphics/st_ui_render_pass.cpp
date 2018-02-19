@@ -15,7 +15,7 @@
 st_ui_render_pass::st_ui_render_pass()
 {
 	_default_material = new st_constant_color_material();
-	_default_material->init();
+	//_default_material->init();
 }
 
 st_ui_render_pass::~st_ui_render_pass()
@@ -47,12 +47,12 @@ void st_ui_render_pass::draw_dynamic(
 
 		if (d._material)
 		{
-			d._material->set_color(d._color);
+			//d._material->set_color(d._color);
 			d._material->bind(context, proj, view, d._transform);
 		}
 		else
 		{
-			_default_material->set_color(d._color);
+			//_default_material->set_color(d._color);
 			_default_material->bind(context, proj, view, d._transform);
 		}
 

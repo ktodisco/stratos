@@ -8,16 +8,18 @@
 
 #include <graphics/st_graphics.h>
 
+#include <graphics/st_shader_manager.h>
+
 #include <cstdint>
 
 #if defined(ST_GRAPHICS_API_OPENGL)
-#include <graphics/opengl/st_gl_texture.h>
+#include <graphics/opengl/st_gl_shader.h>
 
-typedef st_gl_texture st_platform_texture;
+typedef st_gl_shader st_platform_shader;
 #elif defined(ST_GRAPHICS_API_DX12)
-#include <graphics/dx12/st_dx12_texture.h>
+#include <graphics/dx12/st_dx12_shader.h>
 
-typedef st_dx12_texture st_platform_texture;
+typedef st_dx12_shader st_platform_shader;
 #elif defined(ST_GRAPHICS_API_VULKAN)
 #error Vulkan not implemented.
 #else
@@ -25,10 +27,11 @@ typedef st_dx12_texture st_platform_texture;
 #endif
 
 /*
-** Represents a texture object for rendering.
+** Represents a shader.
+** @see st_program
 */
-class st_texture : public st_platform_texture
+class st_shader : public st_platform_shader
 {
 public:
-	st_texture() : st_platform_texture() {}
+	st_shader(const char* source, uint8_t type) : st_platform_shader(source, type) {}
 };

@@ -19,7 +19,7 @@ st_model_component::st_model_component(st_entity* ent, st_model_data* model, st_
 	st_component(ent),
 	_material(material)
 {
-	_material->init();
+	//_material->init();
 
 	// TODO: Assert that the model's format is finalized.
 

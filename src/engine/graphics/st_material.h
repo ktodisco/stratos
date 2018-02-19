@@ -13,14 +13,19 @@
 #include "math/st_mat4f.h"
 #include "math/st_vec3f.h"
 
+#include <memory>
 #include <string>
+
+#include <wrl.h>
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 #include <graphics/opengl/st_gl_material.h>
 
 typedef st_gl_material st_platform_material;
 #elif defined(ST_GRAPHICS_API_DX12)
-#error DX12 not implemented.
+#include <graphics/dx12/st_dx12_material.h>
+
+typedef st_dx12_material st_platform_material;
 #elif defined(ST_GRAPHICS_API_VULKAN)
 #error Vulkan not implemented.
 #else
@@ -33,6 +38,13 @@ typedef st_gl_material st_platform_material;
 */
 class st_material : public st_platform_material
 {
+	// TODO: How do we define the pipeline state a material needs at construction?
+	// Duh, in the constructor, create the platform agnostic pipeline state object and fill it out.
+	// bind() becomes a simple matter of binding the pipeline state in DirectX, and making
+	// individual state calls in OpenGL.
+
+	// TODO: Shader files for each material also need to be specified by a single name.
+	// OpenGL implementation can append .vert/.frag at initialization time.
 };
 
 // TODO: These should be moved into their own files.
@@ -45,7 +57,7 @@ public:
 	st_unlit_texture_material(const char* texture_file);
 	~st_unlit_texture_material();
 
-	virtual bool init() override;
+	//virtual bool init() override;
 
 	virtual void bind(
 		class st_render_context* context,
@@ -67,7 +79,7 @@ public:
 	st_constant_color_material();
 	~st_constant_color_material();
 
-	virtual bool init() override;
+	//virtual bool init() override;
 
 	virtual void bind(
 		class st_render_context* context,
@@ -75,7 +87,10 @@ public:
 		const st_mat4f& view,
 		const st_mat4f& transform) override;
 
-	virtual void set_color(const st_vec3f& color) override { _color = color; }
+	void get_pipeline_state(
+		struct st_dx12_pipeline_state_desc* state_desc) override {}
+
+	//virtual void set_color(const st_vec3f& color) override { _color = color; }
 
 private:
 	st_vec3f _color;
@@ -84,18 +99,34 @@ private:
 /*
 ** A material supporting the phong shading model.
 */
-class st_phong_material : public st_material
+class st_phong_material final : public st_material
 {
 public:
 	st_phong_material();
 	~st_phong_material();
 
-	virtual bool init() override;
-	virtual void bind(
+	void bind(
 		class st_render_context* context,
 		const st_mat4f& proj,
 		const st_mat4f& view,
 		const st_mat4f& transform) override;
+
+	void get_pipeline_state(
+		struct st_dx12_pipeline_state_desc* state_desc) override;
+
+	struct st_phong_cb
+	{
+		st_mat4f _mvp;
+		// This is necessary to keep the CB size at 256 bytes.
+		float padding[48];
+	};
+
+private:
+	// TEMP: Constant buffer tracking.
+	Microsoft::WRL::ComPtr<ID3D12Resource> _constant_buffer;
+	uint32_t _constant_buffer_offset = 0;
+	uint8_t* _constant_buffer_head = nullptr;
+	std::unique_ptr<class st_vertex_format> _vertex_format = nullptr;
 };
 
 /*
@@ -107,7 +138,7 @@ public:
 	st_animated_material(struct st_skeleton* skeleton);
 	~st_animated_material();
 
-	virtual bool init() override;
+	//virtual bool init() override;
 	virtual void bind(
 		class st_render_context* context,
 		const st_mat4f& proj,
@@ -127,7 +158,7 @@ public:
 	st_animated_unlit_texture_material(struct st_skeleton* skeleton, const char* texture_file);
 	~st_animated_unlit_texture_material();
 
-	virtual bool init() override;
+	//virtual bool init() override;
 	virtual void bind(
 		class st_render_context* context,
 		const st_mat4f& proj,

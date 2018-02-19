@@ -6,8 +6,8 @@
 
 #include <graphics/opengl/st_gl_program.h>
 
-#include <graphics/st_program.h>
-#include <graphics/st_texture.h>
+#include <graphics/opengl/st_gl_program.h>
+#include <graphics/opengl/st_gl_texture.h>
 
 #include <math/st_mat4f.h>
 #include <math/st_vec3f.h>
@@ -34,10 +34,10 @@ void st_gl_uniform::set(const st_mat4f* mats, uint32_t count)
 	glUniformMatrix4fv(_location, count, GL_TRUE, (const GLfloat*)mats[0].data);
 }
 
-void st_gl_uniform::set(const st_texture& tex, uint32_t unit)
+void st_gl_uniform::set(const st_gl_texture& tex, uint32_t unit)
 {
 	glActiveTexture(GL_TEXTURE0 + unit);
-	glBindTexture(GL_TEXTURE_2D, tex.get_handle());
+	glBindTexture(GL_TEXTURE_2D, (GLuint)tex.get_handle());
 	glUniform1i(_location, unit);
 }
 
@@ -110,10 +110,10 @@ std::string st_gl_program::get_link_log() const
 	return log;
 }
 
-st_uniform st_gl_program::get_uniform(const char* name)
+st_gl_uniform st_gl_program::get_uniform(const char* name)
 {
 	int32_t location = glGetUniformLocation(_handle, name);
-	return st_uniform(location);
+	return st_gl_uniform(location);
 }
 
 void st_gl_program::use()

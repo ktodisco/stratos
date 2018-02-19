@@ -6,12 +6,26 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <graphics/st_graphics.h>
+
+#if defined(ST_GRAPHICS_API_OPENGL)
+#error TODO
+#elif defined(ST_GRAPHICS_API_DX12)
+#include <graphics/dx12/st_dx12_vertex_format.h>
+
+typedef st_dx12_vertex_format st_platform_vertex_format;
+#elif defined(ST_GRAPHICS_API_VULKAN)
+#error Vulkan not implemented.
+#else
+#error Graphics API not defined.
+#endif
+
 #include "graphics/st_vertex_attribute.h"
 
 #include <cstdint>
 #include <vector>
 
-class st_vertex_format
+class st_vertex_format : public st_platform_vertex_format
 {
 public:
 

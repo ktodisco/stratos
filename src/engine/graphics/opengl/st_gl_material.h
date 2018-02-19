@@ -29,7 +29,7 @@ public:
 	virtual void set_color(const st_vec3f& color) {}
 
 protected:
-	bool init_shaders(const char* vs, const char* fs);
+	bool init_shaders(const char* shader_name);
 
 protected:
 	class st_gl_shader* _vs;

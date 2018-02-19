@@ -23,7 +23,7 @@ public:
 		uint32_t index_count);
 	~st_gl_geometry();
 
-	void draw(struct st_static_drawcall& draw_call);
+	void draw(struct st_gl_static_drawcall& draw_call);
 
 private:
 

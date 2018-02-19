@@ -58,4 +58,6 @@ void st_vertex_format::finalize()
 	}
 
 	_vertex_size = (uint32_t)vertex_size;
+
+	platform_finalize();
 }

@@ -13,7 +13,9 @@
 
 typedef st_gl_render_context st_platform_render_context;
 #elif defined(ST_GRAPHICS_API_DX12)
-#error DX12 not implemented.
+#include <graphics/dx12/st_dx12_render_context.h>
+
+typedef st_dx12_render_context st_platform_render_context;
 #elif defined(ST_GRAPHICS_API_VULKAN)
 #error Vulkan not implemented.
 #else
@@ -23,5 +25,5 @@ typedef st_gl_render_context st_platform_render_context;
 class st_render_context : public st_platform_render_context
 {
 public:
-	st_render_context(HDC device_context) : st_platform_render_context(device_context) {}
+	st_render_context(const class st_window* window) : st_platform_render_context(window) {}
 };

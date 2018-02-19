@@ -50,7 +50,7 @@ public:
 	st_font_material(st_texture* texture);
 	~st_font_material();
 
-	virtual bool init() override;
+	//virtual bool init() override;
 
 	virtual void bind(
 		class st_render_context* context,
@@ -58,12 +58,12 @@ public:
 		const struct st_mat4f& view,
 		const struct st_mat4f& transform) override;
 
-	virtual void set_color(const struct st_vec3f& color) override { _color = color; }
+	void get_pipeline_state(
+		struct st_dx12_pipeline_state_desc* state_desc) override {}
+
+	//virtual void set_color(const struct st_vec3f& color) override { _color = color; }
 
 private:
-	class st_shader* _vs;
-	class st_shader* _fs;
-	class st_program* _program;
 	class st_texture* _texture;
 	st_vec3f _color;
 };

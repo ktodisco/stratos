@@ -9,7 +9,6 @@
 #include <framework/st_compiler_defines.h>
 #include <framework/st_frame_params.h>
 #include <graphics/st_material.h>
-#include <graphics/st_program.h>
 #include <graphics/st_render_context.h>
 #include <math/st_vec2f.h>
 
@@ -63,11 +62,11 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 	}
 
 	_texture = new st_texture();
-	_texture->load_from_data(image_width, image_height, 1, image_data);
+	_texture->load_from_data(image_width, image_height, st_texture_format_r8_uint, image_data);
 	delete[] image_data;
 
 	_material = new st_font_material(_texture);
-	_material->init();
+	//_material->init();
 }
 
 st_font::~st_font()
@@ -153,12 +152,11 @@ st_font_material::~st_font_material()
 {
 }
 
-bool st_font_material::init()
+/*bool st_font_material::init()
 {
 	return st_material::init_shaders(
-		"data/shaders/st_font_simple_vert.glsl",
-		"data/shaders/st_font_simple_frag.glsl");
-}
+		"data/shaders/st_font_simple");
+}*/
 
 void st_font_material::bind(
 	st_render_context* context,
@@ -166,7 +164,7 @@ void st_font_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	st_uniform mvp_uniform = _program->get_uniform("u_mvp");
+	/*st_uniform mvp_uniform = _program->get_uniform("u_mvp");
 	st_uniform color_uniform = _program->get_uniform("u_color");
 	st_uniform texture_uniform = _program->get_uniform("u_texture");
 
@@ -180,8 +178,7 @@ void st_font_material::bind(
 	context->set_depth_state(true, k_st_depth_less);
 	context->set_depth_mask(true);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_DEPTH_TEST);
-	glDepthMask(GL_FALSE);
+	context->set_blend_state(true, k_st_src_alpha, k_st_one_minus_src_alpha);
+	context->set_depth_state(false, 0);
+	context->set_depth_mask(false);*/
 }

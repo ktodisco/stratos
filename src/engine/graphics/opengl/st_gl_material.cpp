@@ -16,7 +16,7 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 
-void load_shader(const char* filename, std::string& contents)
+void load_shader(const std::string& filename, std::string& contents)
 {
 	extern char g_root_path[256];
 	std::string fullpath = g_root_path;
@@ -29,13 +29,13 @@ void load_shader(const char* filename, std::string& contents)
 	contents.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 }
 
-bool st_gl_material::init_shaders(const char* vs, const char* fs)
+bool st_gl_material::init_shaders(const char* shader_name)
 {
 	std::string source_vs;
-	load_shader(vs, source_vs);
+	load_shader(std::string(shader_name) + std::string("_vert.glsl"), source_vs);
 
 	std::string source_fs;
-	load_shader(fs, source_fs);
+	load_shader(std::string(shader_name) + std::string("_frag.glsl"), source_fs);
 
 	_vs = new st_gl_shader(source_vs.c_str(), GL_VERTEX_SHADER);
 	if (!_vs->compile())

@@ -6,13 +6,15 @@
 
 #include <graphics/opengl/st_gl_render_context.h>
 
-#include <graphics/st_drawcall.h>
+#include <graphics/opengl/st_gl_drawcall.h>
+#include <system/st_window.h>
 
 #include <cstdio>
 
-st_gl_render_context::st_gl_render_context(HDC device_context) :
-	_device_context(device_context)
+st_gl_render_context::st_gl_render_context(const st_window* window)
 {
+	_device_context = GetDC(window->get_window_handle());
+
 	// Choose a pixel format.
 	PIXELFORMATDESCRIPTOR format_desc =
 	{ 
@@ -88,7 +90,6 @@ void st_gl_render_context::set_viewport(int x, int y, int width, int height)
 	glViewport(x, y, width, height);
 }
 
-
 void st_gl_render_context::set_depth_state(bool enable, GLenum func)
 {
 	if (enable) glEnable(GL_DEPTH_TEST);
@@ -134,13 +135,13 @@ void st_gl_render_context::clear(unsigned int clear_flags)
 	glClear(flags);
 }
 
-void st_gl_render_context::draw(const st_static_drawcall& drawcall)
+void st_gl_render_context::draw(const st_gl_static_drawcall& drawcall)
 {
 	glBindVertexArray(drawcall._vao);
 	glDrawElements(drawcall._draw_mode, drawcall._index_count, GL_UNSIGNED_SHORT, 0);
 }
 
-void st_gl_render_context::draw(const st_dynamic_drawcall& drawcall)
+void st_gl_render_context::draw(const st_gl_dynamic_drawcall& drawcall)
 {
 	GLuint vao;
 	glGenVertexArrays(1, &vao);

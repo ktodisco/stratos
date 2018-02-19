@@ -9,7 +9,6 @@
 #include "st_frame_params.h"
 
 #include "graphics/st_material.h"
-#include "graphics/st_program.h"
 #include "graphics/st_render_context.h"
 #include "graphics/st_render_marker.h"
 #include "graphics/st_scene_render_pass.h"
@@ -39,6 +38,8 @@ void st_output::update(st_frame_params* params)
 	// Acquire the render context.
 	_render_context->acquire();
 
+	_render_context->begin_frame();
+
 	// Update viewport in case window was resized.
 	uint32_t width = _window->get_width();
 	uint32_t height = _window->get_height();
@@ -53,6 +54,8 @@ void st_output::update(st_frame_params* params)
 
 	_render_context->set_cull_state(true);
 
+	_render_context->transition_backbuffer_to_target();
+
 	st_scene_render_pass scene_pass;
 	scene_pass.render(_render_context, params);
 
@@ -60,6 +63,8 @@ void st_output::update(st_frame_params* params)
 	ui_pass.render(_render_context, params);
 
 	// Swap the frame buffers and release the context.
+	_render_context->transition_backbuffer_to_present();
+	_render_context->end_frame();
 	_render_context->swap();
 
 	_render_context->release();
