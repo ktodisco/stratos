@@ -24,6 +24,7 @@ static T align_value(T value, uint32_t alignment)
 
 st_dx12_render_context::st_dx12_render_context(const st_window* window)
 {
+	UINT dxgi_factory_flags = 0;
 #if defined(_DEBUG)
 	// Enable the D3D12 debug layer.
 	{
@@ -31,12 +32,15 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		if (SUCCEEDED(D3D12GetDebugInterface(__uuidof(ID3D12Debug), (void**)&debug_controller)))
 		{
 			debug_controller->EnableDebugLayer();
+
+			// Enable additional debug layers.
+			dxgi_factory_flags |= DXGI_CREATE_FACTORY_DEBUG;
 		}
 	}
 #endif
 
 	Microsoft::WRL::ComPtr<IDXGIFactory4> factory;
-	HRESULT result = CreateDXGIFactory1(__uuidof(IDXGIFactory4), (void**)&factory);
+	HRESULT result = CreateDXGIFactory2(dxgi_factory_flags, __uuidof(IDXGIFactory4), (void**)&factory);
 
 	if (result != S_OK)
 	{
@@ -264,7 +268,7 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
 		_command_allocator.Get(),
 		nullptr,
-		__uuidof(ID3D12CommandList),
+		__uuidof(ID3D12GraphicsCommandList),
 		(void**)&_command_list);
 
 	if (result != S_OK)
@@ -361,6 +365,26 @@ void st_dx12_render_context::set_pipeline_state(const class st_dx12_pipeline_sta
 
 void st_dx12_render_context::set_viewport(int x, int y, int width, int height)
 {
+	D3D12_VIEWPORT viewport{};
+	viewport.TopLeftX = x;
+	viewport.TopLeftY = y;
+	viewport.Width = width;
+	viewport.Height = height;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	_command_list->RSSetViewports(1, &viewport);
+}
+
+void st_dx12_render_context::set_scissor(int left, int top, int right, int bottom)
+{
+	D3D12_RECT rect;
+	rect.left = left;
+	rect.right = right;
+	rect.top = top;
+	rect.bottom = bottom;
+
+	_command_list->RSSetScissorRects(1, &rect);
 }
 
 void st_dx12_render_context::set_depth_state(bool enable, uint32_t func)
@@ -381,6 +405,10 @@ void st_dx12_render_context::set_depth_mask(bool enable)
 
 void st_dx12_render_context::set_clear_color(float r, float g, float b, float a)
 {
+	_clear_color[0] = r;
+	_clear_color[1] = g;
+	_clear_color[2] = b;
+	_clear_color[3] = a;
 }
 
 void st_dx12_render_context::set_constant_buffer_table(uint32_t table, uint32_t offset)
@@ -393,6 +421,41 @@ void st_dx12_render_context::set_constant_buffer_table(uint32_t table, uint32_t 
 
 void st_dx12_render_context::clear(unsigned int clear_flags)
 {
+	if (clear_flags & st_clear_flag_color)
+	{
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(
+			_rtv_heap->GetCPUDescriptorHandleForHeapStart(),
+			_frame_index,
+			_rtv_descriptor_size);
+
+		_command_list->ClearRenderTargetView(
+			rtv_handle,
+			_clear_color,
+			0,
+			nullptr);
+	}
+
+	if (clear_flags & st_clear_flag_depth)
+	{
+		_command_list->ClearDepthStencilView(
+			_dsv_heap->GetCPUDescriptorHandleForHeapStart(),
+			D3D12_CLEAR_FLAG_DEPTH,
+			1.0f,
+			0,
+			0,
+			nullptr);
+	}
+
+	if (clear_flags & st_clear_flag_stencil)
+	{
+		_command_list->ClearDepthStencilView(
+			_dsv_heap->GetCPUDescriptorHandleForHeapStart(),
+			D3D12_CLEAR_FLAG_STENCIL,
+			0.0f,
+			0,
+			0,
+			nullptr);
+	}
 }
 
 void st_dx12_render_context::draw(const st_static_drawcall& drawcall)

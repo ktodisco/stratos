@@ -36,6 +36,7 @@ public:
 
 	void set_pipeline_state(const class st_dx12_pipeline_state* state);
 	void set_viewport(int x, int y, int width, int height);
+	void set_scissor(int left, int top, int right, int bottom);
 	// TODO: These state functions should be combined into a single state call.
 	void set_depth_state(bool enable, uint32_t func);
 	void set_cull_state(bool enable);

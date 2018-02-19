@@ -117,6 +117,7 @@ void st_phong_material::bind(
 {
 	// TEMP: Set the constant buffer data.
 	st_mat4f mvp = transform * view * proj;
+	mvp.transpose();
 	memcpy(_constant_buffer_head, &mvp, sizeof(st_phong_cb));
 
 	// TEMP: Set the CBV's offset on the root descriptor table.

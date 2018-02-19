@@ -26,6 +26,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 	_window(window), _render_context(render_context)
 {
 	_render_context->set_viewport(0, 0, _window->get_width(), _window->get_height());
+	_render_context->set_scissor(0, 0, window->get_width(), window->get_height());
 	_render_context->set_depth_state(true, k_st_depth_less);
 }
 
@@ -44,8 +45,11 @@ void st_output::update(st_frame_params* params)
 	uint32_t width = _window->get_width();
 	uint32_t height = _window->get_height();
 	_render_context->set_viewport(0, 0, width, height);
+	_render_context->set_scissor(0, 0, width, height);
 	params->_width = width;
 	params->_height = height;
+
+	_render_context->transition_backbuffer_to_target();
 
 	// Clear viewport.
 	_render_context->set_depth_mask(true);
@@ -53,8 +57,6 @@ void st_output::update(st_frame_params* params)
 	_render_context->clear(st_clear_flag_color | st_clear_flag_depth);
 
 	_render_context->set_cull_state(true);
-
-	_render_context->transition_backbuffer_to_target();
 
 	st_scene_render_pass scene_pass;
 	scene_pass.render(_render_context, params);
