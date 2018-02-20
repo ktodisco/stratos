@@ -2,6 +2,8 @@ struct vs_input
 {
 	float3 position : POSITION;
 	float3 normal : NORMAL;
+	float4 color : COLOR;
+	float2 uv : UV;
 };
 
 struct ps_input

@@ -32,12 +32,30 @@ typedef st_dx12_material st_platform_material;
 #error Graphics API not defined.
 #endif
 
+// For the record, I'm not fond of this direction.
+enum st_material_type
+{
+	st_material_type_unlit_texture,
+	st_material_type_constant_color,
+	st_material_type_phong,
+	st_material_type_animated,
+	st_material_type_animated_unlit_texture,
+	st_material_type_font
+};
+
 /*
 ** Base class for all graphical materials.
 ** Includes the shaders and other state necessary to draw geometry.
 */
 class st_material : public st_platform_material
 {
+public:
+	virtual st_material_type get_material_type() = 0;
+};
+
+struct st_view_cb
+{
+	st_mat4f _mvp;
 };
 
 // TODO: These should be moved into their own files.
@@ -58,9 +76,15 @@ public:
 		const st_mat4f& view,
 		const st_mat4f& transform) override;
 
+	void get_pipeline_state(
+		struct st_pipeline_state_desc* state_desc) override;
+
+	st_material_type get_material_type() override { return st_material_type_unlit_texture; }
+
 private:
+	std::unique_ptr<class st_constant_buffer> _view_buffer = nullptr;
 	std::string _texture_file;
-	st_texture* _texture;
+	std::unique_ptr<st_texture> _texture;
 };
 
 /*
@@ -82,6 +106,8 @@ public:
 
 	void get_pipeline_state(
 		struct st_pipeline_state_desc* state_desc) override {}
+
+	st_material_type get_material_type() override { return st_material_type_constant_color; }
 
 	//virtual void set_color(const st_vec3f& color) override { _color = color; }
 
@@ -107,14 +133,10 @@ public:
 	void get_pipeline_state(
 		struct st_pipeline_state_desc* state_desc) override;
 
-	struct st_phong_cb
-	{
-		st_mat4f _mvp;
-	};
+	st_material_type get_material_type() override { return st_material_type_phong; }
 
 private:
 	std::unique_ptr<class st_constant_buffer> _phong_buffer = nullptr;
-	std::unique_ptr<class st_vertex_format> _vertex_format = nullptr;
 };
 
 /*
@@ -132,6 +154,8 @@ public:
 		const st_mat4f& proj,
 		const st_mat4f& view,
 		const st_mat4f& transform) override;
+
+	st_material_type get_material_type() override { return st_material_type_animated; }
 
 private:
 	struct st_skeleton* _skeleton;
@@ -152,6 +176,8 @@ public:
 		const st_mat4f& proj,
 		const st_mat4f& view,
 		const st_mat4f& transform) override;
+
+	st_material_type get_material_type() override { return st_material_type_animated_unlit_texture; }
 
 private:
 	std::string _texture_file;

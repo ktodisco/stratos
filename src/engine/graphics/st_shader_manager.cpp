@@ -12,7 +12,14 @@ st_shader_manager* st_shader_manager::_this = nullptr;
 
 st_shader_manager::st_shader_manager()
 {
-	_shaders[st_shader_phong] = std::make_unique<st_shader>("data/shaders/st_phong", st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_phong] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_phong",
+			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_unlit_texture] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_unlit_texture",
+			st_shader_type_vertex | st_shader_type_pixel);
 
 	_this = this;
 }

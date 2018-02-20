@@ -61,6 +61,8 @@ public:
 	void get_pipeline_state(
 		struct st_pipeline_state_desc* state_desc) override {}
 
+	st_material_type get_material_type() override { return st_material_type_font; }
+
 	//virtual void set_color(const struct st_vec3f& color) override { _color = color; }
 
 private:

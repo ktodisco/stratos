@@ -226,6 +226,7 @@ void parse_vertex_data(std::ifstream &file, st_model_data* model, st_egg_parser_
 			file >> data; v._color.x = (float)atof(data);
 			file >> data; v._color.y = (float)atof(data);
 			file >> data; v._color.z = (float)atof(data);
+			file >> data; v._color.w = (float)atof(data);
 			file >> data; open_parens -= 1;
 		}
 		else if (strcmp(data, "{") == 0)

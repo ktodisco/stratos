@@ -25,9 +25,9 @@ struct st_egg_parser_state
 /*
 ** Read an EGG file, get the model data.
 */
-void egg_to_model(const char* filename, struct st_model* model);
+void egg_to_model(const char* filename, struct st_model_data* model);
 
 /*
 ** Read an EGG file, get the animation data.
 */
-void egg_to_animation(const char* filename, struct st_animation* animation, struct st_model* model);
+void egg_to_animation(const char* filename, struct st_animation* animation, struct st_model_data* model);

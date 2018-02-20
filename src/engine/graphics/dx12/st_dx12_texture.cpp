@@ -44,9 +44,15 @@ bool st_dx12_texture::load_from_file(const char* path)
 		return false;
 	}
 
-	load_from_data(width, height, st_texture_format_r8g8b8a8_uint, data);
+	load_from_data(width, height, st_texture_format_r8g8b8a8_unorm, data);
 
 	stbi_image_free(data);
 
 	return true;
+}
+
+void st_dx12_texture::bind(class st_dx12_render_context* context)
+{
+	context->set_shader_resource_table(_srv);
+	context->set_sampler_table(_sampler);
 }

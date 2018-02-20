@@ -50,7 +50,9 @@ public:
 	void set_depth_mask(bool enable);
 	void set_clear_color(float r, float g, float b, float a);
 
-	void set_constant_buffer_table(uint32_t table, uint32_t offset);
+	void set_shader_resource_table(uint32_t offset);
+	void set_sampler_table(uint32_t offset);
+	void set_constant_buffer_table(uint32_t offset);
 
 	void clear(unsigned int clear_flags);
 	void draw(const struct st_static_drawcall& drawcall);

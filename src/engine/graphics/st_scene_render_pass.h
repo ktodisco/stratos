@@ -27,6 +27,11 @@ private:
 		const class st_mat4f& proj,
 		const class st_mat4f& view);
 
-	std::unique_ptr<class st_phong_material> _default_material;
-	std::unique_ptr<class st_pipeline_state> _pipeline_state;
+	std::unique_ptr<class st_vertex_format> _vertex_format = nullptr;
+
+	std::unique_ptr<class st_phong_material> _default_phong = nullptr;
+	std::unique_ptr<class st_pipeline_state> _phong_state = nullptr;
+
+	std::unique_ptr<class st_unlit_texture_material> _default_unlit_texture = nullptr;
+	std::unique_ptr<class st_pipeline_state> _unlit_texture_state = nullptr;
 };

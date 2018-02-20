@@ -64,7 +64,7 @@ int main(int argc, const char** argv)
 	// Create the rendering context for the window.
 	st_render_context* render = new st_render_context(window);
 
-	// TODO: Create the shader manager, loading all the shaders.
+	// Create the shader manager, loading all the shaders.
 	std::unique_ptr<st_shader_manager> shader_manager =
 		std::make_unique<st_shader_manager>();
 
@@ -84,6 +84,7 @@ int main(int argc, const char** argv)
 	// Create the default font:
 	g_font = new st_font("VeraMono.ttf", 16.0f, 512, 512);
 
+	// Set up a test for the phong material.
 	st_model_data test_model;
 	ply_to_model("data/models/bunny_med_res.ply", &test_model);
 
@@ -95,6 +96,18 @@ int main(int argc, const char** argv)
 
 	// The bunny is rather small, so scale.
 	test_entity.scale(40.0f);
+	test_entity.translate({ -2.0f, 0.0f, 0.0f });
+
+	// Set up a test for the unlit texture material.
+	st_model_data unlit_model;
+	egg_to_model("data/models/cube.egg", &unlit_model);
+
+	st_entity unlit_entity;
+	st_unlit_texture_material* unlit_material = new st_unlit_texture_material("data/textures/test.png");
+	st_model_component unlit_model_component(&unlit_entity, &unlit_model, unlit_material);
+	sim->add_entity(&unlit_entity);
+
+	unlit_entity.translate({ 2.0f, 0.0f, 0.0f });
 
 	window->show();
 

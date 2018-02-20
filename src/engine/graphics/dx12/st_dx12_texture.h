@@ -21,6 +21,8 @@ public:
 	void load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data);
 	bool load_from_file(const char* path);
 
+	void bind(class st_dx12_render_context* context);
+
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> _handle;
 

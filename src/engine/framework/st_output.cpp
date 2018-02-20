@@ -56,7 +56,7 @@ void st_output::update(st_frame_params* params)
 
 	// Clear viewport.
 	_render_context->set_depth_mask(true);
-	_render_context->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+	_render_context->set_clear_color(0.0f, 0.0f, 0.3f, 1.0f);
 	_render_context->clear(st_clear_flag_color | st_clear_flag_depth);
 
 	_render_context->set_cull_state(true);

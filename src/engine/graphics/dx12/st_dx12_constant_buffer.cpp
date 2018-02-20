@@ -42,5 +42,5 @@ void st_dx12_constant_buffer::update(const st_dx12_render_context* context, void
 
 void st_dx12_constant_buffer::commit(st_dx12_render_context* context)
 {
-	context->set_constant_buffer_table(0, _constant_buffer_offset);
+	context->set_constant_buffer_table(_constant_buffer_offset);
 }

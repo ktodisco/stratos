@@ -279,11 +279,15 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
 	}
 
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	CD3DX12_DESCRIPTOR_RANGE1 ranges[3];
+	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);
+	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 
-	CD3DX12_ROOT_PARAMETER1 root_parameters[1];
-	root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_VERTEX);
+	CD3DX12_ROOT_PARAMETER1 root_parameters[3];
+	root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+	root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+	root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
 	root_signature_desc.Init_1_1(
@@ -405,12 +409,28 @@ void st_dx12_render_context::set_clear_color(float r, float g, float b, float a)
 	_clear_color[3] = a;
 }
 
-void st_dx12_render_context::set_constant_buffer_table(uint32_t table, uint32_t offset)
+void st_dx12_render_context::set_shader_resource_table(uint32_t offset)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap->GetGPUDescriptorHandleForHeapStart();
+	srv_handle.ptr += _cbv_srv_descriptor_size * offset;
+
+	_command_list->SetGraphicsRootDescriptorTable(0, srv_handle);
+}
+
+void st_dx12_render_context::set_sampler_table(uint32_t offset)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->GetGPUDescriptorHandleForHeapStart();
+	sampler_handle.ptr += _sampler_descriptor_size * offset;
+
+	_command_list->SetGraphicsRootDescriptorTable(1, sampler_handle);
+}
+
+void st_dx12_render_context::set_constant_buffer_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->GetGPUDescriptorHandleForHeapStart();
 	cbv_handle.ptr += _cbv_srv_descriptor_size * offset;
 
-	_command_list->SetGraphicsRootDescriptorTable(table, cbv_handle);
+	_command_list->SetGraphicsRootDescriptorTable(2, cbv_handle);
 }
 
 void st_dx12_render_context::clear(unsigned int clear_flags)
@@ -673,8 +693,8 @@ void st_dx12_render_context::create_texture(
 	// This is to jump the gaps from the alignment of RowPitch in the upload heap.
 	for (uint32_t row_itr = 0; row_itr < height; ++row_itr)
 	{
-		uint8_t* dest = _upload_buffer_start + placed_footprint.Offset + (height * footprint.RowPitch);
-		uint8_t* src = reinterpret_cast<uint8_t*>(data) + (width * row_itr);
+		uint8_t* dest = _upload_buffer_start + placed_footprint.Offset + (row_itr * footprint.RowPitch);
+		uint8_t* src = reinterpret_cast<uint8_t*>(data) + (row_itr * footprint.RowPitch);
 		memcpy(dest, src, sizeof(uint32_t) * width);
 	}
 
