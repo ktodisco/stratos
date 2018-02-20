@@ -63,8 +63,9 @@ st_gl_render_context::st_gl_render_context(const st_window* window)
 		exit(1);
 	}
 
-	// TODO: Wrap this in a debug define.
+#if defined(_DEBUG)
 	glEnable(GL_DEBUG_OUTPUT);
+#endif
 }
 
 st_gl_render_context::~st_gl_render_context()

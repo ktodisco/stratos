@@ -7,6 +7,7 @@
 */
 
 #include <d3d12.h>
+#include <dxgidebug.h>
 #include <graphics/dx12/d3dx12.h>
 
 enum e_st_primitive_topology_type

@@ -56,22 +56,22 @@ int main(int argc, const char** argv)
 
 	st_job::startup(0xffff, 256, 256);
 
-	st_input* input = new st_input();
+	std::unique_ptr<st_input> input = std::make_unique<st_input>();
 
 	// Create a window.
-	st_window* window = new st_window("Stratos", 1280, 720, input);
+	std::unique_ptr<st_window> window = std::make_unique<st_window>("Stratos", 1280, 720, input.get());
 
 	// Create the rendering context for the window.
-	st_render_context* render = new st_render_context(window);
+	std::unique_ptr<st_render_context> render = std::make_unique<st_render_context>(window.get());
 
 	// Create the shader manager, loading all the shaders.
 	std::unique_ptr<st_shader_manager> shader_manager =
 		std::make_unique<st_shader_manager>();
 
 	// Create objects for phases of the frame: sim, physics, and output.
-	st_sim* sim = new st_sim();
-	st_physics_world* world = new st_physics_world();
-	st_output* output = new st_output(window, render);
+	std::unique_ptr<st_sim> sim = std::make_unique<st_sim>();
+	std::unique_ptr<st_physics_world> world = std::make_unique<st_physics_world>();
+	std::unique_ptr<st_output> output = std::make_unique<st_output>(window.get(), render.get());
 
 	// Create camera.
 	st_camera* camera = new st_camera({ 0.0f, 7.0f, 20.0f });
@@ -144,10 +144,6 @@ int main(int argc, const char** argv)
 		output->update(&params);
 	}
 
-	delete output;
-	delete world;
-	delete sim;
-	delete input;
 	delete camera;
 
 	st_job::shutdown();

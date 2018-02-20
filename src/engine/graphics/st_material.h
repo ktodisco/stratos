@@ -38,8 +38,6 @@ enum st_material_type
 	st_material_type_unlit_texture,
 	st_material_type_constant_color,
 	st_material_type_phong,
-	st_material_type_animated,
-	st_material_type_animated_unlit_texture,
 	st_material_type_font
 };
 
@@ -67,8 +65,6 @@ class st_unlit_texture_material : public st_material
 public:
 	st_unlit_texture_material(const char* texture_file);
 	~st_unlit_texture_material();
-
-	//virtual bool init() override;
 
 	virtual void bind(
 		class st_render_context* context,
@@ -137,51 +133,4 @@ public:
 
 private:
 	std::unique_ptr<class st_constant_buffer> _phong_buffer = nullptr;
-};
-
-/*
-** A material which supports vertex animation.
-*/
-class st_animated_material : public st_material
-{
-public:
-	st_animated_material(struct st_skeleton* skeleton);
-	~st_animated_material();
-
-	//virtual bool init() override;
-	virtual void bind(
-		class st_render_context* context,
-		const st_mat4f& proj,
-		const st_mat4f& view,
-		const st_mat4f& transform) override;
-
-	st_material_type get_material_type() override { return st_material_type_animated; }
-
-private:
-	struct st_skeleton* _skeleton;
-};
-
-/*
-** A material which supports vertex animation and a texture.
-*/
-class st_animated_unlit_texture_material : public st_material
-{
-public:
-	st_animated_unlit_texture_material(struct st_skeleton* skeleton, const char* texture_file);
-	~st_animated_unlit_texture_material();
-
-	//virtual bool init() override;
-	virtual void bind(
-		class st_render_context* context,
-		const st_mat4f& proj,
-		const st_mat4f& view,
-		const st_mat4f& transform) override;
-
-	st_material_type get_material_type() override { return st_material_type_animated_unlit_texture; }
-
-private:
-	std::string _texture_file;
-	st_texture* _texture;
-
-	struct st_skeleton* _skeleton;
 };

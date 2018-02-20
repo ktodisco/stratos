@@ -6,6 +6,8 @@
 
 #include <graphics/st_vertex_format.h>
 
+#include <cassert>
+
 st_vertex_format::st_vertex_format()
 {
 }
@@ -52,7 +54,7 @@ void st_vertex_format::finalize()
 			vertex_size += data_size * 2;
 			break;
 		default:
-			// TODO: Assert.
+			assert(false);
 			break;
 		}
 	}
