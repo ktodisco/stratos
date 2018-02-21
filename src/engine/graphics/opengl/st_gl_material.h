@@ -26,8 +26,6 @@ public:
 		const st_mat4f& view,
 		const st_mat4f& transform) = 0;
 
-	virtual void set_color(const st_vec3f& color) {}
-
 protected:
 	bool init_shaders(const char* shader_name);
 

@@ -8,8 +8,11 @@
 
 #include <framework/st_compiler_defines.h>
 #include <framework/st_frame_params.h>
+#include <graphics/st_constant_buffer.h>
 #include <graphics/st_material.h>
+#include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
+#include <graphics/st_shader_manager.h>
 #include <math/st_vec2f.h>
 
 #include <algorithm>
@@ -61,18 +64,15 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 		return;
 	}
 
-	_texture = new st_texture();
-	_texture->load_from_data(image_width, image_height, st_texture_format_r8_uint, image_data);
+	_texture = std::make_unique<st_texture>();
+	_texture->load_from_data(image_width, image_height, st_texture_format_r8_unorm, image_data);
 	delete[] image_data;
 
-	_material = new st_font_material(_texture);
-	//_material->init();
+	_material = std::make_unique<st_font_material>(_texture.get());
 }
 
 st_font::~st_font()
 {
-	delete _material;
-	delete _texture;
 }
 
 void st_font::print(
@@ -96,7 +96,7 @@ void st_font::print(
 	st_dynamic_drawcall drawcall;
 	drawcall._color = color;
 	drawcall._draw_mode = st_primitive_topology_triangles;
-	drawcall._material = _material;
+	drawcall._material = _material.get();
 	drawcall._transform.make_identity();
 
 	int index = 0;
@@ -129,8 +129,8 @@ void st_font::print(
 			drawcall._texcoords.push_back({ q.s0, q.t1 });
 
 			drawcall._indices.push_back(index + 0);
-			drawcall._indices.push_back(index + 1);
 			drawcall._indices.push_back(index + 2);
+			drawcall._indices.push_back(index + 1);
 			drawcall._indices.push_back(index + 0);
 			drawcall._indices.push_back(index + 3);
 			drawcall._indices.push_back(index + 2);
@@ -146,17 +146,25 @@ void st_font::print(
 
 st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 {
+	_constant_buffer = std::make_unique<st_constant_buffer>(sizeof(st_font_cb));
 }
 
 st_font_material::~st_font_material()
 {
 }
 
-/*bool st_font_material::init()
+void st_font_material::get_pipeline_state(
+	st_pipeline_state_desc* state_desc)
 {
-	return st_material::init_shaders(
-		"data/shaders/st_font_simple");
-}*/
+	state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_font);
+
+	state_desc->_depth_stencil_desc._depth_enable = false;
+	state_desc->_blend_desc._target_blend[0]._blend = true;
+	state_desc->_blend_desc._target_blend[0]._src_blend = st_blend_src_alpha;
+	state_desc->_blend_desc._target_blend[0]._src_blend_alpha = st_blend_src_alpha;
+	state_desc->_blend_desc._target_blend[0]._dst_blend = st_blend_inv_src_alpha;
+	state_desc->_blend_desc._target_blend[0]._dst_blend_alpha = st_blend_inv_src_alpha;
+}
 
 void st_font_material::bind(
 	st_render_context* context,
@@ -164,21 +172,14 @@ void st_font_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	/*st_uniform mvp_uniform = _program->get_uniform("u_mvp");
-	st_uniform color_uniform = _program->get_uniform("u_color");
-	st_uniform texture_uniform = _program->get_uniform("u_texture");
+	st_mat4f mvp = transform * view * proj;
+	mvp.transpose();
 
-	_program->use();
+	st_font_cb cb_data{};
+	cb_data._mvp = mvp;
+	cb_data._color = _color;
+	_constant_buffer->update(context, &cb_data);
+	_constant_buffer->commit(context);
 
-	mvp_uniform.set(transform * view * proj);
-	color_uniform.set(_color);
-	texture_uniform.set(*_texture, 0);
-
-	context->set_blend_state(true, k_st_src_alpha, k_st_one_minus_src_alpha);
-	context->set_depth_state(true, k_st_depth_less);
-	context->set_depth_mask(true);
-
-	context->set_blend_state(true, k_st_src_alpha, k_st_one_minus_src_alpha);
-	context->set_depth_state(false, 0);
-	context->set_depth_mask(false);*/
+	_texture->bind(context);
 }

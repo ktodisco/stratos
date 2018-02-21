@@ -25,10 +25,6 @@
 st_output::st_output(const st_window* window, st_render_context* render_context) :
 	_window(window), _render_context(render_context)
 {
-	_render_context->set_viewport(0, 0, _window->get_width(), _window->get_height());
-	_render_context->set_scissor(0, 0, window->get_width(), window->get_height());
-	_render_context->set_depth_state(true, k_st_depth_less);
-
 	_scene_pass = std::make_unique<st_scene_render_pass>();
 	_ui_pass = std::make_unique<st_ui_render_pass>();
 }

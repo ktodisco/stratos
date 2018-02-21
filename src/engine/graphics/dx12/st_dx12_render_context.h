@@ -62,6 +62,7 @@ public:
 	void transition_backbuffer_to_target();
 	void transition_backbuffer_to_present();
 
+	void begin_loading();
 	void end_loading();
 	void begin_frame();
 	void end_frame();
@@ -127,6 +128,12 @@ private:
 	// Data upload heap.
 	Microsoft::WRL::ComPtr<ID3D12Resource> _upload_buffer;
 	uint8_t* _upload_buffer_start = 0;
+
+	// Dynamic geometry buffers.
+	Microsoft::WRL::ComPtr<ID3D12Resource> _dynamic_vertex_buffer;
+	size_t _dynamic_vertex_bytes_written = 0;
+	Microsoft::WRL::ComPtr<ID3D12Resource> _dynamic_index_buffer;
+	size_t _dynamic_index_bytes_written = 0;
 
 	// Synchronization objects.
 	HANDLE _fence_event;

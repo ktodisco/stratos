@@ -340,8 +340,17 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		}
 	}
 
+	// Set up the dynamic geometry buffers.
+	// TODO: Better way of managing this constant.
+	const size_t k_dynamic_buffer_size = 16 * 1000 * 1000;
+	create_buffer(k_dynamic_buffer_size, _dynamic_vertex_buffer.GetAddressOf());
+	create_buffer(k_dynamic_buffer_size, _dynamic_index_buffer.GetAddressOf());
+
 	// Set the global instance.
 	_this = this;
+
+	// The command list starts open, so close it first.
+	end_loading();
 }
 
 st_dx12_render_context::~st_dx12_render_context()
@@ -482,7 +491,70 @@ void st_dx12_render_context::draw(const st_static_drawcall& drawcall)
 
 void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
 {
-	// TODO.
+	// TODO: Dynamic buffer limit checking.
+
+	uint8_t* buffer_begin;
+	D3D12_RANGE range = { 0, 0 };
+	HRESULT result = _dynamic_vertex_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
+	buffer_begin += _dynamic_vertex_bytes_written;
+
+	D3D12_VERTEX_BUFFER_VIEW dynamic_vertex_buffer_view;
+	dynamic_vertex_buffer_view.BufferLocation = _dynamic_vertex_buffer->GetGPUVirtualAddress() + _dynamic_vertex_bytes_written;
+	dynamic_vertex_buffer_view.StrideInBytes = 20;
+	dynamic_vertex_buffer_view.SizeInBytes = drawcall._positions.size() * 20;
+
+	if (result != S_OK)
+	{
+		assert(false);
+	}
+
+	struct st_dynamic_vertex
+	{
+		st_vec3f _pos;
+		st_vec2f _uv;
+	};
+
+	std::vector<st_dynamic_vertex> verts;
+
+	for (uint32_t vert_itr = 0; vert_itr < drawcall._positions.size(); ++vert_itr)
+	{
+		verts.push_back({ drawcall._positions[vert_itr], st_vec2f() });
+	}
+
+	for (uint32_t vert_itr = 0; vert_itr < drawcall._texcoords.size(); ++vert_itr)
+	{
+		verts[vert_itr]._uv = drawcall._texcoords[vert_itr];
+	}
+
+	memcpy(buffer_begin, &verts[0], sizeof(st_dynamic_vertex) * verts.size());
+	_dynamic_vertex_buffer->Unmap(0, nullptr);
+	_dynamic_vertex_bytes_written += sizeof(st_dynamic_vertex) * verts.size();
+
+	range.Begin = _dynamic_index_bytes_written;
+	result = _dynamic_index_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
+	buffer_begin += _dynamic_index_bytes_written;
+
+	D3D12_INDEX_BUFFER_VIEW dynamic_index_buffer_view;
+	dynamic_index_buffer_view.BufferLocation = _dynamic_index_buffer->GetGPUVirtualAddress() + _dynamic_index_bytes_written;
+	dynamic_index_buffer_view.Format = DXGI_FORMAT_R16_UINT;
+	dynamic_index_buffer_view.SizeInBytes = sizeof(uint16_t) * drawcall._indices.size();
+
+	if (result != S_OK)
+	{
+		assert(false);
+	}
+
+	memcpy(buffer_begin, &drawcall._indices[0], sizeof(uint16_t) * drawcall._indices.size());
+	_dynamic_index_buffer->Unmap(0, nullptr);
+	_dynamic_index_bytes_written += sizeof(uint16_t) * drawcall._indices.size();
+
+	st_static_drawcall static_draw;
+	static_draw._draw_mode = drawcall._draw_mode;
+	static_draw._vertex_buffer_view = &dynamic_vertex_buffer_view;
+	static_draw._index_buffer_view = &dynamic_index_buffer_view;
+	static_draw._index_count = drawcall._indices.size();
+
+	draw(static_draw);
 }
 
 void st_dx12_render_context::transition_backbuffer_to_target()
@@ -511,6 +583,11 @@ void st_dx12_render_context::transition_backbuffer_to_present()
 			D3D12_RESOURCE_STATE_PRESENT));
 }
 
+void st_dx12_render_context::begin_loading()
+{
+	_command_list->Reset(_command_allocator.Get(), nullptr);
+}
+
 void st_dx12_render_context::end_loading()
 {
 	// Close the command list and execute it to begin intial GPU setup.
@@ -534,6 +611,9 @@ void st_dx12_render_context::begin_frame()
 
 	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap.Get(), _sampler_heap.Get() };
 	_command_list->SetDescriptorHeaps(_countof(heaps), heaps);
+
+	_dynamic_vertex_bytes_written = 0;
+	_dynamic_index_bytes_written = 0;
 }
 
 void st_dx12_render_context::end_frame()
@@ -620,15 +700,19 @@ void st_dx12_render_context::create_texture(
 	uint32_t* sampler_offset,
 	uint32_t* srv_offset)
 {
+	begin_loading();
+
 	DXGI_FORMAT real_format = (DXGI_FORMAT)format;
 
 	// TODO: Find a more automatic way of doing this.
 	uint32_t pixel_size;
 	switch (format)
 	{
+	case st_texture_format_r8_unorm:
 	case st_texture_format_r8_uint:
 		pixel_size = 1;
 		break;
+	case st_texture_format_r8g8b8a8_unorm:
 	case st_texture_format_r8g8b8a8_uint:
 	default:
 		pixel_size = 4;
@@ -695,7 +779,7 @@ void st_dx12_render_context::create_texture(
 	{
 		uint8_t* dest = _upload_buffer_start + placed_footprint.Offset + (row_itr * footprint.RowPitch);
 		uint8_t* src = reinterpret_cast<uint8_t*>(data) + (row_itr * footprint.RowPitch);
-		memcpy(dest, src, sizeof(uint32_t) * width);
+		memcpy(dest, src, width * pixel_size);
 	}
 
 	// Copy the upload heap to the texture 2D.
@@ -761,6 +845,9 @@ void st_dx12_render_context::create_texture(
 	_device->CreateShaderResourceView(*resource, &srv_desc, cbv_srv_handle);
 
 	_cbv_srv_slot++;
+
+	// TODO: It's not the most elegant to wait on each texture load synchronously.
+	end_loading();
 }
 
 void st_dx12_render_context::create_constant_buffer(

@@ -20,6 +20,14 @@ st_shader_manager::st_shader_manager()
 		std::make_unique<st_shader>(
 			"data/shaders/st_unlit_texture",
 			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_constant_color] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_constant_color",
+			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_font] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_font_simple",
+			st_shader_type_vertex | st_shader_type_pixel);
 
 	_this = this;
 }

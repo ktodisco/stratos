@@ -23,6 +23,8 @@ enum e_st_shader
 {
 	st_shader_phong,
 	st_shader_unlit_texture,
+	st_shader_constant_color,
+	st_shader_font,
 };
 
 class st_shader_manager

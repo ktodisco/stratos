@@ -28,7 +28,6 @@ enum e_st_primitive_topology
 	st_primitive_topology_points = GL_POINTS,
 	st_primitive_topology_lines = GL_LINES,
 	st_primitive_topology_triangles = GL_TRIANGLES,
-	st_primitive_topology_quads = GL_QUADS,
 };
 
 enum e_st_texture_format

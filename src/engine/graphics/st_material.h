@@ -48,6 +48,7 @@ enum st_material_type
 class st_material : public st_platform_material
 {
 public:
+	virtual void set_color(const st_vec3f& color) {}
 	virtual st_material_type get_material_type() = 0;
 };
 
@@ -78,6 +79,7 @@ public:
 	st_material_type get_material_type() override { return st_material_type_unlit_texture; }
 
 private:
+	// TODO: This view buffer should live at a larger scope.
 	std::unique_ptr<class st_constant_buffer> _view_buffer = nullptr;
 	std::string _texture_file;
 	std::unique_ptr<st_texture> _texture;
@@ -101,13 +103,20 @@ public:
 		const st_mat4f& transform) override;
 
 	void get_pipeline_state(
-		struct st_pipeline_state_desc* state_desc) override {}
+		struct st_pipeline_state_desc* state_desc) override;
 
 	st_material_type get_material_type() override { return st_material_type_constant_color; }
 
-	//virtual void set_color(const st_vec3f& color) override { _color = color; }
+	void set_color(const st_vec3f& color) override { _color = color; }
+
+	struct st_constant_color_cb
+	{
+		st_mat4f _mvp;
+		st_vec3f _color;
+	};
 
 private:
+	std::unique_ptr<class st_constant_buffer> _color_buffer = nullptr;
 	st_vec3f _color;
 };
 

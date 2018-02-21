@@ -9,6 +9,8 @@
 #include "graphics/st_material.h"
 #include "math/st_vec3f.h"
 
+#include <memory>
+
 #include <stb_truetype.h>
 
 /*
@@ -31,8 +33,8 @@ public:
 		struct st_vec2f* extent_max = nullptr);
 
 private:
-	class st_texture* _texture;
-	class st_font_material* _material;
+	std::unique_ptr<class st_texture> _texture;
+	std::unique_ptr<class st_font_material> _material;
 
 	int _image_width;
 	int _image_height;
@@ -50,8 +52,6 @@ public:
 	st_font_material(st_texture* texture);
 	~st_font_material();
 
-	//virtual bool init() override;
-
 	virtual void bind(
 		class st_render_context* context,
 		const struct st_mat4f& proj,
@@ -59,13 +59,20 @@ public:
 		const struct st_mat4f& transform) override;
 
 	void get_pipeline_state(
-		struct st_pipeline_state_desc* state_desc) override {}
+		struct st_pipeline_state_desc* state_desc) override;
 
 	st_material_type get_material_type() override { return st_material_type_font; }
 
-	//virtual void set_color(const struct st_vec3f& color) override { _color = color; }
+	void set_color(const struct st_vec3f& color) override { _color = color; }
+
+	struct st_font_cb
+	{
+		st_mat4f _mvp;
+		st_vec3f _color;
+	};
 
 private:
+	std::unique_ptr<class st_constant_buffer> _constant_buffer;
 	class st_texture* _texture;
 	st_vec3f _color;
 };

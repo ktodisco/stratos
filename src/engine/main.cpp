@@ -111,8 +111,6 @@ int main(int argc, const char** argv)
 
 	window->show();
 
-	st_render_context::get()->end_loading();
-
 	// Main loop:
 	while (true)
 	{

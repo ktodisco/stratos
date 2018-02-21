@@ -65,17 +65,22 @@ void st_unlit_texture_material::bind(
 
 st_constant_color_material::st_constant_color_material()
 {
+	_color_buffer = std::make_unique<st_constant_buffer>(sizeof(st_constant_color_cb));
 }
 
 st_constant_color_material::~st_constant_color_material()
 {
 }
 
-/*bool st_constant_color_material::init()
+void st_constant_color_material::get_pipeline_state(
+	struct st_pipeline_state_desc* state_desc)
 {
-	return st_material::init_shaders(
-		"data/shaders/st_constant_color");
-}*/
+	state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_constant_color);
+
+	state_desc->_blend_desc._target_blend[0]._blend = false;
+	state_desc->_depth_stencil_desc._depth_enable = true;
+	state_desc->_depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
+}
 
 void st_constant_color_material::bind(
 	st_render_context* context,
@@ -83,17 +88,14 @@ void st_constant_color_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	/*st_uniform mvp_uniform = _program->get_uniform("u_mvp");
-	st_uniform color_uniform = _program->get_uniform("u_color");
+	st_mat4f mvp = transform * view * proj;
+	mvp.transpose();
 
-	_program->use();
-
-	mvp_uniform.set(transform * view * proj);
-	color_uniform.set(_color);
-
-	context->set_blend_state(false, k_st_src_alpha, k_st_one_minus_src_alpha);
-	context->set_depth_state(true, k_st_depth_less);
-	context->set_depth_mask(true);*/
+	st_constant_color_cb cb_data{};
+	cb_data._mvp = mvp;
+	cb_data._color = _color;
+	_color_buffer->update(context, &cb_data);
+	_color_buffer->commit(context);
 }
 
 st_phong_material::st_phong_material()
