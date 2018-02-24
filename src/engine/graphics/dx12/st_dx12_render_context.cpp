@@ -628,6 +628,16 @@ void st_dx12_render_context::swap()
 	_frame_index = _swap_chain->GetCurrentBackBufferIndex();
 }
 
+void st_dx12_render_context::begin_marker(const std::string& marker)
+{
+	PIXBeginEvent(_command_list.Get(), 0, marker.c_str());
+}
+
+void st_dx12_render_context::end_marker()
+{
+	PIXEndEvent(_command_list.Get());
+}
+
 void st_dx12_render_context::create_graphics_pipeline_state(
 	const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,
 	ID3D12PipelineState** pipeline_state)

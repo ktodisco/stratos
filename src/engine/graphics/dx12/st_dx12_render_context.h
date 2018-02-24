@@ -11,6 +11,7 @@
 #if defined(ST_GRAPHICS_API_DX12)
 
 #include <cstdint>
+#include <string>
 
 #define k_st_depth_less 0
 
@@ -59,6 +60,9 @@ public:
 	void begin_frame();
 	void end_frame();
 	void swap();
+
+	void begin_marker(const std::string& marker);
+	void end_marker();
 
 	void create_graphics_pipeline_state(
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,

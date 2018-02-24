@@ -9,6 +9,7 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <dxgidebug.h>
+#include <pix.h>
 
 #include <graphics/dx12/d3dx12.h>
 
