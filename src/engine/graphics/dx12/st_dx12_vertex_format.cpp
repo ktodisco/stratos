@@ -6,6 +6,8 @@
 
 #include <graphics/dx12/st_dx12_vertex_format.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <graphics/st_vertex_attribute.h>
 
 #include <cassert>
@@ -94,3 +96,5 @@ void st_dx12_vertex_format::platform_finalize()
 	_input_layout.NumElements = get_attribute_count();
 	_input_layout.pInputElementDescs = &_elements[0];
 }
+
+#endif

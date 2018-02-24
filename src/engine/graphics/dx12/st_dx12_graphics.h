@@ -7,8 +7,13 @@
 */
 
 #include <d3d12.h>
+#include <dxgi1_6.h>
 #include <dxgidebug.h>
+
 #include <graphics/dx12/d3dx12.h>
+
+#include <Windows.h>
+#include <wrl.h>
 
 enum e_st_primitive_topology_type
 {

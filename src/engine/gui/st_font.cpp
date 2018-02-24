@@ -147,6 +147,13 @@ void st_font::print(
 st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 {
 	_constant_buffer = std::make_unique<st_constant_buffer>(sizeof(st_font_cb));
+	_constant_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
+	_constant_buffer->add_constant("u_color", st_shader_constant_type_vec3);
+
+	if (_texture)
+	{
+		_texture->set_meta("u_texture", 0);
+	}
 }
 
 st_font_material::~st_font_material()
@@ -181,5 +188,8 @@ void st_font_material::bind(
 	_constant_buffer->update(context, &cb_data);
 	_constant_buffer->commit(context);
 
-	_texture->bind(context);
+	if (_texture)
+	{
+		_texture->bind(context);
+	}
 }

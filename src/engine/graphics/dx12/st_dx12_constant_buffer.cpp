@@ -6,6 +6,8 @@
 
 #include <graphics/dx12/st_dx12_constant_buffer.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <graphics/dx12/st_dx12_render_context.h>
 
 st_dx12_constant_buffer::st_dx12_constant_buffer(const size_t size) :
@@ -31,7 +33,9 @@ st_dx12_constant_buffer::~st_dx12_constant_buffer()
 	_constant_buffer->Unmap(0, nullptr);
 }
 
-void st_dx12_constant_buffer::add_constant(std::string name, const size_t size)
+void st_dx12_constant_buffer::add_constant(
+		const std::string& name,
+		const e_st_shader_constant_type constant_type)
 {
 }
 
@@ -44,3 +48,5 @@ void st_dx12_constant_buffer::commit(st_dx12_render_context* context)
 {
 	context->set_constant_buffer_table(_constant_buffer_offset);
 }
+
+#endif

@@ -6,12 +6,14 @@
 
 #include <graphics/opengl/st_gl_texture.h>
 
+#if defined(ST_GRAPHICS_API_OPENGL)
+
+#include <graphics/opengl/st_gl_render_context.h>
+#include <graphics/st_shader.h>
+
 #include <cassert>
 #include <stb_image.h>
 #include <string>
-
-#define GLEW_STATIC
-#include <GL/glew.h>
 
 st_gl_texture::st_gl_texture()
 {
@@ -64,3 +66,19 @@ bool st_gl_texture::load_from_file(const char* path)
 
 	return true;
 }
+
+void st_gl_texture::set_meta(const char* name, const uint32_t slot)
+{
+	_name = name;
+	_slot = slot;
+}
+
+void st_gl_texture::bind(class st_gl_render_context* context)
+{
+	const st_gl_shader* shader = context->get_bound_shader();
+
+	st_gl_uniform uniform = shader->get_uniform(_name.c_str());
+	uniform.set(*this, _slot);
+}
+
+#endif

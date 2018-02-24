@@ -6,6 +6,8 @@
 
 #include <graphics/dx12/st_dx12_shader.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <cassert>
 
 #include <d3dcompiler.h>
@@ -91,3 +93,5 @@ st_dx12_shader::st_dx12_shader(const char* source, uint8_t type)
 st_dx12_shader::~st_dx12_shader()
 {
 }
+
+#endif

@@ -6,6 +6,8 @@
 
 #include <graphics/dx12/st_dx12_geometry.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <graphics/dx12/st_dx12_render_context.h>
 
 #include <graphics/st_drawcall.h>
@@ -77,3 +79,5 @@ void st_dx12_geometry::draw(st_static_drawcall& draw_call)
 	draw_call._index_count = _index_count;
 	draw_call._draw_mode = st_primitive_topology_triangles;
 }
+
+#endif

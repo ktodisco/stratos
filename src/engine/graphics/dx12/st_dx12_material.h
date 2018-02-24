@@ -8,8 +8,9 @@
 
 #include <graphics/st_graphics.h>
 
-#include "math/st_mat4f.h"
-#include "math/st_vec3f.h"
+#if defined(ST_GRAPHICS_API_DX12)
+
+#include <math/st_mat4f.h>
 
 #include <string>
 
@@ -32,3 +33,5 @@ public:
 	virtual void get_pipeline_state(
 		struct st_pipeline_state_desc* state_desc) = 0;
 };
+
+#endif

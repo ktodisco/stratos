@@ -6,9 +6,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_shader_manager.h>
-
 #include <graphics/st_graphics.h>
+
+#if defined(ST_GRAPHICS_API_DX12)
+
+#include <graphics/st_shader_manager.h>
 
 #include <Windows.h>
 #include <wrl.h>
@@ -43,3 +45,5 @@ private:
 
 	uint8_t _type = 0;
 };
+
+#endif

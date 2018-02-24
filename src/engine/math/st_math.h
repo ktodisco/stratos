@@ -7,8 +7,8 @@
 */
 
 #define _USE_MATH_DEFINES
-#include <math.h>
 #include <algorithm>
+#include <math.h>
 
 #define st_absf fabsf
 #define st_cosf cosf

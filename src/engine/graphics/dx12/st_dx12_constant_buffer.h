@@ -8,6 +8,8 @@
 
 #include <graphics/st_graphics.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <string>
 #include <Windows.h>
 #include <wrl.h>
@@ -18,7 +20,9 @@ public:
 	st_dx12_constant_buffer(const size_t size);
 	~st_dx12_constant_buffer();
 
-	void add_constant(std::string name, const size_t size);
+	void add_constant(
+		const std::string& name,
+		const e_st_shader_constant_type constant_type);
 
 	void update(const class st_dx12_render_context* context, void* data);
 
@@ -30,3 +34,5 @@ private:
 	uint32_t _constant_buffer_offset = 0;
 	uint8_t* _constant_buffer_head = nullptr;
 };
+
+#endif

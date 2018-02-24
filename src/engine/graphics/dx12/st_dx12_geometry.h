@@ -6,10 +6,13 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <graphics/st_graphics.h>
+
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <cstdint>
 #include <vector>
 
-#include <d3d12.h>
 #include <wrl.h>
 
 class st_vertex_format;
@@ -36,3 +39,5 @@ private:
 	D3D12_INDEX_BUFFER_VIEW _index_buffer_view;
 	uint32_t _index_count = 0;
 };
+
+#endif

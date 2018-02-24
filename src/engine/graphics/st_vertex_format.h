@@ -9,7 +9,9 @@
 #include <graphics/st_graphics.h>
 
 #if defined(ST_GRAPHICS_API_OPENGL)
-#error TODO
+#include <graphics/opengl/st_gl_vertex_format.h>
+
+typedef st_gl_vertex_format st_platform_vertex_format;
 #elif defined(ST_GRAPHICS_API_DX12)
 #include <graphics/dx12/st_dx12_vertex_format.h>
 
@@ -32,17 +34,17 @@ public:
 	st_vertex_format();
 	~st_vertex_format();
 
-	uint32_t get_attribute_count() const
+	uint32_t get_attribute_count() const override
 	{
 		return static_cast<uint32_t>(_attributes.size());
 	}
+
+	const st_vertex_attribute& get_attribute(uint32_t index) const override;
 
 	uint32_t get_vertex_size() const
 	{
 		return _vertex_size;
 	}
-
-	const st_vertex_attribute& get_attribute(uint32_t index) const;
 
 	void add_attribute(st_vertex_attribute& attribute);
 	void finalize();

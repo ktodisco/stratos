@@ -6,6 +6,10 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <graphics/st_graphics.h>
+
+#if defined(ST_GRAPHICS_API_OPENGL)
+
 #include <cstdint>
 #include <string>
 
@@ -15,7 +19,7 @@
 */
 class st_gl_uniform
 {
-	friend class st_gl_program;
+	friend class st_gl_shader;
 
 public:
 	void set(const struct st_vec3f& vec);
@@ -32,13 +36,13 @@ protected:
 /*
 ** Represents a shader.
 */
-class st_gl_shader
+class st_gl_shader_component
 {
-	friend class st_gl_program;
+	friend class st_gl_shader;
 
 public:
-	st_gl_shader(const char* source, uint32_t type);
-	~st_gl_shader();
+	st_gl_shader_component(const char* source, uint32_t type);
+	~st_gl_shader_component();
 
 	bool compile();
 
@@ -54,23 +58,27 @@ private:
 ** Vertex shader and fragment shader linked together.
 ** @see st_shader
 */
-class st_gl_program
+class st_gl_shader
 {
 public:
-	st_gl_program();
-	~st_gl_program();
+	st_gl_shader(const char* source, uint8_t type);
+	~st_gl_shader();
 
-	void attach(const st_gl_shader& shader);
-	void detach(const st_gl_shader& shader);
+	void attach(const st_gl_shader_component& shader);
+	void detach(const st_gl_shader_component& shader);
 
 	bool link();
 
 	std::string get_link_log() const;
 
-	class st_gl_uniform get_uniform(const char* name);
+	class st_gl_uniform get_uniform(const char* name) const;
 
-	void use();
+	void use() const;
 
 private:
 	uint32_t _handle;
+	st_gl_shader_component* _vs;
+	st_gl_shader_component* _fs;
 };
+
+#endif

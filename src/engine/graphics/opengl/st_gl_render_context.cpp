@@ -6,7 +6,12 @@
 
 #include <graphics/opengl/st_gl_render_context.h>
 
+#if defined(ST_GRAPHICS_API_OPENGL)
+
 #include <graphics/opengl/st_gl_drawcall.h>
+#include <graphics/opengl/st_gl_pipeline_state.h>
+#include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_shader.h>
 #include <system/st_window.h>
 
 #include <cstdio>
@@ -48,13 +53,6 @@ st_gl_render_context::st_gl_render_context(const st_window* window)
 
 	wglMakeCurrent(_device_context, _gl_context);
 
-	GLint major;
-	GLint minor;
-	glGetIntegerv(GL_MAJOR_VERSION, &major);
-	glGetIntegerv(GL_MINOR_VERSION, &minor);
-
-	printf("Using OpenGL %d.%d.\n", major, minor);
-
 	// Init GLEW after creating the OpenGL context so it can locate the functions.
 	GLint glew_init_result = glewInit();
 	if (glew_init_result != GLEW_OK)
@@ -62,6 +60,24 @@ st_gl_render_context::st_gl_render_context(const st_window* window)
 		printf("Failed to initialize GLEW. %s. Exiting.\n", glewGetErrorString(glew_init_result));
 		exit(1);
 	}
+	
+	const GLint attribs[] =
+	{
+		WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+		WGL_CONTEXT_MINOR_VERSION_ARB, 6,
+		0
+	};
+
+    _gl_context = wglCreateContextAttribsARB(_device_context, 0, attribs);
+
+	wglMakeCurrent(_device_context, _gl_context);
+
+	GLint major;
+	GLint minor;
+	glGetIntegerv(GL_MAJOR_VERSION, &major);
+	glGetIntegerv(GL_MINOR_VERSION, &minor);
+
+	printf("Using OpenGL %d.%d. Version: %s\n", major, minor, (char*)glGetString(GL_VERSION));
 
 #if defined(_DEBUG)
 	glEnable(GL_DEBUG_OUTPUT);
@@ -86,9 +102,37 @@ void st_gl_render_context::release()
 	wglMakeCurrent(_device_context, 0);
 }
 
+void st_gl_render_context::set_pipeline_state(const st_gl_pipeline_state* state)
+{
+	const st_pipeline_state_desc& state_desc = state->get_state();
+	state_desc._shader->use();
+	_bound_shader = state_desc._shader;
+
+	set_depth_state(
+		state_desc._depth_stencil_desc._depth_enable,
+		state_desc._depth_stencil_desc._depth_compare);
+
+	set_depth_mask(
+		state_desc._depth_stencil_desc._depth_mask != st_depth_write_mask_zero);
+
+	set_blend_state(
+		state_desc._blend_desc._target_blend[0]._blend,
+		state_desc._blend_desc._target_blend[0]._src_blend,
+		state_desc._blend_desc._target_blend[0]._dst_blend);
+
+	set_cull_state(
+		state_desc._rasterizer_desc._cull_mode != GL_NONE,
+		state_desc._rasterizer_desc._cull_mode);
+}
+
 void st_gl_render_context::set_viewport(int x, int y, int width, int height)
 {
 	glViewport(x, y, width, height);
+}
+
+void st_gl_render_context::set_scissor(int left, int top, int right, int bottom)
+{
+	glScissor(left, top, right - left, bottom - top);
 }
 
 void st_gl_render_context::set_depth_state(bool enable, GLenum func)
@@ -99,10 +143,12 @@ void st_gl_render_context::set_depth_state(bool enable, GLenum func)
 	glDepthFunc(func);
 }
 
-void st_gl_render_context::set_cull_state(bool enable)
+void st_gl_render_context::set_cull_state(bool enable, GLenum mode)
 {
 	if (enable) glEnable(GL_CULL_FACE);
 	else glDisable(GL_CULL_FACE);
+
+	glCullFace(mode);
 }
 
 void st_gl_render_context::set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor)
@@ -124,6 +170,8 @@ void st_gl_render_context::set_clear_color(float r, float g, float b, float a)
 	_clear_color[1] = g;
 	_clear_color[2] = b;
 	_clear_color[3] = a;
+
+	glClearColor(r, g, b, a);
 }
 
 void st_gl_render_context::clear(unsigned int clear_flags)
@@ -184,7 +232,25 @@ void st_gl_render_context::draw(const st_gl_dynamic_drawcall& drawcall)
 	glBindVertexArray(0);
 }
 
+void st_gl_render_context::transition_backbuffer_to_target()
+{
+}
+
+void st_gl_render_context::transition_backbuffer_to_present()
+{
+}
+
+void st_gl_render_context::begin_frame()
+{
+}
+
+void st_gl_render_context::end_frame()
+{
+}
+
 void st_gl_render_context::swap()
 {
 	SwapBuffers(_device_context);
 }
+
+#endif

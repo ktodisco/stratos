@@ -111,14 +111,11 @@ void egg_to_model(const char* filename, st_model_data* model)
 	}
 
 	// Sort out the model's vertex format.
-	if (state._vertex_format & egg_vertex_attribute_position)
-		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
-	if (state._vertex_format & egg_vertex_attribute_normal)
-		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
-	if (state._vertex_format & egg_vertex_attribute_color)
-		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 2));
-	if (state._vertex_format & egg_vertex_attribute_uv)
-		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 3));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 2));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 3));
+
 	if (state._vertex_format & egg_vertex_attribute_joints)
 		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_joints, 4));
 	if (state._vertex_format & egg_vertex_attribute_weights)

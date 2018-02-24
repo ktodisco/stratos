@@ -6,6 +6,8 @@
 
 #include <graphics/dx12/st_dx12_render_context.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <graphics/dx12/st_dx12_pipeline_state.h>
 #include <graphics/st_drawcall.h>
 #include <system/st_window.h>
@@ -365,7 +367,7 @@ void st_dx12_render_context::release()
 {
 }
 
-void st_dx12_render_context::set_pipeline_state(const class st_dx12_pipeline_state* state)
+void st_dx12_render_context::set_pipeline_state(const st_dx12_pipeline_state* state)
 {
 	_command_list->SetPipelineState(state->get_state());
 }
@@ -392,22 +394,6 @@ void st_dx12_render_context::set_scissor(int left, int top, int right, int botto
 	rect.bottom = bottom;
 
 	_command_list->RSSetScissorRects(1, &rect);
-}
-
-void st_dx12_render_context::set_depth_state(bool enable, uint32_t func)
-{
-}
-
-void st_dx12_render_context::set_cull_state(bool enable)
-{
-}
-
-void st_dx12_render_context::set_blend_state(bool enable, uint32_t src_factor, uint32_t dst_factor)
-{
-}
-
-void st_dx12_render_context::set_depth_mask(bool enable)
-{
 }
 
 void st_dx12_render_context::set_clear_color(float r, float g, float b, float a)
@@ -872,3 +858,5 @@ st_dx12_render_context* st_dx12_render_context::get()
 {
 	return _this;
 }
+
+#endif

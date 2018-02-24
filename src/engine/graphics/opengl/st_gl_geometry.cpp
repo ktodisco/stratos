@@ -6,13 +6,11 @@
 
 #include <graphics/opengl/st_gl_geometry.h>
 
+#if defined(ST_GRAPHICS_API_OPENGL)
+
 #include <graphics/opengl/st_gl_drawcall.h>
 #include <graphics/st_vertex_attribute.h>
 #include <graphics/st_vertex_format.h>
-
-#define GLEW_STATIC
-#include <GL/glew.h>
-#include <GL/GL.h>
 
 st_gl_geometry::st_gl_geometry(
 	const st_vertex_format* format,
@@ -30,6 +28,7 @@ st_gl_geometry::st_gl_geometry(
 	glBindBuffer(GL_ARRAY_BUFFER, _vbos[0]);
 	glBufferData(GL_ARRAY_BUFFER, vertex_count * vertex_size, vertex_data, GL_STATIC_DRAW);
 
+	// TODO: Instead of accumulated offset, we need offset into data of st_vertex.
 	size_t offset = 0;
 	for (uint32_t itr = 0; itr < format->get_attribute_count(); ++itr)
 	{
@@ -108,3 +107,5 @@ void st_gl_geometry::draw(st_gl_static_drawcall& draw_call)
 	draw_call._index_count = _index_count;
 	draw_call._draw_mode = st_primitive_topology_triangles;
 }
+
+#endif

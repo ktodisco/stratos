@@ -6,12 +6,15 @@
 
 #include <graphics/dx12/st_dx12_pipeline_state.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <graphics/dx12/st_dx12_render_context.h>
 #include <graphics/dx12/st_dx12_shader.h>
 #include <graphics/dx12/st_dx12_vertex_format.h>
 
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_shader.h>
+#include <graphics/st_vertex_format.h>
 
 #include <graphics/dx12/d3dx12.h>
 
@@ -118,3 +121,5 @@ st_dx12_pipeline_state::~st_dx12_pipeline_state()
 {
 	// TODO.
 }
+
+#endif

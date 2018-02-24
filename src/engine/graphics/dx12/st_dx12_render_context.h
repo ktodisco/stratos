@@ -8,12 +8,9 @@
 
 #include <graphics/st_graphics.h>
 
-#include <cstdint>
-#include <Windows.h>
-#include <wrl.h>
+#if defined(ST_GRAPHICS_API_DX12)
 
-#include <d3d12.h>
-#include <dxgi1_6.h>
+#include <cstdint>
 
 #define k_st_depth_less 0
 
@@ -43,11 +40,6 @@ public:
 	void set_pipeline_state(const class st_dx12_pipeline_state* state);
 	void set_viewport(int x, int y, int width, int height);
 	void set_scissor(int left, int top, int right, int bottom);
-	// TODO: These state functions should be combined into a single state call.
-	void set_depth_state(bool enable, uint32_t func);
-	void set_cull_state(bool enable);
-	void set_blend_state(bool enable, uint32_t src_factor, uint32_t dst_factor);
-	void set_depth_mask(bool enable);
 	void set_clear_color(float r, float g, float b, float a);
 
 	void set_shader_resource_table(uint32_t offset);
@@ -143,3 +135,5 @@ private:
 	float _clear_color[4] = { 0 };
 	uint32_t _frame_index = 0;
 };
+
+#endif

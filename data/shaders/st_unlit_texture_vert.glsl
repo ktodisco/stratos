@@ -3,7 +3,7 @@
 uniform mat4 u_mvp;
 
 layout(location = 0) in vec3 in_vertex;
-layout(location = 2) in vec2 in_texcood0;
+layout(location = 3) in vec2 in_texcood0;
 
 out vec2 texcoord0;
 

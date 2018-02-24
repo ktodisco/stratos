@@ -8,6 +8,8 @@
 
 #include <graphics/st_graphics.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <cstdint>
 
 #include <Windows.h>
@@ -24,3 +26,5 @@ public:
 private:
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipeline_state;
 };
+
+#endif

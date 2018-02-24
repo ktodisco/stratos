@@ -6,10 +6,9 @@
 
 #include <graphics/opengl/st_gl_render_marker.h>
 
-#include <string>
+#if defined(ST_GRAPHICS_API_OPENGL)
 
-#define GLEW_STATIC
-#include <GL/glew.h>
+#include <string>
 
 st_gl_render_marker::st_gl_render_marker(const std::string& message)
 {
@@ -20,3 +19,5 @@ st_gl_render_marker::~st_gl_render_marker()
 {
 	glPopDebugGroup();
 }
+
+#endif

@@ -22,6 +22,7 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	_texture_file(texture_file)
 {
 	_view_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
+	_view_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
 
 	_texture = std::make_unique<st_texture>();
 	if (!_texture->load_from_file(_texture_file.c_str()))
@@ -29,6 +30,7 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 		std::cerr << "Failed to load " << _texture_file << std::endl;
 		assert(false);
 	}
+	_texture->set_meta("u_texture", 0);
 }
 
 st_unlit_texture_material::~st_unlit_texture_material()
@@ -66,6 +68,8 @@ void st_unlit_texture_material::bind(
 st_constant_color_material::st_constant_color_material()
 {
 	_color_buffer = std::make_unique<st_constant_buffer>(sizeof(st_constant_color_cb));
+	_color_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
+	_color_buffer->add_constant("u_color", st_shader_constant_type_vec3);
 }
 
 st_constant_color_material::~st_constant_color_material()
@@ -101,6 +105,7 @@ void st_constant_color_material::bind(
 st_phong_material::st_phong_material()
 {
 	_phong_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
+	_phong_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
 }
 
 st_phong_material::~st_phong_material()

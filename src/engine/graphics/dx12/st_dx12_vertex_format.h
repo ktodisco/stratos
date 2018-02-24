@@ -8,6 +8,8 @@
 
 #include <graphics/st_graphics.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <cstdint>
 #include <vector>
 
@@ -28,3 +30,5 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> _elements;
 	D3D12_INPUT_LAYOUT_DESC _input_layout = {};
 };
+
+#endif

@@ -6,6 +6,10 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <graphics/st_graphics.h>
+
+#if defined(ST_GRAPHICS_API_OPENGL)
+
 #include <cstdint>
 
 class st_vertex_format;
@@ -31,3 +35,5 @@ private:
 	uint32_t _vbos[4];
 	uint32_t _index_count;
 };
+
+#endif
