@@ -81,6 +81,7 @@ st_gl_render_context::st_gl_render_context(const st_window* window)
 
 #if defined(_DEBUG)
 	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback((GLDEBUGPROC)gl_message_callback, 0);
 #endif
 }
 

@@ -14,6 +14,15 @@
 
 #include <Windows.h>
 
+void gl_message_callback(
+	GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const GLchar* message,
+	const void* userParam);
+
 enum e_st_primitive_topology_type
 {
 	st_primitive_topology_type_point = GL_POINTS,

@@ -6,8 +6,8 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-//#define ST_GRAPHICS_API_OPENGL
-#define ST_GRAPHICS_API_DX12
+#define ST_GRAPHICS_API_OPENGL
+//#define ST_GRAPHICS_API_DX12
 //#define ST_GRAPHICS_API_VULKAN
 
 typedef void* st_graphics_resource;
