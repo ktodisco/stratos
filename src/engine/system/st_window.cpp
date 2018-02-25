@@ -45,6 +45,9 @@ st_window::st_window(std::string window_name, uint32_t width, uint32_t height, s
 		_module_handle,
 		this);
 
+	// For some reason CreateWindowEx is not setting the window name properly.
+	SetWindowText(_window_handle, (LPCSTR)window_name.c_str());
+
 	_message_thread = new st_message_thread(this, input);
 }
 
