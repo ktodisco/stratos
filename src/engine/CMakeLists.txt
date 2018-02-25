@@ -40,6 +40,4 @@ endif()
 add_custom_command(TARGET stratos PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/ttf-bitstream-vera-1.10/VeraMono.ttf $<TARGET_FILE_DIR:stratos>)
 
 add_custom_target(ALWAYS_COPY_DATA COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/always_copy_data.h)
-add_dependencies(stratos ALWAYS_COPY_DATA)
-
-add_custom_command(TARGET stratos POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../../data $<TARGET_FILE_DIR:stratos>/data)
+add_custom_command(TARGET ALWAYS_COPY_DATA POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../../data $<TARGET_FILE_DIR:stratos>/data)
