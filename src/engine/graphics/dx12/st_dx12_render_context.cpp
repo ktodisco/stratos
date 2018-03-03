@@ -209,6 +209,7 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 
 		_device->CreateRenderTargetView(_backbuffers[rtv_itr].Get(), nullptr, _rtv_handle);
 		_rtv_handle.ptr += _rtv_descriptor_size;
+		_rtv_slot++;
 	}
 
 	// Create the depth/stencil buffer.

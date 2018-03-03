@@ -6,6 +6,7 @@
 
 #include <graphics/opengl/st_gl_graphics.h>
 
+#include <cassert>
 #include <iostream>
 
 void gl_message_callback(

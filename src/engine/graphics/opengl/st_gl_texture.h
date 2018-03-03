@@ -19,6 +19,7 @@ public:
 	st_gl_texture();
 	~st_gl_texture();
 
+	void reserve_data(uint32_t width, uint32_t height, e_st_texture_format format);
 	void load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data);
 	bool load_from_file(const char* path);
 	void set_meta(const char* name, const uint32_t slot);

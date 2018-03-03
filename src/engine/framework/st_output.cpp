@@ -4,18 +4,20 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_output.h"
+#include <framework/st_output.h>
 
-#include "st_frame_params.h"
+#include <framework/st_frame_params.h>
 
-#include "graphics/st_material.h"
-#include "graphics/st_render_context.h"
-#include "graphics/st_render_marker.h"
-#include "graphics/st_scene_render_pass.h"
-#include "graphics/st_ui_render_pass.h"
-#include "math/st_mat4f.h"
-#include "math/st_quatf.h"
-#include "system/st_window.h"
+#include <graphics/st_framebuffer.h>
+#include <graphics/st_material.h>
+#include <graphics/st_render_context.h>
+#include <graphics/st_render_marker.h>
+#include <graphics/st_render_texture.h>
+#include <graphics/st_scene_render_pass.h>
+#include <graphics/st_ui_render_pass.h>
+#include <math/st_mat4f.h>
+#include <math/st_quatf.h>
+#include <system/st_window.h>
 
 #include <cassert>
 #include <iostream>
@@ -27,6 +29,21 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 {
 	_scene_pass = std::make_unique<st_scene_render_pass>();
 	_ui_pass = std::make_unique<st_ui_render_pass>();
+
+	_render_target = std::make_unique<st_render_texture>(
+		_window->get_width(),
+		_window->get_height(),
+		st_texture_format_r8g8b8a8_unorm);
+	_depth_stencil_target = std::make_unique<st_render_texture>(
+		_window->get_width(),
+		_window->get_height(),
+		st_texture_format_d24_unorm_s8_uint);
+
+	st_render_texture* targets[] = { _render_target.get() };
+	_framebuffer = std::make_unique<st_framebuffer>(
+		1,
+		targets,
+		_depth_stencil_target.get());
 }
 
 st_output::~st_output()

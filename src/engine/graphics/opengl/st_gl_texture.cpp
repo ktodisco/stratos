@@ -25,17 +25,25 @@ st_gl_texture::~st_gl_texture()
 	glDeleteTextures(1, &_handle);
 }
 
-void st_gl_texture::load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data)
+void st_gl_texture::reserve_data(uint32_t width, uint32_t height, e_st_texture_format format)
 {
-	GLenum internal_format;
+	// TODO: This is duplicated below and should be consolidated.
+	GLenum pixel_format;
+	GLenum type;
 
 	switch (format)
 	{
-	case st_texture_format_r8_uint:
-		internal_format = GL_R8;
+	case st_texture_format_r8_unorm:
+		pixel_format = GL_RED;
+		type = GL_UNSIGNED_BYTE;
 		break;
-	case st_texture_format_r8g8b8a8_uint:
-		internal_format = GL_RGBA8;
+	case st_texture_format_r8g8b8a8_unorm:
+		pixel_format = GL_RGBA;
+		type = GL_UNSIGNED_BYTE;
+		break;
+	case st_texture_format_d24_unorm_s8_uint:
+		pixel_format = GL_DEPTH_STENCIL;
+		type = GL_UNSIGNED_INT_24_8;
 		break;
 	default:
 		assert(false);
@@ -43,8 +51,41 @@ void st_gl_texture::load_from_data(uint32_t width, uint32_t height, e_st_texture
 	}
 
 	glBindTexture(GL_TEXTURE_2D, _handle);
-	glTexStorage2D(GL_TEXTURE_2D, 1, internal_format, width, height);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, pixel_format, type, 0);
+}
+
+void st_gl_texture::load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data)
+{
+	GLenum pixel_format;
+	GLenum type;
+
+	switch (format)
+	{
+	case st_texture_format_r8_unorm:
+		pixel_format = GL_RED;
+		type = GL_UNSIGNED_BYTE;
+		break;
+	case st_texture_format_r8g8b8a8_unorm:
+		pixel_format = GL_RGBA;
+		type = GL_UNSIGNED_BYTE;
+		break;
+	case st_texture_format_d24_unorm_s8_uint:
+		pixel_format = GL_DEPTH_STENCIL;
+		type = GL_UNSIGNED_INT_24_8;
+		break;
+	default:
+		assert(false);
+		break;
+	}
+
+	glBindTexture(GL_TEXTURE_2D, _handle);
+	glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, pixel_format, type, data);
 }
 
 bool st_gl_texture::load_from_file(const char* path)

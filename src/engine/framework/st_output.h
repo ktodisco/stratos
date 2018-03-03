@@ -35,4 +35,8 @@ private:
 
 	std::unique_ptr<class st_scene_render_pass> _scene_pass;
 	std::unique_ptr<class st_ui_render_pass> _ui_pass;
+
+	std::unique_ptr<class st_render_texture> _render_target;
+	std::unique_ptr<class st_render_texture> _depth_stencil_target;
+	std::unique_ptr<class st_framebuffer> _framebuffer;
 };

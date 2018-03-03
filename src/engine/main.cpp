@@ -59,7 +59,7 @@ int main(int argc, const char** argv)
 	std::unique_ptr<st_input> input = std::make_unique<st_input>();
 
 	// Create a window.
-	std::unique_ptr<st_window> window = std::make_unique<st_window>("Stratos", 1280, 720, input.get());
+	std::unique_ptr<st_window> window = std::make_unique<st_window>("Stratos Renderer", 1280, 720, input.get());
 
 	// Create the rendering context for the window.
 	std::unique_ptr<st_render_context> render = std::make_unique<st_render_context>(window.get());
@@ -90,7 +90,7 @@ int main(int argc, const char** argv)
 
 	st_entity test_entity;
 	st_phong_material* test_material = new st_phong_material();
-	//test_material->set_color({0.5f, 0.5f, 0.5f});
+	test_material->set_color({0.5f, 0.5f, 0.5f});
 	st_model_component model_component(&test_entity, &test_model, test_material);
 	sim->add_entity(&test_entity);
 
