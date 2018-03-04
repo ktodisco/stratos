@@ -8,12 +8,12 @@
 
 #include <framework/st_frame_params.h>
 
-#include <graphics/st_framebuffer.h>
+#include <graphics/st_fullscreen_render_pass.h>
+#include <graphics/st_gbuffer_render_pass.h>
 #include <graphics/st_material.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
-#include <graphics/st_scene_render_pass.h>
 #include <graphics/st_ui_render_pass.h>
 #include <math/st_mat4f.h>
 #include <math/st_quatf.h>
@@ -27,10 +27,11 @@
 st_output::st_output(const st_window* window, st_render_context* render_context) :
 	_window(window), _render_context(render_context)
 {
-	_scene_pass = std::make_unique<st_scene_render_pass>();
-	_ui_pass = std::make_unique<st_ui_render_pass>();
-
-	_render_target = std::make_unique<st_render_texture>(
+	_gbuffer_albedo_target = std::make_unique<st_render_texture>(
+		_window->get_width(),
+		_window->get_height(),
+		st_texture_format_r8g8b8a8_unorm);
+	_gbuffer_normal_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
 		st_texture_format_r8g8b8a8_unorm);
@@ -39,11 +40,13 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		_window->get_height(),
 		st_texture_format_d24_unorm_s8_uint);
 
-	st_render_texture* targets[] = { _render_target.get() };
-	_framebuffer = std::make_unique<st_framebuffer>(
-		1,
-		targets,
+	_gbuffer_pass = std::make_unique<st_gbuffer_render_pass>(
+		_gbuffer_albedo_target.get(),
+		_gbuffer_normal_target.get(),
 		_depth_stencil_target.get());
+	_fullscreen_pass = std::make_unique<st_fullscreen_render_pass>(
+		_gbuffer_normal_target.get());
+	_ui_pass = std::make_unique<st_ui_render_pass>();
 }
 
 st_output::~st_output()
@@ -65,14 +68,11 @@ void st_output::update(st_frame_params* params)
 	params->_width = width;
 	params->_height = height;
 
+	_gbuffer_pass->render(_render_context, params);
+
 	_render_context->transition_backbuffer_to_target();
 
-	// Clear viewport.
-	_render_context->set_clear_color(0.0f, 0.0f, 0.3f, 1.0f);
-	_render_context->clear(st_clear_flag_color | st_clear_flag_depth);
-
-	_scene_pass->render(_render_context, params);
-
+	_fullscreen_pass->render(_render_context, params);
 	_ui_pass->render(_render_context, params);
 
 	// Swap the frame buffers and release the context.

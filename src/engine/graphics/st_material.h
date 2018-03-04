@@ -38,7 +38,9 @@ enum st_material_type
 	st_material_type_unlit_texture,
 	st_material_type_constant_color,
 	st_material_type_phong,
-	st_material_type_font
+	st_material_type_font,
+	st_material_type_gbuffer,
+	st_material_type_fullscreen,
 };
 
 /*

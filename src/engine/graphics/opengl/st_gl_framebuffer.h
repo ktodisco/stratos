@@ -25,6 +25,7 @@ public:
 	void unbind(class st_render_context* context);
 
 private:
+	uint32_t _target_count;
 	GLuint _framebuffer;
 };
 

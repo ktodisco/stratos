@@ -22,6 +22,10 @@ public:
 	void reserve_data(uint32_t width, uint32_t height, e_st_texture_format format);
 	void load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data);
 	bool load_from_file(const char* path);
+
+	// TODO: This meta information is not ideal for textures that are shared between different
+	// passes.  One solution is to enforce it to be named on-the-fly.  Another solution is to
+	// createa texture view class that acts as this information on an individualized basis.
 	void set_meta(const char* name, const uint32_t slot);
 
 	uint32_t get_handle() const { return _handle; }

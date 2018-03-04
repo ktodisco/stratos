@@ -33,10 +33,11 @@ private:
 	const st_window* _window;
 	st_render_context* _render_context;
 
-	std::unique_ptr<class st_scene_render_pass> _scene_pass;
+	std::unique_ptr<class st_gbuffer_render_pass> _gbuffer_pass;
+	std::unique_ptr<class st_fullscreen_render_pass> _fullscreen_pass;
 	std::unique_ptr<class st_ui_render_pass> _ui_pass;
 
-	std::unique_ptr<class st_render_texture> _render_target;
+	std::unique_ptr<class st_render_texture> _gbuffer_albedo_target;
+	std::unique_ptr<class st_render_texture> _gbuffer_normal_target;
 	std::unique_ptr<class st_render_texture> _depth_stencil_target;
-	std::unique_ptr<class st_framebuffer> _framebuffer;
 };

@@ -25,6 +25,8 @@ enum e_st_shader
 	st_shader_unlit_texture,
 	st_shader_constant_color,
 	st_shader_font,
+	st_shader_gbuffer,
+	st_shader_fullscreen,
 };
 
 class st_shader_manager

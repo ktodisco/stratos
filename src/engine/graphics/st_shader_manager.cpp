@@ -28,6 +28,14 @@ st_shader_manager::st_shader_manager()
 		std::make_unique<st_shader>(
 			"data/shaders/st_font_simple",
 			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_gbuffer] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_gbuffer",
+			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_fullscreen] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_fullscreen",
+			st_shader_type_vertex | st_shader_type_pixel);
 
 	_this = this;
 }

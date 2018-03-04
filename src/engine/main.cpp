@@ -16,6 +16,7 @@
 #include "graphics/st_animation.h"
 #include "graphics/st_animation_component.h"
 #include "graphics/st_egg_parser.h"
+#include "graphics/st_gbuffer_material.h"
 #include "graphics/st_material.h"
 #include "graphics/st_model_component.h"
 #include "graphics/st_ply_parser.h"
@@ -89,8 +90,7 @@ int main(int argc, const char** argv)
 	ply_to_model("data/models/bunny_med_res.ply", &test_model);
 
 	st_entity test_entity;
-	st_phong_material* test_material = new st_phong_material();
-	test_material->set_color({0.5f, 0.5f, 0.5f});
+	st_gbuffer_material* test_material = new st_gbuffer_material("");
 	st_model_component model_component(&test_entity, &test_model, test_material);
 	sim->add_entity(&test_entity);
 
@@ -103,7 +103,7 @@ int main(int argc, const char** argv)
 	egg_to_model("data/models/cube.egg", &unlit_model);
 
 	st_entity unlit_entity;
-	st_unlit_texture_material* unlit_material = new st_unlit_texture_material("data/textures/test.png");
+	st_gbuffer_material* unlit_material = new st_gbuffer_material("data/textures/test.png");
 	st_model_component unlit_model_component(&unlit_entity, &unlit_model, unlit_material);
 	sim->add_entity(&unlit_entity);
 
