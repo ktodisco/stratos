@@ -10,6 +10,7 @@
 
 #include <graphics/dx12/st_dx12_pipeline_state.h>
 #include <graphics/st_drawcall.h>
+#include <graphics/st_render_texture.h>
 #include <system/st_window.h>
 
 #include <cassert>
@@ -123,7 +124,8 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 
 	// Create descriptor heaps.
 	D3D12_DESCRIPTOR_HEAP_DESC rtv_heap_desc{};
-	rtv_heap_desc.NumDescriptors = k_backbuffer_count;
+	// TODO: The render target count could either be more dynamic, or defined better.
+	rtv_heap_desc.NumDescriptors = k_backbuffer_count + 16;
 	rtv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtv_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	result = _device->CreateDescriptorHeap(
@@ -140,7 +142,8 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 	_rtv_handle = _rtv_heap->GetCPUDescriptorHandleForHeapStart();
 
 	D3D12_DESCRIPTOR_HEAP_DESC dsv_heap_desc{};
-	dsv_heap_desc.NumDescriptors = 1;
+	// TODO: Just like render targets, we need a solution to regulate this number.
+	dsv_heap_desc.NumDescriptors = 16;
 	dsv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	dsv_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 	result = _device->CreateDescriptorHeap(
@@ -152,6 +155,9 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 	{
 		assert(false);
 	}
+
+	_dsv_descriptor_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	_dsv_handle = _dsv_heap->GetCPUDescriptorHandleForHeapStart();
 
 	D3D12_DESCRIPTOR_HEAP_DESC cbv_srv_heap_desc{};
 	cbv_srv_heap_desc.NumDescriptors = k_max_shader_resources;
@@ -202,6 +208,8 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 			__uuidof(ID3D12Resource),
 			(void**)&_backbuffers[rtv_itr]);
 
+		ST_NAME_DX12_OBJECT(_backbuffers[rtv_itr], "Backbuffer");
+
 		if (result != S_OK)
 		{
 			assert(false);
@@ -246,7 +254,11 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		assert(false);
 	}
 
-	_device->CreateDepthStencilView(_depth_stencil.Get(), &depth_stencil_desc, _dsv_heap->GetCPUDescriptorHandleForHeapStart());
+	ST_NAME_DX12_OBJECT(_depth_stencil, "Depth-Stencil");
+
+	_device->CreateDepthStencilView(_depth_stencil.Get(), &depth_stencil_desc, _dsv_handle);
+	_dsv_handle.ptr += _dsv_descriptor_size;
+	_dsv_slot++;
 
 	// Create the command allocator.
 	result = _device->CreateCommandAllocator(
@@ -429,17 +441,49 @@ void st_dx12_render_context::set_constant_buffer_table(uint32_t offset)
 	_command_list->SetGraphicsRootDescriptorTable(2, cbv_handle);
 }
 
-void st_dx12_render_context::clear(unsigned int clear_flags)
+void st_dx12_render_context::set_render_targets(
+	uint32_t count,
+	class st_render_texture** targets,
+	class st_render_texture* depth_stencil)
 {
-	if (clear_flags & st_clear_flag_color)
+	for (uint32_t target_itr = 0; target_itr < count; ++target_itr)
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(
+		CD3DX12_CPU_DESCRIPTOR_HANDLE target_handle(
 			_rtv_heap->GetCPUDescriptorHandleForHeapStart(),
-			_frame_index,
+			targets[target_itr]->get_rtv_offset(),
 			_rtv_descriptor_size);
 
+		_bound_targets[target_itr] = target_handle;
+	}
+
+	// Clear out stale render targets.
+	for (uint32_t target_itr = count; target_itr < 8; ++target_itr)
+	{
+		_bound_targets[target_itr] = {};
+	}
+
+	if (depth_stencil)
+	{
+		_bound_depth_stencil = CD3DX12_CPU_DESCRIPTOR_HANDLE(
+			_dsv_heap->GetCPUDescriptorHandleForHeapStart(),
+			depth_stencil->get_rtv_offset(),
+			_dsv_descriptor_size);
+	}
+
+	_command_list->OMSetRenderTargets(
+		count,
+		_bound_targets,
+		false,
+		depth_stencil ? &_bound_depth_stencil : nullptr);
+}
+
+void st_dx12_render_context::clear(unsigned int clear_flags)
+{
+	// TODO: This needs to clear multiple render targets.
+	if (clear_flags & st_clear_flag_color)
+	{
 		_command_list->ClearRenderTargetView(
-			rtv_handle,
+			_bound_targets[0],
 			_clear_color,
 			0,
 			nullptr);
@@ -448,7 +492,7 @@ void st_dx12_render_context::clear(unsigned int clear_flags)
 	if (clear_flags & st_clear_flag_depth)
 	{
 		_command_list->ClearDepthStencilView(
-			_dsv_heap->GetCPUDescriptorHandleForHeapStart(),
+			_bound_depth_stencil,
 			D3D12_CLEAR_FLAG_DEPTH,
 			1.0f,
 			0,
@@ -459,7 +503,7 @@ void st_dx12_render_context::clear(unsigned int clear_flags)
 	if (clear_flags & st_clear_flag_stencil)
 	{
 		_command_list->ClearDepthStencilView(
-			_dsv_heap->GetCPUDescriptorHandleForHeapStart(),
+			_bound_depth_stencil,
 			D3D12_CLEAR_FLAG_STENCIL,
 			0.0f,
 			0,
@@ -568,6 +612,13 @@ void st_dx12_render_context::transition_backbuffer_to_present()
 		&CD3DX12_RESOURCE_BARRIER::Transition(_backbuffers[_frame_index].Get(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			D3D12_RESOURCE_STATE_PRESENT));
+}
+
+void st_dx12_render_context::transition_targets(
+	uint32_t count,
+	D3D12_RESOURCE_BARRIER* barriers)
+{
+	_command_list->ResourceBarrier(count, barriers);
 }
 
 void st_dx12_render_context::begin_loading()
@@ -843,8 +894,140 @@ void st_dx12_render_context::create_texture(
 
 	_cbv_srv_slot++;
 
-	// TODO: It's not the most elegant to wait on each texture load synchronously.
+	// TODO: It's not the most elegant to wait on each texture to load synchronously.
 	end_loading();
+}
+
+void st_dx12_render_context::create_target(
+	uint32_t width,
+	uint32_t height,
+	e_st_texture_format format,
+	const st_vec4f& clear,
+	ID3D12Resource** resource,
+	uint32_t* rtv_offset,
+	uint32_t* sampler_offset,
+	uint32_t* srv_offset)
+{
+	D3D12_RESOURCE_FLAGS flags;
+	D3D12_RESOURCE_STATES resource_state;
+
+	switch (format)
+	{
+	case st_texture_format_d24_unorm_s8_uint:
+		flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		resource_state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+		break;
+	default:
+		flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		resource_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		break;
+	}
+
+	D3D12_RESOURCE_DESC target_desc = {};
+	target_desc.Width = width;
+	target_desc.Height = height;
+	target_desc.MipLevels = 1;
+	target_desc.Format = (DXGI_FORMAT)format;
+	target_desc.Flags = flags;
+	target_desc.DepthOrArraySize = 1;
+	target_desc.SampleDesc.Count = 1;
+	target_desc.SampleDesc.Quality = 0;
+	target_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+	D3D12_CLEAR_VALUE clear_value = {};
+	clear_value.Format = (DXGI_FORMAT)format;
+
+	if (format == st_texture_format_d24_unorm_s8_uint)
+	{
+		clear_value.DepthStencil.Depth = clear.x;
+		clear_value.DepthStencil.Stencil = (uint8_t)clear.y;
+	}
+	else
+	{
+		clear_value.Color[0] = clear.x;
+		clear_value.Color[1] = clear.y;
+		clear_value.Color[2] = clear.z;
+		clear_value.Color[3] = clear.w;
+	}
+
+	D3D12_HEAP_PROPERTIES heap_properties{
+		D3D12_HEAP_TYPE_DEFAULT,
+		D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
+		D3D12_MEMORY_POOL_UNKNOWN,
+		1,
+		1
+	};
+
+	HRESULT hr = _device->CreateCommittedResource(
+		&heap_properties,
+		D3D12_HEAP_FLAG_NONE,
+		&target_desc,
+		resource_state,
+		&clear_value,
+		__uuidof(ID3D12Resource),
+		(void**)resource);
+
+	if (format == st_texture_format_d24_unorm_s8_uint)
+	{
+		ST_NAME_DX12_OBJECT(*resource, "Depth-Stencil Target");
+
+		// Create the depth/stencil view.
+		*rtv_offset = _dsv_slot;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE dsv_handle = _dsv_heap->GetCPUDescriptorHandleForHeapStart();
+		dsv_handle.ptr += _dsv_descriptor_size * _dsv_slot;
+		_device->CreateDepthStencilView(*resource, nullptr, dsv_handle);
+
+		_dsv_slot++;
+	}
+	else
+	{
+		ST_NAME_DX12_OBJECT(*resource, "Render Target");
+
+		// Create the render target view.
+		*rtv_offset = _rtv_slot;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = _rtv_heap->GetCPUDescriptorHandleForHeapStart();
+		rtv_handle.ptr += _rtv_descriptor_size * _rtv_slot;
+		_device->CreateRenderTargetView(*resource, nullptr, rtv_handle);
+
+		_rtv_slot++;
+
+		// Create the sampler.
+		*sampler_offset = _sampler_slot;
+
+		D3D12_SAMPLER_DESC sampler_desc = {};
+		sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		sampler_desc.MinLOD = 0;
+		sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
+		sampler_desc.MipLODBias = 0.0f;
+		sampler_desc.MaxAnisotropy = 1;
+		sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->GetCPUDescriptorHandleForHeapStart();
+		sampler_handle.ptr += _sampler_descriptor_size * _sampler_slot;
+		_device->CreateSampler(&sampler_desc, sampler_handle);
+
+		_sampler_slot++;
+
+		// Create the shader resource view.
+		*srv_offset = _cbv_srv_slot;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_handle = _cbv_srv_heap->GetCPUDescriptorHandleForHeapStart();
+		cbv_srv_handle.ptr += _cbv_srv_descriptor_size * _cbv_srv_slot;
+		_device->CreateShaderResourceView(*resource, nullptr, cbv_srv_handle);
+
+		_cbv_srv_slot++;
+	}
+
+	_command_list->ResourceBarrier(1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(
+			(*resource),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 }
 
 void st_dx12_render_context::create_constant_buffer(

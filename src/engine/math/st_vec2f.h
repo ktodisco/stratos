@@ -19,7 +19,7 @@ struct st_vec2f
 		float axes[2];
 	};
 
-	st_VECN_FUNCTIONS(2)
+	ST_VECN_FUNCTIONS(2)
 
 	static st_vec2f zero_vector();
 	static st_vec2f one_vector();
@@ -27,4 +27,4 @@ struct st_vec2f
 	static st_vec2f y_vector();
 };
 
-#undef st_VECN_FUNCTIONS
+#undef ST_VECN_FUNCTIONS

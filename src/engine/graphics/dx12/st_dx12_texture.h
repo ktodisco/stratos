@@ -27,11 +27,15 @@ public:
 
 	void bind(class st_dx12_render_context* context);
 
+	ID3D12Resource* get_resource() const { return _handle.Get(); }
+
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> _handle;
 
 	uint32_t _sampler;
 	uint32_t _srv;
+
+	friend class st_dx12_render_texture;
 };
 
 #endif

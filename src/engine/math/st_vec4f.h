@@ -19,7 +19,7 @@ struct st_vec4f
 		float axes[4];
 	};
 
-	st_VECN_FUNCTIONS(4)
+	ST_VECN_FUNCTIONS(4)
 
 	static st_vec4f zero_vector();
 	static st_vec4f one_vector();
@@ -29,4 +29,4 @@ struct st_vec4f
 	static st_vec4f w_vector();
 };
 
-#undef V_VECN_FUNCTIONS
+#undef ST_VECN_FUNCTIONS

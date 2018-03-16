@@ -66,7 +66,7 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 	_framebuffer->bind(context);
 
 	// Clear viewport.
-	context->set_clear_color(0.0f, 0.0f, 0.3f, 1.0f);
+	context->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
 	context->clear(st_clear_flag_color | st_clear_flag_depth);
 
 	// Draw all static geometry.

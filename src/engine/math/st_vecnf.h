@@ -6,7 +6,7 @@
 
 #include "math/st_math.h"
 
-#define st_VECN_FUNCTIONS(N) \
+#define ST_VECN_FUNCTIONS(N) \
 	/* \
 	** Negate the vector in place. \
 	*/ \

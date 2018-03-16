@@ -48,7 +48,7 @@ st_fullscreen_render_pass::st_fullscreen_render_pass(
 		6);
 
 	// Set up the fullscreen material and state.
-	_default_material = std::make_unique<st_fullscreen_material>(input->get_texture());
+	_default_material = std::make_unique<st_fullscreen_material>(input);
 
 	st_pipeline_state_desc fullscreen_state_desc;
 	_default_material->get_pipeline_state(&fullscreen_state_desc);

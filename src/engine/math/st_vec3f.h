@@ -19,7 +19,7 @@ struct st_vec3f
 		float axes[3];
 	};
 
-	st_VECN_FUNCTIONS(3)
+	ST_VECN_FUNCTIONS(3)
 
 	static st_vec3f zero_vector();
 	static st_vec3f one_vector();
@@ -28,7 +28,7 @@ struct st_vec3f
 	static st_vec3f z_vector();
 };
 
-#undef V_VECN_FUNCTIONS
+#undef ST_VECN_FUNCTIONS
 
 /*
 ** Compute the cross product between two vectors.

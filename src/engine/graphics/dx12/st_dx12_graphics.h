@@ -16,6 +16,12 @@
 #include <Windows.h>
 #include <wrl.h>
 
+#if defined(_DEBUG)
+#define ST_NAME_DX12_OBJECT(object, name) (object)->SetName((LPCWSTR)name)
+#else
+#define ST_NAME_DX12_OBJECT(object, name)
+#endif
+
 enum e_st_primitive_topology_type
 {
 	st_primitive_topology_type_point = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT,

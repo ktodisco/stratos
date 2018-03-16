@@ -36,6 +36,8 @@ private:
 	uint32_t _handle;
 	uint32_t _slot = 0;
 	std::string _name;
+
+	friend class st_gl_render_texture;
 };
 
 #endif

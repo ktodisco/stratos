@@ -8,12 +8,15 @@
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
-#include <graphics/st_texture.h>
+#include <graphics/opengl/st_gl_texture.h>
 
-st_gl_render_texture::st_gl_render_texture(uint32_t width, uint32_t height, e_st_texture_format format)
+st_gl_render_texture::st_gl_render_texture(
+	uint32_t width,
+	uint32_t height,
+	e_st_texture_format format,
+	const st_vec4f& clear)
 {
-	_texture = std::make_unique<st_texture>();
-	_texture->reserve_data(width, height, format);
+	reserve_data(width, height, format);
 }
 
 st_gl_render_texture::~st_gl_render_texture()

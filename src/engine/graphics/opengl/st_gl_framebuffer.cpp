@@ -6,6 +6,8 @@
 
 #include <graphics/opengl/st_gl_framebuffer.h>
 
+#if defined(ST_GRAPHICS_API_OPENGL)
+
 #include <graphics/st_render_texture.h>
 #include <graphics/st_texture.h>
 
@@ -29,7 +31,7 @@ st_gl_framebuffer::st_gl_framebuffer(
 			GL_FRAMEBUFFER,
 			color_attachment,
 			GL_TEXTURE_2D,
-			(*target)->get_texture()->get_handle(),
+			(*target)->get_handle(),
 			0);
 
 		target++;
@@ -42,7 +44,7 @@ st_gl_framebuffer::st_gl_framebuffer(
 			GL_FRAMEBUFFER,
 			GL_DEPTH_STENCIL_ATTACHMENT,
 			GL_TEXTURE_2D,
-			depth_stencil->get_texture()->get_handle(),
+			depth_stencil->get_handle(),
 			0);
 	}
 
@@ -80,3 +82,5 @@ void st_gl_framebuffer::unbind(class st_render_context* context)
 	GLenum target[] = { GL_BACK_LEFT };
 	glDrawBuffers(1, target);
 }
+
+#endif

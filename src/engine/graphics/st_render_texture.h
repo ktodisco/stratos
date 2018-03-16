@@ -25,6 +25,10 @@ typedef st_dx12_render_texture st_platform_render_texture;
 class st_render_texture : public st_platform_render_texture
 {
 public:
-	st_render_texture(uint32_t width, uint32_t height, e_st_texture_format format) :
-		st_platform_render_texture(width, height, format) {}
+	st_render_texture(
+		uint32_t width,
+		uint32_t height,
+		e_st_texture_format format,
+		st_vec4f clear) :
+		st_platform_render_texture(width, height, format, clear) {}
 };

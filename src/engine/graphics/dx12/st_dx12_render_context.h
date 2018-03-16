@@ -10,6 +10,8 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <math/st_vec4f.h>
+
 #include <cstdint>
 #include <string>
 
@@ -47,6 +49,11 @@ public:
 	void set_sampler_table(uint32_t offset);
 	void set_constant_buffer_table(uint32_t offset);
 
+	void set_render_targets(
+		uint32_t count,
+		class st_render_texture** targets,
+		class st_render_texture* depth_stencil);
+
 	void clear(unsigned int clear_flags);
 	void draw(const struct st_static_drawcall& drawcall);
 	void draw(const struct st_dynamic_drawcall& drawcall);
@@ -54,6 +61,10 @@ public:
 	// TODO: These are temporary and a generic solution is needed.
 	void transition_backbuffer_to_target();
 	void transition_backbuffer_to_present();
+
+	void transition_targets(
+		uint32_t count,
+		D3D12_RESOURCE_BARRIER* barriers);
 
 	void begin_loading();
 	void end_loading();
@@ -74,6 +85,15 @@ public:
 		e_st_texture_format format,
 		void* data,
 		ID3D12Resource** resource,
+		uint32_t* sampler_offset,
+		uint32_t* srv_offset);
+	void create_target(
+		uint32_t width,
+		uint32_t height,
+		e_st_texture_format format,
+		const st_vec4f& clear,
+		ID3D12Resource** resource,
+		uint32_t* rtv_offset,
 		uint32_t* sampler_offset,
 		uint32_t* srv_offset);
 	void create_constant_buffer(
@@ -112,12 +132,15 @@ private:
 
 	uint32_t _rtv_descriptor_size = 0;
 	uint32_t _rtv_slot = 0;
+	uint32_t _dsv_descriptor_size = 0;
+	uint32_t _dsv_slot = 0;
 	uint32_t _cbv_srv_descriptor_size = 0;
 	uint32_t _cbv_srv_slot = 0;
 	uint32_t _sampler_descriptor_size = 0;
 	uint32_t _sampler_slot = 0;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE _rtv_handle = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE _dsv_handle = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE _cbv_srv_handle = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE _sampler_handle = {};
 
@@ -136,8 +159,12 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Fence> _fence;
 	uint64_t _fence_value = 0;
 
+	// State tracking.
 	float _clear_color[4] = { 0 };
 	uint32_t _frame_index = 0;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE _bound_targets[8] = {};
+	D3D12_CPU_DESCRIPTOR_HANDLE _bound_depth_stencil;
 };
 
 #endif
