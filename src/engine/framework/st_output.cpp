@@ -8,6 +8,7 @@
 
 #include <framework/st_frame_params.h>
 
+#include <graphics/st_deferred_light_render_pass.h>
 #include <graphics/st_fullscreen_render_pass.h>
 #include <graphics/st_gbuffer_render_pass.h>
 #include <graphics/st_material.h>
@@ -44,11 +45,28 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_texture_format_d24_unorm_s8_uint,
 		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }));
 
+	_deferred_target = std::make_unique<st_render_texture>(
+		_window->get_width(),
+		_window->get_height(),
+		st_texture_format_r8g8b8a8_unorm,
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
+	_deferred_depth = std::make_unique<st_render_texture>(
+		_window->get_width(),
+		_window->get_height(),
+		st_texture_format_d24_unorm_s8_uint,
+		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }));
+
 	_gbuffer_pass = std::make_unique<st_gbuffer_render_pass>(
 		_gbuffer_albedo_target.get(),
 		_gbuffer_normal_target.get(),
 		_depth_stencil_target.get());
-	_fullscreen_pass = std::make_unique<st_fullscreen_render_pass>(
+	_deferred_pass = std::make_unique<st_deferred_light_render_pass>(
+		_gbuffer_albedo_target.get(),
+		_gbuffer_normal_target.get(),
+		_depth_stencil_target.get(),
+		_deferred_target.get(),
+		_deferred_depth.get());
+	_passthrough_pass = std::make_unique<st_fullscreen_render_pass>(
 		_gbuffer_normal_target.get());
 	_ui_pass = std::make_unique<st_ui_render_pass>();
 }
@@ -73,10 +91,11 @@ void st_output::update(st_frame_params* params)
 	params->_height = height;
 
 	_gbuffer_pass->render(_render_context, params);
+	_deferred_pass->render(_render_context, params);
 
 	_render_context->transition_backbuffer_to_target();
 
-	_fullscreen_pass->render(_render_context, params);
+	_passthrough_pass->render(_render_context, params);
 	_ui_pass->render(_render_context, params);
 
 	// Swap the frame buffers and release the context.

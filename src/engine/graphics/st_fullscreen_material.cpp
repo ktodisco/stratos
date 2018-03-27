@@ -14,7 +14,6 @@
 st_fullscreen_material::st_fullscreen_material(st_texture* texture) :
 	_texture(texture)
 {
-	_texture = texture;
 }
 
 st_fullscreen_material::~st_fullscreen_material()

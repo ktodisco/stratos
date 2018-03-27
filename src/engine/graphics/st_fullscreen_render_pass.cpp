@@ -77,7 +77,7 @@ void st_fullscreen_render_pass::render(st_render_context* context, const st_fram
 	_default_material->bind(context, identity, identity, identity);
 
 	st_static_drawcall draw_call;
-	draw_call._name = "st_model_component";
+	draw_call._name = "fullscreen_quad";
 	draw_call._transform = identity;
 	_fullscreen_quad->draw(draw_call);
 

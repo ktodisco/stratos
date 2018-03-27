@@ -31,6 +31,9 @@ public:
 private:
 	size_t _size;
 	Microsoft::WRL::ComPtr<ID3D12Resource> _constant_buffer;
+	// TODO: The constant buffer view offset, as well as other shader resource view
+	// offsets, should be managed by an independent class which can group commonly
+	// accessed resources and create contiguous views for them.
 	uint32_t _constant_buffer_offset = 0;
 	uint8_t* _constant_buffer_head = nullptr;
 };

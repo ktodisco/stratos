@@ -27,6 +27,7 @@ enum e_st_shader
 	st_shader_font,
 	st_shader_gbuffer,
 	st_shader_fullscreen,
+	st_shader_deferred_light,
 };
 
 class st_shader_manager
