@@ -32,4 +32,6 @@ private:
 	class st_texture* _albedo;
 	class st_texture* _normal;
 	class st_texture* _depth;
+
+	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 };

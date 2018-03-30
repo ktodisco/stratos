@@ -23,6 +23,8 @@ st_dx12_texture::~st_dx12_texture()
 
 void st_dx12_texture::load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data)
 {
+	_format = format;
+
 	st_dx12_render_context::get()->create_texture(
 		width,
 		height,

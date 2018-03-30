@@ -11,7 +11,7 @@
 
 st_button::st_button(const char* text, float x, float y, st_frame_params* params)
 {
-	extern st_font* g_font;
+	extern std::unique_ptr<st_font> g_font;
 	g_font->print(params, text, x, y, k_text_color, &_min, &_max);
 
 	if (get_hover(params))

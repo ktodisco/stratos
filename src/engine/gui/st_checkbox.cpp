@@ -13,7 +13,7 @@ st_checkbox::st_checkbox(bool state, const char* text, float x, float y, st_fram
 {
 	st_vec2f text_min, text_max;
 
-	extern st_font* g_font;
+	extern std::unique_ptr<st_font> g_font;
 	g_font->print(params, text, x + k_checkbox_offset, y, k_text_color, &text_min, &text_max);
 
 	_min = { x, text_min.y };

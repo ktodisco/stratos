@@ -28,10 +28,13 @@ public:
 	void bind(class st_dx12_render_context* context);
 
 	ID3D12Resource* get_resource() const { return _handle.Get(); }
+	e_st_texture_format get_format() const { return _format; }
 
-private:
+
+protected:
 	Microsoft::WRL::ComPtr<ID3D12Resource> _handle;
 
+	e_st_texture_format _format;
 	uint32_t _sampler;
 	uint32_t _srv;
 

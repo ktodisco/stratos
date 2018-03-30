@@ -71,8 +71,4 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 	}
 }
 
-void st_gl_constant_buffer::commit(class st_gl_render_context* context)
-{
-}
-
 #endif

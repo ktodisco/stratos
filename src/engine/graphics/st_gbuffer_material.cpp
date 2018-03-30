@@ -9,6 +9,7 @@
 #include <graphics/st_constant_buffer.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_context.h>
+#include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
 
 #include <cassert>
@@ -27,6 +28,10 @@ st_gbuffer_material::st_gbuffer_material(const char* texture_file) :
 		assert(false);
 	}
 	_texture->set_meta("u_texture", 0);
+
+	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table->add_constant_buffer(_view_buffer.get());
+	_resource_table->add_shader_resource(_texture.get());
 }
 
 st_gbuffer_material::~st_gbuffer_material()
@@ -57,7 +62,5 @@ void st_gbuffer_material::bind(
 	cb_data._mvp = mvp;
 	_view_buffer->update(context, &cb_data);
 
-	_view_buffer->commit(context);
-
-	_texture->bind(context);
+	_resource_table->bind(context);
 }

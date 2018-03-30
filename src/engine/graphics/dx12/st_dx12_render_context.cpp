@@ -8,6 +8,7 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <core/st_core.h>
 #include <graphics/dx12/st_dx12_pipeline_state.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_render_texture.h>
@@ -479,14 +480,19 @@ void st_dx12_render_context::set_render_targets(
 
 void st_dx12_render_context::clear(unsigned int clear_flags)
 {
-	// TODO: This needs to clear multiple render targets.
 	if (clear_flags & st_clear_flag_color)
 	{
-		_command_list->ClearRenderTargetView(
-			_bound_targets[0],
-			_clear_color,
-			0,
-			nullptr);
+		for (uint32_t target_itr = 0; target_itr < 8; ++target_itr)
+		{
+			if (_bound_targets[target_itr].ptr)
+			{
+				_command_list->ClearRenderTargetView(
+					_bound_targets[target_itr],
+					_clear_color,
+					0,
+					nullptr);
+			}
+		}
 	}
 
 	if (clear_flags & st_clear_flag_depth)
@@ -859,41 +865,6 @@ void st_dx12_render_context::create_texture(
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 
-	// Create the sampler.
-	*sampler_offset = _sampler_slot;
-
-	D3D12_SAMPLER_DESC sampler_desc = {};
-	sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler_desc.MinLOD = 0;
-	sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
-	sampler_desc.MipLODBias = 0.0f;
-	sampler_desc.MaxAnisotropy = 1;
-	sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->GetCPUDescriptorHandleForHeapStart();
-	sampler_handle.ptr += _sampler_descriptor_size * _sampler_slot;
-	_device->CreateSampler(&sampler_desc, sampler_handle);
-
-	_sampler_slot++;
-
-	// Create the shader resource view.
-	*srv_offset = _cbv_srv_slot;
-
-	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srv_desc.Format = real_format;
-	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srv_desc.Texture2D.MipLevels = 1;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_handle = _cbv_srv_heap->GetCPUDescriptorHandleForHeapStart();
-	cbv_srv_handle.ptr += _cbv_srv_descriptor_size * _cbv_srv_slot;
-	_device->CreateShaderResourceView(*resource, &srv_desc, cbv_srv_handle);
-
-	_cbv_srv_slot++;
-
 	// TODO: It's not the most elegant to wait on each texture to load synchronously.
 	end_loading();
 }
@@ -908,6 +879,8 @@ void st_dx12_render_context::create_target(
 	uint32_t* sampler_offset,
 	uint32_t* srv_offset)
 {
+	begin_loading();
+
 	D3D12_RESOURCE_FLAGS flags;
 	D3D12_RESOURCE_STATES resource_state;
 
@@ -969,7 +942,7 @@ void st_dx12_render_context::create_target(
 
 	if (format == st_texture_format_d24_unorm_s8_uint)
 	{
-		ST_NAME_DX12_OBJECT(*resource, "Depth-Stencil Target");
+		ST_NAME_DX12_OBJECT(*resource, str_to_wstr("Depth-Stencil Target").c_str());
 
 		// Create the depth/stencil view.
 		*rtv_offset = _dsv_slot;
@@ -979,10 +952,17 @@ void st_dx12_render_context::create_target(
 		_device->CreateDepthStencilView(*resource, nullptr, dsv_handle);
 
 		_dsv_slot++;
+
+		// TODO: There is an order issue with the states here.
+		/*_command_list->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+			(*resource),
+				D3D12_RESOURCE_STATE_DEPTH_WRITE,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));*/
 	}
 	else
 	{
-		ST_NAME_DX12_OBJECT(*resource, "Render Target");
+		ST_NAME_DX12_OBJECT(*resource, str_to_wstr("Render Target").c_str());
 
 		// Create the render target view.
 		*rtv_offset = _rtv_slot;
@@ -993,59 +973,68 @@ void st_dx12_render_context::create_target(
 
 		_rtv_slot++;
 
-		// Create the sampler.
-		*sampler_offset = _sampler_slot;
-
-		D3D12_SAMPLER_DESC sampler_desc = {};
-		sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		sampler_desc.MinLOD = 0;
-		sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
-		sampler_desc.MipLODBias = 0.0f;
-		sampler_desc.MaxAnisotropy = 1;
-		sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-
-		D3D12_CPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->GetCPUDescriptorHandleForHeapStart();
-		sampler_handle.ptr += _sampler_descriptor_size * _sampler_slot;
-		_device->CreateSampler(&sampler_desc, sampler_handle);
-
-		_sampler_slot++;
-
-		// Create the shader resource view.
-		*srv_offset = _cbv_srv_slot;
-
-		D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_handle = _cbv_srv_heap->GetCPUDescriptorHandleForHeapStart();
-		cbv_srv_handle.ptr += _cbv_srv_descriptor_size * _cbv_srv_slot;
-		_device->CreateShaderResourceView(*resource, nullptr, cbv_srv_handle);
-
-		_cbv_srv_slot++;
+		_command_list->ResourceBarrier(1,
+			&CD3DX12_RESOURCE_BARRIER::Transition(
+			(*resource),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
 
-	_command_list->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			(*resource),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+	end_loading();
 }
 
-void st_dx12_render_context::create_constant_buffer(
+void st_dx12_render_context::create_constant_buffer_view(
 	D3D12_GPU_VIRTUAL_ADDRESS gpu_address,
-	size_t size,
-	uint32_t* cbv_offset)
+	size_t size)
 {
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc;
 	cbv_desc.BufferLocation = gpu_address;
 	cbv_desc.SizeInBytes = align_value(size, 256);
-
-	*cbv_offset = _cbv_srv_slot;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->GetCPUDescriptorHandleForHeapStart();
 	cbv_handle.ptr += _cbv_srv_descriptor_size * _cbv_srv_slot;
 	_device->CreateConstantBufferView(&cbv_desc, cbv_handle);
 
 	_cbv_srv_slot++;
+}
+
+void st_dx12_render_context::create_shader_resource_view(
+	ID3D12Resource* resource,
+	e_st_texture_format format)
+{
+	// Create the shader resource view.
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srv_desc.Format = (DXGI_FORMAT)format;
+	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srv_desc.Texture2D.MipLevels = 1;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_handle = _cbv_srv_heap->GetCPUDescriptorHandleForHeapStart();
+	cbv_srv_handle.ptr += _cbv_srv_descriptor_size * _cbv_srv_slot;
+	_device->CreateShaderResourceView(resource, &srv_desc, cbv_srv_handle);
+
+	_cbv_srv_slot++;
+}
+
+void st_dx12_render_context::create_shader_sampler()
+{
+	// Create the sampler.
+	D3D12_SAMPLER_DESC sampler_desc = {};
+	sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	sampler_desc.MinLOD = 0;
+	sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
+	sampler_desc.MipLODBias = 0.0f;
+	sampler_desc.MaxAnisotropy = 1;
+	sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->GetCPUDescriptorHandleForHeapStart();
+	sampler_handle.ptr += _sampler_descriptor_size * _sampler_slot;
+	_device->CreateSampler(&sampler_desc, sampler_handle);
+
+	_sampler_slot++;
 }
 
 st_dx12_render_context* st_dx12_render_context::get()

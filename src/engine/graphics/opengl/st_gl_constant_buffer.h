@@ -25,8 +25,6 @@ public:
 
 	void update(const class st_gl_render_context* context, void* data);
 
-	void commit(class st_gl_render_context* context);
-
 private:
 	struct st_gl_constant
 	{

@@ -86,6 +86,8 @@ private:
 	std::unique_ptr<class st_constant_buffer> _view_buffer = nullptr;
 	std::string _texture_file;
 	std::unique_ptr<st_texture> _texture;
+
+	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 };
 
 /*
@@ -121,6 +123,8 @@ public:
 private:
 	std::unique_ptr<class st_constant_buffer> _color_buffer = nullptr;
 	st_vec3f _color;
+
+	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 };
 
 /*
@@ -145,4 +149,6 @@ public:
 
 private:
 	std::unique_ptr<class st_constant_buffer> _phong_buffer = nullptr;
+
+	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 };

@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 
 class st_dx12_render_texture : public st_texture
 {
@@ -26,6 +27,8 @@ public:
 		e_st_texture_format format,
 		const st_vec4f& clear);
 	~st_dx12_render_texture();
+
+	void set_name(std::string name);
 
 	uint32_t get_rtv_offset() const { return _rtv; }
 

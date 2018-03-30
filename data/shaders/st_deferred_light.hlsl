@@ -11,13 +11,12 @@ struct ps_input
 
 Texture2D albedo_texture : register(t0);
 Texture2D normal_texture : register(t1);
-Texture2D depth_texture : register(t2);
 
 // Light constants.
-float3 light_dir = normalize(float3(-1.0, -1.0, -1.0));
-float3 ambient = float3(0.2, 0.2, 0.2);
-float3 diffuse = float3(0.5, 0.5, 0.5);
-float3 specular = float3(0.5, 0.5, 0.5);
+static float3 light_dir = normalize(float3(-1.0, -1.0, -1.0));
+static float3 ambient = float3(0.2, 0.2, 0.2);
+static float3 diffuse = float3(0.5, 0.5, 0.5);
+static float3 specular = float3(0.5, 0.5, 0.5);
 
 ps_input vs_main(vs_input input)
 {
@@ -39,7 +38,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float3 to_light = -light_dir;
 	
 	float3 diffuse_color = diffuse * max(dot(to_light, normal), 0) * albedo;
-	float3 lit_color = ambient + diffuse_color;
+	float3 lit_color = diffuse_color + (ambient * albedo);
 	
 	return float4(lit_color, 1.0f);
 };

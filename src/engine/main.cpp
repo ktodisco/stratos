@@ -47,7 +47,7 @@
 #include <unistd.h>
 #endif
 
-st_font* g_font = nullptr;
+std::unique_ptr<st_font> g_font = nullptr;
 
 static void set_root_path(const char* exepath);
 
@@ -75,7 +75,7 @@ int main(int argc, const char** argv)
 	std::unique_ptr<st_output> output = std::make_unique<st_output>(window.get(), render.get());
 
 	// Create camera.
-	st_camera* camera = new st_camera({ 0.0f, 7.0f, 20.0f });
+	std::unique_ptr<st_camera> camera = std::make_unique<st_camera>(st_vec3f({ 0.0f, 7.0f, 20.0f }));
 	st_quatf rotation;
 	rotation.make_axis_angle(st_vec3f::y_vector(), st_degrees_to_radians(180.0f));
 	camera->rotate(rotation);
@@ -83,31 +83,28 @@ int main(int argc, const char** argv)
 	camera->rotate(rotation);
 
 	// Create the default font:
-	g_font = new st_font("VeraMono.ttf", 16.0f, 512, 512);
-
-	// Set up a test for the phong material.
-	st_model_data test_model;
-	ply_to_model("data/models/bunny_med_res.ply", &test_model);
-
-	st_entity test_entity;
-	st_gbuffer_material* test_material = new st_gbuffer_material("");
-	st_model_component model_component(&test_entity, &test_model, test_material);
-	sim->add_entity(&test_entity);
-
-	// The bunny is rather small, so scale.
-	test_entity.scale(40.0f);
-	test_entity.translate({ -2.0f, 0.0f, 0.0f });
+	g_font = std::make_unique<st_font>("VeraMono.ttf", 16.0f, 512, 512);
 
 	// Set up a test for the unlit texture material.
-	st_model_data unlit_model;
-	egg_to_model("data/models/cube.egg", &unlit_model);
+	st_model_data pbr_model;
+	ply_to_model("data/models/sphere.ply", &pbr_model);
 
-	st_entity unlit_entity;
-	st_gbuffer_material* unlit_material = new st_gbuffer_material("data/textures/test.png");
-	st_model_component unlit_model_component(&unlit_entity, &unlit_model, unlit_material);
-	sim->add_entity(&unlit_entity);
+	st_entity pbr_entity;
+	st_gbuffer_material pbr_material("");
+	st_model_component unlit_model_component(&pbr_entity, &pbr_model, &pbr_material);
+	sim->add_entity(&pbr_entity);
 
-	unlit_entity.translate({ 2.0f, 0.0f, 0.0f });
+	pbr_entity.scale(4.0f);
+
+	st_model_data floor_model;
+	ply_to_model("data/models/plane.ply", &floor_model);
+
+	st_entity floor_entity;
+	st_gbuffer_material floor_material("data/textures/floor.png");
+	st_model_component floor_model_component(&floor_entity, &floor_model, &floor_material);
+	sim->add_entity(&floor_entity);
+
+	floor_entity.scale(5.0f);
 
 	window->show();
 
@@ -141,8 +138,6 @@ int main(int argc, const char** argv)
 		// Draw to screen.
 		output->update(&params);
 	}
-
-	delete camera;
 
 	st_job::shutdown();
 

@@ -26,15 +26,12 @@ public:
 
 	void update(const class st_dx12_render_context* context, void* data);
 
-	void commit(class st_dx12_render_context* context);
+	D3D12_GPU_VIRTUAL_ADDRESS get_virtual_address() const { return _constant_buffer->GetGPUVirtualAddress(); }
+	size_t get_size() const { return _size; }
 
 private:
 	size_t _size;
 	Microsoft::WRL::ComPtr<ID3D12Resource> _constant_buffer;
-	// TODO: The constant buffer view offset, as well as other shader resource view
-	// offsets, should be managed by an independent class which can group commonly
-	// accessed resources and create contiguous views for them.
-	uint32_t _constant_buffer_offset = 0;
 	uint8_t* _constant_buffer_head = nullptr;
 };
 

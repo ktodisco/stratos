@@ -10,6 +10,7 @@
 #include <graphics/st_constant_buffer.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
+#include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_vertex_format.h>
 
@@ -31,6 +32,10 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 		assert(false);
 	}
 	_texture->set_meta("u_texture", 0);
+
+	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table->add_constant_buffer(_view_buffer.get());
+	_resource_table->add_shader_resource(_texture.get());
 }
 
 st_unlit_texture_material::~st_unlit_texture_material()
@@ -60,9 +65,7 @@ void st_unlit_texture_material::bind(
 	cb_data._mvp = mvp;
 	_view_buffer->update(context, &cb_data);
 
-	_view_buffer->commit(context);
-
-	_texture->bind(context);
+	_resource_table->bind(context);
 }
 
 st_constant_color_material::st_constant_color_material()
@@ -70,6 +73,9 @@ st_constant_color_material::st_constant_color_material()
 	_color_buffer = std::make_unique<st_constant_buffer>(sizeof(st_constant_color_cb));
 	_color_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
 	_color_buffer->add_constant("u_color", st_shader_constant_type_vec3);
+
+	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table->add_constant_buffer(_color_buffer.get());
 }
 
 st_constant_color_material::~st_constant_color_material()
@@ -99,13 +105,17 @@ void st_constant_color_material::bind(
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
 	_color_buffer->update(context, &cb_data);
-	_color_buffer->commit(context);
+
+	_resource_table->bind(context);
 }
 
 st_phong_material::st_phong_material()
 {
 	_phong_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
 	_phong_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
+
+	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table->add_constant_buffer(_phong_buffer.get());
 }
 
 st_phong_material::~st_phong_material()
@@ -125,7 +135,7 @@ void st_phong_material::bind(
 	cb_data._mvp = mvp;
 	_phong_buffer->update(context, &cb_data);
 
-	_phong_buffer->commit(context);
+	_resource_table->bind(context);
 }
 
 void st_phong_material::get_pipeline_state(

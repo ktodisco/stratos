@@ -34,11 +34,13 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		_window->get_height(),
 		st_texture_format_r8g8b8a8_unorm,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
+	_gbuffer_albedo_target->set_name("Albedo Target");
 	_gbuffer_normal_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
 		st_texture_format_r8g8b8a8_unorm,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
+	_gbuffer_normal_target->set_name("Normal Target");
 	_depth_stencil_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
@@ -50,6 +52,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		_window->get_height(),
 		st_texture_format_r8g8b8a8_unorm,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
+	_deferred_target->set_name("Deferred Target");
 	_deferred_depth = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
@@ -67,7 +70,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		_deferred_target.get(),
 		_deferred_depth.get());
 	_passthrough_pass = std::make_unique<st_fullscreen_render_pass>(
-		_gbuffer_normal_target.get());
+		_deferred_target.get());
 	_ui_pass = std::make_unique<st_ui_render_pass>();
 }
 

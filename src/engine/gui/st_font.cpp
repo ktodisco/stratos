@@ -12,6 +12,7 @@
 #include <graphics/st_material.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
+#include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
 #include <math/st_vec2f.h>
 
@@ -150,9 +151,13 @@ st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 	_constant_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
 	_constant_buffer->add_constant("u_color", st_shader_constant_type_vec3);
 
+	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table->add_constant_buffer(_constant_buffer.get());
+
 	if (_texture)
 	{
 		_texture->set_meta("u_texture", 0);
+		_resource_table->add_shader_resource(_texture);
 	}
 }
 
@@ -186,10 +191,6 @@ void st_font_material::bind(
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
 	_constant_buffer->update(context, &cb_data);
-	_constant_buffer->commit(context);
 
-	if (_texture)
-	{
-		_texture->bind(context);
-	}
+	_resource_table->bind(context);
 }

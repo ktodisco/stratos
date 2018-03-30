@@ -8,6 +8,7 @@
 
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_context.h>
+#include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture.h>
 
@@ -19,6 +20,11 @@ st_deferred_light_material::st_deferred_light_material(
 	_normal(normal_texture),
 	_depth(depth_texture)
 {
+	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table->add_shader_resource(_albedo);
+	_resource_table->add_shader_resource(_normal);
+	// TODO: The d24_s8 format cannot be used with an SRV.
+	//_resource_table->add_shader_resource(_depth);
 }
 
 st_deferred_light_material::~st_deferred_light_material()
@@ -44,7 +50,5 @@ void st_deferred_light_material::bind(
 	_normal->set_meta("u_normal", 1);
 	_depth->set_meta("u_depth", 2);
 
-	_albedo->bind(context);
-	_normal->bind(context);
-	_depth->bind(context);
+	_resource_table->bind(context);
 }

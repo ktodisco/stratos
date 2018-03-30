@@ -8,12 +8,15 @@
 
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
+#include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture.h>
 
 st_fullscreen_material::st_fullscreen_material(st_texture* texture) :
 	_texture(texture)
 {
+	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table->add_shader_resource(_texture);
 }
 
 st_fullscreen_material::~st_fullscreen_material()
@@ -36,5 +39,5 @@ void st_fullscreen_material::bind(
 	const st_mat4f& transform)
 {
 	_texture->set_meta("u_texture", 0);
-	_texture->bind(context);
+	_resource_table->bind(context);
 }

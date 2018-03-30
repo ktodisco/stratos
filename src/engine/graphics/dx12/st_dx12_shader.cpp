@@ -8,23 +8,13 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <core/st_core.h>
+
 #include <cassert>
 
 #include <d3dcompiler.h>
 
 extern char g_root_path[256];
-
-std::wstring s2ws(const std::string& s)
-{
-	int len;
-	int slength = (int)s.length() + 1;
-	len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0); 
-	wchar_t* buf = new wchar_t[len];
-	MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
-	std::wstring r(buf);
-	delete[] buf;
-	return r;
-}
 
 st_dx12_shader::st_dx12_shader(const char* source, uint8_t type)
 {
@@ -35,7 +25,10 @@ st_dx12_shader::st_dx12_shader(const char* source, uint8_t type)
 #endif
 
 	Microsoft::WRL::ComPtr<ID3DBlob> errors;
-	std::wstring full_path = s2ws(g_root_path) + s2ws(source) + s2ws(".hlsl");
+	std::wstring full_path =
+		str_to_wstr(g_root_path) +
+		str_to_wstr(source) +
+		str_to_wstr(".hlsl");
 
 	if (type & st_shader_type_vertex)
 	{

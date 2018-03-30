@@ -6,13 +6,6 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-// Constant buffer interface:
-// constructor takes size
-// call add_variable with string name and type for each variable (opengl benefit)
-// update with cb struct memcpys on dx12 and name/offset meta is used for opengl
-//		opengl probably needs the context passed to get current program and query locations
-// commit is called with the context to update descriptor tables on DX
-
 #include <graphics/st_graphics.h>
 
 #if defined(ST_GRAPHICS_API_OPENGL)

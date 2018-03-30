@@ -43,10 +43,12 @@ void st_dx12_framebuffer::bind(st_render_context* context)
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
 	}
 
-	barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+	// TODO: There seems to be a mismatch in order here that puts the depth
+	// target in an unexpected state.
+	/*barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
 		_depth_stencil->get_resource(),
 		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_DEPTH_WRITE));
+		D3D12_RESOURCE_STATE_DEPTH_WRITE));*/
 
 	context->transition_targets(_target_count, &barriers[0]);
 
@@ -67,10 +69,12 @@ void st_dx12_framebuffer::unbind(st_render_context* context)
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
 
-	barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
+	// TODO: There seems to be a mismatch in order here that puts the depth
+	// target in an unexpected state.
+	/*barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
 		_depth_stencil->get_resource(),
 		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));*/
 
 	context->transition_targets(_target_count, &barriers[0]);
 

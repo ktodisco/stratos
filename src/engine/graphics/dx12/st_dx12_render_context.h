@@ -96,12 +96,20 @@ public:
 		uint32_t* rtv_offset,
 		uint32_t* sampler_offset,
 		uint32_t* srv_offset);
-	void create_constant_buffer(
+
+	void create_constant_buffer_view(
 		D3D12_GPU_VIRTUAL_ADDRESS gpu_address,
-		size_t size,
-		uint32_t* cbv_offset);
+		size_t size);
+	void create_shader_resource_view(
+		ID3D12Resource* resource,
+		e_st_texture_format format);
+	void create_shader_sampler();
 
 	ID3D12RootSignature* get_root_signature() { return _root_signature.Get(); }
+
+	// TODO: These should be protected or private.
+	uint32_t get_first_cbv_srv_slot() const { return _cbv_srv_slot; }
+	uint32_t get_first_sampler_slot() const { return _sampler_slot; }
 
 	static st_dx12_render_context* get();
 
