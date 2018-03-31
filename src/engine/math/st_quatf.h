@@ -23,6 +23,9 @@ struct st_quatf
 		float axes[4];
 	};
 
+	st_quatf();
+	st_quatf(float nx, float ny, float nz, float nw);
+
 	/*
 	** Build a quaternion for an axis and angle.
 	** @param axis Normalized axis.

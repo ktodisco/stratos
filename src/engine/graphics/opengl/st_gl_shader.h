@@ -22,6 +22,7 @@ class st_gl_uniform
 	friend class st_gl_shader;
 
 public:
+	void set(float val);
 	void set(const struct st_vec2f& vec);
 	void set(const struct st_vec3f& vec);
 	void set(const struct st_vec4f& vec);

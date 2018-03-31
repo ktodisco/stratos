@@ -6,11 +6,13 @@
 
 #include <graphics/st_deferred_light_render_pass.h>
 
+#include <graphics/st_constant_buffer.h>
 #include <graphics/st_deferred_light_material.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_framebuffer.h>
 #include <graphics/st_geometry.h>
 #include <graphics/st_pipeline_state.h>
+#include <graphics/st_point_light.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
@@ -49,10 +51,16 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		(uint16_t*)indices,
 		6);
 
+	_light_buffer = std::make_unique<st_constant_buffer>(sizeof(st_point_light_cb));
+	_light_buffer->add_constant("u_light_position", st_shader_constant_type_vec4);
+	_light_buffer->add_constant("u_light_color", st_shader_constant_type_vec4);
+	_light_buffer->add_constant("u_light_power", st_shader_constant_type_float);
+
 	_default_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
 		normal_buffer,
-		depth_buffer);
+		depth_buffer,
+		_light_buffer.get());
 
 	st_pipeline_state_desc deferred_light_state_desc;
 	_default_material->get_pipeline_state(&deferred_light_state_desc);
@@ -69,6 +77,11 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		1,
 		targets,
 		output_depth);
+
+	_light = std::make_unique<st_point_light>(
+		st_vec3f({ -1.0f, -1.0f, -1.0f }),
+		st_vec3f({ 1.0f, 1.0f, 0.6f }),
+		75.0f);
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()
@@ -87,6 +100,14 @@ void st_deferred_light_render_pass::render(
 	context->set_pipeline_state(_pipeline_state.get());
 
 	_framebuffer->bind(context);
+
+	// Update the light information.
+	st_point_light_cb light_data;
+	light_data._position = st_vec4f(_light->get_position(), 0.0f);
+	light_data._color = st_vec4f(_light->get_color(), 0.0f);
+	light_data._power = _light->get_power();
+
+	_light_buffer->update(context, &light_data);
 
 	_default_material->bind(context, identity, identity, identity);
 

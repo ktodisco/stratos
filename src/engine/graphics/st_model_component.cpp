@@ -23,19 +23,17 @@ st_model_component::st_model_component(st_entity* ent, st_model_data* model, st_
 {
 	assert(model->_vertex_format.is_finalized());
 
-	_geometry = new st_geometry(
+	_geometry = std::make_unique<st_geometry>(
 		&model->_vertex_format,
 		&model->_vertices[0],
-		sizeof(model->_vertices[0]),
-		model->_vertices.size(),
+		(uint32_t)sizeof(model->_vertices[0]),
+		(uint32_t)model->_vertices.size(),
 		&model->_indices[0],
-		model->_indices.size());
+		(uint32_t)model->_indices.size());
 }
 
 st_model_component::~st_model_component()
 {
-	delete _geometry;
-	delete _material;
 }
 
 void st_model_component::update(st_frame_params* params)

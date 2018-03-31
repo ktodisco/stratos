@@ -5,3 +5,15 @@
 */
 
 #include "math/st_quatf.h"
+
+st_quatf::st_quatf()
+{
+}
+
+st_quatf::st_quatf(float nx, float ny, float nz, float nw)
+{
+	x = nx;
+	y = ny;
+	z = nz;
+	w = nw;
+}

@@ -35,6 +35,11 @@ void load_shader(const std::string& filename, std::string& contents)
 
 st_gl_uniform::st_gl_uniform(int32_t location) : _location(location) {}
 
+void st_gl_uniform::set(float val)
+{
+	glUniform1f(_location, val);
+}
+
 void st_gl_uniform::set(const st_vec2f& vec)
 {
 	glUniform2fv(_location, 1, vec.axes);

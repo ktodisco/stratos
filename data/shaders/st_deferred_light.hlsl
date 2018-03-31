@@ -13,10 +13,14 @@ Texture2D albedo_texture : register(t0);
 Texture2D normal_texture : register(t1);
 
 // Light constants.
-static float3 light_dir = normalize(float3(-1.0, -1.0, -1.0));
 static float3 ambient = float3(0.2, 0.2, 0.2);
-static float3 diffuse = float3(0.5, 0.5, 0.5);
-static float3 specular = float3(0.5, 0.5, 0.5);
+
+cbuffer cb0 : register(b0)
+{
+	float3 light_dir;
+	float3 light_color;
+	float light_power;
+}
 
 ps_input vs_main(vs_input input)
 {
@@ -35,9 +39,9 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float3 albedo = albedo_texture.Load(int3(input.position.xy, 0));
 	float3 normal = normal_texture.Load(int3(input.position.xy, 0));
 	
-	float3 to_light = -light_dir;
+	float3 to_light = -normalize(light_dir);
 	
-	float3 diffuse_color = diffuse * max(dot(to_light, normal), 0) * albedo;
+	float3 diffuse_color = max(dot(to_light, normal), 0) * albedo * light_color;
 	float3 lit_color = diffuse_color + (ambient * albedo);
 	
 	return float4(lit_color, 1.0f);

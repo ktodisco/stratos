@@ -6,8 +6,8 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-//#define ST_GRAPHICS_API_OPENGL
-#define ST_GRAPHICS_API_DX12
+#define ST_GRAPHICS_API_OPENGL
+//#define ST_GRAPHICS_API_DX12
 //#define ST_GRAPHICS_API_VULKAN
 
 typedef void* st_graphics_resource;
@@ -19,8 +19,11 @@ enum e_st_clear_flags
 	st_clear_flag_stencil = 4
 };
 
+// TODO: DirectX packing rules do not allow for vec2s or vec3s.
+// It's probably best just to deprecate them.
 enum e_st_shader_constant_type
 {
+	st_shader_constant_type_float,
 	st_shader_constant_type_vec2,
 	st_shader_constant_type_vec3,
 	st_shader_constant_type_vec4,

@@ -9,6 +9,7 @@
 #include "entity/st_component.h"
 
 #include <cstdint>
+#include <memory>
 
 /*
 ** Renderable model component.
@@ -23,5 +24,5 @@ public:
 
 private:
 	class st_material* _material;
-	class st_geometry* _geometry;
+	std::unique_ptr<class st_geometry> _geometry = nullptr;
 };

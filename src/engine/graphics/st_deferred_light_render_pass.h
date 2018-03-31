@@ -29,4 +29,7 @@ private:
 	std::unique_ptr<class st_pipeline_state> _pipeline_state = nullptr;
 
 	std::unique_ptr<class st_framebuffer> _framebuffer = nullptr;
+
+	std::unique_ptr<class st_point_light> _light = nullptr;
+	std::unique_ptr<class st_constant_buffer> _light_buffer = nullptr;
 };

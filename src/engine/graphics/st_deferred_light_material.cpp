@@ -6,6 +6,7 @@
 
 #include <graphics/st_deferred_light_material.h>
 
+#include <graphics/st_constant_buffer.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_resource_table.h>
@@ -15,12 +16,14 @@
 st_deferred_light_material::st_deferred_light_material(
 	st_texture* albedo_texture,
 	st_texture* normal_texture,
-	st_texture* depth_texture) :
+	st_texture* depth_texture,
+	st_constant_buffer* light_buffer) :
 	_albedo(albedo_texture),
 	_normal(normal_texture),
 	_depth(depth_texture)
 {
 	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table->add_constant_buffer(light_buffer);
 	_resource_table->add_shader_resource(_albedo);
 	_resource_table->add_shader_resource(_normal);
 	// TODO: The d24_s8 format cannot be used with an SRV.

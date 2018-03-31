@@ -47,27 +47,37 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 
 		switch (constant._type)
 		{
+		case st_shader_constant_type_float:
+			{
+				float* val = reinterpret_cast<float*>(data) + offset;
+				uniform.set(*val);
+			}
+			break;
 		case st_shader_constant_type_vec2:
 			{
-				st_vec2f* vec2 = reinterpret_cast<st_vec2f*>(data) + offset;
+				char* data_offset = reinterpret_cast<char*>(data) + offset;
+				st_vec2f* vec2 = reinterpret_cast<st_vec2f*>(data_offset);
 				uniform.set(*vec2);
 			}
 			break;
 		case st_shader_constant_type_vec3:
 			{
-				st_vec3f* vec3 = reinterpret_cast<st_vec3f*>(data) + offset;
+				char* data_offset = reinterpret_cast<char*>(data) + offset;
+				st_vec3f* vec3 = reinterpret_cast<st_vec3f*>(data_offset);
 				uniform.set(*vec3);
 			}
 			break;
 		case st_shader_constant_type_vec4:
 			{
-				st_vec4f* vec4 = reinterpret_cast<st_vec4f*>(data) + offset;
+				char* data_offset = reinterpret_cast<char*>(data) + offset;
+				st_vec4f* vec4 = reinterpret_cast<st_vec4f*>(data_offset);
 				uniform.set(*vec4);
 			}
 			break;
 		case st_shader_constant_type_mat4:
 			{
-				st_mat4f* mat4 = reinterpret_cast<st_mat4f*>(data) + offset;
+				char* data_offset = reinterpret_cast<char*>(data) + offset;
+				st_mat4f* mat4 = reinterpret_cast<st_mat4f*>(data_offset);
 				uniform.set(*mat4);
 			}
 			break;

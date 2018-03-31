@@ -14,6 +14,15 @@
 
 #include <Windows.h>
 
+#define ST_GL_CALL(call) \
+	call; \
+	GLenum er = glGetError(); \
+	if (er != GL_NO_ERROR) \
+	{ \
+		int* brk = 0; \
+		*brk = 0; \
+	}
+
 void gl_message_callback(
 	GLenum source,
 	GLenum type,

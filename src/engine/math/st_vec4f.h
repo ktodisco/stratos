@@ -18,6 +18,10 @@ struct st_vec4f
 		struct { float x, y, z, w; };
 		float axes[4];
 	};
+	
+	st_vec4f();
+	st_vec4f(float nx, float ny, float nz, float nw);
+	st_vec4f(class st_vec3f vec3, float nw);
 
 	ST_VECN_FUNCTIONS(4)
 
