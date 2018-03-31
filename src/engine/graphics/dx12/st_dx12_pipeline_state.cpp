@@ -119,7 +119,6 @@ st_dx12_pipeline_state::st_dx12_pipeline_state(const st_pipeline_state_desc& des
 
 st_dx12_pipeline_state::~st_dx12_pipeline_state()
 {
-	// TODO.
 }
 
 #endif

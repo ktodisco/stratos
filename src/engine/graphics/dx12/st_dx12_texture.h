@@ -27,9 +27,10 @@ public:
 
 	void bind(class st_dx12_render_context* context);
 
+	void set_name(std::string name);
+
 	ID3D12Resource* get_resource() const { return _handle.Get(); }
 	e_st_texture_format get_format() const { return _format; }
-
 
 protected:
 	Microsoft::WRL::ComPtr<ID3D12Resource> _handle;

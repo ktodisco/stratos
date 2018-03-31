@@ -22,7 +22,9 @@ class st_gl_uniform
 	friend class st_gl_shader;
 
 public:
+	void set(const struct st_vec2f& vec);
 	void set(const struct st_vec3f& vec);
+	void set(const struct st_vec4f& vec);
 	void set(const struct st_mat4f& mat);
 	void set(const struct st_mat4f* mats, uint32_t count);
 	void set(const class st_gl_texture& tex, uint32_t unit);

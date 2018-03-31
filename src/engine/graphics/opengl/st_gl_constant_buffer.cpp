@@ -48,12 +48,21 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 		switch (constant._type)
 		{
 		case st_shader_constant_type_vec2:
-			// TODO.
+			{
+				st_vec2f* vec2 = reinterpret_cast<st_vec2f*>(data) + offset;
+				uniform.set(*vec2);
+			}
 			break;
 		case st_shader_constant_type_vec3:
 			{
 				st_vec3f* vec3 = reinterpret_cast<st_vec3f*>(data) + offset;
 				uniform.set(*vec3);
+			}
+			break;
+		case st_shader_constant_type_vec4:
+			{
+				st_vec4f* vec4 = reinterpret_cast<st_vec4f*>(data) + offset;
+				uniform.set(*vec4);
 			}
 			break;
 		case st_shader_constant_type_mat4:

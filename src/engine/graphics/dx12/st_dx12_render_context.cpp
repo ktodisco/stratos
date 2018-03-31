@@ -806,8 +806,6 @@ void st_dx12_render_context::create_texture(
 		assert(false);
 	}
 
-	// TODO: Name the texture, for debugging?
-
 	// Create a subresource footprint. RowPitch must be aligned to D3D12_TEXTURE_DATA_PITCH_ALIGNMENT.
 	D3D12_SUBRESOURCE_FOOTPRINT footprint{};
 	footprint.Format = real_format;

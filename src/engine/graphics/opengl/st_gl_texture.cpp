@@ -27,28 +27,9 @@ st_gl_texture::~st_gl_texture()
 
 void st_gl_texture::reserve_data(uint32_t width, uint32_t height, e_st_texture_format format)
 {
-	// TODO: This is duplicated below and should be consolidated.
 	GLenum pixel_format;
 	GLenum type;
-
-	switch (format)
-	{
-	case st_texture_format_r8_unorm:
-		pixel_format = GL_RED;
-		type = GL_UNSIGNED_BYTE;
-		break;
-	case st_texture_format_r8g8b8a8_unorm:
-		pixel_format = GL_RGBA;
-		type = GL_UNSIGNED_BYTE;
-		break;
-	case st_texture_format_d24_unorm_s8_uint:
-		pixel_format = GL_DEPTH_STENCIL;
-		type = GL_UNSIGNED_INT_24_8;
-		break;
-	default:
-		assert(false);
-		break;
-	}
+	get_pixel_format_and_type(format, pixel_format, type);
 
 	glBindTexture(GL_TEXTURE_2D, _handle);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -63,25 +44,7 @@ void st_gl_texture::load_from_data(uint32_t width, uint32_t height, e_st_texture
 {
 	GLenum pixel_format;
 	GLenum type;
-
-	switch (format)
-	{
-	case st_texture_format_r8_unorm:
-		pixel_format = GL_RED;
-		type = GL_UNSIGNED_BYTE;
-		break;
-	case st_texture_format_r8g8b8a8_unorm:
-		pixel_format = GL_RGBA;
-		type = GL_UNSIGNED_BYTE;
-		break;
-	case st_texture_format_d24_unorm_s8_uint:
-		pixel_format = GL_DEPTH_STENCIL;
-		type = GL_UNSIGNED_INT_24_8;
-		break;
-	default:
-		assert(false);
-		break;
-	}
+	get_pixel_format_and_type(format, pixel_format, type);
 
 	glBindTexture(GL_TEXTURE_2D, _handle);
 	glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
@@ -114,12 +77,42 @@ void st_gl_texture::set_meta(const char* name, const uint32_t slot)
 	_slot = slot;
 }
 
+void st_gl_texture::set_name(std::string name)
+{
+	glObjectLabel(GL_TEXTURE, _handle, name.length(), name.c_str());
+}
+
 void st_gl_texture::bind(class st_gl_render_context* context)
 {
 	const st_gl_shader* shader = context->get_bound_shader();
 
 	st_gl_uniform uniform = shader->get_uniform(_name.c_str());
 	uniform.set(*this, _slot);
+}
+
+void st_gl_texture::get_pixel_format_and_type(
+	e_st_texture_format format,
+	GLenum& pixel_format,
+	GLenum& type)
+{
+	switch (format)
+	{
+	case st_texture_format_r8_unorm:
+		pixel_format = GL_RED;
+		type = GL_UNSIGNED_BYTE;
+		break;
+	case st_texture_format_r8g8b8a8_unorm:
+		pixel_format = GL_RGBA;
+		type = GL_UNSIGNED_BYTE;
+		break;
+	case st_texture_format_d24_unorm_s8_uint:
+		pixel_format = GL_DEPTH_STENCIL;
+		type = GL_UNSIGNED_INT_24_8;
+		break;
+	default:
+		assert(false);
+		break;
+	}
 }
 
 #endif

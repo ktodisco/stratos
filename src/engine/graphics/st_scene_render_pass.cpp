@@ -4,14 +4,17 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_scene_render_pass.h"
+#include <graphics/st_scene_render_pass.h>
 
-#include "framework/st_frame_params.h"
-#include "graphics/st_drawcall.h"
-#include "graphics/st_material.h"
-#include "graphics/st_pipeline_state.h"
-#include "graphics/st_render_context.h"
-#include "graphics/st_render_marker.h"
+#include <framework/st_frame_params.h>
+
+#include <graphics/st_drawcall.h>
+#include <graphics/st_material.h>
+#include <graphics/st_phong_material.h>
+#include <graphics/st_pipeline_state.h>
+#include <graphics/st_render_context.h>
+#include <graphics/st_render_marker.h>
+#include <graphics/st_unlit_texture_material.h>
 #include <graphics/st_vertex_format.h>
 
 st_scene_render_pass::st_scene_render_pass()

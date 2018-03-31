@@ -4,22 +4,24 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_model_component.h"
+#include <graphics/st_model_component.h>
 
-#include "st_animation.h"
-#include "st_model_data.h"
-#include "st_material.h"
-#include "graphics/st_geometry.h"
-#include "graphics/st_vertex_attribute.h"
-#include "graphics/st_vertex_format.h"
+#include <graphics/st_animation.h>
+#include <graphics/st_geometry.h>
+#include <graphics/st_model_data.h>
+#include <graphics/st_material.h>
+#include <graphics/st_vertex_attribute.h>
+#include <graphics/st_vertex_format.h>
 
-#include "entity/st_entity.h"
+#include <entity/st_entity.h>
+
+#include <cassert>
 
 st_model_component::st_model_component(st_entity* ent, st_model_data* model, st_material* material) :
 	st_component(ent),
 	_material(material)
 {
-	// TODO: Assert that the model's format is finalized.
+	assert(model->_vertex_format.is_finalized());
 
 	_geometry = new st_geometry(
 		&model->_vertex_format,

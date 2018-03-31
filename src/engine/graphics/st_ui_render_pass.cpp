@@ -7,12 +7,15 @@
 #include <graphics/st_ui_render_pass.h>
 
 #include <framework/st_frame_params.h>
+
+#include <graphics/st_constant_color_material.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_material.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_vertex_format.h>
+
 #include <gui/st_font.h>
 
 st_ui_render_pass::st_ui_render_pass()

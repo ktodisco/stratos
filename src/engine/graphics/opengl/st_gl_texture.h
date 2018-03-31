@@ -28,6 +28,8 @@ public:
 	// createa texture view class that acts as this information on an individualized basis.
 	void set_meta(const char* name, const uint32_t slot);
 
+	void set_name(std::string name);
+
 	uint32_t get_handle() const { return _handle; }
 
 	void bind(class st_gl_render_context* context);
@@ -36,6 +38,12 @@ protected:
 	uint32_t _handle;
 	uint32_t _slot = 0;
 	std::string _name;
+
+private:
+	void get_pixel_format_and_type(
+		e_st_texture_format format,
+		GLenum& pixel_format,
+		GLenum& type);
 };
 
 #endif

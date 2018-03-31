@@ -8,7 +8,6 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
-#include <core/st_core.h>
 #include <graphics/dx12/st_dx12_render_context.h>
 
 st_dx12_render_texture::st_dx12_render_texture(
@@ -32,11 +31,6 @@ st_dx12_render_texture::st_dx12_render_texture(
 
 st_dx12_render_texture::~st_dx12_render_texture()
 {
-}
-
-void st_dx12_render_texture::set_name(std::string name)
-{
-	ST_NAME_DX12_OBJECT(_handle.Get(), str_to_wstr(name).c_str());
 }
 
 #endif

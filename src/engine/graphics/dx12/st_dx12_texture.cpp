@@ -8,6 +8,8 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <core/st_core.h>
+
 #include <graphics/dx12/st_dx12_render_context.h>
 
 #include <stb_image.h>
@@ -59,6 +61,11 @@ void st_dx12_texture::bind(class st_dx12_render_context* context)
 {
 	context->set_shader_resource_table(_srv);
 	context->set_sampler_table(_sampler);
+}
+
+void st_dx12_texture::set_name(std::string name)
+{
+	ST_NAME_DX12_OBJECT(_handle.Get(), str_to_wstr(name).c_str());
 }
 
 #endif

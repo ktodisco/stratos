@@ -30,12 +30,6 @@ public:
 
 	virtual void get_pipeline_state(
 		struct st_pipeline_state_desc* state_desc) = 0;
-
-protected:
-	// TODO: I think we're getting rid of these?
-	class st_gl_shader* _vs;
-	class st_gl_shader* _fs;
-	class st_gl_program* _program;
 };
 
 #endif

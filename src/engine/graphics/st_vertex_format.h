@@ -46,11 +46,16 @@ public:
 		return _vertex_size;
 	}
 
+	// A format is finalized when its vertex size is filled out.
+	bool is_finalized() const
+	{
+		return get_vertex_size() > 0;
+	}
+
 	void add_attribute(st_vertex_attribute& attribute);
 	void finalize();
 
 private:
-
 	std::vector<st_vertex_attribute> _attributes;
 	uint32_t _vertex_size = 0;
 };

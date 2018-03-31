@@ -68,11 +68,19 @@ void st_gl_framebuffer::bind(class st_render_context* context)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
 
-	// TODO: There's got to be a more clever way to do this.
-	std::vector<GLenum> targets;
-	if (_target_count > 0) targets.push_back(GL_COLOR_ATTACHMENT0);
-	if (_target_count > 1) targets.push_back(GL_COLOR_ATTACHMENT1);
-	glDrawBuffers(_target_count, &targets[0]);
+	GLenum targets[] =
+	{
+		GL_COLOR_ATTACHMENT0,
+		GL_COLOR_ATTACHMENT1,
+		GL_COLOR_ATTACHMENT2,
+		GL_COLOR_ATTACHMENT3,
+		GL_COLOR_ATTACHMENT4,
+		GL_COLOR_ATTACHMENT5,
+		GL_COLOR_ATTACHMENT6,
+		GL_COLOR_ATTACHMENT7,
+	};
+
+	glDrawBuffers(_target_count, targets);
 }
 
 void st_gl_framebuffer::unbind(class st_render_context* context)

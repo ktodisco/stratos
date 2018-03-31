@@ -12,6 +12,8 @@
 #include <graphics/st_vertex_attribute.h>
 #include <graphics/st_vertex_format.h>
 
+#include <cassert>
+
 st_gl_geometry::st_gl_geometry(
 	const st_vertex_format* format,
 	void* vertex_data,
@@ -57,7 +59,7 @@ st_gl_geometry::st_gl_geometry(
 			size = 2;
 			break;
 		default:
-			// TODO: Assert.
+			assert(false);
 			break;
 		}
 

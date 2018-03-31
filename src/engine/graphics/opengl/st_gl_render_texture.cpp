@@ -23,9 +23,4 @@ st_gl_render_texture::~st_gl_render_texture()
 {
 }
 
-void st_gl_render_texture::set_name(std::string name)
-{
-	glObjectLabel(GL_TEXTURE, _handle, name.length(), name.c_str());
-}
-
 #endif

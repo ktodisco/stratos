@@ -26,7 +26,6 @@ struct st_render_target_blend_desc
 
 	uint8_t _write_mask = 0xf;
 
-	// TODO: Logic ops.
 	e_st_logic_op _logic_op = st_logic_op_noop;
 };
 

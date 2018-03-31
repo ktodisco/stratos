@@ -27,8 +27,6 @@ public:
 		e_st_texture_format format,
 		const st_vec4f& clear);
 	~st_gl_render_texture();
-
-	void set_name(std::string name);
 };
 
 #endif
