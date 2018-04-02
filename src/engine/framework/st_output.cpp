@@ -38,7 +38,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 	_gbuffer_normal_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
-		st_texture_format_r8g8b8a8_unorm,
+		st_texture_format_r8g8b8a8_snorm,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
 	_gbuffer_normal_target->set_name("Gbuffer Normal");
 	_depth_stencil_target = std::make_unique<st_render_texture>(

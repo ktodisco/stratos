@@ -43,7 +43,7 @@ ps_output ps_main(ps_input input)
 	ps_output output;
 	
 	output.albedo = diffuse_texture.Sample(diffuse_sampler, input.uv);
-	output.normal = float4(input.normal, 1.0f);
+	output.normal = float4(normalize(input.normal), 1.0f);
 	
 	return output;
 }

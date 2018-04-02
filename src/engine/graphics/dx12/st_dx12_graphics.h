@@ -41,6 +41,7 @@ enum e_st_texture_format
 	st_texture_format_unknown = DXGI_FORMAT_UNKNOWN,
 	st_texture_format_r8_unorm = DXGI_FORMAT_R8_UNORM,
 	st_texture_format_r8_uint = DXGI_FORMAT_R8_UINT,
+	st_texture_format_r8g8b8a8_snorm = DXGI_FORMAT_R8G8B8A8_SNORM,
 	st_texture_format_r8g8b8a8_unorm = DXGI_FORMAT_R8G8B8A8_UNORM,
 	st_texture_format_r8g8b8a8_uint = DXGI_FORMAT_R8G8B8A8_UINT,
 	st_texture_format_r24_unorm_x8_typeless = DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
