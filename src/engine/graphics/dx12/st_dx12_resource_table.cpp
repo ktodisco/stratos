@@ -32,9 +32,16 @@ void st_dx12_resource_table::add_constant_buffer(class st_dx12_constant_buffer* 
 
 void st_dx12_resource_table::add_shader_resource(class st_dx12_texture* sr)
 {
+	// TODO: Depending on whether we want depth or stencil, this needs to be flexible.
+	e_st_texture_format format = sr->get_format();
+	if (format == st_texture_format_d24_unorm_s8_uint)
+	{
+		format = st_texture_format_r24_unorm_x8_typeless;
+	}
+
 	st_dx12_render_context::get()->create_shader_resource_view(
 		sr->get_resource(),
-		sr->get_format());
+		format);
 	st_dx12_render_context::get()->create_shader_sampler();
 }
 

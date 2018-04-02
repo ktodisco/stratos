@@ -34,18 +34,19 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		_window->get_height(),
 		st_texture_format_r8g8b8a8_unorm,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
-	_gbuffer_albedo_target->set_name("Albedo Target");
+	_gbuffer_albedo_target->set_name("Gbuffer Albedo");
 	_gbuffer_normal_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
 		st_texture_format_r8g8b8a8_unorm,
-		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
-	_gbuffer_normal_target->set_name("Normal Target");
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
+	_gbuffer_normal_target->set_name("Gbuffer Normal");
 	_depth_stencil_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
 		st_texture_format_d24_unorm_s8_uint,
 		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }));
+	_depth_stencil_target->set_name("Gbuffer Depth");
 
 	_deferred_target = std::make_unique<st_render_texture>(
 		_window->get_width(),

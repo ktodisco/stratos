@@ -67,6 +67,10 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		{
 			hardware_adapter = adapters[adapter_itr];
 			max_memory = desc.DedicatedVideoMemory;
+
+			// Naively take the first one. At the time of development, this is commonly
+			// the dedicated graphics card.
+			break;
 		}
 	}
 
@@ -951,12 +955,11 @@ void st_dx12_render_context::create_target(
 
 		_dsv_slot++;
 
-		// TODO: There is an order issue with the states here.
-		/*_command_list->ResourceBarrier(1,
+		_command_list->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
 			(*resource),
 				D3D12_RESOURCE_STATE_DEPTH_WRITE,
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));*/
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
 	else
 	{

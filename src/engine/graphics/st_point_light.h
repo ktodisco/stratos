@@ -31,6 +31,7 @@ private:
 
 struct st_point_light_cb
 {
+	st_mat4f _inverse_vp;
 	st_vec4f _position;
 	st_vec4f _color;
 	float _power;

@@ -45,6 +45,7 @@ st_dx12_pipeline_state::st_dx12_pipeline_state(const st_pipeline_state_desc& des
 	raster_desc.CullMode = (D3D12_CULL_MODE)desc._rasterizer_desc._cull_mode;
 	raster_desc.FillMode = (D3D12_FILL_MODE)desc._rasterizer_desc._fill_mode;
 	raster_desc.FrontCounterClockwise = !desc._rasterizer_desc._winding_order_clockwise;
+	raster_desc.DepthClipEnable = true;
 
 	pipeline_desc.RasterizerState = raster_desc;
 

@@ -27,7 +27,7 @@ st_deferred_light_material::st_deferred_light_material(
 	_resource_table->add_shader_resource(_albedo);
 	_resource_table->add_shader_resource(_normal);
 	// TODO: The d24_s8 format cannot be used with an SRV.
-	//_resource_table->add_shader_resource(_depth);
+	_resource_table->add_shader_resource(_depth);
 }
 
 st_deferred_light_material::~st_deferred_light_material()

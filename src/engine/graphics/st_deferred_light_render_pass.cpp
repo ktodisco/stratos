@@ -6,6 +6,8 @@
 
 #include <graphics/st_deferred_light_render_pass.h>
 
+#include <framework/st_frame_params.h>
+
 #include <graphics/st_constant_buffer.h>
 #include <graphics/st_deferred_light_material.h>
 #include <graphics/st_drawcall.h>
@@ -79,7 +81,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		output_depth);
 
 	_light = std::make_unique<st_point_light>(
-		st_vec3f({ -1.0f, -1.0f, -1.0f }),
+		st_vec3f({ 10.0f, 10.0f, 10.0f }),
 		st_vec3f({ 1.0f, 1.0f, 0.6f }),
 		75.0f);
 }
@@ -102,7 +104,12 @@ void st_deferred_light_render_pass::render(
 	_framebuffer->bind(context);
 
 	// Update the light information.
+	st_mat4f perspective;
+	perspective.make_perspective_rh(st_degrees_to_radians(45.0f), (float)params->_width / (float)params->_height, 0.1f, 10000.0f);
+
 	st_point_light_cb light_data;
+	light_data._inverse_vp = (params->_view * perspective).inverse();
+	light_data._inverse_vp.transpose();
 	light_data._position = st_vec4f(_light->get_position(), 0.0f);
 	light_data._color = st_vec4f(_light->get_color(), 0.0f);
 	light_data._power = _light->get_power();
