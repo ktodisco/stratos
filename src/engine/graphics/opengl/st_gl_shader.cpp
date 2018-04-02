@@ -117,12 +117,14 @@ st_gl_shader::st_gl_shader(const char* source, uint8_t type)
 	if (!_vs->compile())
 	{
 		std::cerr << "Failed to compile vertex shader:" << std::endl << _vs->get_compile_log() << std::endl;
+		assert(false);
 	}
 
 	_fs = new st_gl_shader_component(source_fs.c_str(), GL_FRAGMENT_SHADER);
 	if (!_fs->compile())
 	{
 		std::cerr << "Failed to compile fragment shader:\n\t" << std::endl << _fs->get_compile_log() << std::endl;
+		assert(false);
 	}
 
 	attach(*_vs);
@@ -130,6 +132,7 @@ st_gl_shader::st_gl_shader(const char* source, uint8_t type)
 	if (!link())
 	{
 		std::cerr << "Failed to link shader program:\n\t" << std::endl << get_link_log() << std::endl;
+		assert(false);
 	}
 }
 

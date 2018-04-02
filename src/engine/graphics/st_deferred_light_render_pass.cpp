@@ -54,6 +54,8 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		6);
 
 	_light_buffer = std::make_unique<st_constant_buffer>(sizeof(st_point_light_cb));
+	// TODO: These should be validated against the buffer's provided size.
+	_light_buffer->add_constant("u_inverse_vp", st_shader_constant_type_mat4);
 	_light_buffer->add_constant("u_light_position", st_shader_constant_type_vec4);
 	_light_buffer->add_constant("u_light_color", st_shader_constant_type_vec4);
 	_light_buffer->add_constant("u_light_power", st_shader_constant_type_float);

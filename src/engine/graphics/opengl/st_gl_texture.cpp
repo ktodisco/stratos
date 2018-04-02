@@ -101,6 +101,7 @@ void st_gl_texture::get_pixel_format_and_type(
 		pixel_format = GL_RED;
 		type = GL_UNSIGNED_BYTE;
 		break;
+	case st_texture_format_r8g8b8a8_snorm:
 	case st_texture_format_r8g8b8a8_unorm:
 		pixel_format = GL_RGBA;
 		type = GL_UNSIGNED_BYTE;
