@@ -35,7 +35,8 @@ private:
 
 	std::unique_ptr<class st_gbuffer_render_pass> _gbuffer_pass;
 	std::unique_ptr<class st_deferred_light_render_pass> _deferred_pass;
-	std::unique_ptr<class st_fullscreen_render_pass> _passthrough_pass;
+	std::unique_ptr<class st_tonemap_render_pass> _tonemap_pass;
+	std::unique_ptr<class st_passthrough_render_pass> _passthrough_pass;
 	std::unique_ptr<class st_ui_render_pass> _ui_pass;
 
 	std::unique_ptr<class st_render_texture> _gbuffer_albedo_target;
@@ -44,4 +45,6 @@ private:
 
 	std::unique_ptr<class st_render_texture> _deferred_target;
 	std::unique_ptr<class st_render_texture> _deferred_depth;
+
+	std::unique_ptr<class st_render_texture> _tonemap_target;
 };

@@ -45,6 +45,7 @@ enum e_st_texture_format
 	st_texture_format_r8g8b8a8_unorm = DXGI_FORMAT_R8G8B8A8_UNORM,
 	st_texture_format_r8g8b8a8_uint = DXGI_FORMAT_R8G8B8A8_UINT,
 	st_texture_format_r10g10b10a2_unorm = DXGI_FORMAT_R10G10B10A2_UNORM,
+	st_texture_format_r16g16b16a16_float = DXGI_FORMAT_R16G16B16A16_FLOAT,
 	st_texture_format_r24_unorm_x8_typeless = DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
 	st_texture_format_d24_unorm_s8_uint = DXGI_FORMAT_D24_UNORM_S8_UINT,
 };

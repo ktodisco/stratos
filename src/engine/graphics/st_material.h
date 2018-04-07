@@ -42,6 +42,7 @@ enum st_material_type
 	st_material_type_gbuffer,
 	st_material_type_fullscreen,
 	st_material_type_deferred_light,
+	st_material_type_tonemap,
 };
 
 /*

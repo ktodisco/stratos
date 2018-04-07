@@ -110,6 +110,10 @@ void st_gl_texture::get_pixel_format_and_type(
 		pixel_format = GL_RGBA;
 		type = GL_UNSIGNED_BYTE;
 		break;
+	case st_texture_format_r16g16b16a16_float:
+		pixel_format = GL_RGBA;
+		type = GL_FLOAT;
+		break;
 	case st_texture_format_d24_unorm_s8_uint:
 		pixel_format = GL_DEPTH_STENCIL;
 		type = GL_UNSIGNED_INT_24_8;

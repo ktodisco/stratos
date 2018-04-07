@@ -8,14 +8,11 @@
 
 #include <graphics/st_material.h>
 
-/*
-** Material for a passthrough fullscreen pass.
-*/
-class st_fullscreen_material : public st_material
+class st_tonemap_material : public st_material
 {
 public:
-	st_fullscreen_material(class st_texture* texture);
-	~st_fullscreen_material();
+	st_tonemap_material(class st_texture* texture);
+	~st_tonemap_material();
 
 	virtual void bind(
 		class st_render_context* context,
@@ -26,7 +23,7 @@ public:
 	void get_pipeline_state(
 		struct st_pipeline_state_desc* state_desc) override;
 
-	st_material_type get_material_type() override { return st_material_type_fullscreen; }
+	st_material_type get_material_type() override { return st_material_type_tonemap; }
 
 private:
 	class st_texture* _texture;

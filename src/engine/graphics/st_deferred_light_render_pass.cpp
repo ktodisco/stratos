@@ -20,6 +20,8 @@
 #include <graphics/st_render_texture.h>
 #include <graphics/st_vertex_format.h>
 
+#include <cmath>
+
 st_deferred_light_render_pass::st_deferred_light_render_pass(
 	st_render_texture* albedo_buffer,
 	st_render_texture* normal_buffer,
@@ -27,32 +29,6 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	st_render_texture* output_buffer,
 	st_render_texture* output_depth)
 {
-	_vertex_format = std::make_unique<st_vertex_format>();
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
-	_vertex_format->finalize();
-
-	const float verts[] =
-	{
-		1.0f, 1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f,
-		-1.0f, 1.0f, 0.0f,
-	};
-
-	const uint16_t indices[] =
-	{
-		2, 1, 0,
-		3, 2, 0,
-	};
-
-	_fullscreen_quad = std::make_unique<st_geometry>(
-		_vertex_format.get(),
-		(void*)verts,
-		static_cast<uint32_t>(sizeof(float) * 3),
-		12,
-		(uint16_t*)indices,
-		6);
-
 	_light_buffer = std::make_unique<st_constant_buffer>(sizeof(st_point_light_cb));
 	// TODO: These should be validated against the buffer's provided size.
 	_light_buffer->add_constant("u_inverse_vp", st_shader_constant_type_mat4);
@@ -61,14 +37,14 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	_light_buffer->add_constant("u_light_color", st_shader_constant_type_vec4);
 	_light_buffer->add_constant("u_light_power", st_shader_constant_type_float);
 
-	_default_material = std::make_unique<st_deferred_light_material>(
+	_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
 		normal_buffer,
 		depth_buffer,
 		_light_buffer.get());
 
 	st_pipeline_state_desc deferred_light_state_desc;
-	_default_material->get_pipeline_state(&deferred_light_state_desc);
+	_material->get_pipeline_state(&deferred_light_state_desc);
 
 	deferred_light_state_desc._vertex_format = _vertex_format.get();
 	deferred_light_state_desc._render_target_count = 1;
@@ -86,7 +62,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	_light = std::make_unique<st_point_light>(
 		st_vec3f({ 10.0f, 10.0f, 10.0f }),
 		st_vec3f({ 1.0f, 1.0f, 0.9f }),
-		75.0f);
+		1400.0f);
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()
@@ -116,11 +92,11 @@ void st_deferred_light_render_pass::render(
 	light_data._eye = st_vec4f(params->_eye, 0.0f);
 	light_data._position = st_vec4f(_light->get_position(), 0.0f);
 	light_data._color = st_vec4f(_light->get_color(), 0.0f);
-	light_data._power = _light->get_power();
+	light_data._power = _light->get_power() / (4.0f * M_PI);
 
 	_light_buffer->update(context, &light_data);
 
-	_default_material->bind(context, identity, identity, identity);
+	_material->bind(context, identity, identity, identity);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";

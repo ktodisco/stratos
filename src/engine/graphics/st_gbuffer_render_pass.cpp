@@ -18,9 +18,9 @@
 #include <graphics/st_vertex_format.h>
 
 st_gbuffer_render_pass::st_gbuffer_render_pass(
-		class st_render_texture* albedo_buffer,
-		class st_render_texture* normal_buffer,
-		class st_render_texture* depth_buffer)
+		st_render_texture* albedo_buffer,
+		st_render_texture* normal_buffer,
+		st_render_texture* depth_buffer)
 {
 	_vertex_format = std::make_unique<st_vertex_format>();
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));

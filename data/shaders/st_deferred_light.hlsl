@@ -20,15 +20,20 @@ static float3 ambient = float3(0.2, 0.2, 0.2);
 cbuffer cb0 : register(b0)
 {
 	float4x4 inverse_vp;
-	float3 eye;
-	float3 light_position;
-	float3 light_color;
+	float4 eye;
+	float4 light_position;
+	float4 light_color;
 	float light_power;
+}
+
+float light_falloff(float power, float distance)
+{
+	return 1.0f / ((distance * distance) / 100.0f);
 }
 
 float3 diffuse_lambertian(float3 albedo, float3 n, float3 l)
 {
-	return (albedo / s_pi) * dot(n, l);
+	return (albedo / s_pi) * saturate(dot(n, l));
 }
 
 float3 specular_phong(float3 specular, float3 n, float3 v, float3 l, float g)
@@ -65,14 +70,16 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float4 world_position = mul(clip_position, inverse_vp);
 	world_position /= world_position.w;
 	
-	float3 to_eye = normalize(eye - world_position.xyz);
-	float3 to_light = normalize(light_position - world_position.xyz);
+	float3 to_eye = normalize(eye.xyz - world_position.xyz);
+	float3 to_light = light_position.xyz - world_position.xyz;
+	float dist_to_light = length(to_light);
+	to_light = normalize(to_light);
 	
 	float3 diffuse_color = albedo * (1.0f - metalness);
-	float3 specular_color = light_color * metalness;
+	float3 specular_color = light_color.xyz * metalness;
 	
-	float3 lit_color = diffuse_lambertian(diffuse_color, normal, to_light);
-	lit_color += specular_phong(specular_color, normal, to_eye, to_light, gloss);
+	float3 lit_color = diffuse_lambertian(diffuse_color, normal, to_light) * light_falloff(light_power, dist_to_light);
+	lit_color += specular_phong(specular_color, normal, to_eye, to_light, gloss) * light_falloff(light_power, dist_to_light);
 	lit_color += diffuse_color * ambient;
 	
 	return float4(lit_color, 1.0f);

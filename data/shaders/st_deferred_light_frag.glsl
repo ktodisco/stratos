@@ -18,9 +18,14 @@ in vec2 ps_in_texcoord;
 
 layout(location = 0) out vec4 out_color;
 
+float light_falloff(float power, float distance)
+{
+	return 1.0f / ((distance * distance) / 100.0f);
+}
+
 vec3 diffuse_lambertian(vec3 albedo, vec3 n, vec3 l)
 {
-	return (albedo / s_pi) * dot(n, l);
+	return (albedo / s_pi) * clamp(dot(n, l), 0.0, 1.0);
 }
 
 vec3 specular_phong(vec3 specular, vec3 n, vec3 v, vec3 l, float g)
@@ -46,13 +51,15 @@ void main(void)
 	world_position /= world_position.w;
 	
 	vec3 to_eye = normalize(u_eye.xyz - world_position.xyz);
-	vec3 to_light = normalize(u_light_position.xyz - world_position.xyz);
+	vec3 to_light = u_light_position.xyz - world_position.xyz;
+	float dist_to_light = length(to_light);
+	to_light = normalize(to_light);
 	
 	vec3 diffuse_color = albedo * (1.0 - metalness);
 	vec3 specular_color = u_light_color.rgb * metalness;
 	
-	vec3 lit_color = diffuse_lambertian(diffuse_color, normal, to_light);
-	lit_color += specular_phong(specular_color, normal, to_eye, to_light, gloss);
+	vec3 lit_color = diffuse_lambertian(diffuse_color, normal, to_light) * light_falloff(u_light_power, dist_to_light);
+	lit_color += specular_phong(specular_color, normal, to_eye, to_light, gloss) * light_falloff(u_light_power, dist_to_light);
 	lit_color += diffuse_color * ambient;
 
 	out_color = vec4(lit_color, 1.0);

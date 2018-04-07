@@ -40,6 +40,10 @@ st_shader_manager::st_shader_manager()
 		std::make_unique<st_shader>(
 			"data/shaders/st_deferred_light",
 			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_tonemap] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_tonemap",
+			st_shader_type_vertex | st_shader_type_pixel);
 
 	_this = this;
 }

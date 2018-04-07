@@ -54,6 +54,7 @@ enum e_st_texture_format
 	st_texture_format_r8g8b8a8_uint = GL_RGBA8,
 	st_texture_format_r8g8b8a8_snorm = GL_RGBA8_SNORM,
 	st_texture_format_r8g8b8a8_unorm = GL_RGBA8,
+	st_texture_format_r16g16b16a16_float = GL_RGBA16,
 	st_texture_format_d24_unorm_s8_uint = GL_DEPTH24_STENCIL8,
 };
 
