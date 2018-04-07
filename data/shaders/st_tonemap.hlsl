@@ -27,6 +27,10 @@ ps_input vs_main(vs_input input)
 
 float3 aces_film(float3 x)
 {
+	// Tonemap down to the reference white level of 80 nits.
+	const float k_ref_white = 80.0f;
+	x /= k_ref_white;
+	
     float a = 2.51f;
     float b = 0.03f;
     float c = 2.43f;
@@ -37,7 +41,15 @@ float3 aces_film(float3 x)
 	return result;
 }
 
+float3 gamma_correct(float3 x)
+{
+	return pow(x, 2.2f);
+}
+
 float4 ps_main(ps_input input) : SV_TARGET
 {
-	return float4(aces_film(tex.Sample(tex_sampler, input.uv).rgb), 1.0f);
+	float3 tonemap = aces_film(tex.Sample(tex_sampler, input.uv).rgb);
+	float3 gamma = gamma_correct(tonemap);
+	
+	return float4(gamma, 1.0f);
 };

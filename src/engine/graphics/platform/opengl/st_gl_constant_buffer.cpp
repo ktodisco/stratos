@@ -50,7 +50,8 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 		{
 		case st_shader_constant_type_float:
 			{
-				float* val = reinterpret_cast<float*>(data) + offset;
+				char* data_offset = reinterpret_cast<char*>(data) + offset;
+				float* val = reinterpret_cast<float*>(data_offset);
 				uniform.set(*val);
 			}
 			break;

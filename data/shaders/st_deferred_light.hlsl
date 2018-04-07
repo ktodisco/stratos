@@ -28,7 +28,7 @@ cbuffer cb0 : register(b0)
 
 float light_falloff(float power, float distance)
 {
-	return 1.0f / ((distance * distance) / 100.0f);
+	return power / ((distance * distance) / 100.0f);
 }
 
 float3 diffuse_lambertian(float3 albedo, float3 n, float3 l)

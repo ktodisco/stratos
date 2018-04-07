@@ -20,7 +20,7 @@ layout(location = 0) out vec4 out_color;
 
 float light_falloff(float power, float distance)
 {
-	return 1.0f / ((distance * distance) / 100.0f);
+	return power / ((distance * distance) / 100.0);
 }
 
 vec3 diffuse_lambertian(vec3 albedo, vec3 n, vec3 l)
