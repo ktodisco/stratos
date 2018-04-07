@@ -4,36 +4,40 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "framework/st_camera.h"
-#include "framework/st_compiler_defines.h"
-#include "framework/st_input.h"
-#include "framework/st_sim.h"
-#include "framework/st_output.h"
-#include "jobs/st_job.h"
+#include <entity/st_entity.h>
+#include <entity/st_lua_component.h>
 
-#include "entity/st_entity.h"
-#include "entity/st_lua_component.h"
-#include "graphics/st_animation.h"
-#include "graphics/st_animation_component.h"
-#include "graphics/st_egg_parser.h"
-#include "graphics/st_gbuffer_material.h"
-#include "graphics/st_material.h"
-#include "graphics/st_model_component.h"
-#include "graphics/st_ply_parser.h"
-#include "graphics/st_model_data.h"
-#include "graphics/st_render_context.h"
-#include "graphics/st_shader_manager.h"
-#include "gui/st_font.h"
-#include "physics/st_physics_component.h"
-#include "physics/st_playermove_component.h"
-#include "physics/st_physics_world.h"
-#include "physics/st_rigid_body.h"
-#include "physics/st_shape.h"
-#include "system/st_window.h"
+#include <framework/st_camera.h>
+#include <framework/st_compiler_defines.h>
+#include <framework/st_input.h>
+#include <framework/st_sim.h>
+#include <framework/st_output.h>
 
-#include "gui/st_button.h"
-#include "gui/st_checkbox.h"
-#include "gui/st_label.h"
+#include <graphics/animation/st_animation.h>
+#include <graphics/animation/st_animation_component.h>
+#include <graphics/parse/st_egg_parser.h>
+#include <graphics/material/st_gbuffer_material.h>
+#include <graphics/material/st_material.h>
+#include <graphics/geometry/st_model_component.h>
+#include <graphics/parse/st_ply_parser.h>
+#include <graphics/geometry/st_model_data.h>
+#include <graphics/st_render_context.h>
+#include <graphics/st_shader_manager.h>
+
+#include <gui/st_button.h>
+#include <gui/st_checkbox.h>
+#include <gui/st_font.h>
+#include <gui/st_label.h>
+
+#include <jobs/st_job.h>
+
+#include <physics/st_physics_component.h>
+#include <physics/st_playermove_component.h>
+#include <physics/st_physics_world.h>
+#include <physics/st_rigid_body.h>
+#include <physics/st_shape.h>
+
+#include <system/st_window.h>
 
 #include <memory>
 

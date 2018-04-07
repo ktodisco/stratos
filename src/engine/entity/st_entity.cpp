@@ -4,8 +4,9 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_entity.h"
-#include "st_component.h"
+#include <entity/st_entity.h>
+
+#include <entity/st_component.h>
 
 st_entity::st_entity()
 {

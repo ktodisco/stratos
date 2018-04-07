@@ -4,12 +4,14 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_input.h"
-#include "st_compiler_defines.h"
-#include "st_frame_params.h"
+#include <framework/st_input.h>
+
+#include <framework/st_compiler_defines.h>
+#include <framework/st_frame_params.h>
 
 #include <cassert>
 #include <cstdio>
+
 #if defined(ST_MINGW)
 #include <unistd.h>
 #else

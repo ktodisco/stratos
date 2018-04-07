@@ -4,10 +4,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_lua_component.h"
+#include <entity/st_lua_component.h>
 
-#include "entity/st_entity.h"
-#include "framework/st_frame_params.h"
+#include <entity/st_entity.h>
+
+#include <framework/st_frame_params.h>
 
 #include <lua.hpp>
 

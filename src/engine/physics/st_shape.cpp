@@ -4,11 +4,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_shape.h"
+#include <physics/st_shape.h>
 
-#include "graphics/st_debug_geometry.h"
-#include "graphics/st_drawcall.h"
-#include "math/st_math.h"
+#include <graphics/geometry/st_debug_geometry.h>
+#include <graphics/st_drawcall.h>
+#include <math/st_math.h>
 
 #include <vector>
 

@@ -4,10 +4,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_label.h"
-#include "st_font.h"
+#include <gui/st_label.h>
 
-#include "framework/st_frame_params.h"
+#include <framework/st_frame_params.h>
+
+#include <gui/st_font.h>
 
 st_label::st_label(const char* text, float x, float y, st_frame_params* params)
 {

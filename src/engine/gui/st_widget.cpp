@@ -4,10 +4,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_widget.h"
+#include <gui/st_widget.h>
 
-#include "framework/st_frame_params.h"
-#include "graphics/st_drawcall.h"
+#include <framework/st_frame_params.h>
+
+#include <graphics/st_drawcall.h>
 
 const st_vec3f st_widget::k_button_color = { 0.25f, 0.25f, 1.0f };
 const st_vec3f st_widget::k_button_hover_color = { 0.75f, 0.75f, 1.0f };

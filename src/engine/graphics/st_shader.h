@@ -13,11 +13,11 @@
 #include <cstdint>
 
 #if defined(ST_GRAPHICS_API_OPENGL)
-#include <graphics/opengl/st_gl_shader.h>
+#include <graphics/platform/opengl/st_gl_shader.h>
 
 typedef st_gl_shader st_platform_shader;
 #elif defined(ST_GRAPHICS_API_DX12)
-#include <graphics/dx12/st_dx12_shader.h>
+#include <graphics/platform/dx12/st_dx12_shader.h>
 
 typedef st_dx12_shader st_platform_shader;
 #elif defined(ST_GRAPHICS_API_VULKAN)

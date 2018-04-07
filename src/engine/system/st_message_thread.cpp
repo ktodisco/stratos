@@ -7,6 +7,7 @@
 #include <system/st_message_thread.h>
 
 #include <framework/st_input.h>
+
 #include <system/st_window.h>
 
 st_message_thread::st_message_thread(st_window* window, st_input* input) :

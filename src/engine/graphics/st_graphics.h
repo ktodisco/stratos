@@ -6,8 +6,8 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#define ST_GRAPHICS_API_OPENGL
-//#define ST_GRAPHICS_API_DX12
+//#define ST_GRAPHICS_API_OPENGL
+#define ST_GRAPHICS_API_DX12
 //#define ST_GRAPHICS_API_VULKAN
 
 typedef void* st_graphics_resource;
@@ -33,9 +33,9 @@ enum e_st_shader_constant_type
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
 
 #if defined(ST_GRAPHICS_API_OPENGL)
-#include <graphics/opengl/st_gl_graphics.h>
+#include <graphics/platform/opengl/st_gl_graphics.h>
 #elif defined(ST_GRAPHICS_API_DX12)
-#include <graphics/dx12/st_dx12_graphics.h>
+#include <graphics/platform/dx12/st_dx12_graphics.h>
 #elif defined(ST_GRAPHICS_API_VULKAN)
 #error Vulkan not implemented.
 #else

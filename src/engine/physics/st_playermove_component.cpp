@@ -4,9 +4,9 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_playermove_component.h"
+#include <physics/st_playermove_component.h>
 
-#include "entity/st_entity.h"
+#include <entity/st_entity.h>
 
 st_playermove_component::st_playermove_component(st_entity* ent)
 	: st_component(ent), _move_when_paused(false)

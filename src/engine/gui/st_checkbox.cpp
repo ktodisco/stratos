@@ -4,10 +4,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_checkbox.h"
-#include "st_font.h"
+#include <gui/st_checkbox.h>
 
-#include "framework/st_frame_params.h"
+#include <framework/st_frame_params.h>
+
+#include <gui/st_font.h>
 
 st_checkbox::st_checkbox(bool state, const char* text, float x, float y, st_frame_params* params)
 {

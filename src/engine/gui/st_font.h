@@ -6,7 +6,7 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "graphics/st_material.h"
+#include "graphics/material/st_material.h"
 #include "math/st_vec3f.h"
 
 #include <memory>

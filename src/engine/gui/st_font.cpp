@@ -8,12 +8,14 @@
 
 #include <framework/st_compiler_defines.h>
 #include <framework/st_frame_params.h>
+
+#include <graphics/material/st_material.h>
 #include <graphics/st_constant_buffer.h>
-#include <graphics/st_material.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
+
 #include <math/st_vec2f.h>
 
 #include <algorithm>

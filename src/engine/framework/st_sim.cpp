@@ -4,12 +4,13 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_sim.h"
+#include <framework/st_sim.h>
 
-#include "st_compiler_defines.h"
+#include <entity/st_entity.h>
 
-#include "entity/st_entity.h"
-#include "jobs/st_job.h"
+#include <framework/st_compiler_defines.h>
+
+#include <jobs/st_job.h>
 
 #if defined(ST_MINGW)
 #include <malloc.h>

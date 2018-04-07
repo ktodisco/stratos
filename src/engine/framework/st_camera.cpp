@@ -4,10 +4,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include "st_camera.h"
+#include <framework/st_camera.h>
 
-#include "st_frame_params.h"
-#include "math/st_math.h"
+#include <framework/st_frame_params.h>
+
+#include <math/st_math.h>
 
 st_camera::st_camera(const st_vec3f& eye)
 {

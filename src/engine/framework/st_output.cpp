@@ -8,18 +8,20 @@
 
 #include <framework/st_frame_params.h>
 
-#include <graphics/st_deferred_light_render_pass.h>
-#include <graphics/st_gbuffer_render_pass.h>
-#include <graphics/st_material.h>
-#include <graphics/st_passthrough_render_pass.h>
+#include <graphics/material/st_material.h>
+#include <graphics/pass/st_deferred_light_render_pass.h>
+#include <graphics/pass/st_gbuffer_render_pass.h>
+#include <graphics/pass/st_passthrough_render_pass.h>
+#include <graphics/pass/st_tonemap_render_pass.h>
+#include <graphics/pass/st_ui_render_pass.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
-#include <graphics/st_tonemap_render_pass.h>
-#include <graphics/st_ui_render_pass.h>
+
 #include <math/st_mat4f.h>
 #include <math/st_quatf.h>
 #include <math/st_vec4f.h>
+
 #include <system/st_window.h>
 
 #include <cassert>
