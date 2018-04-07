@@ -27,6 +27,8 @@ st_gl_texture::~st_gl_texture()
 
 void st_gl_texture::reserve_data(uint32_t width, uint32_t height, e_st_texture_format format)
 {
+	_format = format;
+
 	GLenum pixel_format;
 	GLenum type;
 	get_pixel_format_and_type(format, pixel_format, type);
@@ -42,6 +44,8 @@ void st_gl_texture::reserve_data(uint32_t width, uint32_t height, e_st_texture_f
 
 void st_gl_texture::load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data)
 {
+	_format = format;
+
 	GLenum pixel_format;
 	GLenum type;
 	get_pixel_format_and_type(format, pixel_format, type);
@@ -55,7 +59,7 @@ bool st_gl_texture::load_from_file(const char* path)
 {
 	extern char g_root_path[256];
 	std::string fullpath = g_root_path;
-	fullpath += (path && path[0]) ? path : "data/textures/default.png";
+	fullpath += (path && path[0]) ? path : "data/textures/default_albedo.png";
 
 	int width, height, channels_in_file;
 	uint8_t* data = stbi_load(fullpath.c_str(), &width, &height, &channels_in_file, 4);

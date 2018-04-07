@@ -56,6 +56,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	_light_buffer = std::make_unique<st_constant_buffer>(sizeof(st_point_light_cb));
 	// TODO: These should be validated against the buffer's provided size.
 	_light_buffer->add_constant("u_inverse_vp", st_shader_constant_type_mat4);
+	_light_buffer->add_constant("u_eye", st_shader_constant_type_vec4);
 	_light_buffer->add_constant("u_light_position", st_shader_constant_type_vec4);
 	_light_buffer->add_constant("u_light_color", st_shader_constant_type_vec4);
 	_light_buffer->add_constant("u_light_power", st_shader_constant_type_float);
@@ -71,8 +72,8 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 
 	deferred_light_state_desc._vertex_format = _vertex_format.get();
 	deferred_light_state_desc._render_target_count = 1;
-	deferred_light_state_desc._render_target_formats[0] = st_texture_format_r8g8b8a8_unorm;
-	deferred_light_state_desc._depth_stencil_format = st_texture_format_d24_unorm_s8_uint;
+	deferred_light_state_desc._render_target_formats[0] = output_buffer->get_format();
+	deferred_light_state_desc._depth_stencil_format = output_depth->get_format();
 
 	_pipeline_state = std::make_unique<st_pipeline_state>(deferred_light_state_desc);
 
@@ -84,7 +85,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 
 	_light = std::make_unique<st_point_light>(
 		st_vec3f({ 10.0f, 10.0f, 10.0f }),
-		st_vec3f({ 1.0f, 1.0f, 0.6f }),
+		st_vec3f({ 1.0f, 1.0f, 0.9f }),
 		75.0f);
 }
 
@@ -112,6 +113,7 @@ void st_deferred_light_render_pass::render(
 	st_point_light_cb light_data;
 	light_data._inverse_vp = (params->_view * perspective).inverse();
 	light_data._inverse_vp.transpose();
+	light_data._eye = st_vec4f(params->_eye, 0.0f);
 	light_data._position = st_vec4f(_light->get_position(), 0.0f);
 	light_data._color = st_vec4f(_light->get_color(), 0.0f);
 	light_data._power = _light->get_power();

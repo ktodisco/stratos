@@ -31,12 +31,14 @@ public:
 	void set_name(std::string name);
 
 	uint32_t get_handle() const { return _handle; }
+	e_st_texture_format get_format() const { return _format; }
 
 	void bind(class st_gl_render_context* context);
 
 protected:
 	uint32_t _handle;
 	uint32_t _slot = 0;
+	e_st_texture_format _format;
 	std::string _name;
 
 private:

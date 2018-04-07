@@ -66,6 +66,7 @@ void st_camera::update(st_frame_params* params)
 	view.make_lookat_rh(eye, at, up);
 
 	params->_view = view;
+	params->_eye = eye;
 }
 
 void st_camera::rotate(const st_quatf& rotation)

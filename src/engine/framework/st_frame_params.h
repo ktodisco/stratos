@@ -80,6 +80,7 @@ struct st_frame_params
 	std::atomic_flag _gui_drawcall_lock = ATOMIC_FLAG_INIT;
 
 	st_mat4f _view;
+	st_vec3f _eye;
 	uint32_t _width;
 	uint32_t _height;
 

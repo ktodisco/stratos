@@ -15,23 +15,33 @@
 #include <cassert>
 #include <iostream>
 
-st_gbuffer_material::st_gbuffer_material(const char* texture_file) :
-	_texture_file(texture_file)
+st_gbuffer_material::st_gbuffer_material(
+		const char* albedo_texture,
+		const char* mge_texture)
 {
 	_view_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
 	_view_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
 
-	_texture = std::make_unique<st_texture>();
-	if (!_texture->load_from_file(_texture_file.c_str()))
+	_albedo_texture = std::make_unique<st_texture>();
+	if (!_albedo_texture->load_from_file(albedo_texture))
 	{
-		std::cerr << "Failed to load " << _texture_file << std::endl;
+		std::cerr << "Failed to load " << albedo_texture << std::endl;
 		assert(false);
 	}
-	_texture->set_meta("u_texture", 0);
+	_albedo_texture->set_meta("u_albedo", 0);
+
+	_mge_texture = std::make_unique<st_texture>();
+	if (!_mge_texture->load_from_file(mge_texture))
+	{
+		std::cerr << "Failed to load " << mge_texture << std::endl;
+		assert(false);
+	}
+	_mge_texture->set_meta("u_mge", 1);
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_view_buffer.get());
-	_resource_table->add_shader_resource(_texture.get());
+	_resource_table->add_shader_resource(_albedo_texture.get());
+	_resource_table->add_shader_resource(_mge_texture.get());
 }
 
 st_gbuffer_material::~st_gbuffer_material()

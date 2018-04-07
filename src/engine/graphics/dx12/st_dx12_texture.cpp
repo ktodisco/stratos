@@ -41,7 +41,7 @@ bool st_dx12_texture::load_from_file(const char* path)
 {
 	extern char g_root_path[256];
 	std::string fullpath = g_root_path;
-	fullpath += (path && path[0]) ? path : "data/textures/default.png";
+	fullpath += (path && path[0]) ? path : "data/textures/default_albedo.png";
 
 	int width, height, channels_in_file;
 	uint8_t* data = stbi_load(fullpath.c_str(), &width, &height, &channels_in_file, 4);
