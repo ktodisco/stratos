@@ -2,7 +2,7 @@
 
 // Light constants.
 const float s_pi = 3.14159;
-const vec3 ambient = vec3(0.2, 0.2, 0.2);
+const float ambient = 10.0;
 
 uniform mat4 u_inverse_vp;
 uniform vec4 u_eye;

@@ -15,7 +15,7 @@ Texture2D depth_texture : register(t2);
 
 // Light constants.
 static float s_pi = 3.14159f;
-static float3 ambient = float3(0.2, 0.2, 0.2);
+static float ambient = 10.0f;
 
 cbuffer cb0 : register(b0)
 {

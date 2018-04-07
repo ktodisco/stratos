@@ -1,0 +1,1 @@
+..\win32\HLSL2GLSLConverter.exe -h -i TessTestQuadDX.dsh -d .\ -d .\include -t ds -e main -c -o TestDS.glsl
