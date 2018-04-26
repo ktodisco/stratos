@@ -68,7 +68,7 @@ void st_mat4f::scale(float s)
 {
 	st_mat4f tmp;
 	tmp.make_scaling(s);
-	(*this) *= tmp;
+	(*this) = tmp * (*this);
 }
 
 void st_mat4f::rotate(const st_quatf& __restrict q)

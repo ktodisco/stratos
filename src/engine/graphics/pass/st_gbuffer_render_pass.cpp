@@ -18,9 +18,10 @@
 #include <graphics/st_render_texture.h>
 
 st_gbuffer_render_pass::st_gbuffer_render_pass(
-		st_render_texture* albedo_buffer,
-		st_render_texture* normal_buffer,
-		st_render_texture* depth_buffer)
+	st_render_texture* albedo_buffer,
+	st_render_texture* normal_buffer,
+	st_render_texture* third_buffer,
+	st_render_texture* depth_buffer)
 {
 	_vertex_format = std::make_unique<st_vertex_format>();
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
@@ -38,16 +39,17 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	_default_gbuffer->get_pipeline_state(&gbuffer_state_desc);
 
 	gbuffer_state_desc._vertex_format = _vertex_format.get();
-	gbuffer_state_desc._render_target_count = 2;
+	gbuffer_state_desc._render_target_count = 3;
 	gbuffer_state_desc._render_target_formats[0] = albedo_buffer->get_format();
 	gbuffer_state_desc._render_target_formats[1] = normal_buffer->get_format();
+	gbuffer_state_desc._render_target_formats[2] = third_buffer->get_format();
 	gbuffer_state_desc._depth_stencil_format = depth_buffer->get_format();
 
 	_gbuffer_state = std::make_unique<st_pipeline_state>(gbuffer_state_desc);
 
-	st_render_texture* targets[] = { albedo_buffer, normal_buffer };
+	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
 	_framebuffer = std::make_unique<st_framebuffer>(
-		2,
+		3,
 		targets,
 		depth_buffer);
 }

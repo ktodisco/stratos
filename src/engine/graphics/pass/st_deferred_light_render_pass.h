@@ -16,6 +16,7 @@ public:
 	st_deferred_light_render_pass(
 		class st_render_texture* albedo_buffer,
 		class st_render_texture* normal_buffer,
+		class st_render_texture* third_buffer,
 		class st_render_texture* depth_buffer,
 		class st_render_texture* output_buffer,
 		class st_render_texture* output_depth);

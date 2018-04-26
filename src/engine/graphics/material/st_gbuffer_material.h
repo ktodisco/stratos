@@ -8,6 +8,12 @@
 
 #include <graphics/material/st_material.h>
 
+struct st_gbuffer_cb
+{
+	st_mat4f _mvp;
+	float _emissive;
+};
+
 /*
 ** Material for objects drawn to the gbuffer.
 */
@@ -30,11 +36,14 @@ public:
 
 	st_material_type get_material_type() override { return st_material_type_gbuffer; }
 
+	void set_emissive(float e) { _emissive = e; }
+
 private:
-	// TODO: This view buffer should live at a larger scope.
-	std::unique_ptr<class st_constant_buffer> _view_buffer = nullptr;
+	std::unique_ptr<class st_constant_buffer> _gbuffer_buffer = nullptr;
 	std::unique_ptr<class st_texture> _albedo_texture;
 	std::unique_ptr<class st_texture> _mge_texture;
 
 	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
+
+	float _emissive = 0;
 };

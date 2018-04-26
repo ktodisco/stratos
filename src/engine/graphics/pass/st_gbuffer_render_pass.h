@@ -17,6 +17,7 @@ public:
 	st_gbuffer_render_pass(
 		class st_render_texture* albedo_buffer,
 		class st_render_texture* normal_buffer,
+		class st_render_texture* third_buffer,
 		class st_render_texture* depth_buffer);
 	~st_gbuffer_render_pass();
 

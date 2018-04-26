@@ -25,6 +25,7 @@
 st_deferred_light_render_pass::st_deferred_light_render_pass(
 	st_render_texture* albedo_buffer,
 	st_render_texture* normal_buffer,
+	st_render_texture* third_buffer,
 	st_render_texture* depth_buffer,
 	st_render_texture* output_buffer,
 	st_render_texture* output_depth)
@@ -40,6 +41,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
 		normal_buffer,
+		third_buffer,
 		depth_buffer,
 		_light_buffer.get());
 
@@ -60,9 +62,9 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		output_depth);
 
 	_light = std::make_unique<st_point_light>(
-		st_vec3f({ 10.0f, 10.0f, 10.0f }),
+		st_vec3f({ 1.0f, 1.0f, 1.0f }),
 		st_vec3f({ 1.0f, 1.0f, 0.9f }),
-		3400.0f);
+		2250.0f);
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()
@@ -92,7 +94,7 @@ void st_deferred_light_render_pass::render(
 	light_data._eye = st_vec4f(params->_eye, 0.0f);
 	light_data._position = st_vec4f(_light->get_position(), 0.0f);
 	light_data._color = st_vec4f(_light->get_color(), 0.0f);
-	light_data._power = _light->get_power() / (4.0f * M_PI);
+	light_data._power = _light->get_power();
 
 	_light_buffer->update(context, &light_data);
 

@@ -132,7 +132,7 @@ void st_mat3f::invert()
 	tmp.data[2][2] = data[0][0] * data[1][1] - data[0][1] * data[1][0];
 
 	float inv_det = data[0][0] * tmp.data[0][0] + data[1][0] * tmp.data[1][0] + data[2][0] * tmp.data[2][0];
-	//VLOG_ASSERT(inv_det != 0.0f, k_vlog_error, 100, "mat3f", "Attempting to invert matrix with zero determinant.");
+	// TODO: Assert inv_det is not 0.
 	inv_det = 1.0f / inv_det;
 
 	data[0][0] = tmp.data[0][0] * inv_det;

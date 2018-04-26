@@ -16,6 +16,7 @@ struct ps_input
 cbuffer cb0 : register(b0)
 {
 	float4x4 mvp;
+	float emissive_intensity;
 }
 
 Texture2D diffuse_texture : register(t0);
@@ -38,6 +39,7 @@ struct ps_output
 {
 	float4 albedo : SV_Target0;
 	float4 normal : SV_Target1;
+	float4 third : SV_Target2;
 };
 
 ps_output ps_main(ps_input input)
@@ -48,6 +50,7 @@ ps_output ps_main(ps_input input)
 	
 	output.albedo = float4(diffuse_texture.Sample(diffuse_sampler, input.uv).rgb, mge.r);
 	output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, mge.g);
+	output.third = float4(mge.b * emissive_intensity, 0.0f, 0.0f, 0.0f);
 	
 	return output;
 }

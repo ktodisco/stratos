@@ -44,6 +44,11 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_texture_format_r8g8b8a8_unorm,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
 	_gbuffer_normal_target->set_name("Gbuffer Normal");
+	_gbuffer_third_target = std::make_unique<st_render_texture>(
+		_window->get_width(),
+		_window->get_height(),
+		st_texture_format_r16g16b16a16_float,
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
 	_depth_stencil_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
@@ -73,10 +78,12 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 	_gbuffer_pass = std::make_unique<st_gbuffer_render_pass>(
 		_gbuffer_albedo_target.get(),
 		_gbuffer_normal_target.get(),
+		_gbuffer_third_target.get(),
 		_depth_stencil_target.get());
 	_deferred_pass = std::make_unique<st_deferred_light_render_pass>(
 		_gbuffer_albedo_target.get(),
 		_gbuffer_normal_target.get(),
+		_gbuffer_third_target.get(),
 		_depth_stencil_target.get(),
 		_deferred_target.get(),
 		_deferred_depth.get());

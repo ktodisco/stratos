@@ -19,8 +19,9 @@ st_gbuffer_material::st_gbuffer_material(
 		const char* albedo_texture,
 		const char* mge_texture)
 {
-	_view_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
-	_view_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
+	_gbuffer_buffer = std::make_unique<st_constant_buffer>(sizeof(st_gbuffer_cb));
+	_gbuffer_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
+	_gbuffer_buffer->add_constant("u_emissive", st_shader_constant_type_float);
 
 	_albedo_texture = std::make_unique<st_texture>();
 	if (!_albedo_texture->load_from_file(albedo_texture))
@@ -39,7 +40,7 @@ st_gbuffer_material::st_gbuffer_material(
 	_mge_texture->set_meta("u_mge", 1);
 
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_constant_buffer(_view_buffer.get());
+	_resource_table->add_constant_buffer(_gbuffer_buffer.get());
 	_resource_table->add_shader_resource(_albedo_texture.get());
 	_resource_table->add_shader_resource(_mge_texture.get());
 }
@@ -68,9 +69,10 @@ void st_gbuffer_material::bind(
 	st_mat4f mvp = transform * view * proj;
 	mvp.transpose();
 
-	st_view_cb cb_data{};
-	cb_data._mvp = mvp;
-	_view_buffer->update(context, &cb_data);
+	st_gbuffer_cb gbuffer_cb{};
+	gbuffer_cb._mvp = mvp;
+	gbuffer_cb._emissive = _emissive;
+	_gbuffer_buffer->update(context, &gbuffer_cb);
 
 	_resource_table->bind(context);
 }

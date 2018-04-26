@@ -79,28 +79,28 @@ int main(int argc, const char** argv)
 	std::unique_ptr<st_output> output = std::make_unique<st_output>(window.get(), render.get());
 
 	// Create camera.
-	std::unique_ptr<st_camera> camera = std::make_unique<st_camera>(st_vec3f({ 0.0f, 7.0f, 20.0f }));
+	std::unique_ptr<st_camera> camera = std::make_unique<st_camera>(st_vec3f({ 0.0f, 1.8f, 3.5f }));
 	st_quatf rotation;
 	rotation.make_axis_angle(st_vec3f::y_vector(), st_degrees_to_radians(180.0f));
 	camera->rotate(rotation);
-	rotation.make_axis_angle(st_vec3f::x_vector(), st_degrees_to_radians(15.0f));
+	rotation.make_axis_angle(st_vec3f::x_vector(), st_degrees_to_radians(20.0f));
 	camera->rotate(rotation);
 
 	// Create the default font:
 	g_font = std::make_unique<st_font>("VeraMono.ttf", 16.0f, 512, 512);
 
 	// Set up a test for the unlit texture material.
-	st_model_data pbr_model;
-	ply_to_model("data/models/sphere.ply", &pbr_model);
+	st_model_data sphere_model;
+	ply_to_model("data/models/sphere.ply", &sphere_model);
 
 	st_entity pbr_entity;
 	st_gbuffer_material pbr_material(
 		"data/textures/default_albedo.png",
 		"data/textures/default_mge.png");
-	st_model_component unlit_model_component(&pbr_entity, &pbr_model, &pbr_material);
+	st_model_component unlit_model_component(&pbr_entity, &sphere_model, &pbr_material);
 	sim->add_entity(&pbr_entity);
 
-	pbr_entity.scale(4.0f);
+	pbr_entity.translate({ 0.0f, 1.0f, 0.0f });
 
 	st_model_data floor_model;
 	ply_to_model("data/models/plane.ply", &floor_model);
@@ -112,7 +112,18 @@ int main(int argc, const char** argv)
 	st_model_component floor_model_component(&floor_entity, &floor_model, &floor_material);
 	sim->add_entity(&floor_entity);
 
-	floor_entity.scale(5.0f);
+	floor_entity.scale(0.5f);
+
+	st_entity light_entity;
+	st_gbuffer_material light_material(
+		"data/textures/white_albedo.png",
+		"data/textures/default_emissive.png");
+	light_material.set_emissive(200.0f);
+	st_model_component light_model_component(&light_entity, &sphere_model, &light_material);
+	sim->add_entity(&light_entity);
+
+	light_entity.translate({ 1.0f, 1.0f, 1.0f });
+	light_entity.scale(0.05f);
 
 	window->show();
 

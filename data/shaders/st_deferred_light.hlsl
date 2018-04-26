@@ -11,7 +11,8 @@ struct ps_input
 
 Texture2D albedo_texture : register(t0);
 Texture2D normal_texture : register(t1);
-Texture2D depth_texture : register(t2);
+Texture2D third_texture : register(t2);
+Texture2D depth_texture : register(t3);
 
 // Light constants.
 static float s_pi = 3.14159f;
@@ -28,7 +29,7 @@ cbuffer cb0 : register(b0)
 
 float light_falloff(float power, float distance)
 {
-	return power / ((distance * distance) / 100.0f);
+	return (power / (4 * s_pi)) / (distance * distance);
 }
 
 float3 diffuse_lambertian(float3 albedo, float3 n, float3 l)
@@ -59,12 +60,14 @@ float4 ps_main(ps_input input) : SV_TARGET
 {
 	float4 albedo_sample = albedo_texture.Load(int3(input.position.xy, 0));
 	float4 normal_sample = normal_texture.Load(int3(input.position.xy, 0));
+	float4 third_sample = third_texture.Load(int3(input.position.xy, 0));
 	float depth = depth_texture.Load(int3(input.position.xy, 0)).r;
 	
 	float3 albedo = albedo_sample.rgb;
 	float metalness = albedo_sample.a;
 	float3 normal = normal_sample.rgb * 2.0f - 1.0f;
 	float gloss = normal_sample.a;
+	float emissive = third_sample.r;
 
 	float4 clip_position = float4(input.uv * 2.0f - 1.0f, depth, 1.0f);
 	float4 world_position = mul(clip_position, inverse_vp);
@@ -81,6 +84,8 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float3 lit_color = diffuse_lambertian(diffuse_color, normal, to_light) * light_falloff(light_power, dist_to_light);
 	lit_color += specular_phong(specular_color, normal, to_eye, to_light, gloss) * light_falloff(light_power, dist_to_light);
 	lit_color += diffuse_color * ambient;
+	
+	lit_color += emissive * albedo_sample;
 	
 	return float4(lit_color, 1.0f);
 };

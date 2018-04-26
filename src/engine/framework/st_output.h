@@ -41,6 +41,7 @@ private:
 
 	std::unique_ptr<class st_render_texture> _gbuffer_albedo_target;
 	std::unique_ptr<class st_render_texture> _gbuffer_normal_target;
+	std::unique_ptr<class st_render_texture> _gbuffer_third_target;
 	std::unique_ptr<class st_render_texture> _depth_stencil_target;
 
 	std::unique_ptr<class st_render_texture> _deferred_target;
