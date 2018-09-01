@@ -12,6 +12,7 @@ uniform float u_light_power;
 
 uniform sampler2D u_albedo;
 uniform sampler2D u_normal;
+uniform sampler2D u_third;
 uniform sampler2D u_depth;
 
 in vec2 ps_in_texcoord;
@@ -20,7 +21,7 @@ layout(location = 0) out vec4 out_color;
 
 float light_falloff(float power, float distance)
 {
-	return power / ((distance * distance) / 100.0);
+	return (power / (4.0 * s_pi)) / (distance * distance);
 }
 
 vec3 diffuse_lambertian(vec3 albedo, vec3 n, vec3 l)
@@ -39,12 +40,14 @@ void main(void)
 {
 	vec4 albedo_sample = texelFetch(u_albedo, ivec2(gl_FragCoord.xy), 0);
 	vec4 normal_sample = texelFetch(u_normal, ivec2(gl_FragCoord.xy), 0);
+	vec4 third_sample = texelFetch(u_third, ivec2(gl_FragCoord.xy), 0);
 	float depth = texelFetch(u_depth, ivec2(gl_FragCoord.xy), 0).r;
 	
 	vec3 albedo = albedo_sample.rgb;
 	float metalness = albedo_sample.a;
 	vec3 normal = normal_sample.rgb * 2.0 - 1.0;
 	float gloss = normal_sample.a;
+	float emissive = third_sample.r;
 	
 	vec4 clip_position = vec4(ps_in_texcoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
 	vec4 world_position = clip_position * u_inverse_vp;
@@ -61,6 +64,8 @@ void main(void)
 	vec3 lit_color = diffuse_lambertian(diffuse_color, normal, to_light) * light_falloff(u_light_power, dist_to_light);
 	lit_color += specular_phong(specular_color, normal, to_eye, to_light, gloss) * light_falloff(u_light_power, dist_to_light);
 	lit_color += diffuse_color * ambient;
+	
+	lit_color += emissive * albedo_sample.rgb;
 
 	out_color = vec4(lit_color, 1.0);
 }

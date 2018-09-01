@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 vs_in_position;
 layout(location = 1) in vec3 vs_in_normal;
+layout(location = 2) in vec4 vs_in_color;
 layout(location = 3) in vec2 vs_in_uv;
 
 uniform mat4 u_mvp;
