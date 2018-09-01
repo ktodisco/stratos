@@ -10,6 +10,7 @@
 
 struct st_gbuffer_cb
 {
+	st_mat4f _model;
 	st_mat4f _mvp;
 	float _emissive;
 };

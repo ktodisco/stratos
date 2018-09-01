@@ -63,6 +63,9 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 		if (strcmp(data, "nx") == 0) state._properties[state._property_count] = st_property_normal_x;
 		if (strcmp(data, "ny") == 0) state._properties[state._property_count] = st_property_normal_y;
 		if (strcmp(data, "nz") == 0) state._properties[state._property_count] = st_property_normal_z;
+		if (strcmp(data, "bnx") == 0) state._properties[state._property_count] = st_property_binormal_x;
+		if (strcmp(data, "bny") == 0) state._properties[state._property_count] = st_property_binormal_y;
+		if (strcmp(data, "bnz") == 0) state._properties[state._property_count] = st_property_binormal_z;
 		if (strcmp(data, "s") == 0) state._properties[state._property_count] = st_property_uv_s;
 		if (strcmp(data, "t") == 0) state._properties[state._property_count] = st_property_uv_t;
 
@@ -115,6 +118,15 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 				break;
 			case st_property_normal_z:
 				vertex._normal.z = (float)atof(data);
+				break;
+			case st_property_binormal_x:
+				vertex._binormal.x = (float)atof(data);
+				break;
+			case st_property_binormal_y:
+				vertex._binormal.y = (float)atof(data);
+				break;
+			case st_property_binormal_z:
+				vertex._binormal.z = (float)atof(data);
 				break;
 			case st_property_uv_s:
 				vertex._uv.x = (float)atof(data);
@@ -203,6 +215,7 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 2));
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 3));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_binormal, 4));
 
 	model->_vertex_format.finalize();
 }

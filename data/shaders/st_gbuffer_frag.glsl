@@ -7,6 +7,7 @@ uniform float u_emissive;
 in vec3 ps_in_position;
 in vec3 ps_in_normal;
 in vec2 ps_in_uv;
+in vec3 ps_in_binormal;
 
 layout(location = 0) out vec4 out_albedo;
 layout(location = 1) out vec4 out_normal;

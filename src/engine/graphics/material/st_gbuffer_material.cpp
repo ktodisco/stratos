@@ -20,6 +20,7 @@ st_gbuffer_material::st_gbuffer_material(
 		const char* mge_texture)
 {
 	_gbuffer_buffer = std::make_unique<st_constant_buffer>(sizeof(st_gbuffer_cb));
+	_gbuffer_buffer->add_constant("u_model", st_shader_constant_type_mat4);
 	_gbuffer_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
 	_gbuffer_buffer->add_constant("u_emissive", st_shader_constant_type_float);
 
@@ -70,6 +71,7 @@ void st_gbuffer_material::bind(
 	mvp.transpose();
 
 	st_gbuffer_cb gbuffer_cb{};
+	gbuffer_cb._model = transform;
 	gbuffer_cb._mvp = mvp;
 	gbuffer_cb._emissive = _emissive;
 	_gbuffer_buffer->update(context, &gbuffer_cb);
