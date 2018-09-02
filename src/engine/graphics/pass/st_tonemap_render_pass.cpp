@@ -54,7 +54,7 @@ void st_tonemap_render_pass::render(
 
 	_framebuffer->bind(context);
 
-	_material->bind(context, identity, identity, identity);
+	_material->bind(context, params, identity, identity, identity);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";

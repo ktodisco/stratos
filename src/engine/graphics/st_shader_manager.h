@@ -29,6 +29,7 @@ enum e_st_shader
 	st_shader_fullscreen,
 	st_shader_deferred_light,
 	st_shader_tonemap,
+	st_shader_parallax_occlusion,
 };
 
 class st_shader_manager

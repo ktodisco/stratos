@@ -10,6 +10,7 @@
 
 #include <graphics/geometry/st_vertex_format.h>
 #include <graphics/material/st_gbuffer_material.h>
+#include <graphics/material/st_parallax_occlusion_material.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_framebuffer.h>
 #include <graphics/st_pipeline_state.h>
@@ -48,6 +49,23 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 
 	_gbuffer_state = std::make_unique<st_pipeline_state>(gbuffer_state_desc);
 
+	// TODO: See comment in header regarding multiple materials in a single render pass.
+	_default_parallax_occlusion = std::make_unique<st_parallax_occlusion_material>(
+		"data/textures/default_albedo.png",
+		"data/textures/pom_normal.png");
+
+	st_pipeline_state_desc parallax_occlusion_state_desc;
+	_default_parallax_occlusion->get_pipeline_state(&parallax_occlusion_state_desc);
+
+	parallax_occlusion_state_desc._vertex_format = _vertex_format.get();
+	parallax_occlusion_state_desc._render_target_count = 3;
+	parallax_occlusion_state_desc._render_target_formats[0] = albedo_buffer->get_format();
+	parallax_occlusion_state_desc._render_target_formats[1] = normal_buffer->get_format();
+	parallax_occlusion_state_desc._render_target_formats[2] = third_buffer->get_format();
+	parallax_occlusion_state_desc._depth_stencil_format = depth_buffer->get_format();
+
+	_parallax_occlusion_state = std::make_unique<st_pipeline_state>(parallax_occlusion_state_desc);
+
 	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
 	_framebuffer = std::make_unique<st_framebuffer>(
 		3,
@@ -82,11 +100,23 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 
 		if (!d._material)
 		{
-			_default_gbuffer->bind(context, perspective, params->_view, d._transform);
+			context->set_pipeline_state(_gbuffer_state.get());
+			_default_gbuffer->bind(context, params, perspective, params->_view, d._transform);
 		}
 		else
 		{
-			d._material->bind(context, perspective, params->_view, d._transform);
+			switch (d._material->get_material_type())
+			{
+			case st_material_type_parallax_occlusion:
+				context->set_pipeline_state(_parallax_occlusion_state.get());
+				break;
+			case st_material_type_gbuffer:
+			default:
+				context->set_pipeline_state(_gbuffer_state.get());
+				break;
+			}
+
+			d._material->bind(context, params, perspective, params->_view, d._transform);
 		}
 
 		context->draw(d);

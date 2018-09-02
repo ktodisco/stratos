@@ -18,6 +18,7 @@
 #include <graphics/parse/st_egg_parser.h>
 #include <graphics/material/st_gbuffer_material.h>
 #include <graphics/material/st_material.h>
+#include <graphics/material/st_parallax_occlusion_material.h>
 #include <graphics/geometry/st_model_component.h>
 #include <graphics/parse/st_ply_parser.h>
 #include <graphics/geometry/st_model_data.h>
@@ -102,17 +103,27 @@ int main(int argc, const char** argv)
 
 	pbr_entity.translate({ 0.0f, 1.0f, 0.0f });
 
-	st_model_data floor_model;
-	ply_to_model("data/models/plane.ply", &floor_model);
+	st_model_data plane_model;
+	ply_to_model("data/models/plane.ply", &plane_model);
 
 	st_entity floor_entity;
 	st_gbuffer_material floor_material(
 		"data/textures/floor.png",
 		"data/textures/dielectric_mge.png");
-	st_model_component floor_model_component(&floor_entity, &floor_model, &floor_material);
+	st_model_component floor_model_component(&floor_entity, &plane_model, &floor_material);
 	sim->add_entity(&floor_entity);
 
 	floor_entity.scale(0.5f);
+
+	st_entity pom_entity;
+	st_parallax_occlusion_material pom_material(
+		"data/textures/pom_albedo.png",
+		"data/textures/pom_normal.png");
+	st_model_component pom_model_component(&pom_entity, &plane_model, &pom_material);
+	sim->add_entity(&pom_entity);
+
+	pom_entity.translate({ 0.0f, 0.01f, 0.0f });
+	pom_entity.scale(0.1f);
 
 	st_entity light_entity;
 	st_gbuffer_material light_material(

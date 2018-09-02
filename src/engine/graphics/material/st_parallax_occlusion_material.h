@@ -8,23 +8,23 @@
 
 #include <graphics/material/st_material.h>
 
-struct st_gbuffer_cb
+struct st_parallax_occlusion_cb
 {
 	st_mat4f _model;
 	st_mat4f _mvp;
-	float _emissive;
+	st_vec4f _eye;
 };
 
 /*
-** Material for objects drawn to the gbuffer.
+** Material for objects drawn with the parallax occlusion mapping effect.
 */
-class st_gbuffer_material : public st_material
+class st_parallax_occlusion_material : public st_material
 {
 public:
-	st_gbuffer_material(
+	st_parallax_occlusion_material(
 		const char* albedo_texture,
-		const char* mge_texture);
-	~st_gbuffer_material();
+		const char* normal_texture);
+	~st_parallax_occlusion_material();
 
 	virtual void bind(
 		class st_render_context* context,
@@ -36,16 +36,12 @@ public:
 	void get_pipeline_state(
 		struct st_pipeline_state_desc* state_desc) override;
 
-	st_material_type get_material_type() override { return st_material_type_gbuffer; }
-
-	void set_emissive(float e) { _emissive = e; }
+	st_material_type get_material_type() override { return st_material_type_parallax_occlusion; }
 
 private:
-	std::unique_ptr<class st_constant_buffer> _gbuffer_buffer = nullptr;
+	std::unique_ptr<class st_constant_buffer> _parallax_occlusion_buffer = nullptr;
 	std::unique_ptr<class st_texture> _albedo_texture;
-	std::unique_ptr<class st_texture> _mge_texture;
+	std::unique_ptr<class st_texture> _normal_texture;
 
 	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
-
-	float _emissive = 0;
 };

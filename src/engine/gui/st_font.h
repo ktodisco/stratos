@@ -54,6 +54,7 @@ public:
 
 	virtual void bind(
 		class st_render_context* context,
+		const struct st_frame_params* params,
 		const struct st_mat4f& proj,
 		const struct st_mat4f& view,
 		const struct st_mat4f& transform) override;

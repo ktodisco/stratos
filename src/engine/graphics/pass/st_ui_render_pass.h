@@ -23,7 +23,7 @@ public:
 private:
 	void draw_dynamic(
 		class st_render_context* context,
-		const std::vector<struct st_dynamic_drawcall>& drawcalls,
+		const struct st_frame_params* params,
 		const class st_mat4f& proj,
 		const class st_mat4f& view);
 

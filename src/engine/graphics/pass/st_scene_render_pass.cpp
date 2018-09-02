@@ -81,28 +81,28 @@ void st_scene_render_pass::render(st_render_context* context, const st_frame_par
 			context->set_pipeline_state(_unlit_texture_state.get());
 		}
 
-		d._material->bind(context, perspective, params->_view, d._transform);
+		d._material->bind(context, params, perspective, params->_view, d._transform);
 		context->draw(d);
 	}
 
 	// Draw all dynamic geometry:
-	draw_dynamic(context, params->_dynamic_drawcalls, perspective, params->_view);
+	draw_dynamic(context, params, perspective, params->_view);
 }
 
 void st_scene_render_pass::draw_dynamic(
 	st_render_context* context,
-	const std::vector<st_dynamic_drawcall>& drawcalls,
+	const st_frame_params* params,
 	const class st_mat4f& proj,
 	const class st_mat4f& view)
 {
-	for (auto& d : drawcalls)
+	for (auto& d : params->_dynamic_drawcalls)
 	{
 		st_render_marker draw_marker(d._name);
 
 		if (d._material)
 		{
 			//d._material->set_color(d._color);
-			d._material->bind(context, proj, view, d._transform);
+			d._material->bind(context, params, proj, view, d._transform);
 		}
 		else
 		{

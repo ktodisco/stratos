@@ -45,7 +45,7 @@ void st_passthrough_render_pass::render(
 
 	context->set_pipeline_state(_pipeline_state.get());
 
-	_material->bind(context, identity, identity, identity);
+	_material->bind(context, params, identity, identity, identity);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";

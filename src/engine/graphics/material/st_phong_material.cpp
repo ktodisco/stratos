@@ -27,6 +27,7 @@ st_phong_material::~st_phong_material()
 
 void st_phong_material::bind(
 	st_render_context* context,
+	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
 	const st_mat4f& transform)

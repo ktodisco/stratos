@@ -24,6 +24,7 @@ class st_gl_material
 public:
 	virtual void bind(
 		class st_render_context* context,
+		const struct st_frame_params* params,
 		const st_mat4f& proj,
 		const st_mat4f& view,
 		const st_mat4f& transform) = 0;

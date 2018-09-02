@@ -54,7 +54,7 @@ void main(void)
 	world_position /= world_position.w;
 	
 	vec3 to_eye = normalize(u_eye.xyz - world_position.xyz);
-	vec3 to_light = u_light_position.xyz - world_position.xyz;
+	vec3 to_light = normalize(vec3(-1.0, 1.0, -1.0));//u_light_position.xyz - world_position.xyz;
 	float dist_to_light = length(to_light);
 	to_light = normalize(to_light);
 	

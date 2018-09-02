@@ -65,16 +65,16 @@ void st_ui_render_pass::render(st_render_context* context, const st_frame_params
 	st_mat4f view;
 	view.make_lookat_rh(st_vec3f::z_vector(), -st_vec3f::z_vector(), st_vec3f::y_vector());
 
-	draw_dynamic(context, params->_gui_drawcalls, ortho, view);
+	draw_dynamic(context, params, ortho, view);
 }
 
 void st_ui_render_pass::draw_dynamic(
 	st_render_context* context,
-	const std::vector<st_dynamic_drawcall>& drawcalls,
+	const st_frame_params* params,
 	const class st_mat4f& proj,
 	const class st_mat4f& view)
 {
-	for (auto& d : drawcalls)
+	for (auto& d : params->_gui_drawcalls)
 	{
 		st_render_marker draw_marker(d._name);
 
@@ -82,13 +82,13 @@ void st_ui_render_pass::draw_dynamic(
 		{
 			context->set_pipeline_state(_font_state.get());
 			d._material->set_color(d._color);
-			d._material->bind(context, proj, view, d._transform);
+			d._material->bind(context, params, proj, view, d._transform);
 		}
 		else
 		{
 			context->set_pipeline_state(_default_state.get());
 			_default_material->set_color(d._color);
-			_default_material->bind(context, proj, view, d._transform);
+			_default_material->bind(context, params, proj, view, d._transform);
 		}
 
 		context->draw(d);
