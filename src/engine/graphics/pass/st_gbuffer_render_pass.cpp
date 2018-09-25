@@ -29,7 +29,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_color, 2));
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 3));
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_binormal, 4));
+	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_tangent, 4));
 	_vertex_format->finalize();
 
 	// Set up the gbuffer material and state.

@@ -2,6 +2,7 @@ struct vs_input
 {
 	float3 position : POSITION;
 	float3 normal : NORMAL;
+	float3 tangent : TANGENT;
 	float4 color : COLOR;
 	float2 uv : UV;
 };
@@ -10,11 +11,13 @@ struct ps_input
 {
 	float4 position : SV_POSITION;
 	float3 normal : TEXCOORD0;
-	float2 uv : TEXCOORD1;
+	float3 tangent : TEXCOORD1;
+	float2 uv : TEXCOORD2;
 };
 
 cbuffer cb0 : register(b0)
 {
+	float4x4 model;
 	float4x4 mvp;
 	float emissive_intensity;
 }
@@ -29,7 +32,8 @@ ps_input vs_main(vs_input input)
 	ps_input result;
 
 	result.position = mul(float4(input.position, 1.0f), mvp);
-	result.normal = input.normal;
+	result.normal = mul(float4(input.normal, 0.0f), model).xyz;
+	result.tangent = mul(float4(input.position, 0.0f), model).xyz;
 	result.uv = input.uv;
 
 	return result;
