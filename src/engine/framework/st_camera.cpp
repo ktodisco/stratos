@@ -71,7 +71,6 @@ void st_camera::update(st_frame_params* params)
 	_transform.translate(_position);
 
 	st_vec3f eye = _transform.get_translation();
-	printf("%f %f %f\n", eye.x, eye.y, eye.z);
 	st_vec3f at = eye + _transform.get_forward();
 	st_vec3f up = st_vec3f::y_vector();
 
