@@ -39,6 +39,8 @@ void st_camera::update(st_frame_params* params)
 	world_translation.make_translation(translation);
 	_transform = _transform * world_translation;
 
+	_position = _transform.get_translation();
+
 	// Use arrow keys to pitch and rotate.
 	float rotation = 0.0f;
 	rotation += (params->_button_mask & k_button_left) ? k_rotate_speed : 0.0f;
@@ -50,16 +52,26 @@ void st_camera::update(st_frame_params* params)
 	rotation = st_degrees_to_radians(rotation);
 	pitch = st_degrees_to_radians(pitch);
 
-	st_quatf rotation_axis_angle;
-	rotation_axis_angle.make_axis_angle(st_vec3f::y_vector(), rotation);
-	st_mat4f rotation_matrix;
-	rotation_matrix.make_rotation(rotation_axis_angle);
+	_yaw += rotation;
+	_pitch += pitch;
 
-	rotation_axis_angle.make_axis_angle(st_vec3f::x_vector(), pitch);
-	rotation_matrix.rotate(rotation_axis_angle);
-	_transform = rotation_matrix * _transform;
+	// Recreate the transform.
+	_transform.make_identity();
+
+	st_quatf rotation_axis_angle;
+	rotation_axis_angle.make_axis_angle(st_vec3f::y_vector(), _yaw);
+	st_mat4f yaw_matrix;
+	yaw_matrix.make_rotation(rotation_axis_angle);
+
+	rotation_axis_angle.make_axis_angle(st_vec3f::x_vector(), _pitch);
+	st_mat4f pitch_matrix;
+	pitch_matrix.make_rotation(rotation_axis_angle);
+	_transform = pitch_matrix * (yaw_matrix * _transform);
+
+	_transform.translate(_position);
 
 	st_vec3f eye = _transform.get_translation();
+	printf("%f %f %f\n", eye.x, eye.y, eye.z);
 	st_vec3f at = eye + _transform.get_forward();
 	st_vec3f up = st_vec3f::y_vector();
 

@@ -27,5 +27,8 @@ public:
 	void set_transform(const st_mat4f& t) { _transform = t; }
 
 private:
+	float _yaw = 0.0f;
+	float _pitch = 0.0f;
+	st_vec3f _position;
 	st_mat4f _transform;
 };
