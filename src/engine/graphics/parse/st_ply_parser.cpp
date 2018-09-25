@@ -63,9 +63,6 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 		if (strcmp(data, "nx") == 0) state._properties[state._property_count] = st_property_normal_x;
 		if (strcmp(data, "ny") == 0) state._properties[state._property_count] = st_property_normal_y;
 		if (strcmp(data, "nz") == 0) state._properties[state._property_count] = st_property_normal_z;
-		if (strcmp(data, "bnx") == 0) state._properties[state._property_count] = st_property_binormal_x;
-		if (strcmp(data, "bny") == 0) state._properties[state._property_count] = st_property_binormal_y;
-		if (strcmp(data, "bnz") == 0) state._properties[state._property_count] = st_property_binormal_z;
 		if (strcmp(data, "s") == 0) state._properties[state._property_count] = st_property_uv_s;
 		if (strcmp(data, "t") == 0) state._properties[state._property_count] = st_property_uv_t;
 
@@ -118,15 +115,6 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 				break;
 			case st_property_normal_z:
 				vertex._normal.z = (float)atof(data);
-				break;
-			case st_property_binormal_x:
-				vertex._binormal.x = (float)atof(data);
-				break;
-			case st_property_binormal_y:
-				vertex._binormal.y = (float)atof(data);
-				break;
-			case st_property_binormal_z:
-				vertex._binormal.z = (float)atof(data);
 				break;
 			case st_property_uv_s:
 				vertex._uv.x = (float)atof(data);
@@ -211,11 +199,72 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 		}
 	}
 
+	// Now, calculate the tangent vectors.
+	// http://www.terathon.com/code/tangent.html
+	st_vec3f* tan1 = new st_vec3f[model->_vertices.size()];
+	memset(tan1, 0, sizeof(st_vec3f) * model->_vertices.size());
+
+	for (uint32_t i = 0; i < model->_indices.size(); i += 3)
+	{
+		uint16_t i0 = model->_indices[i];
+		uint16_t i1 = model->_indices[i + 1];
+		uint16_t i2 = model->_indices[i + 2];
+
+		const st_vec3f& v0 = model->_vertices[i0]._position;
+		const st_vec3f& v1 = model->_vertices[i1]._position;
+		const st_vec3f& v2 = model->_vertices[i2]._position;
+
+		const st_vec2f& w0 = model->_vertices[i0]._uv;
+		const st_vec2f& w1 = model->_vertices[i1]._uv;
+		const st_vec2f& w2 = model->_vertices[i2]._uv;
+
+		float x0 = v1.x - v0.x;
+		float x1 = v2.x - v0.x;
+		float y0 = v1.y - v0.y;
+		float y1 = v2.y - v0.y;
+		float z0 = v1.z - v0.z;
+		float z1 = v2.z - v0.z;
+
+		float s0 = w1.x - w0.x;
+		float s1 = w2.x - w0.x;
+		float t0 = w1.y - w0.y;
+		float t1 = w2.y - w0.y;
+
+		float r = 1.0f / (s0 * t1 - s1 * t0);
+		st_vec3f s_dir
+		{
+			(t1 * x0 - t0 * x1) * r,
+			(t1 * y0 - t0 * y1) * r,
+			(t1 * z0 - t0 * z1) * r
+		};
+		st_vec3f t_dir
+		{
+			(s0 * x1 - s1 * x0) * r,
+			(s0 * y1 - s1 * y0) * r,
+			(s0 * z1 - s1 * z0) * r
+		};
+
+		tan1[i0] += s_dir;
+		tan1[i1] += s_dir;
+		tan1[i2] += s_dir;
+	}
+
+	for (uint32_t i = 0; i < model->_vertices.size(); ++i)
+	{
+		const st_vec3f& n = model->_vertices[i]._normal;
+		const st_vec3f& t = tan1[i];
+
+		// Gram-Schmidt orthogonalize.
+		model->_vertices[i]._tangent = (t - n.scale_result(n.dot(t))).normal();
+	}
+
+	delete[] tan1;
+
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 2));
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 3));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_binormal, 4));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_tangent, 4));
 
 	model->_vertex_format.finalize();
 }

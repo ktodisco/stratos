@@ -7,7 +7,7 @@ uniform vec4 u_eye;
 in vec3 ps_in_position;
 in vec3 ps_in_normal;
 in vec2 ps_in_uv;
-in vec3 ps_in_binormal;
+in vec3 ps_in_tangent;
 
 layout(location = 0) out vec4 out_albedo;
 layout(location = 1) out vec4 out_normal;
@@ -15,13 +15,13 @@ layout(location = 2) out vec4 out_third;
 
 void main(void)
 {
-	// Use the binormal and normal to find the tangent.
-	vec3 tangent = normalize(cross(ps_in_normal, ps_in_binormal));
+	// Use the tangent and normal to find the binormal.
+	vec3 binormal = normalize(cross(ps_in_normal, ps_in_tangent));
 	
 	// Construct the tangent space matrix.
 	mat3 tangent_to_world;
-	tangent_to_world[0] = ps_in_binormal;
-	tangent_to_world[1] = tangent;
+	tangent_to_world[0] = ps_in_tangent;
+	tangent_to_world[1] = binormal;
 	tangent_to_world[2] = ps_in_normal;
 	
 	mat3 world_to_tangent = transpose(tangent_to_world);
@@ -50,7 +50,7 @@ void main(void)
 	float current_sampled_height = 1.0;
 	int current_sample = 0;
 	
-	while (current_sample < num_samples)
+	/*while (current_sample < num_samples)
 	{
 		current_sampled_height = textureGrad(u_normal, ps_in_uv + current_offset, dx, dy).a;
 		if (current_sampled_height > current_ray_height)
@@ -69,13 +69,13 @@ void main(void)
 			current_offset += step_size * max_offset;
 			last_sampled_height = current_sampled_height;
 		}
-	}
+	}*/
 	
 	vec2 final_coords = ps_in_uv + current_offset;
 	vec3 final_normal = normalize(texture(u_normal, final_coords).xyz * world_to_tangent);
 	vec3 final_color = texture(u_albedo, final_coords).xyz;
 	
-	out_albedo = vec4(final_color, 0.0);
+	out_albedo = vec4(final_color, 0.5);
 	out_normal = vec4(normalize(ps_in_normal + final_normal) * 0.5 + 0.5, 0.0);
 	out_third = vec4(0.0, 0.0, 0.0, 0.0);
 }

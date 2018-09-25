@@ -115,15 +115,17 @@ int main(int argc, const char** argv)
 
 	floor_entity.scale(0.5f);
 
+	st_model_data pom_model;
+	ply_to_model("data/models/pom_low.ply", &pom_model);
+
 	st_entity pom_entity;
 	st_parallax_occlusion_material pom_material(
-		"data/textures/pom_albedo.png",
-		"data/textures/pom_normal.png");
-	st_model_component pom_model_component(&pom_entity, &plane_model, &pom_material);
+		"data/textures/default_albedo.png",
+		"data/textures/test_bake_normals.png");
+	st_model_component pom_model_component(&pom_entity, &pom_model, &pom_material);
 	sim->add_entity(&pom_entity);
 
 	pom_entity.translate({ 0.0f, 0.01f, 0.0f });
-	pom_entity.scale(0.1f);
 
 	st_entity light_entity;
 	st_gbuffer_material light_material(
