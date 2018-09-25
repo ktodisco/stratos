@@ -21,7 +21,8 @@ public:
 
 	void update(struct st_frame_params* params);
 
-	void rotate(const struct st_quatf& rotation);
+	void set_yaw(float yaw) { _yaw = yaw; }
+	void set_pitch(float pitch) { _pitch = pitch; }
 
 	const st_mat4f& get_transform() const { return _transform; }
 	void set_transform(const st_mat4f& t) { _transform = t; }

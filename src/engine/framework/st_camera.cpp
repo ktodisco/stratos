@@ -49,9 +49,6 @@ void st_camera::update(st_frame_params* params)
 	pitch += (params->_button_mask & k_button_up) ? -k_rotate_speed : 0.0f;
 	pitch += (params->_button_mask & k_button_down) ? k_rotate_speed : 0.0f;
 
-	rotation = st_degrees_to_radians(rotation);
-	pitch = st_degrees_to_radians(pitch);
-
 	_yaw += rotation;
 	_pitch += pitch;
 
@@ -59,11 +56,11 @@ void st_camera::update(st_frame_params* params)
 	_transform.make_identity();
 
 	st_quatf rotation_axis_angle;
-	rotation_axis_angle.make_axis_angle(st_vec3f::y_vector(), _yaw);
+	rotation_axis_angle.make_axis_angle(st_vec3f::y_vector(), st_degrees_to_radians(_yaw));
 	st_mat4f yaw_matrix;
 	yaw_matrix.make_rotation(rotation_axis_angle);
 
-	rotation_axis_angle.make_axis_angle(st_vec3f::x_vector(), _pitch);
+	rotation_axis_angle.make_axis_angle(st_vec3f::x_vector(), st_degrees_to_radians(_pitch));
 	st_mat4f pitch_matrix;
 	pitch_matrix.make_rotation(rotation_axis_angle);
 	_transform = pitch_matrix * (yaw_matrix * _transform);
@@ -79,11 +76,4 @@ void st_camera::update(st_frame_params* params)
 
 	params->_view = view;
 	params->_eye = eye;
-}
-
-void st_camera::rotate(const st_quatf& rotation)
-{
-	st_mat4f rotation_matrix;
-	rotation_matrix.make_rotation(rotation);
-	_transform = rotation_matrix * _transform;
 }

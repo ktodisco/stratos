@@ -81,11 +81,8 @@ int main(int argc, const char** argv)
 
 	// Create camera.
 	std::unique_ptr<st_camera> camera = std::make_unique<st_camera>(st_vec3f({ 0.0f, 1.8f, 3.5f }));
-	st_quatf rotation;
-	rotation.make_axis_angle(st_vec3f::y_vector(), st_degrees_to_radians(180.0f));
-	camera->rotate(rotation);
-	rotation.make_axis_angle(st_vec3f::x_vector(), st_degrees_to_radians(20.0f));
-	camera->rotate(rotation);
+	camera->set_yaw(180.0f);
+	camera->set_pitch(20.0f);
 
 	// Create the default font:
 	g_font = std::make_unique<st_font>("VeraMono.ttf", 16.0f, 512, 512);

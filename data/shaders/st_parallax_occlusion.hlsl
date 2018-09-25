@@ -34,8 +34,8 @@ ps_input vs_main(vs_input input)
 	ps_input result;
 
 	result.position = mul(float4(input.position, 1.0f), mvp);
-	result.normal = input.normal;
-	result.tangent = mul(float4(input.position, 0.0f), mvp).xyz;
+	result.normal = mul(float4(input.normal, 0.0f), model).xyz;
+	result.tangent = mul(float4(input.position, 0.0f), model).xyz;
 	result.uv = input.uv;
 
 	return result;
