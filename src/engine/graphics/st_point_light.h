@@ -25,7 +25,7 @@ private:
 	st_vec3f _position;
 	st_vec3f _color;
 	
-	// In Watts.
+	// In lumens.
 	float _power = 0;
 };
 
