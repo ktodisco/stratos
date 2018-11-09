@@ -615,6 +615,11 @@ void st_dx12_render_context::transition_backbuffer_to_target()
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE dsv_handle(_dsv_heap->GetCPUDescriptorHandleForHeapStart());
 	_command_list->OMSetRenderTargets(1, &rtv_handle, false, &dsv_handle);
+
+	// TODO: It would be more ideal if this internally had st_render_targets for the
+	// backbuffer and depth/stencil buffer.
+	_bound_targets[0] = rtv_handle;
+	_bound_depth_stencil = dsv_handle;
 }
 
 void st_dx12_render_context::transition_backbuffer_to_present()

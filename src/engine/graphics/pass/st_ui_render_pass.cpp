@@ -65,6 +65,9 @@ void st_ui_render_pass::render(st_render_context* context, const st_frame_params
 	st_mat4f view;
 	view.make_lookat_rh(st_vec3f::z_vector(), -st_vec3f::z_vector(), st_vec3f::y_vector());
 
+	// Clear depth.
+	context->clear(st_clear_flag_depth);
+
 	draw_dynamic(context, params, ortho, view);
 }
 
