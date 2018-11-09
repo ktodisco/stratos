@@ -20,6 +20,7 @@ public:
 	~st_input();
 
 	void update(struct st_frame_params* params);
+	void handle_mouse_move(uint32_t mouse_x, uint32_t mouse_y);
 	void handle_key_press(int key_code, int info);
 	void handle_key_release(int key_code, int info);
 

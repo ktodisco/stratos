@@ -30,6 +30,12 @@ st_input::~st_input()
 {
 }
 
+void st_input::handle_mouse_move(uint32_t mouse_x, uint32_t mouse_y)
+{
+	_mouse_x = mouse_x;
+	_mouse_y = mouse_y;
+}
+
 void st_input::handle_key_press(int key_code, int info)
 {
 	switch (key_code)

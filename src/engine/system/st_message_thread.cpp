@@ -10,6 +10,8 @@
 
 #include <system/st_window.h>
 
+#include <windowsx.h>
+
 st_message_thread::st_message_thread(st_window* window, st_input* input) :
 	_window(window), _input(input)
 {
@@ -36,6 +38,13 @@ LRESULT st_message_thread::handle_message(HWND window_handle, UINT message, WPAR
 {
 	switch(message)
 	{
+	case WM_MOUSEMOVE:
+		{
+			uint32_t x_pos = GET_X_LPARAM(l_param);
+			uint32_t y_pos = GET_Y_LPARAM(l_param);
+			_input->handle_mouse_move(x_pos, y_pos);
+		}
+		break;
 	case WM_KEYDOWN:
 		_input->handle_key_press((int)w_param, (int)l_param);
 		break;
