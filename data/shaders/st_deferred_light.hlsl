@@ -1,3 +1,5 @@
+#include "st_lighting.hlsli"
+
 struct vs_input
 {
 	float3 position : POSITION;
@@ -27,23 +29,6 @@ cbuffer cb0 : register(b0)
 	float light_power;
 }
 
-float light_falloff(float power, float distance)
-{
-	return (power / (4 * s_pi)) / (distance * distance);
-}
-
-float3 diffuse_lambertian(float3 albedo, float3 n, float3 l)
-{
-	return (albedo / s_pi) * saturate(dot(n, l));
-}
-
-float3 specular_phong(float3 specular, float3 n, float3 v, float3 l, float g)
-{
-	float3 r = reflect(-l, n);
-	float a = saturate(dot(r, v));
-	return specular * pow(a, ((1.0f - g) * 50.0f) / 4.0f);
-}
-
 ps_input vs_main(vs_input input)
 {
 	ps_input result;
@@ -66,7 +51,8 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float3 albedo = albedo_sample.rgb;
 	float metalness = albedo_sample.a;
 	float3 normal = normal_sample.rgb * 2.0f - 1.0f;
-	float gloss = normal_sample.a;
+	float roughness = 1.0f - normal_sample.a;
+	float linear_roughness = roughness * roughness;
 	float emissive = third_sample.r;
 
 	float4 clip_position = float4(input.uv * 2.0f - 1.0f, depth, 1.0f);
@@ -75,14 +61,24 @@ float4 ps_main(ps_input input) : SV_TARGET
 	
 	float3 to_eye = normalize(eye.xyz - world_position.xyz);
 	float3 to_light = light_position.xyz - world_position.xyz;
+	float3 half_vector = normalize(to_eye + to_light);
 	float dist_to_light = length(to_light);
 	to_light = normalize(to_light);
+
+	float irradiance = light_falloff(light_power, dist_to_light);
 	
-	float3 diffuse_color = albedo * (1.0f - metalness);
+	float3 diffuse_color = albedo;
 	float3 specular_color = light_color.xyz * metalness;
+
+	float n_dot_l = saturate(dot(normal, to_light));
+	float n_dot_v = saturate(dot(normal, to_eye));
+	float n_dot_h = saturate(dot(normal, half_vector));
+
+	float3 diffuse_result = diffuse_color * diffuse_lambertian(n_dot_l) * irradiance;
+	float3 specular_result = specular_color * specular_ggx(n_dot_v, n_dot_l, n_dot_h, metalness, linear_roughness) * irradiance;
 	
-	float3 lit_color = diffuse_lambertian(diffuse_color, normal, to_light) * light_falloff(light_power, dist_to_light);
-	lit_color += specular_phong(specular_color, normal, to_eye, to_light, gloss) * light_falloff(light_power, dist_to_light);
+	float3 lit_color = diffuse_result;
+	lit_color += specular_result;
 	lit_color += diffuse_color * ambient;
 	
 	lit_color += emissive * albedo_sample;

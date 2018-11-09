@@ -1,0 +1,58 @@
+// Most of this code is borrowed from https://learnopengl.com/PBR/Theory
+// Some formulas are also used by UE4.
+
+static const float k_pi = 3.1415926f;
+
+float3 fresnel(float3 f0, float f90, float h_dot_v)
+{
+	// Schlick's approximation.
+	float x = 1.0f - h_dot_v;
+	float x2 = x * x;
+	float x5 = x2 * x2 * x;
+
+	return f0 + (f90 - f0) * x5;
+}
+
+float diffuse_lambertian(float n_dot_l)
+{
+	return n_dot_l / k_pi;
+}
+
+float specular_ndf_ggx_tr(float n_dot_h, float linear_roughness)
+{
+	float roughness2 = linear_roughness * linear_roughness;
+
+	float num = roughness2;
+	float den = k_pi * pow((n_dot_h * n_dot_h) * (roughness2 - 1.0f) + 1.0f, 2);
+
+	return num / den;
+}
+
+float specular_geometry_schlick_ggx(float n_dot_v, float linear_roughness)
+{
+	float k = pow(linear_roughness + 1.0f, 2) / 8.0f;
+
+	return n_dot_v / (n_dot_v * (1.0f - k) + k);
+}
+
+float specular_shadowmask_smith_ggx(float n_dot_v, float n_dot_l, float linear_roughness)
+{
+	float ggx1 = specular_geometry_schlick_ggx(n_dot_v, linear_roughness);
+	float ggx2 = specular_geometry_schlick_ggx(n_dot_l, linear_roughness);
+
+	return ggx1 + ggx2;
+}
+
+float specular_ggx(float n_dot_v, float n_dot_l, float n_dot_h, float metal, float linear_roughness)
+{
+	float N = specular_ndf_ggx_tr(n_dot_h, linear_roughness);
+	float D = specular_shadowmask_smith_ggx(n_dot_v, n_dot_l, linear_roughness);
+	float F = fresnel(float3(metal, metal, metal), 1.0f, n_dot_v);
+
+	return (N * D * F) / k_pi;
+}
+
+float light_falloff(float power, float distance)
+{
+	return (power / (4 * k_pi)) / (distance * distance);
+}

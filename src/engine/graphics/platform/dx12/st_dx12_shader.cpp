@@ -35,7 +35,7 @@ st_dx12_shader::st_dx12_shader(const char* source, uint8_t type)
 		HRESULT result = D3DCompileFromFile(
 			full_path.c_str(),
 			nullptr,
-			nullptr,
+			D3D_COMPILE_STANDARD_FILE_INCLUDE,
 			"vs_main",
 			"vs_5_0",
 			compile_flags,
@@ -59,7 +59,7 @@ st_dx12_shader::st_dx12_shader(const char* source, uint8_t type)
 		HRESULT result = D3DCompileFromFile(
 			(LPCWSTR)full_path.c_str(),
 			nullptr,
-			nullptr,
+			D3D_COMPILE_STANDARD_FILE_INCLUDE,
 			"ps_main",
 			"ps_5_0",
 			compile_flags,
