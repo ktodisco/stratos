@@ -31,6 +31,14 @@ st_window::st_window(std::string window_name, uint32_t width, uint32_t height, s
 
 	RegisterClassEx(&windowClass);
 
+	RECT clientRect;
+	clientRect.top = 100;
+	clientRect.left = 100;
+	clientRect.bottom = clientRect.top + _height;
+	clientRect.right = clientRect.left + _width;
+
+	AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, false);
+
 	_window_handle = CreateWindowEx(
 		WS_EX_APPWINDOW,
 		(LPCSTR)window_name.c_str(),
@@ -38,8 +46,8 @@ st_window::st_window(std::string window_name, uint32_t width, uint32_t height, s
 		WS_OVERLAPPEDWINDOW,
 		100,
 		100,
-		(int)_width,
-		(int)_height,
+		(int)(clientRect.right - clientRect.left),
+		(int)(clientRect.bottom - clientRect.top),
 		GetDesktopWindow(),
 		NULL,
 		_module_handle,
