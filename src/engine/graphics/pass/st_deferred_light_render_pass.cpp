@@ -60,11 +60,6 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		1,
 		targets,
 		output_depth);
-
-	_light = std::make_unique<st_point_light>(
-		st_vec3f({ 0.0f, 1.0f, 3.0f }),
-		st_vec3f({ 1.0f, 1.0f, 0.9f }),
-		2400.0f);
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()
@@ -92,9 +87,9 @@ void st_deferred_light_render_pass::render(
 	light_data._inverse_vp = (params->_view * perspective).inverse();
 	light_data._inverse_vp.transpose();
 	light_data._eye = st_vec4f(params->_eye, 0.0f);
-	light_data._position = st_vec4f(_light->get_position(), 0.0f);
-	light_data._color = st_vec4f(_light->get_color(), 0.0f);
-	light_data._power = _light->get_power();
+	light_data._position = st_vec4f(params->_light->get_position(), 0.0f);
+	light_data._color = st_vec4f(params->_light->get_color(), 0.0f);
+	light_data._power = params->_light->get_power();
 
 	_light_buffer->update(context, &light_data);
 

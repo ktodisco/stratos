@@ -84,6 +84,9 @@ struct st_frame_params
 	uint32_t _width;
 	uint32_t _height;
 
+	// TODO: This will eventually need to turn into a whole management system.
+	class st_point_light* _light = nullptr;
+
 	// Somewhat of a hack to make collision stable when stepping with a paused simulation.
 	bool _single_step = false;
 };

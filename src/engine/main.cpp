@@ -22,6 +22,7 @@
 #include <graphics/geometry/st_model_component.h>
 #include <graphics/parse/st_ply_parser.h>
 #include <graphics/geometry/st_model_data.h>
+#include <graphics/st_light_component.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_shader_manager.h>
 
@@ -149,6 +150,7 @@ int main(int argc, const char** argv)
 		"data/textures/default_emissive.png");
 	light_material.set_emissive(200.0f);
 	st_model_component light_model_component(&light_entity, &sphere_model, &light_material);
+	st_light_component light_component(&light_entity, st_vec3f({ 1.0f, 1.0f, 0.9f }), 2400.0f);
 	sim->add_entity(&light_entity);
 
 	light_entity.translate({ 0.0f, 1.0f, 3.0f });

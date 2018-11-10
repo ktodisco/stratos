@@ -21,6 +21,8 @@ public:
 	st_vec3f get_color() const { return _color; }
 	float get_power() const { return _power; }
 
+	void set_position(const st_vec3f& position) { _position = position; }
+
 private:
 	st_vec3f _position;
 	st_vec3f _color;
