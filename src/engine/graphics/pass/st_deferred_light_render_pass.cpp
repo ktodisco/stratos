@@ -62,9 +62,9 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		output_depth);
 
 	_light = std::make_unique<st_point_light>(
-		st_vec3f({ 1.0f, 1.0f, 1.0f }),
+		st_vec3f({ 0.0f, 1.0f, 3.0f }),
 		st_vec3f({ 1.0f, 1.0f, 0.9f }),
-		1200.0f);
+		2400.0f);
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()

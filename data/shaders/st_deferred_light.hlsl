@@ -67,8 +67,8 @@ float4 ps_main(ps_input input) : SV_TARGET
 
 	float irradiance = light_falloff(light_power, dist_to_light);
 	
-	float3 diffuse_color = albedo;
-	float3 specular_color = light_color.xyz * metalness;
+	float3 diffuse_color = albedo * (1.0f - metalness);
+	float3 specular_color = light_color.xyz;
 
 	float n_dot_l = saturate(dot(normal, to_light));
 	float n_dot_v = saturate(dot(normal, to_eye));

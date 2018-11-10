@@ -47,7 +47,8 @@ float specular_ggx(float n_dot_v, float n_dot_l, float n_dot_h, float metal, flo
 {
 	float N = specular_ndf_ggx_tr(n_dot_h, linear_roughness);
 	float D = specular_shadowmask_smith_ggx(n_dot_v, n_dot_l, linear_roughness);
-	float F = fresnel(float3(metal, metal, metal), 1.0f, n_dot_v);
+	// TODO: This is the default f0 for plastic.  We need to figure out what to do with this value.
+	float F = fresnel(float3(0.05f, 0.05f, 0.05f), 1.0f, n_dot_v);
 
 	return (N * D * F) / k_pi;
 }

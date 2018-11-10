@@ -91,38 +91,57 @@ int main(int argc, const char** argv)
 	st_model_data sphere_model;
 	ply_to_model("data/models/sphere.ply", &sphere_model);
 
-	st_entity pbr_entity;
-	st_gbuffer_material pbr_material(
-		"data/textures/default_albedo.png",
-		"data/textures/default_mre.png");
-	st_model_component unlit_model_component(&pbr_entity, &sphere_model, &pbr_material);
-	sim->add_entity(&pbr_entity);
-
-	pbr_entity.translate({ 0.0f, 1.0f, 0.0f });
-
 	st_model_data plane_model;
 	ply_to_model("data/models/plane.ply", &plane_model);
 
 	st_entity floor_entity;
 	st_gbuffer_material floor_material(
 		"data/textures/floor.png",
-		"data/textures/dielectric_mre.png");
+		"data/textures/dielectric_25_roughness.png");
 	st_model_component floor_model_component(&floor_entity, &plane_model, &floor_material);
 	sim->add_entity(&floor_entity);
 
 	floor_entity.scale(0.5f);
 
-	st_model_data pom_model;
-	ply_to_model("data/models/pom_low.ply", &pom_model);
+	st_entity dr0_entity;
+	st_gbuffer_material dr0_material(
+		"data/textures/white_albedo.png",
+		"data/textures/dielectric_0_roughness.png");
+	st_model_component dr0_model(&dr0_entity, &sphere_model, &dr0_material);
+	sim->add_entity(&dr0_entity);
+	dr0_entity.translate({ -3.0f, 1.0f, 0.0f });
 
-	st_entity pom_entity;
-	st_parallax_occlusion_material pom_material(
-		"data/textures/default_albedo.png",
-		"data/textures/test_bake_normals.png");
-	st_model_component pom_model_component(&pom_entity, &pom_model, &pom_material);
-	sim->add_entity(&pom_entity);
+	st_entity dr25_entity;
+	st_gbuffer_material dr25_material(
+		"data/textures/white_albedo.png",
+		"data/textures/dielectric_25_roughness.png");
+	st_model_component dr25_model(&dr25_entity, &sphere_model, &dr25_material);
+	sim->add_entity(&dr25_entity);
+	dr25_entity.translate({ -1.5f, 1.0f, 0.0f });
 
-	pom_entity.translate({ 0.0f, 0.01f, 0.0f });
+	st_entity dr50_entity;
+	st_gbuffer_material dr50_material(
+		"data/textures/white_albedo.png",
+		"data/textures/dielectric_50_roughness.png");
+	st_model_component dr50_model(&dr50_entity, &sphere_model, &dr50_material);
+	sim->add_entity(&dr50_entity);
+	dr50_entity.translate({ 0.0f, 1.0f, 0.0f });
+
+	st_entity dr75_entity;
+	st_gbuffer_material dr75_material(
+		"data/textures/white_albedo.png",
+		"data/textures/dielectric_75_roughness.png");
+	st_model_component dr75_model(&dr75_entity, &sphere_model, &dr75_material);
+	sim->add_entity(&dr75_entity);
+	dr75_entity.translate({ 1.5f, 1.0f, 0.0f });
+
+	st_entity dr100_entity;
+	st_gbuffer_material dr100_material(
+		"data/textures/white_albedo.png",
+		"data/textures/dielectric_100_roughness.png");
+	st_model_component dr100_model(&dr100_entity, &sphere_model, &dr100_material);
+	sim->add_entity(&dr100_entity);
+	dr100_entity.translate({ 3.0f, 1.0f, 0.0f });
 
 	st_entity light_entity;
 	st_gbuffer_material light_material(
@@ -132,7 +151,7 @@ int main(int argc, const char** argv)
 	st_model_component light_model_component(&light_entity, &sphere_model, &light_material);
 	sim->add_entity(&light_entity);
 
-	light_entity.translate({ 1.0f, 1.0f, 1.0f });
+	light_entity.translate({ 0.0f, 1.0f, 3.0f });
 	light_entity.scale(0.05f);
 
 	window->show();
