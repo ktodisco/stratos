@@ -8,6 +8,8 @@
 
 #include <graphics/material/st_material.h>
 
+#include <graphics/st_pipeline_state_desc.h>
+
 struct st_gbuffer_cb
 {
 	st_mat4f _model;
