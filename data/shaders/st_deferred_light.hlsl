@@ -51,7 +51,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float3 albedo = albedo_sample.rgb;
 	float metalness = albedo_sample.a;
 	float3 normal = normal_sample.rgb * 2.0f - 1.0f;
-	float roughness = 1.0f - normal_sample.a;
+	float roughness = normal_sample.a;
 	float linear_roughness = roughness * roughness;
 	float emissive = third_sample.r;
 

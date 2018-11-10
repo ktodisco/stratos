@@ -24,10 +24,10 @@ cbuffer cb0 : register(b0)
 
 Texture2D diffuse_texture : register(t0);
 Texture2D normal_texture : register(t1);
-Texture2D mge_texture : register(t2);
+Texture2D mre_texture : register(t2);
 SamplerState diffuse_sampler : register(s0);
 SamplerState normal_sampler : register(s1);
-SamplerState mge_sampler : register(s2);
+SamplerState mre_sampler : register(s2);
 
 ps_input vs_main(vs_input input)
 {

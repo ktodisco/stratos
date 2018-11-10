@@ -23,9 +23,9 @@ cbuffer cb0 : register(b0)
 }
 
 Texture2D diffuse_texture : register(t0);
-Texture2D mge_texture : register(t1);
+Texture2D mre_texture : register(t1);
 SamplerState diffuse_sampler : register(s0);
-SamplerState mge_sampler : register(s1);
+SamplerState mre_sampler : register(s1);
 
 ps_input vs_main(vs_input input)
 {
@@ -50,11 +50,11 @@ ps_output ps_main(ps_input input)
 {
 	ps_output output;
 	
-	float4 mge = mge_texture.Sample(mge_sampler, input.uv);
+	float4 mre = mre_texture.Sample(mre_sampler, input.uv);
 	
-	output.albedo = float4(diffuse_texture.Sample(diffuse_sampler, input.uv).rgb, mge.r);
-	output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, mge.g);
-	output.third = float4(mge.b * emissive_intensity, 0.0f, 0.0f, 0.0f);
+	output.albedo = float4(diffuse_texture.Sample(diffuse_sampler, input.uv).rgb, mre.r);
+	output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, mre.g);
+	output.third = float4(mre.b * emissive_intensity, 0.0f, 0.0f, 0.0f);
 	
 	return output;
 }

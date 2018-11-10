@@ -17,7 +17,7 @@
 
 st_gbuffer_material::st_gbuffer_material(
 		const char* albedo_texture,
-		const char* mge_texture)
+		const char* mre_texture)
 {
 	_gbuffer_buffer = std::make_unique<st_constant_buffer>(sizeof(st_gbuffer_cb));
 	_gbuffer_buffer->add_constant("u_model", st_shader_constant_type_mat4);
@@ -32,18 +32,18 @@ st_gbuffer_material::st_gbuffer_material(
 	}
 	_albedo_texture->set_meta("u_albedo", 0);
 
-	_mge_texture = std::make_unique<st_texture>();
-	if (!_mge_texture->load_from_file(mge_texture))
+	_mre_texture = std::make_unique<st_texture>();
+	if (!_mre_texture->load_from_file(mre_texture))
 	{
-		std::cerr << "Failed to load " << mge_texture << std::endl;
+		std::cerr << "Failed to load " << mre_texture << std::endl;
 		assert(false);
 	}
-	_mge_texture->set_meta("u_mge", 1);
+	_mre_texture->set_meta("u_mre", 1);
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_gbuffer_buffer.get());
 	_resource_table->add_shader_resource(_albedo_texture.get());
-	_resource_table->add_shader_resource(_mge_texture.get());
+	_resource_table->add_shader_resource(_mre_texture.get());
 }
 
 st_gbuffer_material::~st_gbuffer_material()

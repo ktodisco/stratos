@@ -94,7 +94,7 @@ int main(int argc, const char** argv)
 	st_entity pbr_entity;
 	st_gbuffer_material pbr_material(
 		"data/textures/default_albedo.png",
-		"data/textures/default_mge.png");
+		"data/textures/default_mre.png");
 	st_model_component unlit_model_component(&pbr_entity, &sphere_model, &pbr_material);
 	sim->add_entity(&pbr_entity);
 
@@ -106,7 +106,7 @@ int main(int argc, const char** argv)
 	st_entity floor_entity;
 	st_gbuffer_material floor_material(
 		"data/textures/floor.png",
-		"data/textures/dielectric_mge.png");
+		"data/textures/dielectric_mre.png");
 	st_model_component floor_model_component(&floor_entity, &plane_model, &floor_material);
 	sim->add_entity(&floor_entity);
 

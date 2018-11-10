@@ -29,11 +29,11 @@ vec3 diffuse_lambertian(vec3 albedo, vec3 n, vec3 l)
 	return (albedo / s_pi) * clamp(dot(n, l), 0.0, 1.0);
 }
 
-vec3 specular_phong(vec3 specular, vec3 n, vec3 v, vec3 l, float g)
+vec3 specular_phong(vec3 specular, vec3 n, vec3 v, vec3 l, float r)
 {
 	vec3 r = reflect(-l, n);
 	float a = clamp(dot(r, v), 0.0, 1.0);
-	return specular * pow(a, ((1.0f - g) * 50.0f) / 4.0f);
+	return specular * pow(a, (r * 50.0f) / 4.0f);
 }
 
 void main(void)
@@ -46,7 +46,7 @@ void main(void)
 	vec3 albedo = albedo_sample.rgb;
 	float metalness = albedo_sample.a;
 	vec3 normal = normal_sample.rgb * 2.0 - 1.0;
-	float gloss = normal_sample.a;
+	float roughness = normal_sample.a;
 	float emissive = third_sample.r;
 	
 	vec4 clip_position = vec4(ps_in_texcoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
@@ -62,7 +62,7 @@ void main(void)
 	vec3 specular_color = u_light_color.rgb * metalness;
 	
 	vec3 lit_color = diffuse_lambertian(diffuse_color, normal, to_light) * light_falloff(u_light_power, dist_to_light);
-	lit_color += specular_phong(specular_color, normal, to_eye, to_light, gloss) * light_falloff(u_light_power, dist_to_light);
+	lit_color += specular_phong(specular_color, normal, to_eye, to_light, roughness) * light_falloff(u_light_power, dist_to_light);
 	lit_color += diffuse_color * ambient;
 	
 	lit_color += emissive * albedo_sample.rgb;

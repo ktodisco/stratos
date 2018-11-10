@@ -35,7 +35,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	// Set up the gbuffer material and state.
 	_default_gbuffer = std::make_unique<st_gbuffer_material>(
 		"data/textures/default_albedo.png",
-		"data/textures/default_mge.png");
+		"data/textures/default_mre.png");
 
 	st_pipeline_state_desc gbuffer_state_desc;
 	_default_gbuffer->get_pipeline_state(&gbuffer_state_desc);

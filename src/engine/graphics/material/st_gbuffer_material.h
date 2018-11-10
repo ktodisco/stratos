@@ -23,7 +23,7 @@ class st_gbuffer_material : public st_material
 public:
 	st_gbuffer_material(
 		const char* albedo_texture,
-		const char* mge_texture);
+		const char* mre_texture);
 	~st_gbuffer_material();
 
 	virtual void bind(
@@ -43,7 +43,7 @@ public:
 private:
 	std::unique_ptr<class st_constant_buffer> _gbuffer_buffer = nullptr;
 	std::unique_ptr<class st_texture> _albedo_texture;
-	std::unique_ptr<class st_texture> _mge_texture;
+	std::unique_ptr<class st_texture> _mre_texture;
 
 	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 
