@@ -154,7 +154,7 @@ int main(int argc, const char** argv)
 	sim->add_entity(&light_entity);
 
 	light_entity.translate({ 0.0f, 1.0f, 3.0f });
-	light_entity.scale(0.05f);
+	light_entity.scale(0.1f);
 
 	window->show();
 

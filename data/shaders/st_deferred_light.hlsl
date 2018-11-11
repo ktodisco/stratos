@@ -26,7 +26,7 @@ cbuffer cb0 : register(b0)
 	float4 eye;
 	float4 light_position;
 	float4 light_color;
-	float light_power;
+	float2 light_properties;
 }
 
 ps_input vs_main(vs_input input)
@@ -65,14 +65,17 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float dist_to_light = length(to_light);
 	to_light = normalize(to_light);
 
+	float n_dot_l = saturate(dot(normal, to_light));
+	float n_dot_v = saturate(dot(normal, to_eye));
+	float n_dot_h = saturate(dot(normal, half_vector));
+
+	// Unpack light properties.
+	float light_power = light_properties.x;
+
 	float irradiance = light_falloff(light_power, dist_to_light);
 	
 	float3 diffuse_color = albedo * (1.0f - metalness);
 	float3 specular_color = light_color.xyz;
-
-	float n_dot_l = saturate(dot(normal, to_light));
-	float n_dot_v = saturate(dot(normal, to_eye));
-	float n_dot_h = saturate(dot(normal, half_vector));
 
 	float3 diffuse_result = diffuse_color * diffuse_lambertian(n_dot_l) * irradiance;
 	float3 specular_result = specular_color * specular_ggx(n_dot_v, n_dot_l, n_dot_h, metalness, linear_roughness) * irradiance;

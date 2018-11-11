@@ -8,7 +8,7 @@
 
 #include <entity/st_entity.h>
 
-#include <graphics/st_point_light.h>
+#include <graphics/light/st_sphere_light.h>
 
 st_light_component::st_light_component(
 	st_entity* ent,
@@ -16,10 +16,11 @@ st_light_component::st_light_component(
 	float power) :
 	st_component(ent)
 {
-	_light = std::make_unique<st_point_light>(
+	_light = std::make_unique<st_sphere_light>(
 		ent->get_transform().get_translation(),
 		color,
-		power);
+		power,
+		ent->get_transform().get_scale() / 2.0f);
 }
 
 st_light_component::~st_light_component()
@@ -29,5 +30,6 @@ st_light_component::~st_light_component()
 void st_light_component::update(struct st_frame_params* params)
 {
 	_light->set_position(get_entity()->get_transform().get_translation());
+	_light->set_radius(get_entity()->get_transform().get_scale() / 2.0f);
 	params->_light = _light.get();
 }

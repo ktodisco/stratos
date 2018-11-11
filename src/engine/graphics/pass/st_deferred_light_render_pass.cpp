@@ -10,12 +10,12 @@
 
 #include <graphics/geometry/st_geometry.h>
 #include <graphics/geometry/st_vertex_format.h>
+#include <graphics/light/st_sphere_light.h>
 #include <graphics/material/st_deferred_light_material.h>
 #include <graphics/st_constant_buffer.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_framebuffer.h>
 #include <graphics/st_pipeline_state.h>
-#include <graphics/st_point_light.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
@@ -30,13 +30,13 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	st_render_texture* output_buffer,
 	st_render_texture* output_depth)
 {
-	_light_buffer = std::make_unique<st_constant_buffer>(sizeof(st_point_light_cb));
+	_light_buffer = std::make_unique<st_constant_buffer>(sizeof(st_sphere_light_cb));
 	// TODO: These should be validated against the buffer's provided size.
 	_light_buffer->add_constant("u_inverse_vp", st_shader_constant_type_mat4);
 	_light_buffer->add_constant("u_eye", st_shader_constant_type_vec4);
 	_light_buffer->add_constant("u_light_position", st_shader_constant_type_vec4);
 	_light_buffer->add_constant("u_light_color", st_shader_constant_type_vec4);
-	_light_buffer->add_constant("u_light_power", st_shader_constant_type_float);
+	_light_buffer->add_constant("u_light_properties", st_shader_constant_type_vec2);
 
 	_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
@@ -83,13 +83,13 @@ void st_deferred_light_render_pass::render(
 	st_mat4f perspective;
 	perspective.make_perspective_rh(st_degrees_to_radians(45.0f), (float)params->_width / (float)params->_height, 0.1f, 10000.0f);
 
-	st_point_light_cb light_data;
+	st_sphere_light_cb light_data;
 	light_data._inverse_vp = (params->_view * perspective).inverse();
 	light_data._inverse_vp.transpose();
 	light_data._eye = st_vec4f(params->_eye, 0.0f);
 	light_data._position = st_vec4f(params->_light->get_position(), 0.0f);
 	light_data._color = st_vec4f(params->_light->get_color(), 0.0f);
-	light_data._power = params->_light->get_power();
+	light_data._properties = st_vec2f({ params->_light->get_power(), params->_light->get_radius() });
 
 	_light_buffer->update(context, &light_data);
 

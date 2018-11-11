@@ -24,5 +24,5 @@ public:
 	virtual void update(struct st_frame_params* params) override;
 
 private:
-	std::unique_ptr<class st_point_light> _light = nullptr;
+	std::unique_ptr<class st_sphere_light> _light = nullptr;
 };

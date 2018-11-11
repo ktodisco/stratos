@@ -57,3 +57,34 @@ float light_falloff(float power, float distance)
 {
 	return (power / (4 * k_pi)) / (distance * distance);
 }
+
+// Area light calculations adopted from https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+float get_sphere_illuminance(float power, float3 to_light, float dist, float n_dot_l, float radius)
+{
+	// Power correction.
+	float luminance = power / (4.0f * (radius * radius) * (k_pi * k_pi));
+
+	float radius2 = radius * radius;
+	float illuminance = k_pi * (radius2 / (max(radius2, dist * dist))) * n_dot_l;
+
+#if 0 // Horizon correction.
+	float beta = acos(n_dot_l);
+	float h = dist / radius;
+	float x = sqrt(h * h - 1.0f);
+	float y = -x * (1.0f / tan(beta));
+
+	float illuminance = 0;
+	if (h * cos(beta) > 1.0f)
+	{
+		illuminance = cos(beta) / (h * h);
+	}
+	else
+	{
+		illuminance = (1.0f / (k_pi * h * h)) *
+			(cos(beta) * acos(y) - x * sin(beta) * sqrt(1 - y * y)) +
+			(1.0f / k_pi) * atan(sin(beta) * sqrt(1 - y * y) / x);
+	}
+#endif
+
+	return luminance * illuminance * k_pi;
+}

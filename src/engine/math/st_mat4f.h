@@ -130,6 +130,12 @@ struct st_mat4f
 	void set_translation(const st_vec3f& translation);
 
 	/*
+	** Get the scale from the matrix diagonal.
+	** Only returns a single float, assuming that the matrix has uniform scale.
+	*/
+	float get_scale() const;
+
+	/*
 	** Get the forward vector from the matrix.
 	**
 	** The first column of the matrix.

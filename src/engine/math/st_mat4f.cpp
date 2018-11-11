@@ -323,6 +323,11 @@ void st_mat4f::set_translation(const st_vec3f& translation)
 	data[3][2] = translation.z;
 }
 
+float st_mat4f::get_scale() const
+{
+	return data[0][0];
+}
+
 st_vec3f st_mat4f::get_forward() const
 {
 	return{ data[2][0], data[2][1], data[2][2] };

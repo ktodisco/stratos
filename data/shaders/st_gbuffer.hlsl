@@ -1,3 +1,5 @@
+#include "st_gamma_correction.hlsli"
+
 struct vs_input
 {
 	float3 position : POSITION;
@@ -51,7 +53,7 @@ ps_output ps_main(ps_input input)
 	ps_output output;
 	
 	float4 mre = mre_texture.Sample(mre_sampler, input.uv);
-	
+
 	output.albedo = float4(diffuse_texture.Sample(diffuse_sampler, input.uv).rgb, mre.r);
 	output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, mre.g);
 	output.third = float4(mre.b * emissive_intensity, 0.0f, 0.0f, 0.0f);
