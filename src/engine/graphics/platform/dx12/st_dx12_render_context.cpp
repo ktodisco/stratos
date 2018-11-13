@@ -79,7 +79,7 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 	// Create the device and command queue.
 	result = D3D12CreateDevice(
 		hardware_adapter.Get(),
-		D3D_FEATURE_LEVEL_12_0,
+		D3D_FEATURE_LEVEL_12_1,
 		__uuidof(ID3D12Device),
 		(void**)&_device);
 
