@@ -79,6 +79,21 @@ void st_dx12_descriptor_heap::deallocate_handle(uint32_t offset)
 		if (offset == (block->_index + block->_size))
 		{
 			block->_size++;
+
+			// Handle the case where this block now connects to the next block.
+			auto next_block = std::next(itr, 1);
+			if (next_block != _free_blocks.end())
+			{
+				if (block->_index + block->_size == (*next_block)->_index)
+				{
+					// Prefer to keep around the next block, as it's guaranteed to be older in memory and
+					// will help with fragmentation.
+					(*next_block)->_index = block->_index;
+					(*next_block)->_size += block->_size;
+					_free_blocks.pop_front();
+				}
+			}
+
 			success = true;
 			break;
 		}
