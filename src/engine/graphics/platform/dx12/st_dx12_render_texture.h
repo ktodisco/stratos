@@ -10,6 +10,7 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <graphics/platform/dx12/st_dx12_descriptor_heap.h>
 #include <graphics/st_texture.h>
 
 #include <math/st_vec4f.h>
@@ -28,10 +29,10 @@ public:
 		const st_vec4f& clear);
 	~st_dx12_render_texture();
 
-	uint32_t get_rtv_offset() const { return _rtv; }
+	uint32_t get_rtv() const { return _rtv; }
 
 private:
-	uint32_t _rtv;
+	st_dx12_descriptor _rtv;
 };
 
 #endif

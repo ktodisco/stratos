@@ -130,75 +130,30 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 	}
 
 	// Create descriptor heaps.
-	D3D12_DESCRIPTOR_HEAP_DESC rtv_heap_desc{};
 	// TODO: The render target count could either be more dynamic, or defined better.
-	rtv_heap_desc.NumDescriptors = k_backbuffer_count + 16;
-	rtv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	rtv_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	result = _device->CreateDescriptorHeap(
-		&rtv_heap_desc,
-		__uuidof(ID3D12DescriptorHeap),
-		(void**)&_rtv_heap);
+	_rtv_heap = std::make_unique<st_dx12_descriptor_heap>(
+		_device.Get(),
+		k_backbuffer_count + 16,
+		D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
-	if (result != S_OK)
-	{
-		assert(false);
-	}
+	_dsv_heap = std::make_unique<st_dx12_descriptor_heap>(
+		_device.Get(),
+		16,
+		D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
+		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
-	_rtv_descriptor_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	_rtv_handle = _rtv_heap->GetCPUDescriptorHandleForHeapStart();
+	_cbv_srv_heap = std::make_unique<st_dx12_descriptor_heap>(
+		_device.Get(),
+		k_max_shader_resources,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-	D3D12_DESCRIPTOR_HEAP_DESC dsv_heap_desc{};
-	// TODO: Just like render targets, we need a solution to regulate this number.
-	dsv_heap_desc.NumDescriptors = 16;
-	dsv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	dsv_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	result = _device->CreateDescriptorHeap(
-		&dsv_heap_desc,
-		__uuidof(ID3D12DescriptorHeap),
-		(void**)&_dsv_heap);
-
-	if (result != S_OK)
-	{
-		assert(false);
-	}
-
-	_dsv_descriptor_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-	_dsv_handle = _dsv_heap->GetCPUDescriptorHandleForHeapStart();
-
-	D3D12_DESCRIPTOR_HEAP_DESC cbv_srv_heap_desc{};
-	cbv_srv_heap_desc.NumDescriptors = k_max_shader_resources;
-	cbv_srv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	cbv_srv_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	result = _device->CreateDescriptorHeap(
-		&cbv_srv_heap_desc,
-		__uuidof(ID3D12DescriptorHeap),
-		(void**)&_cbv_srv_heap);
-
-	if (result != S_OK)
-	{
-		assert(false);
-	}
-
-	_cbv_srv_descriptor_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	_cbv_srv_handle = _cbv_srv_heap->GetCPUDescriptorHandleForHeapStart();
-
-	D3D12_DESCRIPTOR_HEAP_DESC sampler_heap_desc{};
-	sampler_heap_desc.NumDescriptors = k_max_samplers;
-	sampler_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-	sampler_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	result = _device->CreateDescriptorHeap(
-		&sampler_heap_desc,
-		__uuidof(ID3D12DescriptorHeap),
-		(void**)&_sampler_heap);
-
-	if (result != S_OK)
-	{
-		assert(false);
-	}
-
-	_sampler_descriptor_size = _device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-	_sampler_handle = _sampler_heap->GetCPUDescriptorHandleForHeapStart();
+	_sampler_heap = std::make_unique<st_dx12_descriptor_heap>(
+		_device.Get(),
+		k_max_samplers,
+		D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
+		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	// Create the data upload heap. Let's just make it 16K for now.
 	create_buffer(16 * 1024 * 1024, _upload_buffer.GetAddressOf());
@@ -222,9 +177,8 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 			assert(false);
 		}
 
-		_device->CreateRenderTargetView(_backbuffers[rtv_itr].Get(), nullptr, _rtv_handle);
-		_rtv_handle.ptr += _rtv_descriptor_size;
-		_rtv_slot++;
+		st_dx12_cpu_descriptor_handle rtv_handle = _rtv_heap->allocate_handle();
+		_device->CreateRenderTargetView(_backbuffers[rtv_itr].Get(), nullptr, rtv_handle._handle);
 	}
 
 	// Create the depth/stencil buffer.
@@ -263,9 +217,8 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 
 	ST_NAME_DX12_OBJECT(_depth_stencil, "Depth-Stencil");
 
-	_device->CreateDepthStencilView(_depth_stencil.Get(), &depth_stencil_desc, _dsv_handle);
-	_dsv_handle.ptr += _dsv_descriptor_size;
-	_dsv_slot++;
+	st_dx12_cpu_descriptor_handle dsv_handle = _dsv_heap->allocate_handle();
+	_device->CreateDepthStencilView(_depth_stencil.Get(), &depth_stencil_desc, dsv_handle._handle);
 
 	// Create the command allocator.
 	result = _device->CreateCommandAllocator(
@@ -426,25 +379,19 @@ void st_dx12_render_context::set_clear_color(float r, float g, float b, float a)
 
 void st_dx12_render_context::set_shader_resource_table(uint32_t offset)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap->GetGPUDescriptorHandleForHeapStart();
-	srv_handle.ptr += _cbv_srv_descriptor_size * offset;
-
+	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(0, srv_handle);
 }
 
 void st_dx12_render_context::set_sampler_table(uint32_t offset)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->GetGPUDescriptorHandleForHeapStart();
-	sampler_handle.ptr += _sampler_descriptor_size * offset;
-
+	D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(1, sampler_handle);
 }
 
 void st_dx12_render_context::set_constant_buffer_table(uint32_t offset)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->GetGPUDescriptorHandleForHeapStart();
-	cbv_handle.ptr += _cbv_srv_descriptor_size * offset;
-
+	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(2, cbv_handle);
 }
 
@@ -455,11 +402,7 @@ void st_dx12_render_context::set_render_targets(
 {
 	for (uint32_t target_itr = 0; target_itr < count; ++target_itr)
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE target_handle(
-			_rtv_heap->GetCPUDescriptorHandleForHeapStart(),
-			targets[target_itr]->get_rtv_offset(),
-			_rtv_descriptor_size);
-
+		D3D12_CPU_DESCRIPTOR_HANDLE target_handle = _rtv_heap->get_handle_cpu(targets[target_itr]->get_rtv());
 		_bound_targets[target_itr] = target_handle;
 	}
 
@@ -471,10 +414,8 @@ void st_dx12_render_context::set_render_targets(
 
 	if (depth_stencil)
 	{
-		_bound_depth_stencil = CD3DX12_CPU_DESCRIPTOR_HANDLE(
-			_dsv_heap->GetCPUDescriptorHandleForHeapStart(),
-			depth_stencil->get_rtv_offset(),
-			_dsv_descriptor_size);
+		D3D12_CPU_DESCRIPTOR_HANDLE depth_handle = _dsv_heap->get_handle_cpu(depth_stencil->get_rtv());
+		_bound_depth_stencil = depth_handle;
 	}
 
 	_command_list->OMSetRenderTargets(
@@ -608,12 +549,8 @@ void st_dx12_render_context::transition_backbuffer_to_target()
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET));
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtv_handle(
-		_rtv_heap->GetCPUDescriptorHandleForHeapStart(),
-		_frame_index,
-		_rtv_descriptor_size);
-
-	CD3DX12_CPU_DESCRIPTOR_HANDLE dsv_handle(_dsv_heap->GetCPUDescriptorHandleForHeapStart());
+	D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = _rtv_heap->get_handle_cpu(_frame_index);
+	D3D12_CPU_DESCRIPTOR_HANDLE dsv_handle = _dsv_heap->get_handle_cpu(0);
 	_command_list->OMSetRenderTargets(1, &rtv_handle, false, &dsv_handle);
 
 	// TODO: It would be more ideal if this internally had st_render_targets for the
@@ -664,7 +601,7 @@ void st_dx12_render_context::begin_frame()
 	_command_list->Reset(_command_allocator.Get(), nullptr);
 	_command_list->SetGraphicsRootSignature(_root_signature.Get());
 
-	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap.Get(), _sampler_heap.Get() };
+	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap->get(), _sampler_heap->get() };
 	_command_list->SetDescriptorHeaps(_countof(heaps), heaps);
 
 	_dynamic_vertex_bytes_written = 0;
@@ -884,9 +821,7 @@ void st_dx12_render_context::create_target(
 	e_st_texture_format format,
 	const st_vec4f& clear,
 	ID3D12Resource** resource,
-	uint32_t* rtv_offset,
-	uint32_t* sampler_offset,
-	uint32_t* srv_offset)
+	st_dx12_descriptor* rtv_offset)
 {
 	begin_loading();
 
@@ -954,13 +889,10 @@ void st_dx12_render_context::create_target(
 		ST_NAME_DX12_OBJECT(*resource, str_to_wstr("Depth-Stencil Target").c_str());
 
 		// Create the depth/stencil view.
-		*rtv_offset = _dsv_slot;
+		st_dx12_cpu_descriptor_handle dsv_handle = _dsv_heap->allocate_handle();
+		_device->CreateDepthStencilView(*resource, nullptr, dsv_handle._handle);
 
-		D3D12_CPU_DESCRIPTOR_HANDLE dsv_handle = _dsv_heap->GetCPUDescriptorHandleForHeapStart();
-		dsv_handle.ptr += _dsv_descriptor_size * _dsv_slot;
-		_device->CreateDepthStencilView(*resource, nullptr, dsv_handle);
-
-		_dsv_slot++;
+		*rtv_offset = dsv_handle._offset;
 
 		_command_list->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -973,13 +905,10 @@ void st_dx12_render_context::create_target(
 		ST_NAME_DX12_OBJECT(*resource, str_to_wstr("Render Target").c_str());
 
 		// Create the render target view.
-		*rtv_offset = _rtv_slot;
+		st_dx12_cpu_descriptor_handle rtv_handle = _rtv_heap->allocate_handle();
+		_device->CreateRenderTargetView(*resource, nullptr, rtv_handle._handle);
 
-		D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = _rtv_heap->GetCPUDescriptorHandleForHeapStart();
-		rtv_handle.ptr += _rtv_descriptor_size * _rtv_slot;
-		_device->CreateRenderTargetView(*resource, nullptr, rtv_handle);
-
-		_rtv_slot++;
+		*rtv_offset = rtv_handle._offset;
 
 		_command_list->ResourceBarrier(1,
 			&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -991,7 +920,12 @@ void st_dx12_render_context::create_target(
 	end_loading();
 }
 
-void st_dx12_render_context::create_constant_buffer_view(
+void st_dx12_render_context::destroy_target(st_dx12_descriptor target)
+{
+	_rtv_heap->deallocate_handle(target);
+}
+
+st_dx12_descriptor st_dx12_render_context::create_constant_buffer_view(
 	D3D12_GPU_VIRTUAL_ADDRESS gpu_address,
 	size_t size)
 {
@@ -999,14 +933,18 @@ void st_dx12_render_context::create_constant_buffer_view(
 	cbv_desc.BufferLocation = gpu_address;
 	cbv_desc.SizeInBytes = align_value(size, 256);
 
-	D3D12_CPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->GetCPUDescriptorHandleForHeapStart();
-	cbv_handle.ptr += _cbv_srv_descriptor_size * _cbv_srv_slot;
-	_device->CreateConstantBufferView(&cbv_desc, cbv_handle);
+	st_dx12_cpu_descriptor_handle cbv_handle = _cbv_srv_heap->allocate_handle();
+	_device->CreateConstantBufferView(&cbv_desc, cbv_handle._handle);
 
-	_cbv_srv_slot++;
+	return cbv_handle._offset;
 }
 
-void st_dx12_render_context::create_shader_resource_view(
+void st_dx12_render_context::destroy_constant_buffer_view(st_dx12_descriptor offset)
+{
+	_cbv_srv_heap->deallocate_handle(offset);
+}
+
+st_dx12_descriptor st_dx12_render_context::create_shader_resource_view(
 	ID3D12Resource* resource,
 	e_st_texture_format format)
 {
@@ -1017,14 +955,18 @@ void st_dx12_render_context::create_shader_resource_view(
 	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srv_desc.Texture2D.MipLevels = 1;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_handle = _cbv_srv_heap->GetCPUDescriptorHandleForHeapStart();
-	cbv_srv_handle.ptr += _cbv_srv_descriptor_size * _cbv_srv_slot;
-	_device->CreateShaderResourceView(resource, &srv_desc, cbv_srv_handle);
+	st_dx12_cpu_descriptor_handle srv_handle = _cbv_srv_heap->allocate_handle();
+	_device->CreateShaderResourceView(resource, &srv_desc, srv_handle._handle);
 
-	_cbv_srv_slot++;
+	return srv_handle._offset;
 }
 
-void st_dx12_render_context::create_shader_sampler()
+void st_dx12_render_context::destroy_shader_resource_view(st_dx12_descriptor offset)
+{
+	_cbv_srv_heap->deallocate_handle(offset);
+}
+
+st_dx12_descriptor st_dx12_render_context::create_shader_sampler()
 {
 	// Create the sampler.
 	D3D12_SAMPLER_DESC sampler_desc = {};
@@ -1038,11 +980,15 @@ void st_dx12_render_context::create_shader_sampler()
 	sampler_desc.MaxAnisotropy = 1;
 	sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->GetCPUDescriptorHandleForHeapStart();
-	sampler_handle.ptr += _sampler_descriptor_size * _sampler_slot;
-	_device->CreateSampler(&sampler_desc, sampler_handle);
+	st_dx12_cpu_descriptor_handle sampler_handle = _sampler_heap->allocate_handle();
+	_device->CreateSampler(&sampler_desc, sampler_handle._handle);
 
-	_sampler_slot++;
+	return sampler_handle._offset;
+}
+
+void st_dx12_render_context::destroy_shader_sampler(st_dx12_descriptor offset)
+{
+	_sampler_heap->deallocate_handle(offset);
 }
 
 st_dx12_render_context* st_dx12_render_context::get()

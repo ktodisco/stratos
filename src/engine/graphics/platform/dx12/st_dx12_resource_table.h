@@ -10,7 +10,10 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <graphics/platform/dx12/st_dx12_descriptor_heap.h>
+
 #include <cstdint>
+#include <vector>
 
 class st_dx12_resource_table
 {
@@ -24,10 +27,9 @@ public:
 	void bind(class st_dx12_render_context* context);
 
 private:
-	uint32_t _cbv_srv_offset = UINT_MAX;
-	// TODO: This is a total hack.
-	uint32_t _cbv_count = 0;
-	uint32_t _sampler_offset = UINT_MAX;
+	std::vector<st_dx12_descriptor> _cbvs;
+	std::vector<st_dx12_descriptor> _srvs;
+	std::vector<st_dx12_descriptor> _samplers;
 };
 
 #endif

@@ -24,13 +24,12 @@ st_dx12_render_texture::st_dx12_render_texture(
 		format,
 		clear,
 		_handle.GetAddressOf(),
-		&_rtv,
-		&_sampler,
-		&_srv);
+		&_rtv);
 }
 
 st_dx12_render_texture::~st_dx12_render_texture()
 {
+	st_dx12_render_context::get()->destroy_target(_rtv);
 }
 
 #endif

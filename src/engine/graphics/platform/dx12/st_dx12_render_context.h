@@ -10,6 +10,8 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <graphics/platform/dx12/st_dx12_descriptor_heap.h>
+
 #include <math/st_vec4f.h>
 
 #include <cstdint>
@@ -93,23 +95,21 @@ public:
 		e_st_texture_format format,
 		const st_vec4f& clear,
 		ID3D12Resource** resource,
-		uint32_t* rtv_offset,
-		uint32_t* sampler_offset,
-		uint32_t* srv_offset);
+		st_dx12_descriptor* rtv_offset);
+	void destroy_target(st_dx12_descriptor target);
 
-	void create_constant_buffer_view(
+	st_dx12_descriptor create_constant_buffer_view(
 		D3D12_GPU_VIRTUAL_ADDRESS gpu_address,
 		size_t size);
-	void create_shader_resource_view(
+	void destroy_constant_buffer_view(st_dx12_descriptor offset);
+	st_dx12_descriptor create_shader_resource_view(
 		ID3D12Resource* resource,
 		e_st_texture_format format);
-	void create_shader_sampler();
+	void destroy_shader_resource_view(st_dx12_descriptor offset);
+	st_dx12_descriptor create_shader_sampler();
+	void destroy_shader_sampler(st_dx12_descriptor offset);
 
 	ID3D12RootSignature* get_root_signature() { return _root_signature.Get(); }
-
-	// TODO: These should be protected or private.
-	uint32_t get_first_cbv_srv_slot() const { return _cbv_srv_slot; }
-	uint32_t get_first_sampler_slot() const { return _sampler_slot; }
 
 	static st_dx12_render_context* get();
 
@@ -133,24 +133,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> _default_pso;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _command_list;
 
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _rtv_heap;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _dsv_heap;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _cbv_srv_heap;
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _sampler_heap;
-
-	uint32_t _rtv_descriptor_size = 0;
-	uint32_t _rtv_slot = 0;
-	uint32_t _dsv_descriptor_size = 0;
-	uint32_t _dsv_slot = 0;
-	uint32_t _cbv_srv_descriptor_size = 0;
-	uint32_t _cbv_srv_slot = 0;
-	uint32_t _sampler_descriptor_size = 0;
-	uint32_t _sampler_slot = 0;
-
-	D3D12_CPU_DESCRIPTOR_HANDLE _rtv_handle = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE _dsv_handle = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE _cbv_srv_handle = {};
-	D3D12_CPU_DESCRIPTOR_HANDLE _sampler_handle = {};
+	std::unique_ptr<st_dx12_descriptor_heap> _rtv_heap;
+	std::unique_ptr<st_dx12_descriptor_heap> _dsv_heap;
+	std::unique_ptr<st_dx12_descriptor_heap> _cbv_srv_heap;
+	std::unique_ptr<st_dx12_descriptor_heap> _sampler_heap;
 
 	// Data upload heap.
 	Microsoft::WRL::ComPtr<ID3D12Resource> _upload_buffer;
