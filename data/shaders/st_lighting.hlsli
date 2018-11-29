@@ -43,12 +43,13 @@ float specular_shadowmask_smith_ggx(float n_dot_v, float n_dot_l, float linear_r
 	return ggx1 + ggx2;
 }
 
-float specular_ggx(float n_dot_v, float n_dot_l, float n_dot_h, float metal, float linear_roughness)
+float3 specular_ggx(float3 color, float n_dot_v, float n_dot_l, float n_dot_h, float metal, float linear_roughness)
 {
 	float N = specular_ndf_ggx_tr(n_dot_h, linear_roughness);
 	float D = specular_shadowmask_smith_ggx(n_dot_v, n_dot_l, linear_roughness);
 	// TODO: This is the default f0 for plastic.  We need to figure out what to do with this value.
-	float F = fresnel(float3(0.05f, 0.05f, 0.05f), 1.0f, n_dot_v);
+	float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), color, metal);
+	float F = fresnel(f0, 1.0f, n_dot_v);
 
 	return (N * D * F) / k_pi;
 }
@@ -56,6 +57,34 @@ float specular_ggx(float n_dot_v, float n_dot_l, float n_dot_h, float metal, flo
 float light_falloff(float power, float distance)
 {
 	return (power / (4 * k_pi)) / (distance * distance);
+}
+
+// Returns a [0,1] value indicating what percentage of the sphere light is visible.
+float get_sphere_visibility(float3 to_light, float dist, float n_dot_l_raw, float radius)
+{
+	// Assume a locally flat horizon at an infinitesimally small point.  The sphere
+	// light may be treated as a flat disc.  Simplifying this to 2D we just need to
+	// determine the ratio of the disc that may be hidden by the horizon.
+
+	// We want the angle between the vector to the light and the horizon, the sine
+	// of which is equal to the cosine of the angle between the normal and the vector
+	// to the light. We'll call this angle tau.
+	float sine_tau = n_dot_l_raw;
+	float visible_radius = sine_tau * dist;
+
+	// This estimated visible radius is larger than the actual radius if the light
+	// is above the horizon, so protect against that.
+	float visible_half = min(max(visible_radius, -radius), radius);
+
+	// Now, calculate the area of the segment not visible to our point.
+	float alpha = 2.0f * acos(visible_half / radius);
+	float hidden_area = ((radius * radius) / 2.0f) * (alpha - sin(alpha));
+
+	// Now find the ratio of the visible area to the whole area.
+	float total_area = k_pi * (radius * radius);
+	float visible_area = total_area - hidden_area;
+
+	return saturate(visible_area / total_area);
 }
 
 // Area light calculations adopted from https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
