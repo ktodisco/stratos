@@ -109,7 +109,10 @@ public:
 	st_dx12_descriptor create_shader_sampler();
 	void destroy_shader_sampler(st_dx12_descriptor offset);
 
-	ID3D12RootSignature* get_root_signature() { return _root_signature.Get(); }
+	ID3D12Device* get_device() const { return _device.Get(); }
+	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }
+	ID3D12GraphicsCommandList* get_command_list() const { return _command_list.Get(); }
+	st_dx12_descriptor_heap* get_gui_heap() const { return _gui_srv_heap.get(); }
 
 	static st_dx12_render_context* get();
 
@@ -137,6 +140,8 @@ private:
 	std::unique_ptr<st_dx12_descriptor_heap> _dsv_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _cbv_srv_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _sampler_heap;
+
+	std::unique_ptr<st_dx12_descriptor_heap> _gui_srv_heap;
 
 	// Data upload heap.
 	Microsoft::WRL::ComPtr<ID3D12Resource> _upload_buffer;

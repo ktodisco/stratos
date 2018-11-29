@@ -155,6 +155,13 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
 		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
+	// Create the descriptor heap for imgui.
+	_gui_srv_heap = std::make_unique<st_dx12_descriptor_heap>(
+		_device.Get(),
+		1,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
 	// Create the data upload heap. Let's just make it 16K for now.
 	create_buffer(16 * 1024 * 1024, _upload_buffer.GetAddressOf());
 	

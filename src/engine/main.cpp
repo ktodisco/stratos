@@ -29,6 +29,7 @@
 #include <gui/st_button.h>
 #include <gui/st_checkbox.h>
 #include <gui/st_font.h>
+#include <gui/st_gui.h>
 #include <gui/st_label.h>
 
 #include <jobs/st_job.h>
@@ -87,6 +88,9 @@ int main(int argc, const char** argv)
 
 	// Create the default font:
 	g_font = std::make_unique<st_font>("VeraMono.ttf", 16.0f, 512, 512);
+
+	// Create the imgui context.
+	st_gui::initialize(window.get(), render.get());
 
 	// Set up a test for the unlit texture material.
 	st_model_data sphere_model;
@@ -184,6 +188,9 @@ int main(int argc, const char** argv)
 
 		// Perform the late update.
 		sim->late_update(&params);
+
+		st_gui::new_frame();
+		ImGui::ShowDemoWindow();
 
 		// Draw to screen.
 		output->update(&params);
