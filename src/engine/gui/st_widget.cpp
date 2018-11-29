@@ -17,6 +17,15 @@ const st_vec3f st_widget::k_text_color = { 1.0f, 1.0f, 1.0f };
 const float st_widget::k_button_offset = 4.0f;
 const float st_widget::k_checkbox_offset = 15.0f;
 
+st_widget::st_widget()
+{
+}
+
+st_widget::~st_widget()
+{
+	_materials.clear();
+}
+
 void st_widget::draw_outline(st_frame_params* params, const st_vec2f& min, const st_vec2f& max, const st_vec3f& color, float offset)
 {
 	st_dynamic_drawcall drawcall;
@@ -38,7 +47,10 @@ void st_widget::draw_outline(st_frame_params* params, const st_vec2f& min, const
 	drawcall._color = color;
 	drawcall._draw_mode = st_primitive_topology_lines;
 	drawcall._transform.make_identity();
-	drawcall._material = nullptr;
+
+	_materials.push_back(std::make_unique<st_constant_color_material>());
+	_materials[_materials.size() - 1]->set_color(color);
+	drawcall._material = _materials[_materials.size() - 1].get();
 
 	while (params->_gui_drawcall_lock.test_and_set(std::memory_order_acquire)) {}
 	params->_gui_drawcalls.push_back(drawcall);
@@ -62,7 +74,10 @@ void st_widget::draw_check(st_frame_params* params, const st_vec2f& min, const s
 	drawcall._color = color;
 	drawcall._draw_mode = st_primitive_topology_lines;
 	drawcall._transform.make_identity();
-	drawcall._material = nullptr;
+
+	_materials.push_back(std::make_unique<st_constant_color_material>());
+	_materials[_materials.size() - 1]->set_color(color);
+	drawcall._material = _materials[_materials.size() - 1].get();
 
 	while (params->_gui_drawcall_lock.test_and_set(std::memory_order_acquire)) {}
 	params->_gui_drawcalls.push_back(drawcall);
@@ -79,8 +94,8 @@ void st_widget::draw_fill(st_frame_params* params, const st_vec2f& min, const st
 	drawcall._positions.push_back({ min.x, max.y, 0.0f });
 
 	drawcall._indices.push_back(0);
-	drawcall._indices.push_back(1);
 	drawcall._indices.push_back(2);
+	drawcall._indices.push_back(1);
 	drawcall._indices.push_back(0);
 	drawcall._indices.push_back(3);
 	drawcall._indices.push_back(2);
@@ -88,7 +103,10 @@ void st_widget::draw_fill(st_frame_params* params, const st_vec2f& min, const st
 	drawcall._color = color;
 	drawcall._draw_mode = st_primitive_topology_triangles;
 	drawcall._transform.make_identity();
-	drawcall._material = nullptr;
+
+	_materials.push_back(std::make_unique<st_constant_color_material>());
+	_materials[_materials.size() - 1]->set_color(color);
+	drawcall._material = _materials[_materials.size() - 1].get();
 
 	while (params->_gui_drawcall_lock.test_and_set(std::memory_order_acquire)) {}
 	params->_gui_drawcalls.push_back(drawcall);

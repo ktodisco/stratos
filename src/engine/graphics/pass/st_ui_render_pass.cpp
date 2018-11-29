@@ -83,7 +83,10 @@ void st_ui_render_pass::draw_dynamic(
 
 		if (d._material)
 		{
-			context->set_pipeline_state(_font_state.get());
+			st_pipeline_state* state = d._material->get_material_type() == st_material_type_constant_color ?
+				_default_state.get() :
+				_font_state.get();
+			context->set_pipeline_state(state);
 			d._material->set_color(d._color);
 			d._material->bind(context, params, proj, view, d._transform);
 		}

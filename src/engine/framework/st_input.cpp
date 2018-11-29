@@ -30,13 +30,26 @@ st_input::~st_input()
 {
 }
 
+void st_input::handle_mouse_press(int32_t key_code, int32_t info)
+{
+	_mouse_press_mask |= key_code;
+}
+
+void st_input::handle_mouse_release(int32_t key_code, int32_t info)
+{
+	_mouse_press_mask &= ~key_code;
+	_mouse_click_mask |= key_code;
+}
+
 void st_input::handle_mouse_move(uint32_t mouse_x, uint32_t mouse_y)
 {
+	_mouse_delta_x = mouse_x - _mouse_x;
+	_mouse_delta_y = mouse_y - _mouse_y;
 	_mouse_x = mouse_x;
 	_mouse_y = mouse_y;
 }
 
-void st_input::handle_key_press(int key_code, int info)
+void st_input::handle_key_press(int32_t key_code, int32_t info)
 {
 	switch (key_code)
 	{
@@ -75,7 +88,7 @@ void st_input::handle_key_press(int key_code, int info)
 	};
 }
 
-void st_input::handle_key_release(int key_code, int info)
+void st_input::handle_key_release(int32_t key_code, int32_t info)
 {
 	switch (key_code)
 	{
@@ -116,8 +129,6 @@ void st_input::handle_key_release(int key_code, int info)
 
 void st_input::update(st_frame_params* params)
 {
-	params->_mouse_click_mask = 0;
-
 	_pressed_mask = _button_mask & ~_previous_button_mask;
 	_released_mask = _previous_button_mask & ~_button_mask;
 
@@ -125,9 +136,19 @@ void st_input::update(st_frame_params* params)
 	_previous_button_mask = _button_mask;
 
 	params->_button_mask = _button_mask;
-	params->_mouse_press_mask = _mouse_button_mask;
+	params->_mouse_press_mask = _mouse_press_mask;
+	params->_mouse_click_mask = _mouse_click_mask;
 	params->_mouse_x = _mouse_x;
 	params->_mouse_y = _mouse_y;
+	params->_mouse_delta_x = _mouse_delta_x;
+	params->_mouse_delta_y = _mouse_delta_y;
+
+	// Zero out the click mask; only capture clicks once.
+	_mouse_click_mask = 0;
+
+	// Zero out mouse delta so we don't double count.
+	_mouse_delta_x = 0.0f;
+	_mouse_delta_y = 0.0f;
 
 	// Toggle pause if the p key is pressed.
 	if (_pressed_mask & k_button_p)

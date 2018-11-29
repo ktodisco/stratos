@@ -38,6 +38,18 @@ LRESULT st_message_thread::handle_message(HWND window_handle, UINT message, WPAR
 {
 	switch(message)
 	{
+	case WM_LBUTTONDOWN:
+		_input->handle_mouse_press(k_mouse_left, (int32_t)l_param);
+		break;
+	case WM_RBUTTONDOWN:
+		_input->handle_mouse_press(k_mouse_right, (int32_t)l_param);
+		break;
+	case WM_LBUTTONUP:
+		_input->handle_mouse_release(k_mouse_left, (int32_t)l_param);
+		break;
+	case WM_RBUTTONUP:
+		_input->handle_mouse_release(k_mouse_right, (int32_t)l_param);
+		break;
 	case WM_MOUSEMOVE:
 		{
 			uint32_t x_pos = GET_X_LPARAM(l_param);
@@ -46,10 +58,10 @@ LRESULT st_message_thread::handle_message(HWND window_handle, UINT message, WPAR
 		}
 		break;
 	case WM_KEYDOWN:
-		_input->handle_key_press((int)w_param, (int)l_param);
+		_input->handle_key_press((int32_t)w_param, (int32_t)l_param);
 		break;
 	case WM_KEYUP:
-		_input->handle_key_release((int)w_param, (int)l_param);
+		_input->handle_key_release((int32_t)w_param, (int32_t)l_param);
 		break;
 	case WM_CREATE:
 		break;

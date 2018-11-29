@@ -7,6 +7,7 @@
 #include <framework/st_camera.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_input.h>
 
 #include <math/st_math.h>
 

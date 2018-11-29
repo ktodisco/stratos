@@ -8,6 +8,8 @@
 
 #include <entity/st_entity.h>
 
+#include <framework/st_input.h>
+
 st_playermove_component::st_playermove_component(st_entity* ent)
 	: st_component(ent), _move_when_paused(false)
 {

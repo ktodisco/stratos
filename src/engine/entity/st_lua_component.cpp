@@ -9,6 +9,7 @@
 #include <entity/st_entity.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_input.h>
 
 #include <lua.hpp>
 
