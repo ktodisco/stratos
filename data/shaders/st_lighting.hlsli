@@ -84,7 +84,11 @@ float get_sphere_visibility(float3 to_light, float dist, float n_dot_l_raw, floa
 	float total_area = k_pi * (radius * radius);
 	float visible_area = total_area - hidden_area;
 
-	return saturate(visible_area / total_area);
+	// Lastly, we need the equivalent n-dot-l factor for the portion of light
+	// reaching this point.
+	float attenuation = (visible_radius + max((radius - visible_radius) / 2.0f, 0)) / dist;
+
+	return saturate(visible_area / total_area) * attenuation;
 }
 
 // Area light calculations adopted from https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
