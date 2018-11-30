@@ -34,8 +34,14 @@ bool st_message_thread::pump_messages()
 	return true;
 }
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND window_handle, UINT message, WPARAM w_param, LPARAM l_param);
 LRESULT st_message_thread::handle_message(HWND window_handle, UINT message, WPARAM w_param, LPARAM l_param)
 {
+	if (ImGui_ImplWin32_WndProcHandler(window_handle, message, w_param, l_param))
+	{
+		return true;
+	}
+
 	switch(message)
 	{
 	case WM_LBUTTONDOWN:
