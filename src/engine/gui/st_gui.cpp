@@ -47,8 +47,11 @@ void st_gui::new_frame()
 
 void st_gui::draw()
 {
-	ImGui::Render();
+	// Total hack.
+	ID3D12DescriptorHeap* heaps[] = { st_dx12_render_context::get()->get_gui_heap()->get() };
+	st_dx12_render_context::get()->get_command_list()->SetDescriptorHeaps(1, heaps);
 
+	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(
 		ImGui::GetDrawData(),
 		st_dx12_render_context::get()->get_command_list());
