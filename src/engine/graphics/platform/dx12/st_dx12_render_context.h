@@ -130,7 +130,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Device> _device;
 	Microsoft::WRL::ComPtr<ID3D12Resource> _backbuffers[k_backbuffer_count];
 	Microsoft::WRL::ComPtr<ID3D12Resource> _depth_stencil;
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> _command_allocator;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> _command_allocators[k_backbuffer_count];
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _command_queue;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> _root_signature;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> _default_pso;

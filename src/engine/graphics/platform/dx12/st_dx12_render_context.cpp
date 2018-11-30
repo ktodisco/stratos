@@ -177,7 +177,7 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 			__uuidof(ID3D12Resource),
 			(void**)&_backbuffers[rtv_itr]);
 
-		ST_NAME_DX12_OBJECT(_backbuffers[rtv_itr], "Backbuffer");
+		ST_NAME_DX12_OBJECT(_backbuffers[rtv_itr], str_to_wstr("Backbuffer").c_str());
 
 		if (result != S_OK)
 		{
@@ -222,16 +222,19 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		assert(false);
 	}
 
-	ST_NAME_DX12_OBJECT(_depth_stencil, "Depth-Stencil");
+	ST_NAME_DX12_OBJECT(_depth_stencil, str_to_wstr("Depth-Stencil").c_str());
 
 	st_dx12_cpu_descriptor_handle dsv_handle = _dsv_heap->allocate_handle();
 	_device->CreateDepthStencilView(_depth_stencil.Get(), &depth_stencil_desc, dsv_handle._handle);
 
-	// Create the command allocator.
-	result = _device->CreateCommandAllocator(
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		__uuidof(ID3D12CommandAllocator),
-		(void**)&_command_allocator);
+	for (uint32_t ca_itr = 0; ca_itr < k_backbuffer_count; ++ca_itr)
+	{
+		// Create the command allocator.
+		result = _device->CreateCommandAllocator(
+			D3D12_COMMAND_LIST_TYPE_DIRECT,
+			__uuidof(ID3D12CommandAllocator),
+			(void**)&_command_allocators[ca_itr]);
+	}
 
 	if (result != S_OK)
 	{
@@ -242,7 +245,7 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 	result = _device->CreateCommandList(
 		0,
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
-		_command_allocator.Get(),
+		_command_allocators[0].Get(),
 		nullptr,
 		__uuidof(ID3D12GraphicsCommandList),
 		(void**)&_command_list);
@@ -584,7 +587,7 @@ void st_dx12_render_context::transition_targets(
 
 void st_dx12_render_context::begin_loading()
 {
-	_command_list->Reset(_command_allocator.Get(), nullptr);
+	_command_list->Reset(_command_allocators[_frame_index].Get(), nullptr);
 }
 
 void st_dx12_render_context::end_loading()
@@ -605,7 +608,8 @@ void st_dx12_render_context::end_loading()
 
 void st_dx12_render_context::begin_frame()
 {
-	_command_list->Reset(_command_allocator.Get(), nullptr);
+	_command_allocators[_frame_index]->Reset();
+	_command_list->Reset(_command_allocators[_frame_index].Get(), nullptr);
 	_command_list->SetGraphicsRootSignature(_root_signature.Get());
 
 	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap->get(), _sampler_heap->get() };
