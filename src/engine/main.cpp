@@ -54,7 +54,7 @@
 #include <unistd.h>
 #endif
 
-std::unique_ptr<st_font> g_font = nullptr;
+st_font* g_font = nullptr;
 
 static void set_root_path(const char* exepath);
 
@@ -86,8 +86,9 @@ int main(int argc, const char** argv)
 	camera->set_yaw(180.0f);
 	camera->set_pitch(20.0f);
 
-	// Create the default font:
-	g_font = std::make_unique<st_font>("VeraMono.ttf", 16.0f, 512, 512);
+	// Create the default font. Not a smart pointer because it's a global and will
+	// destruct out of order with other systems it depends on.
+	g_font = new st_font("VeraMono.ttf", 16.0f, 512, 512);
 
 	// Create the imgui context.
 	st_gui::initialize(window.get(), render.get());
@@ -196,7 +197,10 @@ int main(int argc, const char** argv)
 		output->update(&params);
 	}
 
+	st_gui::shutdown();
 	st_job::shutdown();
+
+	delete g_font;
 
 	return 0;
 }

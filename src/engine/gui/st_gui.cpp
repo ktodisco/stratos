@@ -38,6 +38,13 @@ void st_gui::initialize(
 	ImGui::StyleColorsDark();
 }
 
+void st_gui::shutdown()
+{
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+}
+
 void st_gui::new_frame()
 {
 	ImGui_ImplDX12_NewFrame();
