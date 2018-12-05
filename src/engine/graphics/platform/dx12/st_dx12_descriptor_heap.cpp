@@ -6,6 +6,8 @@
 
 #include <graphics/platform/dx12/st_dx12_descriptor_heap.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <cassert>
 
 st_dx12_descriptor_heap::st_dx12_descriptor_heap(
@@ -142,3 +144,5 @@ uint32_t st_dx12_descriptor_heap::get_descriptor_size() const
 {
 	return _descriptor_size;
 }
+
+#endif

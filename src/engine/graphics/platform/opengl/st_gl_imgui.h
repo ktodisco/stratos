@@ -6,9 +6,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <imgui.h>
+#include <graphics/st_graphics.h>
 
-class st_gui
+#if defined(ST_GRAPHICS_API_OPENGL)
+
+class st_gl_imgui
 {
 public:
 	static void initialize(
@@ -19,3 +21,5 @@ public:
 	static void new_frame();
 	static void draw();
 };
+
+#endif

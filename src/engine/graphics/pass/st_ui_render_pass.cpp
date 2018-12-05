@@ -15,8 +15,8 @@
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 
-#include <gui/st_gui.h>
 #include <gui/st_font.h>
+#include <gui/st_imgui.h>
 
 st_ui_render_pass::st_ui_render_pass()
 {
@@ -69,7 +69,7 @@ void st_ui_render_pass::render(st_render_context* context, const st_frame_params
 	// Clear depth.
 	context->clear(st_clear_flag_depth);
 
-	st_gui::draw();
+	st_imgui::draw();
 
 	draw_dynamic(context, params, ortho, view);
 }

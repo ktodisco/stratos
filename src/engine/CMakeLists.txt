@@ -26,8 +26,10 @@ include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/imgui-1.66")
 file (GLOB IMGUI_SOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/imgui-1.66/*.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/imgui-1.66/examples/imgui_impl_dx12.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/imgui-1.66/examples/imgui_impl_opengl3.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/imgui-1.66/examples/imgui_impl_win32.cpp)
 add_library (imgui166 ${IMGUI_SOURCE_FILES})
+target_compile_definitions (imgui166 PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLEW)
 
 # ST framework:
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}")

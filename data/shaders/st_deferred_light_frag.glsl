@@ -29,11 +29,11 @@ vec3 diffuse_lambertian(vec3 albedo, vec3 n, vec3 l)
 	return (albedo / s_pi) * clamp(dot(n, l), 0.0, 1.0);
 }
 
-vec3 specular_phong(vec3 specular, vec3 n, vec3 v, vec3 l, float r)
+vec3 specular_phong(vec3 specular, vec3 n, vec3 v, vec3 l, float roughness)
 {
 	vec3 r = reflect(-l, n);
 	float a = clamp(dot(r, v), 0.0, 1.0);
-	return specular * pow(a, (r * 50.0f) / 4.0f);
+	return specular * pow(a, (roughness * 50.0f) / 4.0f);
 }
 
 void main(void)
