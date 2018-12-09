@@ -18,9 +18,9 @@ float diffuse_lambertian(float n_dot_l)
 	return n_dot_l / k_pi;
 }
 
-float specular_ndf_ggx_tr(float n_dot_h, float linear_roughness)
+float specular_ndf_ggx_tr(float n_dot_h, float linear_roughness, float dist, float radius)
 {
-	float roughness2 = linear_roughness * linear_roughness;
+	float roughness2 = max(linear_roughness * linear_roughness, 0.0001f);
 
 	float num = roughness2;
 	float den = k_pi * pow((n_dot_h * n_dot_h) * (roughness2 - 1.0f) + 1.0f, 2);
@@ -40,18 +40,18 @@ float specular_shadowmask_smith_ggx(float n_dot_v, float n_dot_l, float linear_r
 	float ggx1 = specular_geometry_schlick_ggx(n_dot_v, linear_roughness);
 	float ggx2 = specular_geometry_schlick_ggx(n_dot_l, linear_roughness);
 
-	return ggx1 + ggx2;
+	return ggx1 * ggx2;
 }
 
-float3 specular_ggx(float3 color, float n_dot_v, float n_dot_l, float n_dot_h, float metal, float linear_roughness)
+float3 specular_ggx(float3 color, float dist, float radius, float n_dot_v, float n_dot_l, float n_dot_h, float metal, float linear_roughness)
 {
-	float N = specular_ndf_ggx_tr(n_dot_h, linear_roughness);
+	float N = specular_ndf_ggx_tr(n_dot_h, linear_roughness, dist, radius);
 	float D = specular_shadowmask_smith_ggx(n_dot_v, n_dot_l, linear_roughness);
 	// TODO: This is the default f0 for plastic.  We need to figure out what to do with this value.
 	float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), color, metal);
 	float F = fresnel(f0, 1.0f, n_dot_v);
 
-	return (N * D * F) / k_pi;
+	return saturate((N * D * F) / k_pi);
 }
 
 float light_falloff(float power, float distance)

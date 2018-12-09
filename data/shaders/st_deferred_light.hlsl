@@ -64,7 +64,6 @@ float4 ps_main(ps_input input) : SV_TARGET
 	
 	float3 to_eye = normalize(eye.xyz - world_position.xyz);
 	float3 to_light = light_position.xyz - world_position.xyz;
-	float3 half_vector = normalize(to_eye + to_light);
 	float dist_to_light_center = length(to_light);
 	float dist_to_light = dist_to_light_center - light_radius;
 	to_light = normalize(to_light);
@@ -72,7 +71,6 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float n_dot_l_raw = dot(normal, to_light);
 	float n_dot_l = saturate(n_dot_l_raw);
 	float n_dot_v = saturate(dot(normal, to_eye));
-	float n_dot_h = saturate(dot(normal, half_vector));
 
 	float irradiance = light_falloff(light_power, dist_to_light);
 	
@@ -83,7 +81,22 @@ float4 ps_main(ps_input input) : SV_TARGET
 
 	// Division by pi plays the part of the lambertian diffuse.
 	float3 diffuse_result = diffuse_color * irradiance * visibility_term / k_pi;
-	float3 specular_result = specular_color * specular_ggx(diffuse_color, n_dot_v, n_dot_l, n_dot_h, metalness, linear_roughness) * irradiance;
+
+	float3 reflection = reflect(-to_eye, normal);
+	float3 center_to_ray = dot(to_light, reflection) * reflection - to_light;
+	float3 representative_point = to_light + center_to_ray * saturate(light_radius / length(center_to_ray));
+	float n_dot_r = saturate(dot(normal, representative_point));
+	float3 half_vector = normalize(to_eye + representative_point);
+	float n_dot_h = saturate(dot(normal, half_vector));
+	float3 specular_result = specular_color *
+		specular_ggx(diffuse_color,
+			dist_to_light_center,
+			light_radius,
+			n_dot_v,
+			n_dot_l,
+			n_dot_h,
+			metalness,
+			linear_roughness) * irradiance;
 	
 	float3 lit_color = diffuse_result;
 	lit_color += specular_result;
