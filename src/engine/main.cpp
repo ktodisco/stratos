@@ -10,6 +10,7 @@
 #include <framework/st_camera.h>
 #include <framework/st_compiler_defines.h>
 #include <framework/st_input.h>
+#include <framework/st_scene.h>
 #include <framework/st_sim.h>
 #include <framework/st_output.h>
 
@@ -20,7 +21,6 @@
 #include <graphics/material/st_material.h>
 #include <graphics/material/st_parallax_occlusion_material.h>
 #include <graphics/geometry/st_model_component.h>
-#include <graphics/parse/st_ply_parser.h>
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/st_light_component.h>
 #include <graphics/st_render_context.h>
@@ -80,6 +80,7 @@ int main(int argc, const char** argv)
 	std::unique_ptr<st_sim> sim = std::make_unique<st_sim>();
 	std::unique_ptr<st_physics_world> world = std::make_unique<st_physics_world>();
 	std::unique_ptr<st_output> output = std::make_unique<st_output>(window.get(), render.get());
+	std::unique_ptr<st_scene> scene = std::make_unique<st_scene>();
 
 	// Create camera.
 	std::unique_ptr<st_camera> camera = std::make_unique<st_camera>(st_vec3f({ 0.0f, 1.8f, 3.5f }));
@@ -93,73 +94,7 @@ int main(int argc, const char** argv)
 	// Create the imgui context.
 	st_imgui::initialize(window.get(), render.get());
 
-	// Set up a test for the unlit texture material.
-	st_model_data sphere_model;
-	ply_to_model("data/models/sphere.ply", &sphere_model);
-
-	st_model_data plane_model;
-	ply_to_model("data/models/plane.ply", &plane_model);
-
-	st_entity floor_entity;
-	st_gbuffer_material floor_material(
-		"data/textures/floor.png",
-		"data/textures/dielectric_25_roughness.png");
-	st_model_component floor_model_component(&floor_entity, &plane_model, &floor_material);
-	sim->add_entity(&floor_entity);
-
-	floor_entity.scale(0.5f);
-
-	st_entity dr0_entity;
-	st_gbuffer_material dr0_material(
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_0_roughness.png");
-	st_model_component dr0_model(&dr0_entity, &sphere_model, &dr0_material);
-	sim->add_entity(&dr0_entity);
-	dr0_entity.translate({ -3.0f, 1.0f, 0.0f });
-
-	st_entity dr25_entity;
-	st_gbuffer_material dr25_material(
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_25_roughness.png");
-	st_model_component dr25_model(&dr25_entity, &sphere_model, &dr25_material);
-	sim->add_entity(&dr25_entity);
-	dr25_entity.translate({ -1.5f, 1.0f, 0.0f });
-
-	st_entity dr50_entity;
-	st_gbuffer_material dr50_material(
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_50_roughness.png");
-	st_model_component dr50_model(&dr50_entity, &sphere_model, &dr50_material);
-	sim->add_entity(&dr50_entity);
-	dr50_entity.translate({ 0.0f, 1.0f, 0.0f });
-
-	st_entity dr75_entity;
-	st_gbuffer_material dr75_material(
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_75_roughness.png");
-	st_model_component dr75_model(&dr75_entity, &sphere_model, &dr75_material);
-	sim->add_entity(&dr75_entity);
-	dr75_entity.translate({ 1.5f, 1.0f, 0.0f });
-
-	st_entity dr100_entity;
-	st_gbuffer_material dr100_material(
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_100_roughness.png");
-	st_model_component dr100_model(&dr100_entity, &sphere_model, &dr100_material);
-	sim->add_entity(&dr100_entity);
-	dr100_entity.translate({ 3.0f, 1.0f, 0.0f });
-
-	st_entity light_entity;
-	st_gbuffer_material light_material(
-		"data/textures/white_albedo.png",
-		"data/textures/default_emissive.png");
-	light_material.set_emissive(200.0f);
-	st_model_component light_model_component(&light_entity, &sphere_model, &light_material);
-	st_light_component light_component(&light_entity, st_vec3f({ 1.0f, 1.0f, 0.9f }), 2400.0f);
-	sim->add_entity(&light_entity);
-
-	light_entity.translate({ 0.0f, 1.0f, 3.0f });
-	light_entity.scale(0.1f);
+	scene->setup_lighting_test(sim.get());
 
 	window->show();
 

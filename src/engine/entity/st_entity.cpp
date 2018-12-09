@@ -17,9 +17,9 @@ st_entity::~st_entity()
 {
 }
 
-void st_entity::add_component(st_component* comp)
+void st_entity::add_component(std::unique_ptr<st_component> comp)
 {
-	_components.push_back(comp);
+	_components.push_back(std::move(comp));
 }
 
 void st_entity::update(st_frame_params* params)

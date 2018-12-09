@@ -17,9 +17,9 @@
 
 #include <cassert>
 
-st_model_component::st_model_component(st_entity* ent, st_model_data* model, st_material* material) :
-	st_component(ent),
-	_material(material)
+st_model_component::st_model_component(st_entity* entity, st_model_data* model, std::unique_ptr<class st_material> material) :
+	st_component(entity),
+	_material(std::move(material))
 {
 	assert(model->_vertex_format.is_finalized());
 
@@ -41,7 +41,7 @@ void st_model_component::update(st_frame_params* params)
 	st_static_drawcall draw_call;
 	draw_call._name = "st_model_component";
 	draw_call._transform = get_entity()->get_transform();
-	draw_call._material = _material;
+	draw_call._material = _material.get();
 	_geometry->draw(draw_call);
 
 	while (params->_static_drawcall_lock.test_and_set(std::memory_order_acquire)) {}

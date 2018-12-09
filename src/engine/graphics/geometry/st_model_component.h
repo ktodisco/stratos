@@ -17,12 +17,12 @@
 class st_model_component : public st_component
 {
 public:
-	st_model_component(class st_entity* ent, struct st_model_data* model, class st_material* material);
+	st_model_component(class st_entity* entity, struct st_model_data* model, std::unique_ptr<class st_material> material);
 	virtual ~st_model_component();
 
 	virtual void update(struct st_frame_params* params) override;
 
 private:
-	class st_material* _material;
+	std::unique_ptr<class st_material> _material;
 	std::unique_ptr<class st_geometry> _geometry = nullptr;
 };

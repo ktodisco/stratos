@@ -8,6 +8,7 @@
 
 #include "math/st_mat4f.h"
 
+#include <memory>
 #include <vector>
 
 /*
@@ -22,7 +23,7 @@ public:
 	st_entity();
 	~st_entity();
 
-	void add_component(class st_component* comp);
+	void add_component(std::unique_ptr<class st_component> comp);
 
 	void update(struct st_frame_params* params);
 	void late_update(struct st_frame_params* params);
@@ -35,6 +36,6 @@ public:
 	void set_transform(const st_mat4f& t) { _transform = t; }
 
 private:
-	std::vector<class st_component*> _components;
+	std::vector<std::unique_ptr<class st_component>> _components;
 	st_mat4f _transform;
 };

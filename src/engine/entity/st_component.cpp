@@ -10,7 +10,6 @@
 
 st_component::st_component(st_entity* ent) : _entity(ent)
 {
-	_entity->add_component(this);
 }
 
 st_component::~st_component()
