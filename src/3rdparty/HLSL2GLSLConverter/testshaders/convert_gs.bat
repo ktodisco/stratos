@@ -1,1 +1,0 @@
-..\win32\HLSL2GLSLConverter.exe -h -i SelectArraySlice.gsh -d .\ -d .\include -t gs -e SelectArraySliceGS -c -o TestGS.glsl

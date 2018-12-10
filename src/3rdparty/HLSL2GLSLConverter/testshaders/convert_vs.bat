@@ -1,1 +1,0 @@
-..\win32\HLSL2GLSLConverter.exe -h -i ConverterTest.fx -d .\ -d .\include -t vs -e TestVS -c -o TestVS.glsl
