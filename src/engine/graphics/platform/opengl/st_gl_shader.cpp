@@ -72,6 +72,22 @@ void st_gl_uniform::set(const st_gl_texture& tex, uint32_t unit)
 	glUniform1i(_location, unit);
 }
 
+st_gl_uniform_block::st_gl_uniform_block(int32_t location) : _location(location)
+{
+	glGenBuffers(1, &_buffer);
+}
+
+st_gl_uniform_block::~st_gl_uniform_block()
+{
+	glDeleteBuffers(1, &_buffer);
+}
+
+void st_gl_uniform_block::set(void* data, size_t size)
+{
+	glBindBufferRange(GL_UNIFORM_BUFFER, _location, _buffer, 0, size);
+	glBufferData(GL_UNIFORM_BUFFER, size, data, GL_DYNAMIC_DRAW);
+}
+
 st_gl_shader_component::st_gl_shader_component(const char* source, uint32_t type)
 {
 	_handle = glCreateShader(type);
@@ -174,6 +190,12 @@ st_gl_uniform st_gl_shader::get_uniform(const char* name) const
 {
 	int32_t location = glGetUniformLocation(_handle, name);
 	return st_gl_uniform(location);
+}
+
+st_gl_uniform_block st_gl_shader::get_uniform_block(const char* name) const
+{
+	int32_t location = glGetUniformBlockIndex(_handle, name);
+	return st_gl_uniform_block(location);
 }
 
 void st_gl_shader::use() const

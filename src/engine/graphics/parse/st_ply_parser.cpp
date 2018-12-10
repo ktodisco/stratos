@@ -262,9 +262,9 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
 	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 2));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 3));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_tangent, 4));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_tangent, 2));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 3));
+	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 4));
 
 	model->_vertex_format.finalize();
 }

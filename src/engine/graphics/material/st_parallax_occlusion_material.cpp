@@ -21,9 +21,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	const char* normal_texture)
 {
 	_parallax_occlusion_buffer = std::make_unique<st_constant_buffer>(sizeof(st_parallax_occlusion_cb));
-	_parallax_occlusion_buffer->add_constant("u_model", st_shader_constant_type_mat4);
-	_parallax_occlusion_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
-	_parallax_occlusion_buffer->add_constant("u_eye", st_shader_constant_type_vec4);
+	_parallax_occlusion_buffer->add_constant("type_cb0", st_shader_constant_type_block);
 
 	_albedo_texture = std::make_unique<st_texture>();
 	if (!_albedo_texture->load_from_file(albedo_texture))
@@ -31,7 +29,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 		std::cerr << "Failed to load " << albedo_texture << std::endl;
 		assert(false);
 	}
-	_albedo_texture->set_meta("u_albedo", 0);
+	_albedo_texture->set_meta("SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
 
 	_normal_texture = std::make_unique<st_texture>();
 	if (!_normal_texture->load_from_file(normal_texture))
@@ -39,7 +37,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 		std::cerr << "Failed to load " << normal_texture << std::endl;
 		assert(false);
 	}
-	_normal_texture->set_meta("u_normal", 1);
+	_normal_texture->set_meta("SPIRV_Cross_Combinednormal_texturenormal_sampler");
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_parallax_occlusion_buffer.get());
