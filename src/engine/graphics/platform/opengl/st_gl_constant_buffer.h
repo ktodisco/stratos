@@ -32,6 +32,7 @@ private:
 		e_st_shader_constant_type _type;
 	};
 
+	uint32_t _buffer;
 	const size_t _size;
 	std::vector<st_gl_constant> _constants;
 };

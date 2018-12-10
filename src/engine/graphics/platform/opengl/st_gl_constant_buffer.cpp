@@ -19,10 +19,15 @@
 
 st_gl_constant_buffer::st_gl_constant_buffer(const size_t size) : _size(size)
 {
+	glGenBuffers(1, &_buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, _buffer);
+	glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 st_gl_constant_buffer::~st_gl_constant_buffer()
 {
+	glDeleteBuffers(1, &_buffer);
 }
 
 void st_gl_constant_buffer::add_constant(
@@ -95,8 +100,8 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 			break;
 		case st_shader_constant_type_block:
 			{
-				st_gl_uniform_block block = shader->get_uniform_block(constant._name.c_str());
-				block.set(data, _size);
+				st_gl_uniform_block block = shader->get_uniform_block(constant._name.c_str(), _size);
+				block.set(_buffer, data, _size);
 
 				offset += _size;
 			}
