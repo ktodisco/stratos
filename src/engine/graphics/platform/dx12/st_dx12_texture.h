@@ -23,7 +23,7 @@ public:
 
 	void load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data);
 	bool load_from_file(const char* path);
-	void set_meta(const char* name) {}
+	void set_meta(const char* name, uint32_t slot) {}
 
 	void bind(class st_dx12_render_context* context);
 

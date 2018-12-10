@@ -15,7 +15,7 @@
 st_phong_material::st_phong_material()
 {
 	_phong_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
-	_phong_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	_phong_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_phong_buffer.get());

@@ -53,10 +53,10 @@ void st_deferred_light_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	_albedo->set_meta("SPIRV_Cross_Combinedalbedo_textureSPIRV_Cross_DummySampler");
-	_normal->set_meta("SPIRV_Cross_Combinednormal_textureSPIRV_Cross_DummySampler");
-	_third->set_meta("SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");
-	_depth->set_meta("SPIRV_Cross_Combineddepth_textureSPIRV_Cross_DummySampler");
+	_albedo->set_meta("u_albedo", 0);
+	_normal->set_meta("u_normal", 1);
+	_third->set_meta("u_third", 2);
+	_depth->set_meta("u_depth", 3);
 
 	_resource_table->bind(context);
 }

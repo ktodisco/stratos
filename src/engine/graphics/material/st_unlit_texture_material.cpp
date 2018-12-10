@@ -19,7 +19,7 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	_texture_file(texture_file)
 {
 	_view_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
-	_view_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	_view_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
 
 	_texture = std::make_unique<st_texture>();
 	if (!_texture->load_from_file(_texture_file.c_str()))
@@ -27,7 +27,7 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 		std::cerr << "Failed to load " << _texture_file << std::endl;
 		assert(false);
 	}
-	_texture->set_meta("SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
+	_texture->set_meta("u_texture", 0);
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_view_buffer.get());

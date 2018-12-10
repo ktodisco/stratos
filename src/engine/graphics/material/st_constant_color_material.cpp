@@ -15,7 +15,8 @@
 st_constant_color_material::st_constant_color_material()
 {
 	_color_buffer = std::make_unique<st_constant_buffer>(sizeof(st_constant_color_cb));
-	_color_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	_color_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
+	_color_buffer->add_constant("u_color", st_shader_constant_type_vec3);
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_color_buffer.get());

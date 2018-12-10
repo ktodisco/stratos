@@ -75,9 +75,10 @@ bool st_gl_texture::load_from_file(const char* path)
 	return true;
 }
 
-void st_gl_texture::set_meta(const char* name)
+void st_gl_texture::set_meta(const char* name, const uint32_t slot)
 {
 	_name = name;
+	_slot = slot;
 }
 
 void st_gl_texture::set_name(std::string name)
@@ -90,7 +91,7 @@ void st_gl_texture::bind(class st_gl_render_context* context)
 	const st_gl_shader* shader = context->get_bound_shader();
 
 	st_gl_uniform uniform = shader->get_uniform(_name.c_str());
-	uniform.set(*this, uniform.get_location());
+	uniform.set(*this, _slot);
 }
 
 void st_gl_texture::get_pixel_format_and_type(

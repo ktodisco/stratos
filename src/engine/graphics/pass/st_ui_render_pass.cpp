@@ -22,7 +22,7 @@ st_ui_render_pass::st_ui_render_pass()
 {
 	_vertex_format = std::make_unique<st_vertex_format>();
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 1));
+	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 3));
 	_vertex_format->finalize();
 
 	// Set up the default UI material.

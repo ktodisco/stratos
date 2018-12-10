@@ -39,6 +39,6 @@ void st_fullscreen_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	_texture->set_meta("SPIRV_Cross_Combinedtextex_sampler");
+	_texture->set_meta("u_texture", 0);
 	_resource_table->bind(context);
 }

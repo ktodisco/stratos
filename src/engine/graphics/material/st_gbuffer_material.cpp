@@ -16,11 +16,13 @@
 #include <iostream>
 
 st_gbuffer_material::st_gbuffer_material(
-	const char* albedo_texture,
-	const char* mre_texture)
+		const char* albedo_texture,
+		const char* mre_texture)
 {
 	_gbuffer_buffer = std::make_unique<st_constant_buffer>(sizeof(st_gbuffer_cb));
-	_gbuffer_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	_gbuffer_buffer->add_constant("u_model", st_shader_constant_type_mat4);
+	_gbuffer_buffer->add_constant("u_mvp", st_shader_constant_type_mat4);
+	_gbuffer_buffer->add_constant("u_emissive", st_shader_constant_type_float);
 
 	_albedo_texture = std::make_unique<st_texture>();
 	if (!_albedo_texture->load_from_file(albedo_texture))
@@ -28,7 +30,7 @@ st_gbuffer_material::st_gbuffer_material(
 		std::cerr << "Failed to load " << albedo_texture << std::endl;
 		assert(false);
 	}
-	_albedo_texture->set_meta("SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
+	_albedo_texture->set_meta("u_albedo", 0);
 
 	_mre_texture = std::make_unique<st_texture>();
 	if (!_mre_texture->load_from_file(mre_texture))
@@ -36,7 +38,7 @@ st_gbuffer_material::st_gbuffer_material(
 		std::cerr << "Failed to load " << mre_texture << std::endl;
 		assert(false);
 	}
-	_mre_texture->set_meta("SPIRV_Cross_Combinedmre_texturemre_sampler");
+	_mre_texture->set_meta("u_mre", 1);
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_gbuffer_buffer.get());

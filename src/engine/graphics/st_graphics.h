@@ -28,7 +28,6 @@ enum e_st_shader_constant_type
 	st_shader_constant_type_vec3,
 	st_shader_constant_type_vec4,
 	st_shader_constant_type_mat4,
-	st_shader_constant_type_block,
 };
 
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
