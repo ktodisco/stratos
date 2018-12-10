@@ -24,9 +24,9 @@ struct st_vertex
 	// of each element.
 	st_vec3f _position = st_vec3f::zero_vector();
 	st_vec3f _normal = st_vec3f::zero_vector();
+	st_vec3f _tangent = st_vec3f::zero_vector();
 	st_vec4f _color = st_vec4f::zero_vector();
 	st_vec2f _uv = st_vec2f::zero_vector();
-	st_vec3f _tangent = st_vec3f::zero_vector();
 
 	uint32_t _joints[4] = { 0, 0, 0, 0 };
 	float _weights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };

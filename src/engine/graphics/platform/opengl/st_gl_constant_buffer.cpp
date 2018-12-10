@@ -17,7 +17,7 @@
 
 #include <cassert>
 
-st_gl_constant_buffer::st_gl_constant_buffer(const size_t size)
+st_gl_constant_buffer::st_gl_constant_buffer(const size_t size) : _size(size)
 {
 }
 
@@ -53,6 +53,8 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 				char* data_offset = reinterpret_cast<char*>(data) + offset;
 				float* val = reinterpret_cast<float*>(data_offset);
 				uniform.set(*val);
+
+				offset += st_graphics_get_shader_constant_size(constant._type);
 			}
 			break;
 		case st_shader_constant_type_vec2:
@@ -60,6 +62,8 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 				char* data_offset = reinterpret_cast<char*>(data) + offset;
 				st_vec2f* vec2 = reinterpret_cast<st_vec2f*>(data_offset);
 				uniform.set(*vec2);
+
+				offset += st_graphics_get_shader_constant_size(constant._type);
 			}
 			break;
 		case st_shader_constant_type_vec3:
@@ -67,6 +71,8 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 				char* data_offset = reinterpret_cast<char*>(data) + offset;
 				st_vec3f* vec3 = reinterpret_cast<st_vec3f*>(data_offset);
 				uniform.set(*vec3);
+
+				offset += st_graphics_get_shader_constant_size(constant._type);
 			}
 			break;
 		case st_shader_constant_type_vec4:
@@ -74,6 +80,8 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 				char* data_offset = reinterpret_cast<char*>(data) + offset;
 				st_vec4f* vec4 = reinterpret_cast<st_vec4f*>(data_offset);
 				uniform.set(*vec4);
+
+				offset += st_graphics_get_shader_constant_size(constant._type);
 			}
 			break;
 		case st_shader_constant_type_mat4:
@@ -81,14 +89,22 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 				char* data_offset = reinterpret_cast<char*>(data) + offset;
 				st_mat4f* mat4 = reinterpret_cast<st_mat4f*>(data_offset);
 				uniform.set(*mat4);
+
+				offset += st_graphics_get_shader_constant_size(constant._type);
+			}
+			break;
+		case st_shader_constant_type_block:
+			{
+				st_gl_uniform_block block = shader->get_uniform_block(constant._name.c_str());
+				block.set(data, _size);
+
+				offset += _size;
 			}
 			break;
 		default:
 			assert(false);
 			break;
 		}
-		
-		offset += st_graphics_get_shader_constant_size(constant._type);
 	}
 }
 

@@ -26,7 +26,7 @@ public:
 	// TODO: This meta information is not ideal for textures that are shared between different
 	// passes.  One solution is to enforce it to be named on-the-fly.  Another solution is to
 	// createa texture view class that acts as this information on an individualized basis.
-	void set_meta(const char* name, const uint32_t slot);
+	void set_meta(const char* name);
 
 	void set_name(std::string name);
 
@@ -37,7 +37,6 @@ public:
 
 protected:
 	uint32_t _handle;
-	uint32_t _slot = 0;
 	e_st_texture_format _format;
 	std::string _name;
 
