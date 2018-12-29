@@ -17,6 +17,8 @@
 #include <graphics/parse/st_ply_parser.h>
 #include <graphics/st_light_component.h>
 
+#include <import/st_assimp.h>
+
 st_scene::st_scene()
 {
 
@@ -67,7 +69,8 @@ st_entity* st_scene::add_light(
 void st_scene::setup_lighting_test(class st_sim* sim)
 {
 	st_model_data sphere_model;
-	ply_to_model("data/models/sphere.ply", &sphere_model);
+	assimp_import_model("data/models/sphere.ply", &sphere_model);
+	//ply_to_model("data/models/sphere.ply", &sphere_model);
 
 	st_model_data plane_model;
 	ply_to_model("data/models/plane.ply", &plane_model);

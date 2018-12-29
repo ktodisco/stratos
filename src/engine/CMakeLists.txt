@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.7)
 project (stratos)
 
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/cmake-modules")
+
 # STB: for image loading and font:
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/stb")
 
@@ -32,6 +34,11 @@ add_library (imgui166 ${IMGUI_SOURCE_FILES})
 target_link_libraries(imgui166 glew32 opengl32 glu32 d3d12 D3DCompiler)
 target_compile_definitions (imgui166 PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLEW)
 
+# Assimp: for asset importing:
+find_package (assimp REQUIRED)
+include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/include")
+link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/lib/Release")
+
 # ST framework:
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}")
 file (GLOB_RECURSE ST_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
@@ -47,13 +54,14 @@ if (MINGW)
 endif()
 
 add_executable (stratos ${ST_SOURCE_FILES} always_copy_data.h)
-target_link_libraries (stratos glew32s opengl32 glu32 lua53 imgui166 d3d12 dxgi dxguid D3DCompiler WinPixEventRuntime)
+target_link_libraries (stratos glew32s opengl32 glu32 lua53 imgui166 d3d12 dxgi dxguid D3DCompiler WinPixEventRuntime assimp-vc140-mt)
 if (MSVC)
 	set_target_properties (stratos PROPERTIES LINK_FLAGS "/ignore:4098 /ignore:4099")
 endif()
 
 add_custom_command (TARGET stratos PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/ttf-bitstream-vera-1.10/VeraMono.ttf $<TARGET_FILE_DIR:stratos>)
 add_custom_command (TARGET stratos PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/WinPixEventRuntime.1.0.170918004/bin/WinPixEventRuntime.dll $<TARGET_FILE_DIR:stratos>)
+add_custom_command (TARGET stratos PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/bin/Release/assimp-vc140-mt.dll $<TARGET_FILE_DIR:stratos>)
 
 add_custom_target (ALWAYS_COPY_DATA COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/always_copy_data.h)
 add_custom_command (TARGET ALWAYS_COPY_DATA POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../../data $<TARGET_FILE_DIR:stratos>/data)
