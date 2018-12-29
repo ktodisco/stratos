@@ -70,10 +70,9 @@ void st_scene::setup_lighting_test(class st_sim* sim)
 {
 	st_model_data sphere_model;
 	assimp_import_model("data/models/sphere.ply", &sphere_model);
-	//ply_to_model("data/models/sphere.ply", &sphere_model);
 
 	st_model_data plane_model;
-	ply_to_model("data/models/plane.ply", &plane_model);
+	assimp_import_model("data/models/plane.ply", &plane_model);
 
 	st_entity* floor_entity = add_entity(
 		sim,

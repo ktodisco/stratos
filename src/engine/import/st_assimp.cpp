@@ -14,14 +14,20 @@
 
 #include <cassert>
 
+extern char g_root_path[256];
+
 void assimp_import_model(const char* filename, st_model_data* model)
 {
 	// Create an instance of the importer class.
 	Assimp::Importer importer;
 
+	extern char g_root_path[256];
+	std::string fullpath = g_root_path;
+	fullpath += filename;
+
 	// Have it read the given file with some postprocessing.
 	const aiScene* scene = importer.ReadFile(
-		"C:\\Projects\\stratos\\data\\models\\sphere.ply",
+		fullpath,
 		aiProcess_CalcTangentSpace | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 
 	if (!scene)
