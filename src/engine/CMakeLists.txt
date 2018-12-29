@@ -29,7 +29,7 @@ file (GLOB IMGUI_SOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/imgui-1.66/examples/imgui_impl_opengl3.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/imgui-1.66/examples/imgui_impl_win32.cpp)
 add_library (imgui166 ${IMGUI_SOURCE_FILES})
-target_link_libraries(imgui166 glew32 opengl32 glu32 d3d12 D3dcompiler_47)
+target_link_libraries(imgui166 glew32 opengl32 glu32 d3d12 D3DCompiler)
 target_compile_definitions (imgui166 PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLEW)
 
 # ST framework:
