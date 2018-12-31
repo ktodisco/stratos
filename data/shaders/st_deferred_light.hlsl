@@ -16,9 +16,6 @@ Texture2D normal_texture : register(t1);
 Texture2D third_texture : register(t2);
 Texture2D depth_texture : register(t3);
 
-// Light constants.
-static float ambient = 1.0f;
-
 cbuffer cb0 : register(b0)
 {
 	float4x4 inverse_vp;
@@ -100,7 +97,6 @@ float4 ps_main(ps_input input) : SV_TARGET
 	
 	float3 lit_color = diffuse_result;
 	lit_color += specular_result;
-	lit_color += diffuse_color * ambient;
 	
 	lit_color += emissive * albedo_sample;
 	
