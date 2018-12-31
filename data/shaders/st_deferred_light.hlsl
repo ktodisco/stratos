@@ -82,8 +82,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float3 reflection = reflect(-to_eye, normal);
 	float3 center_to_ray = dot(to_light, reflection) * reflection - to_light;
 	float3 representative_point = to_light + center_to_ray * saturate(light_radius / length(center_to_ray));
-	float n_dot_r = saturate(dot(normal, representative_point));
-	float3 half_vector = normalize(to_eye + representative_point);
+	float3 half_vector = normalize(to_eye + normalize(representative_point));
 	float n_dot_h = saturate(dot(normal, half_vector));
 	float3 specular_result = specular_color *
 		specular_ggx(albedo,
