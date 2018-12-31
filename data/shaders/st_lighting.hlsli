@@ -18,9 +18,13 @@ float diffuse_lambertian(float n_dot_l)
 	return n_dot_l / k_pi;
 }
 
-float specular_ndf_ggx_tr(float n_dot_h, float linear_roughness, float dist, float radius)
+// GGX Trowbridge-Reitz normal distribution function.
+float specular_ndf_ggx_tr(float n_dot_h, float linear_roughness)
 {
-	float roughness2 = max(linear_roughness * linear_roughness, 0.0001f);
+	// While this gives physically accurate results, it does not handle zero roughness and converges on
+	// zero, resulting in no specular highlight.  This is undesirable for area lights, so we nudge with
+	// an epsilon value to avoid zero roughness.
+	float roughness2 = max(linear_roughness * linear_roughness, 0.00001f);
 
 	float num = roughness2;
 	float den = k_pi * pow((n_dot_h * n_dot_h) * (roughness2 - 1.0f) + 1.0f, 2);
@@ -45,13 +49,13 @@ float specular_shadowmask_smith_ggx(float n_dot_v, float n_dot_l, float linear_r
 
 float3 specular_ggx(float3 color, float dist, float radius, float n_dot_v, float n_dot_l, float n_dot_h, float metal, float linear_roughness)
 {
-	float N = specular_ndf_ggx_tr(n_dot_h, linear_roughness, dist, radius);
+	float N = specular_ndf_ggx_tr(n_dot_h, linear_roughness);
 	float D = specular_shadowmask_smith_ggx(n_dot_v, n_dot_l, linear_roughness);
 	// TODO: This is the default f0 for plastic.  We need to figure out what to do with this value.
 	float3 f0 = lerp(float3(0.04f, 0.04f, 0.04f), color, metal);
 	float F = fresnel(f0, 1.0f, n_dot_v);
 
-	return saturate((N * D * F) / k_pi);
+	return (N * D * F) / k_pi;
 }
 
 float light_falloff(float power, float distance)

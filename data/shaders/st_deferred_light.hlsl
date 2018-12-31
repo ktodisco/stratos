@@ -74,8 +74,8 @@ float4 ps_main(ps_input input) : SV_TARGET
 
 	float irradiance = light_falloff(light_power, dist_to_light);
 	
-	float3 diffuse_color = albedo * (1.0f - metalness);
-	float3 specular_color = light_color.xyz;
+	float3 diffuse_color = albedo * (1.0f - metalness) * light_color.xyz;
+	float3 specular_color = light_color.xyz * metalness;
 
 	float visibility_term = get_sphere_visibility(to_light, dist_to_light_center, n_dot_l_raw, light_radius);
 
@@ -89,7 +89,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float3 half_vector = normalize(to_eye + representative_point);
 	float n_dot_h = saturate(dot(normal, half_vector));
 	float3 specular_result = specular_color *
-		specular_ggx(diffuse_color,
+		specular_ggx(albedo,
 			dist_to_light_center,
 			light_radius,
 			n_dot_v,
