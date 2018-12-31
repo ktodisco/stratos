@@ -74,52 +74,29 @@ void st_scene::setup_lighting_test(class st_sim* sim)
 	st_model_data plane_model;
 	assimp_import_model("data/models/plane.ply", &plane_model);
 
-	st_entity* floor_entity = add_entity(
-		sim,
-		{ 0.0f, 0.0f, 0.0f },
-		&plane_model,
-		"data/textures/floor.png",
-		"data/textures/dielectric_25_roughness.png");
+#define CREATE_ENTITY(name, x, y, z, model, albedo, mre) \
+	st_entity* name = add_entity(sim, { x, y ,z }, &model, albedo, mre)
+
+	CREATE_ENTITY(floor_entity, 0.0f, 0.0f, 0.0f, plane_model, "data/textures/floor.png", "data/textures/dielectric_25_roughness.png");
 	floor_entity->scale(0.5f);
 
-	st_entity* dr0_entity = add_entity(
-		sim,
-		{ -3.0f, 1.0f, 0.0f },
-		&sphere_model,
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_0_roughness.png");
+	CREATE_ENTITY(dr0_entity, -3.0f, 1.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/dielectric_0_roughness.png");
+	CREATE_ENTITY(dr25_entity, -1.5f, 1.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/dielectric_25_roughness.png");
+	CREATE_ENTITY(dr50_entity, 0.0f, 1.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/dielectric_50_roughness.png");
+	CREATE_ENTITY(dr75_entity, 1.5f, 1.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/dielectric_75_roughness.png");
+	CREATE_ENTITY(dr100_entity, 3.0f, 1.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/dielectric_100_roughness.png");
 
-	st_entity* dr25_entity = add_entity(
-		sim,
-		{ -1.5f, 1.0f, 0.0f },
-		&sphere_model,
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_25_roughness.png");
+	CREATE_ENTITY(mr0_entity, -3.0f, 2.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/metal_0_roughness.png");
+	CREATE_ENTITY(mr25_entity, -1.5f, 2.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/metal_25_roughness.png");
+	CREATE_ENTITY(mr50_entity, 0.0f, 2.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/metal_50_roughness.png");
+	CREATE_ENTITY(mr75_entity, 1.5f, 2.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/metal_75_roughness.png");
+	CREATE_ENTITY(mr100_entity, 3.0f, 2.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/metal_100_roughness.png");
 
-	st_entity* dr50_entity = add_entity(
-		sim,
-		{ 0.0f, 1.0f, 0.0f },
-		&sphere_model,
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_50_roughness.png");
-
-	st_entity* dr75_entity = add_entity(
-		sim,
-		{ 1.5f, 1.0f, 0.0f },
-		&sphere_model,
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_75_roughness.png");
-
-	st_entity* dr100_entity = add_entity(
-		sim,
-		{ 3.0f, 1.0f, 0.0f },
-		&sphere_model,
-		"data/textures/white_albedo.png",
-		"data/textures/dielectric_100_roughness.png");
+#undef CREATE_ENTITY
 
 	st_entity* light_entity = add_light(
 		sim,
-		{ 0.0f, 1.0f, 3.0f },
+		{ 0.0f, 1.5f, 3.0f },
 		{ 1.0f, 1.0f, 0.9f },
 		2400.0f,
 		&sphere_model,
