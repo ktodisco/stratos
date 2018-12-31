@@ -110,6 +110,7 @@ void st_gl_texture::get_pixel_format_and_type(
 		type = GL_UNSIGNED_BYTE;
 		break;
 	case st_texture_format_r16g16b16a16_float:
+	case st_texture_format_r32g32b32a32_float:
 		pixel_format = GL_RGBA;
 		type = GL_FLOAT;
 		break;
