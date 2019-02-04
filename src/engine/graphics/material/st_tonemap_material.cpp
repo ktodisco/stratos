@@ -16,7 +16,7 @@ st_tonemap_material::st_tonemap_material(st_texture* texture) :
 	_texture(texture)
 {
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_shader_resource(_texture);
+	_resource_table->add_texture_resource(_texture);
 }
 
 st_tonemap_material::~st_tonemap_material()

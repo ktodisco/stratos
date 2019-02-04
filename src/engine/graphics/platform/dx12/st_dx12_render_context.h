@@ -50,6 +50,7 @@ public:
 	void set_shader_resource_table(uint32_t offset);
 	void set_sampler_table(uint32_t offset);
 	void set_constant_buffer_table(uint32_t offset);
+	void set_buffer_table(uint32_t offset);
 
 	void set_render_targets(
 		uint32_t count,
@@ -108,6 +109,12 @@ public:
 	void destroy_shader_resource_view(st_dx12_descriptor offset);
 	st_dx12_descriptor create_shader_sampler();
 	void destroy_shader_sampler(st_dx12_descriptor offset);
+	// TODO: Combine this with create_shader_resource_view.
+	st_dx12_descriptor create_buffer_view(
+		ID3D12Resource* resource,
+		uint32_t count,
+		size_t element_size);
+	void destroy_buffer_view(st_dx12_descriptor offset);
 
 	ID3D12Device* get_device() const { return _device.Get(); }
 	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }

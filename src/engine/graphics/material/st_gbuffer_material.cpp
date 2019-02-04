@@ -40,8 +40,8 @@ st_gbuffer_material::st_gbuffer_material(
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_gbuffer_buffer.get());
-	_resource_table->add_shader_resource(_albedo_texture.get());
-	_resource_table->add_shader_resource(_mre_texture.get());
+	_resource_table->add_texture_resource(_albedo_texture.get());
+	_resource_table->add_texture_resource(_mre_texture.get());
 }
 
 st_gbuffer_material::~st_gbuffer_material()

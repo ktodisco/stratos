@@ -26,5 +26,13 @@ public:
 
 private:
 	std::unique_ptr<class st_framebuffer> _framebuffer = nullptr;
-	std::unique_ptr<class st_constant_buffer> _light_buffer = nullptr;
+	std::unique_ptr<class st_constant_buffer> _constant_buffer = nullptr;
+	std::unique_ptr<class st_buffer> _light_buffer = nullptr;
+	std::unique_ptr<class st_resource_table> _resources = nullptr;
+};
+
+struct st_deferred_light_cb
+{
+	st_mat4f _inverse_vp;
+	st_vec4f _eye;
 };

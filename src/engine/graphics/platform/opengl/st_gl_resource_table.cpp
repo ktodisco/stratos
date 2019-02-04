@@ -23,7 +23,7 @@ void st_gl_resource_table::add_constant_buffer(st_gl_constant_buffer* cb)
 {
 }
 
-void st_gl_resource_table::add_shader_resource(st_gl_texture* sr)
+void st_gl_resource_table::add_texture_resource(st_gl_texture* sr)
 {
 	_shader_resources.push_back(sr);
 }

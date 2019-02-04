@@ -264,15 +264,17 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
 	}
 
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[3];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 4, 0);
-	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+	CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
+	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4, 0);
 
-	CD3DX12_ROOT_PARAMETER1 root_parameters[3];
+	CD3DX12_ROOT_PARAMETER1 root_parameters[4];
 	root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
 	root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
 	root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+	root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
 	root_signature_desc.Init_1_1(
@@ -403,6 +405,12 @@ void st_dx12_render_context::set_constant_buffer_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(2, cbv_handle);
+}
+
+void st_dx12_render_context::set_buffer_table(uint32_t offset)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE buffer_handle = _cbv_srv_heap->get_handle_gpu(offset);
+	_command_list->SetGraphicsRootDescriptorTable(3, buffer_handle);
 }
 
 void st_dx12_render_context::set_render_targets(
@@ -1000,6 +1008,32 @@ st_dx12_descriptor st_dx12_render_context::create_shader_sampler()
 void st_dx12_render_context::destroy_shader_sampler(st_dx12_descriptor offset)
 {
 	_sampler_heap->deallocate_handle(offset);
+}
+
+st_dx12_descriptor st_dx12_render_context::create_buffer_view(
+	ID3D12Resource* resource,
+	uint32_t count,
+	size_t element_size)
+{
+	// Create the shader resource view.
+	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	srv_desc.Buffer.FirstElement = 0;
+	srv_desc.Buffer.NumElements = count;
+	srv_desc.Buffer.StructureByteStride = element_size;
+	srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+	st_dx12_cpu_descriptor_handle srv_handle = _cbv_srv_heap->allocate_handle();
+	_device->CreateShaderResourceView(resource, &srv_desc, srv_handle._handle);
+
+	return srv_handle._offset;
+}
+
+void st_dx12_render_context::destroy_buffer_view(st_dx12_descriptor offset)
+{
+	_cbv_srv_heap->deallocate_handle(offset);
 }
 
 st_dx12_render_context* st_dx12_render_context::get()

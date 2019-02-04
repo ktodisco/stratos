@@ -31,7 +31,7 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_view_buffer.get());
-	_resource_table->add_shader_resource(_texture.get());
+	_resource_table->add_texture_resource(_texture.get());
 }
 
 st_unlit_texture_material::~st_unlit_texture_material()

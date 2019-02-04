@@ -20,10 +20,15 @@ cbuffer cb0 : register(b0)
 {
 	float4x4 inverse_vp;
 	float4 eye;
-	float4 light_position;
-	float4 light_color;
-	float2 light_properties;
 }
+
+struct st_sphere_light
+{
+	float4 position_power;
+	float4 color_radius;
+};
+
+StructuredBuffer<st_sphere_light> light_buffer : register(t4);
 
 ps_input vs_main(vs_input input)
 {
@@ -56,11 +61,11 @@ float4 ps_main(ps_input input) : SV_TARGET
 	world_position /= world_position.w;
 
 	// Unpack light properties.
-	float light_power = light_properties.x;
-	float light_radius = light_properties.y;
+	float light_power = light_buffer[0].position_power.w;
+	float light_radius = light_buffer[0].color_radius.w;
 	
 	float3 to_eye = normalize(eye.xyz - world_position.xyz);
-	float3 to_light = light_position.xyz - world_position.xyz;
+	float3 to_light = light_buffer[0].position_power.xyz - world_position.xyz;
 	float dist_to_light_center = length(to_light);
 	float dist_to_light = dist_to_light_center - light_radius;
 	to_light = normalize(to_light);
@@ -71,8 +76,8 @@ float4 ps_main(ps_input input) : SV_TARGET
 
 	float irradiance = light_falloff(light_power, dist_to_light);
 	
-	float3 diffuse_color = albedo * (1.0f - metalness) * light_color.xyz;
-	float3 specular_color = light_color.xyz * metalness;
+	float3 diffuse_color = albedo * (1.0f - metalness) * light_buffer[0].color_radius.xyz;
+	float3 specular_color = metalness * light_buffer[0].color_radius.xyz;
 
 	float visibility_term = get_sphere_visibility(to_light, dist_to_light_center, n_dot_l_raw, light_radius);
 

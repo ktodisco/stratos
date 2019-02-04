@@ -29,7 +29,7 @@ st_light_component::~st_light_component()
 
 void st_light_component::update(struct st_frame_params* params)
 {
-	_light->set_position(get_entity()->get_transform().get_translation());
-	_light->set_radius(get_entity()->get_transform().get_scale() / 2.0f);
+	_light->_position = get_entity()->get_transform().get_translation();
+	_light->_radius = get_entity()->get_transform().get_scale() / 2.0f;
 	params->_light = _light.get();
 }

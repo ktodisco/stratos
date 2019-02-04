@@ -41,8 +41,8 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 
 	_resource_table = std::make_unique<st_resource_table>();
 	_resource_table->add_constant_buffer(_parallax_occlusion_buffer.get());
-	_resource_table->add_shader_resource(_albedo_texture.get());
-	_resource_table->add_shader_resource(_normal_texture.get());
+	_resource_table->add_texture_resource(_albedo_texture.get());
+	_resource_table->add_texture_resource(_normal_texture.get());
 }
 
 st_parallax_occlusion_material::~st_parallax_occlusion_material()

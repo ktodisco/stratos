@@ -22,7 +22,8 @@ public:
 	~st_dx12_resource_table();
 
 	void add_constant_buffer(class st_dx12_constant_buffer* cb);
-	void add_shader_resource(class st_dx12_texture* sr);
+	void add_texture_resource(class st_dx12_texture* sr);
+	void add_buffer_resource(class st_dx12_buffer* br);
 
 	void bind(class st_dx12_render_context* context);
 
@@ -30,6 +31,7 @@ private:
 	std::vector<st_dx12_descriptor> _cbvs;
 	std::vector<st_dx12_descriptor> _srvs;
 	std::vector<st_dx12_descriptor> _samplers;
+	std::vector<st_dx12_descriptor> _buffers;
 };
 
 #endif

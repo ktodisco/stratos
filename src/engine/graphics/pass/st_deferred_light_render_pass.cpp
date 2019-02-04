@@ -12,6 +12,7 @@
 #include <graphics/geometry/st_vertex_format.h>
 #include <graphics/light/st_sphere_light.h>
 #include <graphics/material/st_deferred_light_material.h>
+#include <graphics/st_buffer.h>
 #include <graphics/st_constant_buffer.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_framebuffer.h>
@@ -19,6 +20,7 @@
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
+#include <graphics/st_resource_table.h>
 
 #include <cmath>
 
@@ -30,15 +32,19 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	st_render_texture* output_buffer,
 	st_render_texture* output_depth)
 {
-	_light_buffer = std::make_unique<st_constant_buffer>(sizeof(st_sphere_light_cb));
-	_light_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	_constant_buffer = std::make_unique<st_constant_buffer>(sizeof(st_deferred_light_cb));
+	_constant_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+
+	_light_buffer = std::make_unique<st_buffer>(1, sizeof(st_sphere_light_data));
+	_resources = std::make_unique<st_resource_table>();
+	_resources->add_buffer_resource(_light_buffer.get());
 
 	_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
 		normal_buffer,
 		third_buffer,
 		depth_buffer,
-		_light_buffer.get());
+		_constant_buffer.get());
 
 	st_pipeline_state_desc deferred_light_state_desc;
 	_material->get_pipeline_state(&deferred_light_state_desc);
@@ -72,21 +78,27 @@ void st_deferred_light_render_pass::render(
 
 	context->set_pipeline_state(_pipeline_state.get());
 
+	// Set global pass resource tables.
+	_resources->bind(context);
+
 	_framebuffer->bind(context);
 
 	// Update the light information.
 	st_mat4f perspective;
 	perspective.make_perspective_rh(st_degrees_to_radians(45.0f), (float)params->_width / (float)params->_height, 0.1f, 10000.0f);
 
-	st_sphere_light_cb light_data;
-	light_data._inverse_vp = (params->_view * perspective).inverse();
-	light_data._inverse_vp.transpose();
-	light_data._eye = st_vec4f(params->_eye, 0.0f);
-	light_data._position = st_vec4f(params->_light->get_position(), 0.0f);
-	light_data._color = st_vec4f(params->_light->get_color(), 0.0f);
-	light_data._properties = st_vec2f({ params->_light->get_power(), params->_light->get_radius() });
+	st_deferred_light_cb constant_data;
+	constant_data._inverse_vp = (params->_view * perspective).inverse();
+	constant_data._inverse_vp.transpose();
+	constant_data._eye = st_vec4f(params->_eye, 0.0f);
 
-	_light_buffer->update(context, &light_data);
+	_constant_buffer->update(context, &constant_data);
+
+	// New light buffer.
+	st_sphere_light_data light_data;
+	light_data._position_power = st_vec4f(params->_light->_position, params->_light->_power);
+	light_data._color_radius = st_vec4f(params->_light->_color, params->_light->_radius);
+	_light_buffer->update(context, &light_data, 1);
 
 	_material->bind(context, params, identity, identity, identity);
 

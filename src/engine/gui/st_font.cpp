@@ -158,7 +158,7 @@ st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 	if (_texture)
 	{
 		_texture->set_meta("SPIRV_Cross_Combinedfont_texturefont_sampler");
-		_resource_table->add_shader_resource(_texture);
+		_resource_table->add_texture_resource(_texture);
 	}
 }
 
