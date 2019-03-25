@@ -20,6 +20,7 @@ public:
 
 	void add_constant_buffer(class st_gl_constant_buffer* cb);
 	void add_texture_resource(class st_gl_texture* sr);
+	void add_buffer_resource(class st_gl_buffer* br);
 
 	void bind(class st_gl_render_context* context);
 

@@ -125,8 +125,11 @@ int main(int argc, const char** argv)
 		// Perform the late update.
 		sim->late_update(&params);
 
+#if !defined(ST_GRAPHICS_API_OPENGL)
+		// TODO: ImGui is broken on OpenGL right now.
 		st_imgui::new_frame();
 		ImGui::ShowDemoWindow();
+#endif
 
 		// Draw to screen.
 		output->update(&params);

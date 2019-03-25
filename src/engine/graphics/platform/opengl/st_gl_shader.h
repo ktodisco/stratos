@@ -50,7 +50,24 @@ public:
 	void set(uint32_t buffer, void* data, size_t size);
 
 protected:
-	st_gl_uniform_block(int32_t location, size_t size);
+	st_gl_uniform_block(int32_t location);
+
+	const int32_t _location;
+};
+
+/*
+** Represents a shader storage buffer resource.  Equivalent of structured buffer.
+** @see st_shader
+*/
+class st_gl_shader_storage_block
+{
+	friend class st_gl_shader;
+
+public:
+	void set(uint32_t buffer, void* data, size_t size);
+
+protected:
+	st_gl_shader_storage_block(int32_t location);
 
 	const int32_t _location;
 };
@@ -93,8 +110,9 @@ public:
 
 	std::string get_link_log() const;
 
-	class st_gl_uniform get_uniform(const char* name) const;
-	class st_gl_uniform_block get_uniform_block(const char* name, size_t size) const;
+	st_gl_uniform get_uniform(const char* name) const;
+	st_gl_uniform_block get_uniform_block(const char* name) const;
+	st_gl_shader_storage_block get_shader_storage_block(const char* name) const;
 
 	void use() const;
 

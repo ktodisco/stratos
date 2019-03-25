@@ -100,7 +100,7 @@ void st_gl_constant_buffer::update(const st_gl_render_context* context, void* da
 			break;
 		case st_shader_constant_type_block:
 			{
-				st_gl_uniform_block block = shader->get_uniform_block(constant._name.c_str(), _size);
+				st_gl_uniform_block block = shader->get_uniform_block(constant._name.c_str());
 				block.set(_buffer, data, _size);
 
 				offset += _size;
