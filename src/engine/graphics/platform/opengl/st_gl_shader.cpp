@@ -72,14 +72,27 @@ void st_gl_uniform::set(const st_gl_texture& tex, uint32_t unit)
 	glUniform1i(_location, unit);
 }
 
-st_gl_uniform_block::st_gl_uniform_block(int32_t location, size_t size) : _location(location)
+st_gl_uniform_block::st_gl_uniform_block(int32_t location) : _location(location)
 {
 }
 
+// TODO: I think this can actually be deferred to the buffer type.
+// Just pass the location back from the shader and CPU map the buffer object then call memcpy.
 void st_gl_uniform_block::set(uint32_t buffer, void* data, size_t size)
 {
 	glBindBufferRange(GL_UNIFORM_BUFFER, _location, buffer, 0, size);
 	glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW);
+}
+
+st_gl_shader_storage_block::st_gl_shader_storage_block(int32_t location)
+	: _location(location)
+{
+}
+
+void st_gl_shader_storage_block::set(uint32_t buffer, void* data, size_t size)
+{
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, _location, buffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_STATIC_DRAW);
 }
 
 st_gl_shader_component::st_gl_shader_component(const char* source, uint32_t type)
@@ -186,10 +199,22 @@ st_gl_uniform st_gl_shader::get_uniform(const char* name) const
 	return st_gl_uniform(location);
 }
 
-st_gl_uniform_block st_gl_shader::get_uniform_block(const char* name, size_t size) const
+st_gl_uniform_block st_gl_shader::get_uniform_block(const char* name) const
 {
 	int32_t location = glGetUniformBlockIndex(_handle, name);
-	return st_gl_uniform_block(location, size);
+	return st_gl_uniform_block(location);
+}
+
+#include <vector>
+
+st_gl_shader_storage_block st_gl_shader::get_shader_storage_block(const char* name) const
+{
+	int32_t location = glGetProgramResourceIndex(_handle, GL_SHADER_STORAGE_BLOCK, name);
+	GLint values[1];
+	const GLenum properties[] = { GL_BUFFER_BINDING };
+	glGetProgramResourceiv(_handle, GL_SHADER_STORAGE_BLOCK, location, 1, properties, 1, NULL, values);
+
+	return st_gl_shader_storage_block(values[0]);
 }
 
 void st_gl_shader::use() const

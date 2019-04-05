@@ -28,6 +28,10 @@ void st_gl_resource_table::add_texture_resource(st_gl_texture* sr)
 	_shader_resources.push_back(sr);
 }
 
+void st_gl_resource_table::add_buffer_resource(class st_gl_buffer* br)
+{
+}
+
 void st_gl_resource_table::bind(st_gl_render_context* context)
 {
 	for (auto& sr : _shader_resources)

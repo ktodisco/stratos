@@ -15,23 +15,23 @@ void st_gl_imgui::initialize(
 	const st_window* window,
 	const st_render_context* context)
 {
-	ImGui_ImplOpenGL3_Init("#version 400");
+	//ImGui_ImplOpenGL3_Init("#version 400");
 }
 
 void st_gl_imgui::shutdown()
 {
-	ImGui_ImplOpenGL3_Shutdown();
+	//ImGui_ImplOpenGL3_Shutdown();
 }
 
 void st_gl_imgui::new_frame()
 {
-	ImGui_ImplOpenGL3_NewFrame();
+	//ImGui_ImplOpenGL3_NewFrame();
 }
 
 void st_gl_imgui::draw()
 {
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	//ImGui::Render();
+	//ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 #endif
