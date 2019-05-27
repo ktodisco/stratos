@@ -29,6 +29,9 @@ enum e_st_shader
 	st_shader_fullscreen,
 	st_shader_deferred_light,
 	st_shader_tonemap,
+	st_shader_bloom,
+	st_shader_gaussian_blur_vertical,
+	st_shader_gaussian_blur_horizontal,
 	st_shader_parallax_occlusion,
 };
 

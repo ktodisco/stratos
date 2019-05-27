@@ -19,6 +19,11 @@ st_dx12_texture::st_dx12_texture()
 {
 }
 
+st_dx12_texture::st_dx12_texture(uint32_t width, uint32_t height) :
+	_width(width), _height(height)
+{
+}
+
 st_dx12_texture::~st_dx12_texture()
 {
 }

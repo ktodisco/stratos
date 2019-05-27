@@ -43,6 +43,8 @@ void st_passthrough_render_pass::render(
 	st_mat4f identity;
 	identity.make_identity();
 
+	context->set_viewport(0, 0, params->_width, params->_height);
+	context->set_scissor(0, 0, params->_width, params->_height);
 	context->set_pipeline_state(_pipeline_state.get());
 
 	_material->bind(context, params, identity, identity, identity);

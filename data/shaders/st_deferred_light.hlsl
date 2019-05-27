@@ -48,7 +48,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float4 normal_sample = normal_texture.Load(int3(input.position.xy, 0));
 	float4 third_sample = third_texture.Load(int3(input.position.xy, 0));
 	// TODO: This is the cause of rendering differences between OpenGL and DX - the depth range remap.
-	float depth = depth_texture.Load(int3(input.position.xy, 0)).r * 2.0f - 1.0f;
+	float depth = depth_texture.Load(int3(input.position.xy, 0)).r;// * 2.0f - 1.0f;
 	
 	float3 albedo = albedo_sample.rgb;
 	float metalness = albedo_sample.a;

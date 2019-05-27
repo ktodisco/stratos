@@ -11,6 +11,7 @@
 #if defined(ST_GRAPHICS_API_DX12)
 
 #include <cstdint>
+#include <string>
 
 class st_dx12_buffer
 {
@@ -19,6 +20,7 @@ public:
 	~st_dx12_buffer();
 
 	void update(const class st_dx12_render_context* context, void* data, const uint32_t count);
+	void set_meta(std::string name) {}
 
 	ID3D12Resource* get_resource() const { return _buffer.Get(); }
 	uint32_t get_count() const { return _count; }

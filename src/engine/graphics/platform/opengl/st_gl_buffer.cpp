@@ -6,6 +6,8 @@
 
 #include <graphics/platform/opengl/st_gl_buffer.h>
 
+#if defined(ST_GRAPHICS_API_OPENGL)
+
 #include <graphics/platform/opengl/st_gl_render_context.h>
 #include <graphics/platform/opengl/st_gl_shader.h>
 
@@ -32,3 +34,5 @@ void st_gl_buffer::update(const class st_gl_render_context* context, void* data,
 	st_gl_shader_storage_block ssb = shader->get_shader_storage_block(_name.c_str());
 	ssb.set(_buffer, data, count * _element_size);
 }
+
+#endif

@@ -31,4 +31,5 @@ class st_texture : public st_platform_texture
 {
 public:
 	st_texture() : st_platform_texture() {}
+	st_texture(uint32_t width, uint32_t height) : st_platform_texture(width, height) {}
 };

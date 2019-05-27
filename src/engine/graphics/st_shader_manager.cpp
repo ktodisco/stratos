@@ -44,6 +44,18 @@ st_shader_manager::st_shader_manager()
 		std::make_unique<st_shader>(
 			"data/shaders/st_tonemap",
 			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_bloom] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_bloom",
+			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_gaussian_blur_vertical] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_gaussian_blur_vertical",
+			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_gaussian_blur_horizontal] =
+		std::make_unique<st_shader>(
+			"data/shaders/st_gaussian_blur_horizontal",
+			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_parallax_occlusion] =
 		std::make_unique<st_shader>(
 			"data/shaders/st_parallax_occlusion",

@@ -9,6 +9,7 @@
 #include <framework/st_frame_params.h>
 
 #include <graphics/material/st_material.h>
+#include <graphics/pass/st_bloom_render_pass.h>
 #include <graphics/pass/st_deferred_light_render_pass.h>
 #include <graphics/pass/st_gbuffer_render_pass.h>
 #include <graphics/pass/st_passthrough_render_pass.h>
@@ -68,6 +69,13 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_texture_format_d24_unorm_s8_uint,
 		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }));
 
+	_bloom_target = std::make_unique<st_render_texture>(
+		_window->get_width(),
+		_window->get_height(),
+		st_texture_format_r16g16b16a16_float,
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
+	_bloom_target->set_name("Bloom Target");
+
 	_tonemap_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
@@ -87,6 +95,9 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		_depth_stencil_target.get(),
 		_deferred_target.get(),
 		_deferred_depth.get());
+	_bloom_pass = std::make_unique<st_bloom_render_pass>(
+		_deferred_target.get(),
+		_bloom_target.get());
 	_tonemap_pass = std::make_unique<st_tonemap_render_pass>(
 		_deferred_target.get(),
 		_tonemap_target.get());
@@ -109,13 +120,12 @@ void st_output::update(st_frame_params* params)
 	// Update viewport in case window was resized.
 	uint32_t width = _window->get_width();
 	uint32_t height = _window->get_height();
-	_render_context->set_viewport(0, 0, width, height);
-	_render_context->set_scissor(0, 0, width, height);
 	params->_width = width;
 	params->_height = height;
 
 	_gbuffer_pass->render(_render_context, params);
 	_deferred_pass->render(_render_context, params);
+	_bloom_pass->render(_render_context, params);
 	_tonemap_pass->render(_render_context, params);
 
 	_render_context->transition_backbuffer_to_target();

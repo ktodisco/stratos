@@ -19,6 +19,7 @@ class st_dx12_texture
 {
 public:
 	st_dx12_texture();
+	st_dx12_texture(uint32_t width, uint32_t height);
 	~st_dx12_texture();
 
 	void load_from_data(uint32_t width, uint32_t height, e_st_texture_format format, void* data);
@@ -30,11 +31,15 @@ public:
 	void set_name(std::string name);
 
 	ID3D12Resource* get_resource() const { return _handle.Get(); }
+	uint32_t get_width() const { return _width; }
+	uint32_t get_height() const { return _height; }
 	e_st_texture_format get_format() const { return _format; }
 
 protected:
 	Microsoft::WRL::ComPtr<ID3D12Resource> _handle;
 
+	uint32_t _width;
+	uint32_t _height;
 	e_st_texture_format _format;
 	uint32_t _sampler;
 	uint32_t _srv;
