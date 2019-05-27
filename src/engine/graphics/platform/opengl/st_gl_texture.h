@@ -17,6 +17,7 @@ class st_gl_texture
 {
 public:
 	st_gl_texture();
+	st_gl_texture(uint32_t width, uint32_t height);
 	~st_gl_texture();
 
 	void reserve_data(uint32_t width, uint32_t height, e_st_texture_format format);
@@ -31,12 +32,16 @@ public:
 	void set_name(std::string name);
 
 	uint32_t get_handle() const { return _handle; }
+	uint32_t get_width() const { return _width; }
+	uint32_t get_height() const { return _height; }
 	e_st_texture_format get_format() const { return _format; }
 
 	void bind(class st_gl_render_context* context);
 
 protected:
 	uint32_t _handle;
+	uint32_t _width;
+	uint32_t _height;
 	e_st_texture_format _format;
 	std::string _name;
 

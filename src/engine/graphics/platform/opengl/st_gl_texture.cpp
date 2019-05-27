@@ -20,6 +20,12 @@ st_gl_texture::st_gl_texture()
 	glGenTextures(1, &_handle);
 }
 
+st_gl_texture::st_gl_texture(uint32_t width, uint32_t height)
+	: _width(width), _height(height)
+{
+	glGenTextures(1, &_handle);
+}
+
 st_gl_texture::~st_gl_texture()
 {
 	glDeleteTextures(1, &_handle);

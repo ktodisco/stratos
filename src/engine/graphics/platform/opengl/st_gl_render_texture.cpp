@@ -14,9 +14,9 @@ st_gl_render_texture::st_gl_render_texture(
 	uint32_t width,
 	uint32_t height,
 	e_st_texture_format format,
-	const st_vec4f& clear)
+	const st_vec4f& clear) : st_texture(width, height)
 {
-	reserve_data(width, height, format);
+	reserve_data(_width, _height, format);
 }
 
 st_gl_render_texture::~st_gl_render_texture()
