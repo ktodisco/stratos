@@ -25,7 +25,8 @@ public:
 	void bind(class st_gl_render_context* context);
 
 private:
-	std::vector<st_gl_texture*> _shader_resources;
+	std::vector<st_gl_texture*> _srvs;
+	std::vector<GLuint> _samplers;
 };
 
 #endif

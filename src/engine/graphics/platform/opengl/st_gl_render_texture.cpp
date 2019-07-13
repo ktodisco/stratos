@@ -13,7 +13,7 @@
 st_gl_render_texture::st_gl_render_texture(
 	uint32_t width,
 	uint32_t height,
-	e_st_texture_format format,
+	e_st_format format,
 	const st_vec4f& clear) : st_texture(width, height)
 {
 	reserve_data(_width, _height, format);

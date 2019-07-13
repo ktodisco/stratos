@@ -92,8 +92,8 @@ struct st_pipeline_state_desc
 
 	uint32_t _render_target_count = 0;
 	// TODO: The 8 should be "max bound targets" by graphics API.
-	e_st_texture_format _render_target_formats[8] = {};
-	e_st_texture_format _depth_stencil_format = st_texture_format_unknown;
+	e_st_format _render_target_formats[8] = {};
+	e_st_format _depth_stencil_format = st_format_unknown;
 
 	st_sample_desc _sample_desc = {};
 

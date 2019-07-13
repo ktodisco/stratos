@@ -68,7 +68,7 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 	}
 
 	_texture = std::make_unique<st_texture>();
-	_texture->load_from_data(image_width, image_height, st_texture_format_r8_unorm, image_data);
+	_texture->load_from_data(image_width, image_height, 1, st_format_r8_unorm, image_data);
 	delete[] image_data;
 
 	_material = std::make_unique<st_font_material>(_texture.get());

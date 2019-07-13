@@ -11,6 +11,7 @@
 #include <graphics/st_render_context.h>
 #include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
+#include <graphics/st_texture_loader.h>
 
 #include <cassert>
 #include <iostream>
@@ -22,20 +23,10 @@ st_gbuffer_material::st_gbuffer_material(
 	_gbuffer_buffer = std::make_unique<st_constant_buffer>(sizeof(st_gbuffer_cb));
 	_gbuffer_buffer->add_constant("type_cb0", st_shader_constant_type_block);
 
-	_albedo_texture = std::make_unique<st_texture>();
-	if (!_albedo_texture->load_from_file(albedo_texture))
-	{
-		std::cerr << "Failed to load " << albedo_texture << std::endl;
-		assert(false);
-	}
+	_albedo_texture = st_texture_loader::load(albedo_texture);
 	_albedo_texture->set_meta("SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
 
-	_mre_texture = std::make_unique<st_texture>();
-	if (!_mre_texture->load_from_file(mre_texture))
-	{
-		std::cerr << "Failed to load " << mre_texture << std::endl;
-		assert(false);
-	}
+	_mre_texture = st_texture_loader::load(mre_texture);
 	_mre_texture->set_meta("SPIRV_Cross_Combinedmre_texturemre_sampler");
 
 	_resource_table = std::make_unique<st_resource_table>();

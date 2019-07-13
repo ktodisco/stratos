@@ -77,7 +77,7 @@ void st_scene::setup_lighting_test(class st_sim* sim)
 #define CREATE_ENTITY(name, x, y, z, model, albedo, mre) \
 	st_entity* name = add_entity(sim, { x, y ,z }, &model, albedo, mre)
 
-	CREATE_ENTITY(floor_entity, 0.0f, 0.0f, 0.0f, plane_model, "data/textures/floor.png", "data/textures/dielectric_25_roughness.png");
+	CREATE_ENTITY(floor_entity, 0.0f, 0.0f, 0.0f, plane_model, "data/textures/floor.dds", "data/textures/dielectric_25_roughness.png");
 	floor_entity->scale(0.5f);
 
 	CREATE_ENTITY(dr0_entity, -3.0f, 1.0f, 0.0f, sphere_model, "data/textures/white_albedo.png", "data/textures/dielectric_0_roughness.png");

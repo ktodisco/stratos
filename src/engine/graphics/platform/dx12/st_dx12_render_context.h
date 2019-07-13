@@ -85,7 +85,8 @@ public:
 	void create_texture(
 		uint32_t width,
 		uint32_t height,
-		e_st_texture_format format,
+		uint32_t mip_count,
+		e_st_format format,
 		void* data,
 		ID3D12Resource** resource,
 		uint32_t* sampler_offset,
@@ -93,7 +94,7 @@ public:
 	void create_target(
 		uint32_t width,
 		uint32_t height,
-		e_st_texture_format format,
+		e_st_format format,
 		const st_vec4f& clear,
 		ID3D12Resource** resource,
 		st_dx12_descriptor* rtv_offset);
@@ -105,7 +106,8 @@ public:
 	void destroy_constant_buffer_view(st_dx12_descriptor offset);
 	st_dx12_descriptor create_shader_resource_view(
 		ID3D12Resource* resource,
-		e_st_texture_format format);
+		e_st_format format,
+		uint32_t levels);
 	void destroy_shader_resource_view(st_dx12_descriptor offset);
 	st_dx12_descriptor create_shader_sampler();
 	void destroy_shader_sampler(st_dx12_descriptor offset);

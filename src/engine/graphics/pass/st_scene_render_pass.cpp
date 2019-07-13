@@ -35,8 +35,8 @@ st_scene_render_pass::st_scene_render_pass()
 
 	phong_state_desc._vertex_format = _vertex_format.get();
 	phong_state_desc._render_target_count = 1;
-	phong_state_desc._render_target_formats[0] = st_texture_format_r8g8b8a8_unorm;
-	phong_state_desc._depth_stencil_format = st_texture_format_d24_unorm_s8_uint;
+	phong_state_desc._render_target_formats[0] = st_format_r8g8b8a8_unorm;
+	phong_state_desc._depth_stencil_format = st_format_d24_unorm_s8_uint;
 
 	_phong_state = std::make_unique<st_pipeline_state>(phong_state_desc);
 
@@ -48,8 +48,8 @@ st_scene_render_pass::st_scene_render_pass()
 
 	unlit_texture_state_desc._vertex_format = _vertex_format.get();
 	unlit_texture_state_desc._render_target_count = 1;
-	unlit_texture_state_desc._render_target_formats[0] = st_texture_format_r8g8b8a8_unorm;
-	unlit_texture_state_desc._depth_stencil_format = st_texture_format_d24_unorm_s8_uint;
+	unlit_texture_state_desc._render_target_formats[0] = st_format_r8g8b8a8_unorm;
+	unlit_texture_state_desc._depth_stencil_format = st_format_d24_unorm_s8_uint;
 
 	_unlit_texture_state = std::make_unique<st_pipeline_state>(unlit_texture_state_desc);
 }

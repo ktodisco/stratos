@@ -11,6 +11,7 @@
 #include <graphics/st_render_context.h>
 #include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
+#include <graphics/st_texture_loader.h>
 
 #include <cassert>
 #include <iostream>
@@ -21,12 +22,7 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	_view_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
 	_view_buffer->add_constant("type_cb0", st_shader_constant_type_block);
 
-	_texture = std::make_unique<st_texture>();
-	if (!_texture->load_from_file(_texture_file.c_str()))
-	{
-		std::cerr << "Failed to load " << _texture_file << std::endl;
-		assert(false);
-	}
+	_texture = st_texture_loader::load(_texture_file.c_str());
 	_texture->set_meta("SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
 
 	_resource_table = std::make_unique<st_resource_table>();

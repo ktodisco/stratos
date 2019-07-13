@@ -13,6 +13,7 @@
 #include <graphics/platform/dx12/st_dx12_pipeline_state.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_render_texture.h>
+#include <graphics/st_texture_loader.h>
 
 #include <system/st_window.h>
 
@@ -715,7 +716,8 @@ void st_dx12_render_context::create_buffer(size_t size, ID3D12Resource** resourc
 void st_dx12_render_context::create_texture(
 	uint32_t width,
 	uint32_t height,
-	e_st_texture_format format,
+	uint32_t mip_count,
+	e_st_format format,
 	void* data,
 	ID3D12Resource** resource,
 	uint32_t* sampler_offset,
@@ -725,23 +727,8 @@ void st_dx12_render_context::create_texture(
 
 	DXGI_FORMAT real_format = (DXGI_FORMAT)format;
 
-	// TODO: Find a more automatic way of doing this.
-	uint32_t pixel_size;
-	switch (format)
-	{
-	case st_texture_format_r8_unorm:
-	case st_texture_format_r8_uint:
-		pixel_size = 1;
-		break;
-	case st_texture_format_r8g8b8a8_unorm:
-	case st_texture_format_r8g8b8a8_uint:
-	default:
-		pixel_size = 4;
-		break;
-	}
-
 	D3D12_RESOURCE_DESC texture_desc{};
-	texture_desc.MipLevels = 1;
+	texture_desc.MipLevels = mip_count;
 	texture_desc.Format = real_format;
 	texture_desc.Width = width;
 	texture_desc.Height = height;
@@ -773,56 +760,87 @@ void st_dx12_render_context::create_texture(
 		assert(false);
 	}
 
-	// Create a subresource footprint. RowPitch must be aligned to D3D12_TEXTURE_DATA_PITCH_ALIGNMENT.
-	D3D12_SUBRESOURCE_FOOTPRINT footprint{};
-	footprint.Format = real_format;
-	footprint.Width = width;
-	footprint.Height = height;
-	footprint.Depth = 1;
-	footprint.RowPitch = align_value(width * pixel_size, D3D12_TEXTURE_DATA_PITCH_ALIGNMENT);
-
-	// Make sure we start at an aligned address.
-	uint8_t* upload_aligned = _upload_buffer_start;
-	upload_aligned = reinterpret_cast<uint8_t*>(align_value(
-		reinterpret_cast<size_t>(upload_aligned),
-		D3D12_TEXTURE_DATA_PITCH_ALIGNMENT));
-
-	// Create a placed subresource footprint.
-	D3D12_PLACED_SUBRESOURCE_FOOTPRINT placed_footprint{};
-	placed_footprint.Offset = upload_aligned - _upload_buffer_start;
-	placed_footprint.Footprint = footprint;
-
-	// Copy row-by-row from the texture data to the upload heap, using the subresource params.
-	// This is to jump the gaps from the alignment of RowPitch in the upload heap.
-	for (uint32_t row_itr = 0; row_itr < height; ++row_itr)
+	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+	uint8_t* bits = reinterpret_cast<uint8_t*>(data);
+	for (uint32_t level = 0; level < mip_count; ++level)
 	{
-		uint8_t* dest = _upload_buffer_start + placed_footprint.Offset + (row_itr * footprint.RowPitch);
-		uint8_t* src = reinterpret_cast<uint8_t*>(data) + (row_itr * footprint.RowPitch);
-		memcpy(dest, src, width * pixel_size);
+		uint32_t level_width = width >> level;
+		uint32_t level_height = height >> level;
+
+		size_t row_bytes;
+		size_t num_bytes;
+		get_surface_info(
+			level_width,
+			level_height,
+			format,
+			&num_bytes,
+			&row_bytes,
+			nullptr);
+
+		D3D12_SUBRESOURCE_DATA res =
+		{
+			bits,
+			static_cast<LONG_PTR>(row_bytes),
+			static_cast<LONG_PTR>(num_bytes)
+		};
+
+		subresources.push_back(res);
+
+		bits += num_bytes;
 	}
 
-	// Copy the upload heap to the texture 2D.
-	D3D12_TEXTURE_COPY_LOCATION dest_location
-	{
-		*resource,
-		D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
-		0
-	};
+	size_t alloc_size = (sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(uint32_t) + sizeof(uint64_t)) * mip_count;
+	auto layouts = reinterpret_cast<D3D12_PLACED_SUBRESOURCE_FOOTPRINT*>(malloc(alloc_size));
 
-	D3D12_TEXTURE_COPY_LOCATION src_location
+	uint64_t* row_sizes_bytes = reinterpret_cast<uint64_t*>(layouts + mip_count);
+	uint32_t* row_count = reinterpret_cast<uint32_t*>(row_sizes_bytes + mip_count);
+	uint64_t required_size = 0;
+	_device->GetCopyableFootprints(&texture_desc, 0, mip_count, 0, layouts, row_count, row_sizes_bytes, &required_size);
+    
+	for (uint32_t i = 0; i < mip_count; ++i)
 	{
-		_upload_buffer.Get(),
-		D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
-		placed_footprint
-	};
+		if (row_sizes_bytes[i] > size_t(-1))
+		{
+			assert(false);	
+		}
 
-	_command_list->CopyTextureRegion(
-		&dest_location,
-		0,
-		0,
-		0,
-		&src_location,
-		nullptr);
+		D3D12_MEMCPY_DEST DestData =
+		{
+			_upload_buffer_start + layouts[i].Offset,
+			layouts[i].Footprint.RowPitch,
+			size_t(layouts[i].Footprint.RowPitch) * size_t(row_count[i])
+		};
+
+		MemcpySubresource(&DestData, &subresources[i], static_cast<size_t>(row_sizes_bytes[i]), row_count[i], layouts[i].Footprint.Depth);
+	}
+
+	for (uint32_t i = 0; i < mip_count; ++i)
+	{
+		// Copy the upload heap to the texture 2D.
+		D3D12_TEXTURE_COPY_LOCATION dest_location
+		{
+			*resource,
+			D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+			i
+		};
+
+		D3D12_TEXTURE_COPY_LOCATION src_location
+		{
+			_upload_buffer.Get(),
+			D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
+			layouts[i]
+		};
+
+		_command_list->CopyTextureRegion(
+			&dest_location,
+			0,
+			0,
+			0,
+			&src_location,
+			nullptr);
+	}
+
+	free(layouts);
 
 	_command_list->ResourceBarrier(1, 
 		&CD3DX12_RESOURCE_BARRIER::Transition(
@@ -837,7 +855,7 @@ void st_dx12_render_context::create_texture(
 void st_dx12_render_context::create_target(
 	uint32_t width,
 	uint32_t height,
-	e_st_texture_format format,
+	e_st_format format,
 	const st_vec4f& clear,
 	ID3D12Resource** resource,
 	st_dx12_descriptor* rtv_offset)
@@ -849,7 +867,7 @@ void st_dx12_render_context::create_target(
 
 	switch (format)
 	{
-	case st_texture_format_d24_unorm_s8_uint:
+	case st_format_d24_unorm_s8_uint:
 		flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 		resource_state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 		break;
@@ -873,7 +891,7 @@ void st_dx12_render_context::create_target(
 	D3D12_CLEAR_VALUE clear_value = {};
 	clear_value.Format = (DXGI_FORMAT)format;
 
-	if (format == st_texture_format_d24_unorm_s8_uint)
+	if (format == st_format_d24_unorm_s8_uint)
 	{
 		clear_value.DepthStencil.Depth = clear.x;
 		clear_value.DepthStencil.Stencil = (uint8_t)clear.y;
@@ -903,7 +921,7 @@ void st_dx12_render_context::create_target(
 		__uuidof(ID3D12Resource),
 		(void**)resource);
 
-	if (format == st_texture_format_d24_unorm_s8_uint)
+	if (format == st_format_d24_unorm_s8_uint)
 	{
 		ST_NAME_DX12_OBJECT(*resource, str_to_wstr("Depth-Stencil Target").c_str());
 
@@ -965,14 +983,15 @@ void st_dx12_render_context::destroy_constant_buffer_view(st_dx12_descriptor off
 
 st_dx12_descriptor st_dx12_render_context::create_shader_resource_view(
 	ID3D12Resource* resource,
-	e_st_texture_format format)
+	e_st_format format,
+	uint32_t levels)
 {
 	// Create the shader resource view.
 	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
 	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srv_desc.Format = (DXGI_FORMAT)format;
 	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srv_desc.Texture2D.MipLevels = 1;
+	srv_desc.Texture2D.MipLevels = levels;
 
 	st_dx12_cpu_descriptor_handle srv_handle = _cbv_srv_heap->allocate_handle();
 	_device->CreateShaderResourceView(resource, &srv_desc, srv_handle._handle);
