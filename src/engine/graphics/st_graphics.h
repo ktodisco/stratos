@@ -7,8 +7,8 @@
 */
 
 //#define ST_GRAPHICS_API_OPENGL
-#define ST_GRAPHICS_API_DX12
-//#define ST_GRAPHICS_API_VULKAN
+//#define ST_GRAPHICS_API_DX12
+#define ST_GRAPHICS_API_VULKAN
 
 typedef void* st_graphics_resource;
 
@@ -38,7 +38,7 @@ size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_t
 #elif defined(ST_GRAPHICS_API_DX12)
 #include <graphics/platform/dx12/st_dx12_graphics.h>
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_graphics.h>
 #else
 #error Graphics API not defined.
 #endif

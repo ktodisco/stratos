@@ -17,7 +17,9 @@ typedef st_gl_framebuffer st_platform_framebuffer;
 
 typedef st_dx12_framebuffer st_platform_framebuffer;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_framebuffer.h>
+
+typedef st_vk_framebuffer st_platform_framebuffer;
 #else
 #error Graphics API not defined.
 #endif

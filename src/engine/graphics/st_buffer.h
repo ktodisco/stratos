@@ -17,7 +17,9 @@ typedef st_gl_buffer st_platform_buffer;
 
 typedef st_dx12_buffer st_platform_buffer;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_buffer.h>
+
+typedef st_vk_buffer st_platform_buffer;
 #else
 #error Graphics API not defined.
 #endif

@@ -18,20 +18,6 @@
 
 #include <wrl.h>
 
-#if defined(ST_GRAPHICS_API_OPENGL)
-#include <graphics/platform/opengl/st_gl_material.h>
-
-typedef st_gl_material st_platform_material;
-#elif defined(ST_GRAPHICS_API_DX12)
-#include <graphics/platform/dx12/st_dx12_material.h>
-
-typedef st_dx12_material st_platform_material;
-#elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
-#else
-#error Graphics API not defined.
-#endif
-
 // For the record, I'm not fond of this direction.
 enum st_material_type
 {
@@ -53,9 +39,19 @@ enum st_material_type
 ** Base class for all graphical materials.
 ** Includes the shaders and other state necessary to draw geometry.
 */
-class st_material : public st_platform_material
+class st_material
 {
 public:
+	virtual void bind(
+		class st_render_context* context,
+		const struct st_frame_params* params,
+		const st_mat4f& proj,
+		const st_mat4f& view,
+		const st_mat4f& transform) = 0;
+
+	virtual void get_pipeline_state(
+		struct st_pipeline_state_desc* state_desc) = 0;
+
 	virtual void set_color(const st_vec3f& color) {}
 	virtual st_material_type get_material_type() = 0;
 };

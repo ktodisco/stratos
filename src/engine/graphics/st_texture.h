@@ -19,7 +19,9 @@ typedef st_gl_texture st_platform_texture;
 
 typedef st_dx12_texture st_platform_texture;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_texture.h>
+
+typedef st_vk_texture st_platform_texture;
 #else
 #error Graphics API not defined.
 #endif

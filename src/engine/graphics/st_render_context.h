@@ -17,7 +17,9 @@ typedef st_gl_render_context st_platform_render_context;
 
 typedef st_dx12_render_context st_platform_render_context;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_render_context.h>
+
+typedef st_vk_render_context st_platform_render_context;
 #else
 #error Graphics API not defined.
 #endif

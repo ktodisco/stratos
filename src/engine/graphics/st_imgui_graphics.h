@@ -17,7 +17,9 @@ typedef st_gl_imgui st_platform_imgui;
 
 typedef st_dx12_imgui st_platform_imgui;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_imgui.h>
+
+typedef st_vk_imgui st_platform_imgui;
 #else
 #error Graphics API not defined.
 #endif
