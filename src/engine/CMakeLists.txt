@@ -43,6 +43,7 @@ link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/lib/Rele
 
 # Vulkan headers:
 # TODO: This pre-installed path is not ideal.
+# Try avoiding the library link by calling vk::init.
 include_directories("C:/VulkanSDK/1.1.108.0/Include")
 link_directories ("C:/VulkanSDK/1.1.108.0/Lib")
 
@@ -52,7 +53,8 @@ file (GLOB_RECURSE ST_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 # On Windows, we're not going to worry about CRT secure warnings.
 if (MSVC)
-	set (CMAKE_CXX_FLAGS "$(CMAKE_CXX_FLAGS) /EHsc")
+	set (CMAKE_CXX_FLAGS "$(CMAKE_CXX_FLAGS) /EHsc /MP")
+	set (CMAKE_C_FLAGS "$(CMAKE_C_FLAGS) /MP")
 endif()
 
 # For Unix, tell gcc to use c++11.
