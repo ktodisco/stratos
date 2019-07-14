@@ -19,7 +19,9 @@ typedef st_gl_pipeline_state st_platform_pipeline_state;
 
 typedef st_dx12_pipeline_state st_platform_pipeline_state;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_pipeline_state.h>
+
+typedef st_vk_pipeline_state st_platform_pipeline_state;
 #else
 #error Graphics API not defined.
 #endif

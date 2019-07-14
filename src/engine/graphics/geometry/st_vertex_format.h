@@ -17,7 +17,9 @@ typedef st_gl_vertex_format st_platform_vertex_format;
 
 typedef st_dx12_vertex_format st_platform_vertex_format;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_vertex_format.h>
+
+typedef st_vk_vertex_format st_platform_vertex_format;
 #else
 #error Graphics API not defined.
 #endif

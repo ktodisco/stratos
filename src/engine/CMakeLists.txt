@@ -39,6 +39,9 @@ find_package (assimp REQUIRED)
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/include")
 link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/lib/Release")
 
+# Vulkan headers:
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/Vulkan-Headers-1.1.114/include")
+
 # ST framework:
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}")
 file (GLOB_RECURSE ST_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

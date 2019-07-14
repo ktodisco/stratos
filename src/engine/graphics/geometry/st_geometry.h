@@ -17,7 +17,9 @@ typedef st_gl_geometry st_platform_geometry;
 
 typedef st_dx12_geometry st_platform_geometry;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_geometry.h>
+
+typedef st_vk_geometry st_platform_geometry;
 #else
 #error Graphics API not defined.
 #endif

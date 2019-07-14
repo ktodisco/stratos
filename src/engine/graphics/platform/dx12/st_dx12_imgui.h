@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 ** Stratos Rendering Engine
 **

@@ -17,7 +17,9 @@ typedef st_gl_constant_buffer st_platform_constant_buffer;
 
 typedef st_dx12_constant_buffer st_platform_constant_buffer;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_constant_buffer.h>
+
+typedef st_vk_constant_buffer st_platform_constant_buffer;
 #else
 #error Graphics API not defined.
 #endif

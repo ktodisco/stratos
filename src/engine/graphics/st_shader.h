@@ -21,7 +21,9 @@ typedef st_gl_shader st_platform_shader;
 
 typedef st_dx12_shader st_platform_shader;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_shader.h>
+
+typedef st_vk_shader st_platform_shader;
 #else
 #error Graphics API not defined.
 #endif

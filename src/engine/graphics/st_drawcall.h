@@ -19,7 +19,10 @@ typedef st_gl_dynamic_drawcall st_platform_dynamic_drawcall;
 typedef st_dx12_static_drawcall st_platform_static_drawcall;
 typedef st_dx12_dynamic_drawcall st_platform_dynamic_drawcall;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_drawcall.h>
+
+typedef st_vk_static_drawcall st_platform_static_drawcall;
+typedef st_vk_dynamic_drawcall st_platform_dynamic_drawcall;
 #else
 #error Graphics API not defined.
 #endif

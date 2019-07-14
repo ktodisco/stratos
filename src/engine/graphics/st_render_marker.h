@@ -19,7 +19,9 @@ typedef st_gl_render_marker st_platform_render_marker;
 
 typedef st_dx12_render_marker st_platform_render_marker;
 #elif defined(ST_GRAPHICS_API_VULKAN)
-#error Vulkan not implemented.
+#include <graphics/platform/vulkan/st_vk_render_marker.h>
+
+typedef st_vk_render_marker st_platform_render_marker;
 #else
 #error Graphics API not defined.
 #endif

@@ -17,11 +17,6 @@
 #include <cstdint>
 #include <string>
 
-#define k_st_depth_less 0
-
-#define k_st_src_alpha 0
-#define k_st_one_minus_src_alpha 0
-
 // TODO: Find an ideal way to represent these.
 #define k_max_shader_resources 1024
 #define k_max_samplers 1024

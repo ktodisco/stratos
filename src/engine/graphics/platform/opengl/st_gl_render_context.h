@@ -10,11 +10,6 @@
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
-#define k_st_depth_less GL_LESS
-
-#define k_st_src_alpha GL_SRC_ALPHA
-#define k_st_one_minus_src_alpha GL_ONE_MINUS_SRC_ALPHA
-
 class st_gl_render_context
 {
 public:
