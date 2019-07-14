@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.7)
 project (stratos)
 
+set (CMAKE_CXX_STANDARD 17)
+
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/cmake-modules")
 
 # STB: for image loading and font:
@@ -40,7 +42,9 @@ include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/inclu
 link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/lib/Release")
 
 # Vulkan headers:
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/Vulkan-Headers-1.1.114/include")
+# TODO: This pre-installed path is not ideal.
+include_directories("C:/VulkanSDK/1.1.108.0/Include")
+link_directories ("C:/VulkanSDK/1.1.108.0/Lib")
 
 # ST framework:
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}")
@@ -57,7 +61,7 @@ if (MINGW)
 endif()
 
 add_executable (stratos ${ST_SOURCE_FILES} always_copy_data.h)
-target_link_libraries (stratos glew32s opengl32 glu32 lua53 imgui166 d3d12 dxgi dxguid D3DCompiler WinPixEventRuntime assimp-vc140-mt)
+target_link_libraries (stratos glew32s opengl32 glu32 lua53 imgui166 d3d12 dxgi dxguid D3DCompiler WinPixEventRuntime assimp-vc140-mt vulkan-1.lib)
 if (MSVC)
 	set_target_properties (stratos PROPERTIES LINK_FLAGS "/ignore:4098 /ignore:4099")
 endif()
