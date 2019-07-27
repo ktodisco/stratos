@@ -6,7 +6,16 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#define VULKAN_HPP_DISABLE_ENHANCED_MODE
 #include <vulkan/vulkan.hpp>
+
+#define GLUEME(x, y) x##y
+#define GLUE(x, y) GLUEME(x, y)
+#define VK_VALIDATE(call) \
+	vk::Result GLUE(vkr, __LINE__) = call; \
+	vk_validate(GLUE(vkr, __LINE__))
+
+bool vk_validate(vk::Result result);
 
 enum e_st_primitive_topology_type
 {
