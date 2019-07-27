@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 // TODO: Find an ideal way to represent these.
 #define k_max_shader_resources 1024
@@ -29,8 +30,8 @@ class st_vk_render_context
 {
 public:
 
-	st_vk_render_context(const class st_window* window) {}
-	~st_vk_render_context() {}
+	st_vk_render_context(const class st_window* window);
+	~st_vk_render_context();
 
 	void acquire() {}
 	void release() {}
@@ -124,6 +125,12 @@ private:
 
 	// Maintain a global instance.
 	static st_vk_render_context* _this;
+
+	vk::Instance _instance;
+	vk::PhysicalDevice _gpu;
+	vk::Device _device;
+
+	uint32_t _queue_family_index = UINT_MAX;
 
 	/*D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissor_rect;
