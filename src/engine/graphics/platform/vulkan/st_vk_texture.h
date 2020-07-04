@@ -36,7 +36,7 @@ public:
 	e_st_format get_format() const { return _format; }
 
 protected:
-	//Microsoft::WRL::ComPtr<ID3D12Resource> _handle;
+	vk::Image _handle;
 
 	uint32_t _width;
 	uint32_t _height;

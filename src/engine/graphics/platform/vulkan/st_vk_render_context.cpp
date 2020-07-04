@@ -95,14 +95,93 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 		.setPEnabledFeatures(nullptr);
 
 	VK_VALIDATE(_gpu.createDevice(&device_info, nullptr, &_device));
+
+	_device.getQueue(_queue_family_index, 0, &_queue);
+
+	vk::CommandPoolCreateInfo command_pool_info = vk::CommandPoolCreateInfo()
+		.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+		.setQueueFamilyIndex(_queue_family_index);
+
+	VK_VALIDATE(_device.createCommandPool(&command_pool_info, nullptr, &_command_pool));
+
+	vk::CommandBufferAllocateInfo command_buffer_info = vk::CommandBufferAllocateInfo()
+		.setCommandBufferCount(1)
+		.setCommandPool(_command_pool)
+		.setLevel(vk::CommandBufferLevel::ePrimary);
+
+	VK_VALIDATE(_device.allocateCommandBuffers(&command_buffer_info, &_command_buffer));
+
+	vk::FenceCreateInfo fence_info = vk::FenceCreateInfo();
+
+	VK_VALIDATE(_device.createFence(&fence_info, nullptr, &_fence));
 }
 
 st_vk_render_context::~st_vk_render_context()
 {
+	_queue.waitIdle();
 	_device.waitIdle();
+
+	_device.destroyFence(_fence, nullptr);
+	_device.freeCommandBuffers(_command_pool, 1, &_command_buffer);
+	_device.destroyCommandPool(_command_pool, nullptr);
 	_device.destroy(nullptr);
 
 	_instance.destroy(nullptr);
+}
+
+void st_vk_render_context::begin_frame()
+{
+	vk::CommandBufferBeginInfo begin_info = vk::CommandBufferBeginInfo()
+		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+	VK_VALIDATE(_command_buffer.begin(&begin_info));
+}
+
+void st_vk_render_context::end_frame()
+{
+	VK_VALIDATE(_command_buffer.end());
+}
+
+void st_vk_render_context::swap()
+{
+	vk::SubmitInfo submit_info = vk::SubmitInfo()
+		.setCommandBufferCount(1)
+		.setPCommandBuffers(&_command_buffer);
+
+	vk::Result result = _device.getFenceStatus(_fence);
+	VK_VALIDATE(_queue.submit(1, &submit_info, _fence));
+
+	// TODO: Better parallelization.
+	VK_VALIDATE(_device.waitForFences(1, &_fence, true, std::numeric_limits<uint64_t>::max()));
+	VK_VALIDATE(_device.resetFences(1, &_fence));
+}
+
+void st_vk_render_context::create_texture(
+	uint32_t width,
+	uint32_t height,
+	uint32_t mip_count,
+	e_st_format format,
+	void* data,
+	vk::Image* resource)
+{
+	vk::ImageCreateInfo create_info = vk::ImageCreateInfo()
+		.setArrayLayers(1)
+		.setImageType(vk::ImageType::e2D)
+		.setFormat((vk::Format)format)
+		.setExtent(vk::Extent3D(width, height, 1))
+		.setMipLevels(mip_count)
+		.setUsage(vk::ImageUsageFlagBits::eSampled)
+		.setInitialLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+		.setTiling(vk::ImageTiling::eOptimal);
+
+	VK_VALIDATE(_device.createImage(&create_info, nullptr, resource));
+
+	// TODO: Create a buffer to store the image data, then copy that buffer to the created image.
+}
+
+void st_vk_render_context::destroy_texture(vk::Image& resource)
+{
+	_device.destroyImage(resource, nullptr);
 }
 
 #endif

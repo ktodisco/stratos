@@ -65,26 +65,26 @@ public:
 
 	void begin_loading() {}
 	void end_loading() {}
-	void begin_frame() {}
-	void end_frame() {}
-	void swap() {}
+	void begin_frame();
+	void end_frame();
+	void swap();
 
 	void begin_marker(const std::string& marker) {}
 	void end_marker() {}
 
-	/*void create_graphics_pipeline_state(
-		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,
-		ID3D12PipelineState** pipeline_state) {}
-	void create_buffer(size_t size, ID3D12Resource** resource) {}
 	void create_texture(
 		uint32_t width,
 		uint32_t height,
 		uint32_t mip_count,
 		e_st_format format,
 		void* data,
-		ID3D12Resource** resource,
-		uint32_t* sampler_offset,
-		uint32_t* srv_offset) {}
+		vk::Image* resource);
+	void destroy_texture(vk::Image& resource);
+
+	/*void create_graphics_pipeline_state(
+		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,
+		ID3D12PipelineState** pipeline_state) {}
+	void create_buffer(size_t size, ID3D12Resource** resource) {}
 	void create_target(
 		uint32_t width,
 		uint32_t height,
@@ -129,6 +129,12 @@ private:
 	vk::Instance _instance;
 	vk::PhysicalDevice _gpu;
 	vk::Device _device;
+	vk::Queue _queue;
+
+	vk::CommandPool _command_pool;
+	vk::CommandBuffer _command_buffer;
+
+	vk::Fence _fence;
 
 	uint32_t _queue_family_index = UINT_MAX;
 
