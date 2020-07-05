@@ -63,8 +63,8 @@ public:
 		uint32_t count,
 		D3D12_RESOURCE_BARRIER* barriers) {}*/
 
-	void begin_loading() {}
-	void end_loading() {}
+	void begin_loading();
+	void end_loading();
 	void begin_frame();
 	void end_frame();
 	void swap();
@@ -78,7 +78,7 @@ public:
 		uint32_t mip_count,
 		e_st_format format,
 		void* data,
-		vk::Image* resource);
+		vk::Image& resource);
 	void destroy_texture(vk::Image& resource);
 
 	/*void create_graphics_pipeline_state(
@@ -135,6 +135,8 @@ private:
 	vk::CommandBuffer _command_buffer;
 
 	vk::Fence _fence;
+
+	vk::Buffer _upload_buffer;
 
 	uint32_t _queue_family_index = UINT_MAX;
 
