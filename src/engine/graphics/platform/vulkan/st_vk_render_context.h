@@ -80,6 +80,8 @@ public:
 		void* data,
 		vk::Image& resource);
 	void destroy_texture(vk::Image& resource);
+	void create_buffer(size_t size, e_st_buffer_usage usage, vk::Buffer& resource);
+	void destroy_buffer(vk::Buffer& resource);
 
 	/*void create_graphics_pipeline_state(
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,

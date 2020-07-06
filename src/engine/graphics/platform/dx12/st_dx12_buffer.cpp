@@ -28,6 +28,7 @@ st_dx12_buffer::st_dx12_buffer(const uint32_t count, const size_t element_size) 
 st_dx12_buffer::~st_dx12_buffer()
 {
 	_buffer->Unmap(0, nullptr);
+	// TODO: Destroy buffer.
 }
 
 void st_dx12_buffer::update(const st_dx12_render_context* context, void* data, const uint32_t count)

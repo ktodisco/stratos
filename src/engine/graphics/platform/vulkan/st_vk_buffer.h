@@ -16,21 +16,22 @@
 class st_vk_buffer
 {
 public:
-	st_vk_buffer(const uint32_t count, const size_t element_size) {}
-	~st_vk_buffer() {}
+	st_vk_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage usage);
+	~st_vk_buffer();
 
-	void update(const class st_vk_render_context* context, void* data, const uint32_t count) {}
+	void update(const class st_vk_render_context* context, void* data, const uint32_t count);
 	void set_meta(std::string name) {}
 
-	//ID3D12Resource* get_resource() const { return _buffer.Get(); }
+	const vk::Buffer& get_resource() const { return _buffer; }
 	uint32_t get_count() const { return _count; }
 	size_t get_element_size() const { return _element_size; }
 
 private:
 	uint32_t _count;
+	e_st_buffer_usage _usage;
 	size_t _element_size;
-	//Microsoft::WRL::ComPtr<ID3D12Resource> _buffer;
-	uint8_t* _buffer_head = nullptr;
+
+	vk::Buffer _buffer;
 };
 
 #endif
