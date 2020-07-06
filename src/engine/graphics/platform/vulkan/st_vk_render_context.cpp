@@ -265,4 +265,20 @@ void st_vk_render_context::destroy_texture(vk::Image& resource)
 	_device.destroyImage(resource, nullptr);
 }
 
+void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage usage, vk::Buffer& resource)
+{
+	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
+		.setUsage(vk::BufferUsageFlags(uint32_t(usage)))
+		.setQueueFamilyIndexCount(1)
+		.setPQueueFamilyIndices(&_queue_family_index)
+		.setSize(size);
+
+	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &resource));
+}
+
+void st_vk_render_context::destroy_buffer(vk::Buffer& resource)
+{
+	_device.destroyBuffer(resource, nullptr);
+}
+
 #endif

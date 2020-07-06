@@ -27,6 +27,6 @@ typedef st_vk_buffer st_platform_buffer;
 class st_buffer : public st_platform_buffer
 {
 public:
-	st_buffer(const uint32_t count, const size_t element_size) :
-		st_platform_buffer(count, element_size) {}
+	st_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage usage) :
+		st_platform_buffer(count, element_size, usage) {}
 };

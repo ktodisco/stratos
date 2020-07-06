@@ -6,6 +6,8 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <core/st_flags.h>
+
 #define VULKAN_HPP_DISABLE_ENHANCED_MODE
 #include <vulkan/vulkan.hpp>
 
@@ -30,6 +32,20 @@ enum e_st_primitive_topology
 	st_primitive_topology_lines = vk::PrimitiveTopology::eLineList,
 	st_primitive_topology_triangles = vk::PrimitiveTopology::eTriangleList,
 };
+
+enum e_st_buffer_usage_flags
+{
+	st_index_buffer = vk::BufferUsageFlagBits::eIndexBuffer,
+	st_indirect_buffer = vk::BufferUsageFlagBits::eIndirectBuffer,
+	st_storage_buffer = vk::BufferUsageFlagBits::eStorageBuffer,
+	st_storage_texel_buffer = vk::BufferUsageFlagBits::eStorageTexelBuffer,
+	st_transfer_dest = vk::BufferUsageFlagBits::eTransferDst,
+	st_transfer_source = vk::BufferUsageFlagBits::eTransferSrc,
+	st_uniform_buffer = vk::BufferUsageFlagBits::eUniformBuffer,
+	st_uniform_texel_buffer = vk::BufferUsageFlagBits::eUniformTexelBuffer,
+	st_vertex_buffer = vk::BufferUsageFlagBits::eVertexBuffer,
+};
+using e_st_buffer_usage = st_flags<e_st_buffer_usage_flags, uint32_t>;
 
 // HACK: In order to give a unique id to each format matching
 // those of DXGI, several of which vulkan has no equivalent for.
