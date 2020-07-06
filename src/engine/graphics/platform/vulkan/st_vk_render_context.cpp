@@ -276,6 +276,11 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage usage, v
 	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &resource));
 }
 
+void st_vk_render_context::update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data)
+{
+	_command_buffer.updateBuffer(resource, offset, num_bytes, data);
+}
+
 void st_vk_render_context::destroy_buffer(vk::Buffer& resource)
 {
 	_device.destroyBuffer(resource, nullptr);

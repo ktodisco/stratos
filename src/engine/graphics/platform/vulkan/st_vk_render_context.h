@@ -81,6 +81,7 @@ public:
 		vk::Image& resource);
 	void destroy_texture(vk::Image& resource);
 	void create_buffer(size_t size, e_st_buffer_usage usage, vk::Buffer& resource);
+	void update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data);
 	void destroy_buffer(vk::Buffer& resource);
 
 	/*void create_graphics_pipeline_state(
