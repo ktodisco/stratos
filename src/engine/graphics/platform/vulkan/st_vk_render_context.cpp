@@ -133,13 +133,7 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	VK_VALIDATE(_device.createFence(&fence_info, nullptr, &_fence));
 
-	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
-		.setUsage(vk::BufferUsageFlagBits::eTransferSrc)
-		.setQueueFamilyIndexCount(1)
-		.setPQueueFamilyIndices(&_queue_family_index)
-		.setSize(16 * 1024 * 1024);
-
-	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &_upload_buffer));
+	create_buffer(16 * 1024 * 1024, e_st_buffer_usage::transfer_source | e_st_buffer_usage::transfer_dest, _upload_buffer);
 
 	_this = this;
 }
@@ -213,11 +207,24 @@ void st_vk_render_context::create_texture(
 		.setFormat((vk::Format)format)
 		.setExtent(vk::Extent3D(width, height, 1))
 		.setMipLevels(mip_count)
-		.setUsage(vk::ImageUsageFlagBits::eSampled)
-		.setInitialLayout(vk::ImageLayout::eTransferDstOptimal)
+		.setUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst)
+		.setInitialLayout(vk::ImageLayout::ePreinitialized)
 		.setTiling(vk::ImageTiling::eOptimal);
 
 	VK_VALIDATE(_device.createImage(&create_info, nullptr, &resource));
+
+	// Allocate memory for the image.
+	vk::MemoryRequirements memory_reqs;
+	_device.getImageMemoryRequirements(resource, &memory_reqs);
+
+	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
+		.setAllocationSize(memory_reqs.size)
+		.setMemoryTypeIndex(_device_memory_index);
+
+	vk::DeviceMemory memory;
+	_device.allocateMemory(&allocate_info, nullptr, &memory);
+
+	_device.bindImageMemory(resource, memory, 0);
 
 	std::vector<vk::BufferImageCopy> regions;
 	uint64_t offset = 0;
@@ -258,10 +265,18 @@ void st_vk_render_context::create_texture(
 
 	_command_buffer.copyBufferToImage(_upload_buffer, resource, vk::ImageLayout::eTransferDstOptimal, mip_count, regions.data());
 
+	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
+		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setBaseMipLevel(0)
+		.setLevelCount(mip_count);
+
 	vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
 		.setImage(resource)
 		.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-		.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+		.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+		.setSubresourceRange(range);
 	_command_buffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::PipelineStageFlagBits::eTransfer,
@@ -296,7 +311,7 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags us
 	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
-		.setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst)
+		.setUsage(flags)
 		.setQueueFamilyIndexCount(1)
 		.setPQueueFamilyIndices(&_queue_family_index)
 		.setSize(size);
