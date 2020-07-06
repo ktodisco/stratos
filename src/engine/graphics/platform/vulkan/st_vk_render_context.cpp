@@ -16,7 +16,9 @@ st_vk_render_context* st_vk_render_context::_this = nullptr;
 st_vk_render_context::st_vk_render_context(const class st_window* window)
 {
 	std::vector<const char*> layer_names;
+#if _DEBUG
 	layer_names.push_back("VK_LAYER_KHRONOS_validation");
+#endif
 
 	// Create the per-application instance object.
 	auto app_info = vk::ApplicationInfo()
@@ -26,7 +28,7 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	auto create_info = vk::InstanceCreateInfo()
 		.setPApplicationInfo(&app_info)
-		.setEnabledLayerCount(0)
+		.setEnabledLayerCount(layer_names.size())
 		.setPpEnabledLayerNames(layer_names.data())
 		.setEnabledExtensionCount(0);
 
@@ -53,6 +55,20 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 		// Just pick the first discrete GPU that we find.
 		if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
 		{
+			break;
+		}
+	}
+
+	// Query the device memory properties.
+	vk::PhysicalDeviceMemoryProperties memory_props;
+	_gpu.getMemoryProperties(&memory_props);
+
+	// Fill out the device memory type indices.
+	for (int i = 0; i < memory_props.memoryTypeCount; ++i)
+	{
+		if (memory_props.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)
+		{
+			_device_memory_index = i;
 			break;
 		}
 	}
@@ -265,15 +281,40 @@ void st_vk_render_context::destroy_texture(vk::Image& resource)
 	_device.destroyImage(resource, nullptr);
 }
 
-void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage usage, vk::Buffer& resource)
+void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource)
 {
+	vk::BufferUsageFlags flags;
+
+	if (usage & e_st_buffer_usage::index) flags |= vk::BufferUsageFlagBits::eIndexBuffer;
+	if (usage & e_st_buffer_usage::indirect) flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
+	if (usage & e_st_buffer_usage::storage) flags |= vk::BufferUsageFlagBits::eStorageBuffer;
+	if (usage & e_st_buffer_usage::storage_texel) flags |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
+	if (usage & e_st_buffer_usage::transfer_dest) flags |= vk::BufferUsageFlagBits::eTransferDst;
+	if (usage & e_st_buffer_usage::transfer_source) flags |= vk::BufferUsageFlagBits::eTransferSrc;
+	if (usage & e_st_buffer_usage::uniform) flags |= vk::BufferUsageFlagBits::eUniformBuffer;
+	if (usage & e_st_buffer_usage::uniform_texel) flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
+	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
+
 	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
-		.setUsage(vk::BufferUsageFlags(uint32_t(usage)))
+		.setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst)
 		.setQueueFamilyIndexCount(1)
 		.setPQueueFamilyIndices(&_queue_family_index)
 		.setSize(size);
 
 	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &resource));
+
+	// Allocate memory for the buffer.
+	vk::MemoryRequirements memory_reqs;
+	_device.getBufferMemoryRequirements(resource, &memory_reqs);
+
+	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
+		.setAllocationSize(memory_reqs.size)
+		.setMemoryTypeIndex(_device_memory_index);
+
+	vk::DeviceMemory memory;
+	_device.allocateMemory(&allocate_info, nullptr, &memory);
+
+	_device.bindBufferMemory(resource, memory, 0);
 }
 
 void st_vk_render_context::update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data)

@@ -33,19 +33,20 @@ enum e_st_primitive_topology
 	st_primitive_topology_triangles = vk::PrimitiveTopology::eTriangleList,
 };
 
-enum e_st_buffer_usage_flags
+enum class e_st_buffer_usage : uint32_t
 {
-	st_index_buffer = vk::BufferUsageFlagBits::eIndexBuffer,
-	st_indirect_buffer = vk::BufferUsageFlagBits::eIndirectBuffer,
-	st_storage_buffer = vk::BufferUsageFlagBits::eStorageBuffer,
-	st_storage_texel_buffer = vk::BufferUsageFlagBits::eStorageTexelBuffer,
-	st_transfer_dest = vk::BufferUsageFlagBits::eTransferDst,
-	st_transfer_source = vk::BufferUsageFlagBits::eTransferSrc,
-	st_uniform_buffer = vk::BufferUsageFlagBits::eUniformBuffer,
-	st_uniform_texel_buffer = vk::BufferUsageFlagBits::eUniformTexelBuffer,
-	st_vertex_buffer = vk::BufferUsageFlagBits::eVertexBuffer,
+	index,
+	indirect,
+	storage,
+	storage_texel,
+	transfer_dest,
+	transfer_source,
+	uniform,
+	uniform_texel,
+	vertex,
 };
-using e_st_buffer_usage = st_flags<e_st_buffer_usage_flags, uint32_t>;
+using e_st_buffer_usage_flags = st_flags<e_st_buffer_usage, uint32_t>;
+ST_ENUM_FLAG_OPS(e_st_buffer_usage, e_st_buffer_usage_flags);
 
 // HACK: In order to give a unique id to each format matching
 // those of DXGI, several of which vulkan has no equivalent for.

@@ -80,7 +80,7 @@ public:
 		void* data,
 		vk::Image& resource);
 	void destroy_texture(vk::Image& resource);
-	void create_buffer(size_t size, e_st_buffer_usage usage, vk::Buffer& resource);
+	void create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource);
 	void update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data);
 	void destroy_buffer(vk::Buffer& resource);
 
@@ -133,6 +133,8 @@ private:
 	vk::PhysicalDevice _gpu;
 	vk::Device _device;
 	vk::Queue _queue;
+
+	uint32_t _device_memory_index = UINT_MAX;
 
 	vk::CommandPool _command_pool;
 	vk::CommandBuffer _command_buffer;

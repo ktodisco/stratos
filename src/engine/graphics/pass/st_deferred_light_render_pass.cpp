@@ -38,7 +38,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	_light_buffer = std::make_unique<st_buffer>(
 		1,
 		sizeof(st_sphere_light_data),
-		st_storage_buffer);
+		e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest);
 	_light_buffer->set_meta("type_StructuredBuffer_st_sphere_light");
 	_resources = std::make_unique<st_resource_table>();
 	_resources->add_buffer_resource(_light_buffer.get());
