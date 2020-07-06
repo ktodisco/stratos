@@ -21,5 +21,5 @@ st_vk_buffer::~st_vk_buffer()
 
 void st_vk_buffer::update(const class st_vk_render_context* context, void* data, const uint32_t count)
 {
-
+	st_vk_render_context::get()->update_buffer(_buffer, 0, count * _element_size, data);
 }

@@ -15,22 +15,19 @@
 class st_vk_constant_buffer
 {
 public:
-	st_vk_constant_buffer(const size_t size) {}
-	~st_vk_constant_buffer() {}
+	st_vk_constant_buffer(const size_t size);
+	~st_vk_constant_buffer();
 
 	void add_constant(
 		const std::string& name,
 		const e_st_shader_constant_type constant_type) {}
 
-	void update(const class st_vk_render_context* context, void* data) {}
-
-	//D3D12_GPU_VIRTUAL_ADDRESS get_virtual_address() const { return _constant_buffer->GetGPUVirtualAddress(); }
+	void update(const class st_vk_render_context* context, void* data);
 	size_t get_size() const { return _size; }
 
 private:
+	vk::Buffer _buffer;
 	size_t _size;
-	//Microsoft::WRL::ComPtr<ID3D12Resource> _constant_buffer;
-	uint8_t* _constant_buffer_head = nullptr;
 };
 
 #endif
