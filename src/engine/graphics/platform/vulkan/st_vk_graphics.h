@@ -35,15 +35,15 @@ enum e_st_primitive_topology
 
 enum class e_st_buffer_usage : uint32_t
 {
-	index,
-	indirect,
-	storage,
-	storage_texel,
-	transfer_dest,
-	transfer_source,
-	uniform,
-	uniform_texel,
-	vertex,
+	index = 0x0001,
+	indirect = 0x0002,
+	storage = 0x0004,
+	storage_texel = 0x0008,
+	transfer_dest = 0x0010,
+	transfer_source = 0x0020,
+	uniform = 0x0040,
+	uniform_texel = 0x0080,
+	vertex = 0x0100,
 };
 using e_st_buffer_usage_flags = st_flags<e_st_buffer_usage, uint32_t>;
 ST_ENUM_FLAG_OPS(e_st_buffer_usage, e_st_buffer_usage_flags);
