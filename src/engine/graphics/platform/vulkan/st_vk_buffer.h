@@ -16,7 +16,7 @@
 class st_vk_buffer
 {
 public:
-	st_vk_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage usage);
+	st_vk_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage_flags usage);
 	~st_vk_buffer();
 
 	void update(const class st_vk_render_context* context, void* data, const uint32_t count);
@@ -28,7 +28,7 @@ public:
 
 private:
 	uint32_t _count;
-	e_st_buffer_usage _usage;
+	e_st_buffer_usage_flags _usage;
 	size_t _element_size;
 
 	vk::Buffer _buffer;
