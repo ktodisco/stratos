@@ -84,6 +84,8 @@ public:
 	void update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data);
 	void destroy_buffer(vk::Buffer& resource);
 
+	vk::Device* get_device() { return std::addressof(_device); }
+
 	/*void create_graphics_pipeline_state(
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,
 		ID3D12PipelineState** pipeline_state) {}
