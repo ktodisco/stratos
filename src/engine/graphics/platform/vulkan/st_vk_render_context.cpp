@@ -6,10 +6,12 @@
 
 #include <graphics/platform/vulkan/st_vk_render_context.h>
 
+#if defined(ST_GRAPHICS_API_VULKAN)
+
+#include <graphics/platform/vulkan/st_vk_texture.h>
+
 #include <iostream>
 #include <vector>
-
-#if defined(ST_GRAPHICS_API_VULKAN)
 
 st_vk_render_context* st_vk_render_context::_this = nullptr;
 
@@ -294,6 +296,29 @@ void st_vk_render_context::create_texture(
 void st_vk_render_context::destroy_texture(vk::Image& resource)
 {
 	_device.destroyImage(resource, nullptr);
+}
+
+void st_vk_render_context::create_texture_view(st_vk_texture* texture, vk::ImageView& resource)
+{
+	vk::ImageSubresourceRange subresource_range = vk::ImageSubresourceRange()
+		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseMipLevel(0)
+		.setLevelCount(texture->get_levels())
+		.setBaseArrayLayer(0)
+		.setLayerCount(1);
+
+	vk::ImageViewCreateInfo create_info = vk::ImageViewCreateInfo()
+		.setFormat(vk::Format(texture->get_format()))
+		.setImage(texture->get_resource())
+		.setViewType(vk::ImageViewType::e2D)
+		.setSubresourceRange(subresource_range);
+
+	_device.createImageView(&create_info, nullptr, &resource);
+}
+
+void st_vk_render_context::destroy_texture_view(vk::ImageView& resource)
+{
+	_device.destroyImageView(resource, nullptr);
 }
 
 void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource)

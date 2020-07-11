@@ -76,6 +76,7 @@ st_vk_render_pass::st_vk_render_pass(
 	device->createRenderPass(&pass_info, nullptr, &_render_pass);
 
 	_framebuffer = std::make_unique<st_vk_framebuffer>(
+		_render_pass,
 		count,
 		targets,
 		depth_stencil);
@@ -91,12 +92,22 @@ st_vk_render_pass::~st_vk_render_pass()
 
 void st_vk_render_pass::begin(st_render_context* context)
 {
-	_framebuffer->bind(context);
+	vk::CommandBuffer* command_buffer = context->get_command_buffer();
+
+	vk::RenderPassBeginInfo begin_info = vk::RenderPassBeginInfo()
+		.setClearValueCount(0)
+		.setFramebuffer(_framebuffer->get())
+		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(_framebuffer->get_width(), _framebuffer->get_height())))
+		.setRenderPass(_render_pass);
+
+	command_buffer->beginRenderPass(&begin_info, vk::SubpassContents::eInline);
 }
 
 void st_vk_render_pass::end(st_render_context* context)
 {
-	_framebuffer->unbind(context);
+	vk::CommandBuffer* command_buffer = context->get_command_buffer();
+
+	command_buffer->endRenderPass();
 }
 
 #endif
