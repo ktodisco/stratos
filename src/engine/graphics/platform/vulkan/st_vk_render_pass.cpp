@@ -6,9 +6,12 @@
 
 #include <graphics/platform/vulkan/st_vk_render_pass.h>
 
-#include <graphics/platform/vulkan/st_vk_render_context.h>
+#if defined(ST_GRAPHICS_API_VULKAN)
+
+#include <graphics/platform/vulkan/st_vk_framebuffer.h>
 #include <graphics/platform/vulkan/st_vk_render_texture.h>
 
+#include <graphics/st_render_context.h>
 #include <graphics/st_render_texture.h>
 
 #include <vector>
@@ -36,30 +39,35 @@ st_vk_render_pass::st_vk_render_pass(
 		vk::AttachmentReference ref = vk::AttachmentReference()
 			.setAttachment(i)
 			.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+		attachment_refs.push_back(ref);
 	}
-
-	vk::AttachmentDescription ds_desc = vk::AttachmentDescription()
-		.setFormat(vk::Format(depth_stencil->get_format()))
-		.setSamples(vk::SampleCountFlagBits::e1)
-		.setLoadOp(vk::AttachmentLoadOp::eLoad)
-		.setStoreOp(vk::AttachmentStoreOp::eStore)
-		.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-		.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-	attachment_descs.push_back(ds_desc);
-
-	vk::AttachmentReference ds_ref = vk::AttachmentReference()
-		.setAttachment(attachment_descs.size() - 1)
-		.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
 	vk::SubpassDescription subpass_desc = vk::SubpassDescription()
 		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 		.setInputAttachmentCount(0)
 		.setColorAttachmentCount(count)
-		.setPColorAttachments(attachment_refs.data())
-		.setPDepthStencilAttachment(&ds_ref);
+		.setPColorAttachments(attachment_refs.data());
+
+	if (depth_stencil)
+	{
+		vk::AttachmentDescription ds_desc = vk::AttachmentDescription()
+			.setFormat(vk::Format(depth_stencil->get_format()))
+			.setSamples(vk::SampleCountFlagBits::e1)
+			.setLoadOp(vk::AttachmentLoadOp::eLoad)
+			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		attachment_descs.push_back(ds_desc);
+
+		vk::AttachmentReference ds_ref = vk::AttachmentReference()
+			.setAttachment(attachment_descs.size() - 1)
+			.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+		subpass_desc.setPDepthStencilAttachment(&ds_ref);
+	}
 
 	vk::RenderPassCreateInfo pass_info = vk::RenderPassCreateInfo()
-		.setAttachmentCount(count)
+		.setAttachmentCount(attachment_descs.size())
 		.setPAttachments(attachment_descs.data())
 		.setSubpassCount(1)
 		.setPSubpasses(&subpass_desc)
@@ -67,7 +75,7 @@ st_vk_render_pass::st_vk_render_pass(
 
 	device->createRenderPass(&pass_info, nullptr, &_render_pass);
 
-	_framebuffer = std::make_unique<st_framebuffer>(
+	_framebuffer = std::make_unique<st_vk_framebuffer>(
 		count,
 		targets,
 		depth_stencil);
@@ -81,12 +89,14 @@ st_vk_render_pass::~st_vk_render_pass()
 	_framebuffer = nullptr;
 }
 
-void st_vk_render_pass::begin()
+void st_vk_render_pass::begin(st_render_context* context)
 {
-
+	_framebuffer->bind(context);
 }
 
-void st_vk_render_pass::end()
+void st_vk_render_pass::end(st_render_context* context)
 {
-
+	_framebuffer->unbind(context);
 }
+
+#endif

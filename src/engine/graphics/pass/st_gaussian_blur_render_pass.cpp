@@ -9,10 +9,10 @@
 #include <framework/st_frame_params.h>
 
 #include <graphics/material/st_gaussian_blur_material.h>
-#include <graphics/st_framebuffer.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
+#include <graphics/st_render_pass.h>
 #include <graphics/st_render_texture.h>
 
 st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
@@ -52,13 +52,13 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 	_horizontal_blur_state = std::make_unique<st_pipeline_state>(horizontal_blur_state_desc);
 
 	st_render_texture* vertical_blur_targets[] = { _intermediate_target.get() };
-	_vertical_blur_framebuffer = std::make_unique<st_framebuffer>(
+	_vertical_blur_pass = std::make_unique<st_render_pass>(
 		1,
 		vertical_blur_targets,
 		nullptr);
 
 	st_render_texture* horizontal_blur_targets[] = { target_buffer };
-	_horizontal_blur_framebuffer = std::make_unique<st_framebuffer>(
+	_horizontal_blur_pass = std::make_unique<st_render_pass>(
 		1,
 		horizontal_blur_targets,
 		nullptr);
@@ -84,7 +84,7 @@ void st_gaussian_blur_render_pass::render(
 		st_render_marker marker("Vertical Blur");
 
 		context->set_pipeline_state(_vertical_blur_state.get());
-		_vertical_blur_framebuffer->bind(context);
+		_vertical_blur_pass->begin(context);
 
 		_vertical_blur_material->bind(context, params, identity, identity, identity);
 
@@ -95,14 +95,14 @@ void st_gaussian_blur_render_pass::render(
 
 		context->draw(draw_call);
 
-		_vertical_blur_framebuffer->unbind(context);
+		_vertical_blur_pass->end(context);
 	}
 
 	{
 		st_render_marker marker("Horizontal Blur");
 
 		context->set_pipeline_state(_horizontal_blur_state.get());
-		_horizontal_blur_framebuffer->bind(context);
+		_horizontal_blur_pass->begin(context);
 
 		_horizontal_blur_material->bind(context, params, identity, identity, identity);
 
@@ -113,6 +113,6 @@ void st_gaussian_blur_render_pass::render(
 
 		context->draw(draw_call);
 
-		_horizontal_blur_framebuffer->unbind(context);
+		_horizontal_blur_pass->end(context);
 	}
 }

@@ -8,26 +8,25 @@
 
 #include <graphics/st_graphics.h>
 
-#include <graphics/st_framebuffer.h>
-
 #if defined(ST_GRAPHICS_API_VULKAN)
 
 class st_render_texture;
 
 class st_vk_render_pass
 {
+public:
 	st_vk_render_pass(
 		uint32_t count,
 		class st_render_texture** targets,
 		class st_render_texture* depth_stencil);
 	~st_vk_render_pass();
 
-	void begin();
-	void end();
+	void begin(class st_render_context* context);
+	void end(class st_render_context* context);
 
 private:
 	vk::RenderPass _render_pass;
-	std::unique_ptr<st_framebuffer> _framebuffer;
+	std::unique_ptr<class st_vk_framebuffer> _framebuffer;
 };
 
 #endif
