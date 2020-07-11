@@ -80,11 +80,14 @@ public:
 		void* data,
 		vk::Image& resource);
 	void destroy_texture(vk::Image& resource);
+	void create_texture_view(class st_vk_texture* texture, vk::ImageView& resource);
+	void destroy_texture_view(vk::ImageView& resource);
 	void create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource);
 	void update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data);
 	void destroy_buffer(vk::Buffer& resource);
 
 	vk::Device* get_device() { return std::addressof(_device); }
+	vk::CommandBuffer* get_command_buffer() { return std::addressof(_command_buffer); }
 
 	/*void create_graphics_pipeline_state(
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,

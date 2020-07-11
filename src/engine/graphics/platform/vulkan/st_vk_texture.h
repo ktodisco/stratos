@@ -13,6 +13,8 @@
 class st_vk_texture
 {
 public:
+	// TODO: Finally set up proper RAII. Create the texture and texture view in the constructor,
+	// and then require load to be called separately to actually upload data to the texture.
 	st_vk_texture();
 	st_vk_texture(uint32_t width, uint32_t height);
 	~st_vk_texture();
@@ -29,7 +31,7 @@ public:
 
 	void set_name(std::string name);
 
-	//ID3D12Resource* get_resource() const { return _handle.Get(); }
+	const vk::Image& get_resource() const { return _handle; }
 	uint32_t get_width() const { return _width; }
 	uint32_t get_height() const { return _height; }
 	uint32_t get_levels() const { return _levels; }
