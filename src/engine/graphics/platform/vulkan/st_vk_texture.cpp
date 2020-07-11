@@ -6,6 +6,8 @@
 
 #include <graphics/platform/vulkan/st_vk_texture.h>
 
+#if defined(ST_GRAPHICS_API_VULKAN)
+
 #include <graphics/platform/vulkan/st_vk_render_context.h>
 
 st_vk_texture::st_vk_texture()
@@ -52,3 +54,5 @@ void st_vk_texture::set_name(std::string name)
 {
 
 }
+
+#endif

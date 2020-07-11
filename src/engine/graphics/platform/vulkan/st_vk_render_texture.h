@@ -23,13 +23,8 @@ public:
 		uint32_t width,
 		uint32_t height,
 		e_st_format format,
-		const st_vec4f& clear) {}
-	~st_vk_render_texture() {}
-
-	//uint32_t get_rtv() const { return _rtv; }
-
-private:
-	//st_dx12_descriptor _rtv;
+		const st_vec4f& clear);
+	~st_vk_render_texture();
 };
 
 #endif

@@ -9,10 +9,10 @@
 #include <framework/st_frame_params.h>
 
 #include <graphics/material/st_tonemap_material.h>
-#include <graphics/st_framebuffer.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
+#include <graphics/st_render_pass.h>
 #include <graphics/st_render_texture.h>
 
 st_tonemap_render_pass::st_tonemap_render_pass(
@@ -31,7 +31,7 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 	_pipeline_state = std::make_unique<st_pipeline_state>(tonemap_state_desc);
 
 	st_render_texture* targets[] = { target_buffer };
-	_framebuffer = std::make_unique<st_framebuffer>(
+	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,
 		nullptr);
@@ -54,7 +54,7 @@ void st_tonemap_render_pass::render(
 	context->set_scissor(0, 0, params->_width, params->_height);
 	context->set_pipeline_state(_pipeline_state.get());
 
-	_framebuffer->bind(context);
+	_pass->begin(context);
 
 	_material->bind(context, params, identity, identity, identity);
 
@@ -65,5 +65,5 @@ void st_tonemap_render_pass::render(
 
 	context->draw(draw_call);
 
-	_framebuffer->unbind(context);
+	_pass->end(context);
 }

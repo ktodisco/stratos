@@ -34,5 +34,5 @@ private:
 	std::unique_ptr<class st_parallax_occlusion_material> _default_parallax_occlusion = nullptr;
 	std::unique_ptr<class st_pipeline_state> _parallax_occlusion_state = nullptr;
 
-	std::unique_ptr<class st_framebuffer> _framebuffer = nullptr;
+	std::unique_ptr<class st_render_pass> _pass = nullptr;
 };

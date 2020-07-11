@@ -12,10 +12,10 @@
 #include <graphics/material/st_gbuffer_material.h>
 #include <graphics/material/st_parallax_occlusion_material.h>
 #include <graphics/st_drawcall.h>
-#include <graphics/st_framebuffer.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
+#include <graphics/st_render_pass.h>
 #include <graphics/st_render_texture.h>
 
 st_gbuffer_render_pass::st_gbuffer_render_pass(
@@ -67,7 +67,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	_parallax_occlusion_state = std::make_unique<st_pipeline_state>(parallax_occlusion_state_desc);
 
 	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
-	_framebuffer = std::make_unique<st_framebuffer>(
+	_pass = std::make_unique<st_render_pass>(
 		3,
 		targets,
 		depth_buffer);
@@ -89,7 +89,7 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 	context->set_scissor(0, 0, params->_width, params->_height);
 	context->set_pipeline_state(_gbuffer_state.get());
 
-	_framebuffer->bind(context);
+	_pass->begin(context);
 
 	// Clear viewport.
 	context->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -124,5 +124,5 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 		context->draw(d);
 	}
 
-	_framebuffer->unbind(context);
+	_pass->end(context);
 }

@@ -15,10 +15,10 @@
 #include <graphics/st_buffer.h>
 #include <graphics/st_constant_buffer.h>
 #include <graphics/st_drawcall.h>
-#include <graphics/st_framebuffer.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
+#include <graphics/st_render_pass.h>
 #include <graphics/st_render_texture.h>
 #include <graphics/st_resource_table.h>
 
@@ -61,7 +61,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	_pipeline_state = std::make_unique<st_pipeline_state>(deferred_light_state_desc);
 
 	st_render_texture* targets[] = { output_buffer };
-	_framebuffer = std::make_unique<st_framebuffer>(
+	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,
 		output_depth);
@@ -87,7 +87,7 @@ void st_deferred_light_render_pass::render(
 	// Set global pass resource tables.
 	_resources->bind(context);
 
-	_framebuffer->bind(context);
+	_pass->begin(context);
 
 	// Update the light information.
 	st_mat4f perspective;
@@ -120,5 +120,5 @@ void st_deferred_light_render_pass::render(
 
 	context->draw(draw_call);
 
-	_framebuffer->unbind(context);
+	_pass->end(context);
 }

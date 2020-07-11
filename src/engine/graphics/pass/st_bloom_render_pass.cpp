@@ -10,10 +10,10 @@
 
 #include <graphics/material/st_bloom_material.h>
 #include <graphics/pass/st_gaussian_blur_render_pass.h>
-#include <graphics/st_framebuffer.h>
 #include <graphics/st_pipeline_state.h>
 #include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
+#include <graphics/st_render_pass.h>
 #include <graphics/st_render_texture.h>
 
 st_bloom_render_pass::st_bloom_render_pass(
@@ -46,7 +46,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 	blur_target->set_name("Bloom Blur Target");
 
 	st_render_texture* targets[] = { half_target.get() };
-	_framebuffer = std::make_unique<st_framebuffer>(
+	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,
 		nullptr);
@@ -77,7 +77,7 @@ void st_bloom_render_pass::render(
 	context->set_scissor(0, 0, _targets[0]->get_width(), _targets[0]->get_height());
 	context->set_pipeline_state(_pipeline_state.get());
 
-	_framebuffer->bind(context);
+	_pass->begin(context);
 
 	_material->bind(context, params, identity, identity, identity);
 
@@ -90,5 +90,5 @@ void st_bloom_render_pass::render(
 
 	_blur_pass->render(context, params);
 
-	_framebuffer->unbind(context);
+	_pass->end(context);
 }

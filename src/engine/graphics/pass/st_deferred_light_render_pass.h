@@ -25,7 +25,7 @@ public:
 	void render(class st_render_context* context, const struct st_frame_params* params);
 
 private:
-	std::unique_ptr<class st_framebuffer> _framebuffer = nullptr;
+	std::unique_ptr<class st_render_pass> _pass = nullptr;
 	std::unique_ptr<class st_constant_buffer> _constant_buffer = nullptr;
 	std::unique_ptr<class st_buffer> _light_buffer = nullptr;
 	std::unique_ptr<class st_resource_table> _resources = nullptr;
