@@ -76,3 +76,4 @@ add_custom_target (ALWAYS_COPY_DATA COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CU
 add_custom_command (TARGET ALWAYS_COPY_DATA POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../../data $<TARGET_FILE_DIR:stratos>/data)
 
 add_custom_command (TARGET ALWAYS_COPY_DATA PRE_BUILD COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../../build/scripts/build_shaders.py ${CMAKE_CURRENT_SOURCE_DIR}/../../data/shaders glsl $<TARGET_FILE_DIR:stratos>/data/shaders)
+add_custom_command (TARGET ALWAYS_COPY_DATA PRE_BUILD COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../../build/scripts/build_shaders.py ${CMAKE_CURRENT_SOURCE_DIR}/../../data/shaders spirv $<TARGET_FILE_DIR:stratos>/data/shaders)
