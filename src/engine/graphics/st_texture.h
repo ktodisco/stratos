@@ -32,6 +32,12 @@ typedef st_vk_texture st_platform_texture;
 class st_texture : public st_platform_texture
 {
 public:
-	st_texture() : st_platform_texture() {}
-	st_texture(uint32_t width, uint32_t height) : st_platform_texture(width, height) {}
+	st_texture() = delete;
+	st_texture(
+		uint32_t width,
+		uint32_t height,
+		uint32_t levels,
+		e_st_format format,
+		e_st_texture_usage_flags usage) :
+		st_platform_texture(width, height, levels, format, usage) {}
 };

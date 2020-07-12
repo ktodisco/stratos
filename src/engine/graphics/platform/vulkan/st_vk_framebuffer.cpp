@@ -13,6 +13,8 @@
 
 #include <graphics/st_render_texture.h>
 
+#include <vector>
+
 st_vk_framebuffer::st_vk_framebuffer(
 	const vk::RenderPass& pass,
 	uint32_t count,
@@ -26,9 +28,22 @@ st_vk_framebuffer::st_vk_framebuffer(
 	_width = targets[0]->get_width();
 	_height = targets[0]->get_height();
 
+	std::vector<vk::ImageView> views;
+	views.reserve(count + 1);
+
+	for (int i = 0; i < count; ++i)
+	{
+		views.push_back(targets[i]->get_resource_view());
+	}
+
+	if (depth_stencil)
+	{
+		views.push_back(depth_stencil->get_resource_view());
+	}
+
 	vk::FramebufferCreateInfo create_info = vk::FramebufferCreateInfo()
 		.setAttachmentCount(attachmentCount)
-		//.setPAttachments(nullptr)
+		.setPAttachments(views.data())
 		.setRenderPass(pass)
 		.setWidth(_width)
 		.setHeight(_height)
