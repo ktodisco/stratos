@@ -13,8 +13,6 @@
 class st_vk_texture
 {
 public:
-	// TODO: Finally set up proper RAII. Create the texture and texture view in the constructor,
-	// and then require load to be called separately to actually upload data to the texture.
 	st_vk_texture() = delete;
 	st_vk_texture(
 		uint32_t width,
