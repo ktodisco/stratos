@@ -35,6 +35,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		source_buffer->get_width() / 2,
 		source_buffer->get_height() / 2,
 		source_buffer->get_format(),
+		e_st_texture_usage::color_target,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
 	half_target->set_name("Bloom Half Res");
 
@@ -42,6 +43,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		source_buffer->get_width() / 2,
 		source_buffer->get_height() / 2,
 		source_buffer->get_format(),
+		e_st_texture_usage::color_target,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
 	blur_target->set_name("Bloom Blur Target");
 
@@ -88,7 +90,7 @@ void st_bloom_render_pass::render(
 
 	context->draw(draw_call);
 
-	_blur_pass->render(context, params);
-
 	_pass->end(context);
+
+	_blur_pass->render(context, params);
 }

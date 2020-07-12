@@ -77,11 +77,12 @@ public:
 		uint32_t height,
 		uint32_t mip_count,
 		e_st_format format,
-		void* data,
+		e_st_texture_usage_flags usage,
 		vk::Image& resource);
 	void destroy_texture(vk::Image& resource);
 	void create_texture_view(class st_vk_texture* texture, vk::ImageView& resource);
 	void destroy_texture_view(vk::ImageView& resource);
+	void upload_texture(class st_vk_texture* texture, void* data);
 	void create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource);
 	void update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data);
 	void destroy_buffer(vk::Buffer& resource);

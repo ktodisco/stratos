@@ -198,10 +198,19 @@ void st_vk_render_context::create_texture(
 	uint32_t height,
 	uint32_t mip_count,
 	e_st_format format,
-	void* data,
+	e_st_texture_usage_flags usage,
 	vk::Image& resource)
 {
-	begin_loading();
+	vk::ImageUsageFlags flags;
+
+	if (usage & e_st_texture_usage::copy_source) flags |= vk::ImageUsageFlagBits::eTransferSrc;
+	if (usage & e_st_texture_usage::copy_dest) flags |= vk::ImageUsageFlagBits::eTransferDst;
+	if (usage & e_st_texture_usage::sampled) flags |= vk::ImageUsageFlagBits::eSampled;
+	if (usage & e_st_texture_usage::storage) flags |= vk::ImageUsageFlagBits::eStorage;
+	if (usage & e_st_texture_usage::color_target) flags |= vk::ImageUsageFlagBits::eColorAttachment;
+	if (usage & e_st_texture_usage::depth_target) flags |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+	if (usage & e_st_texture_usage::transient_target) flags |= vk::ImageUsageFlagBits::eTransientAttachment;
+	if (usage & e_st_texture_usage::input_target) flags |= vk::ImageUsageFlagBits::eInputAttachment;
 
 	vk::ImageCreateInfo create_info = vk::ImageCreateInfo()
 		.setArrayLayers(1)
@@ -209,7 +218,7 @@ void st_vk_render_context::create_texture(
 		.setFormat((vk::Format)format)
 		.setExtent(vk::Extent3D(width, height, 1))
 		.setMipLevels(mip_count)
-		.setUsage(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst)
+		.setUsage(flags)
 		.setInitialLayout(vk::ImageLayout::ePreinitialized)
 		.setTiling(vk::ImageTiling::eOptimal);
 
@@ -227,70 +236,6 @@ void st_vk_render_context::create_texture(
 	_device.allocateMemory(&allocate_info, nullptr, &memory);
 
 	_device.bindImageMemory(resource, memory, 0);
-
-	std::vector<vk::BufferImageCopy> regions;
-	uint64_t offset = 0;
-	for (int i = 0; i < mip_count; ++i)
-	{
-		uint32_t level_width = width >> i;
-		uint32_t level_height = height >> i;
-
-		size_t row_bytes;
-		size_t num_bytes;
-		get_surface_info(
-			level_width,
-			level_height,
-			format,
-			&num_bytes,
-			&row_bytes,
-			nullptr);
-
-		_command_buffer.updateBuffer(_upload_buffer, offset, num_bytes, reinterpret_cast<char*>(data) + offset);
-		offset += num_bytes;
-
-		vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
-			.setAspectMask(vk::ImageAspectFlagBits::eColor)
-			.setBaseArrayLayer(0)
-			.setLayerCount(1)
-			.setMipLevel(i);
-
-		vk::BufferImageCopy region = vk::BufferImageCopy()
-			.setBufferImageHeight(level_height)
-			.setBufferRowLength(row_bytes)
-			.setBufferOffset(offset)
-			.setImageExtent(vk::Extent3D(level_width, level_height, 1))
-			.setImageOffset(vk::Offset3D(0, 0, 0))
-			.setImageSubresource(subresource);
-
-		regions.push_back(region);
-	}
-
-	_command_buffer.copyBufferToImage(_upload_buffer, resource, vk::ImageLayout::eTransferDstOptimal, mip_count, regions.data());
-
-	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-		.setAspectMask(vk::ImageAspectFlagBits::eColor)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1)
-		.setBaseMipLevel(0)
-		.setLevelCount(mip_count);
-
-	vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
-		.setImage(resource)
-		.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-		.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-		.setSubresourceRange(range);
-	_command_buffer.pipelineBarrier(
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::DependencyFlags(),
-		0,
-		nullptr,
-		0,
-		nullptr,
-		1,
-		&barrier);
-
-	end_loading();
 }
 
 void st_vk_render_context::destroy_texture(vk::Image& resource)
@@ -319,6 +264,75 @@ void st_vk_render_context::create_texture_view(st_vk_texture* texture, vk::Image
 void st_vk_render_context::destroy_texture_view(vk::ImageView& resource)
 {
 	_device.destroyImageView(resource, nullptr);
+}
+
+void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
+{
+	begin_loading();
+
+	std::vector<vk::BufferImageCopy> regions;
+	uint64_t offset = 0;
+	for (int i = 0; i < texture->get_levels(); ++i)
+	{
+		uint32_t level_width = texture->get_width() >> i;
+		uint32_t level_height = texture->get_height() >> i;
+
+		size_t row_bytes;
+		size_t num_bytes;
+		get_surface_info(
+			level_width,
+			level_height,
+			texture->get_format(),
+			&num_bytes,
+			&row_bytes,
+			nullptr);
+
+		_command_buffer.updateBuffer(_upload_buffer, offset, num_bytes, reinterpret_cast<char*>(data) + offset);
+		offset += num_bytes;
+
+		vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
+			.setAspectMask(vk::ImageAspectFlagBits::eColor)
+			.setBaseArrayLayer(0)
+			.setLayerCount(1)
+			.setMipLevel(i);
+
+		vk::BufferImageCopy region = vk::BufferImageCopy()
+			.setBufferImageHeight(level_height)
+			.setBufferRowLength(row_bytes)
+			.setBufferOffset(offset)
+			.setImageExtent(vk::Extent3D(level_width, level_height, 1))
+			.setImageOffset(vk::Offset3D(0, 0, 0))
+			.setImageSubresource(subresource);
+
+		regions.push_back(region);
+	}
+
+	_command_buffer.copyBufferToImage(_upload_buffer, texture->get_resource(), vk::ImageLayout::eTransferDstOptimal, texture->get_levels(), regions.data());
+
+	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
+		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setBaseMipLevel(0)
+		.setLevelCount(texture->get_levels());
+
+	vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
+		.setImage(texture->get_resource())
+		.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+		.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+		.setSubresourceRange(range);
+	_command_buffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		&barrier);
+
+	end_loading();
 }
 
 void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource)
