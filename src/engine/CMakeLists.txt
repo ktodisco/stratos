@@ -44,8 +44,8 @@ link_directories ("${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty/assimp-4.1.0/lib/Rele
 # Vulkan headers:
 # TODO: This pre-installed path is not ideal.
 # Try avoiding the library link by calling vk::init.
-include_directories("C:/VulkanSDK/1.1.108.0/Include")
-link_directories ("C:/VulkanSDK/1.1.108.0/Lib")
+include_directories("C:/VulkanSDK/1.1.114.0/Include")
+link_directories ("C:/VulkanSDK/1.1.114.0/Lib")
 
 # ST framework:
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}")
