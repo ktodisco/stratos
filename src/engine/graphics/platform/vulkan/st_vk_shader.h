@@ -18,14 +18,14 @@
 class st_vk_shader
 {
 public:
-	st_vk_shader(const char* source, uint8_t type) {}
-	~st_vk_shader() {}
+	st_vk_shader(const char* source, uint8_t type);
+	~st_vk_shader();
 
-	/*ID3DBlob* get_vertex_blob() const { return _vs.Get(); }
-	ID3DBlob* get_pixel_blob() const { return _ps.Get(); }
-	ID3DBlob* get_domain_blob() const { return _ds.Get(); }
-	ID3DBlob* get_hull_blob() const { return _hs.Get(); }
-	ID3DBlob* get_geometry_blob() const { return _gs.Get(); }*/
+	const vk::ShaderModule& get_vertex_module() const { return _vs; }
+	const vk::ShaderModule& get_pixel_module() const { return _ps; }
+	const vk::ShaderModule& get_domain_module() const { return _ds; }
+	const vk::ShaderModule& get_hull_module() const { return _hs; }
+	const vk::ShaderModule& get_geometry_module() const { return _gs; }
 
 	bool has_vertex() const { return _type & st_shader_type_vertex; }
 	bool has_pixel() const { return _type & st_shader_type_pixel; }
@@ -34,11 +34,11 @@ public:
 	bool has_geometry() const { return _type & st_shader_type_geometry; }
 
 private:
-	/*Microsoft::WRL::ComPtr<ID3DBlob> _vs;
-	Microsoft::WRL::ComPtr<ID3DBlob> _ps;
-	Microsoft::WRL::ComPtr<ID3DBlob> _ds;
-	Microsoft::WRL::ComPtr<ID3DBlob> _hs;
-	Microsoft::WRL::ComPtr<ID3DBlob> _gs;*/
+	vk::ShaderModule _vs;
+	vk::ShaderModule _ps;
+	vk::ShaderModule _ds;
+	vk::ShaderModule _hs;
+	vk::ShaderModule _gs;
 
 	uint8_t _type = 0;
 };
