@@ -6,7 +6,7 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#define VULKAN_HPP_DISABLE_ENHANCED_MODE
+//#define VULKAN_HPP_DISABLE_ENHANCED_MODE
 #include <vulkan/vulkan.hpp>
 
 #define GLUEME(x, y) x##y

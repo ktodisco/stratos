@@ -39,7 +39,7 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	// Obtain the list of physical devices.
 	uint32_t device_count;
-	VK_VALIDATE(_instance.enumeratePhysicalDevices(&device_count, nullptr));
+	VK_VALIDATE(_instance.enumeratePhysicalDevices(&device_count, static_cast<vk::PhysicalDevice*>(nullptr)));
 
 	std::vector<vk::PhysicalDevice> devices;
 	devices.resize(device_count);
@@ -77,7 +77,7 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	// For the physical device we chose, query the queue families it supports.
 	uint32_t queue_family_count;
-	_gpu.getQueueFamilyProperties(&queue_family_count, nullptr);
+	_gpu.getQueueFamilyProperties(&queue_family_count, static_cast<vk::QueueFamilyProperties*>(nullptr));
 
 	std::vector<vk::QueueFamilyProperties> queue_family_properties;
 	queue_family_properties.resize(queue_family_count);
