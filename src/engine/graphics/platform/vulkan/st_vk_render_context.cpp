@@ -19,7 +19,7 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 {
 	std::vector<const char*> layer_names;
 #if _DEBUG
-	layer_names.push_back("VK_LAYER_KHRONOS_validation");
+	//layer_names.push_back("VK_LAYER_KHRONOS_validation");
 #endif
 
 	// Create the per-application instance object.
@@ -176,7 +176,7 @@ void st_vk_render_context::begin_frame()
 
 void st_vk_render_context::end_frame()
 {
-	VK_VALIDATE(_command_buffer.end());
+	_command_buffer.end();
 }
 
 void st_vk_render_context::swap()
