@@ -18,8 +18,27 @@ st_vk_render_context* st_vk_render_context::_this = nullptr;
 st_vk_render_context::st_vk_render_context(const class st_window* window)
 {
 	std::vector<const char*> layer_names;
+
 #if _DEBUG
-	//layer_names.push_back("VK_LAYER_KHRONOS_validation");
+	// List all the layers available in the instance.
+	uint32_t layer_count;
+	VK_VALIDATE(vk::enumerateInstanceLayerProperties(&layer_count, static_cast<vk::LayerProperties*>(nullptr)));
+
+	std::vector<vk::LayerProperties> layers;
+	layers.resize(layer_count);
+	VK_VALIDATE(vk::enumerateInstanceLayerProperties(&layer_count, layers.data()));
+
+	for (auto& layer : layers)
+	{
+		std::cout << "Layer: " << layer.layerName << std::endl;
+		std::cout << "\t" << layer.description << std::endl;
+
+		// Naively enable all validation layers.
+		if (strstr(layer.layerName, "validation") != nullptr)
+		{
+			layer_names.push_back(layer.layerName);
+		}
+	}
 #endif
 
 	// Create the per-application instance object.
@@ -35,7 +54,6 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 		.setEnabledExtensionCount(0);
 
 	VK_VALIDATE(vk::createInstance(&create_info, nullptr, &_instance));
-	
 
 	// Obtain the list of physical devices.
 	uint32_t device_count;
