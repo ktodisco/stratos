@@ -263,8 +263,21 @@ void st_vk_render_context::destroy_texture(vk::Image& resource)
 
 void st_vk_render_context::create_texture_view(st_vk_texture* texture, vk::ImageView& resource)
 {
+	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+
+	if (texture->get_format() == st_format_d16_unorm ||
+		texture->get_format() == st_format_d32_float)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth;
+	}
+	else if (texture->get_format() == st_format_d24_unorm_s8_uint)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth |
+			vk::ImageAspectFlagBits::eStencil;
+	}
+
 	vk::ImageSubresourceRange subresource_range = vk::ImageSubresourceRange()
-		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setAspectMask(aspect)
 		.setBaseMipLevel(0)
 		.setLevelCount(texture->get_levels())
 		.setBaseArrayLayer(0)

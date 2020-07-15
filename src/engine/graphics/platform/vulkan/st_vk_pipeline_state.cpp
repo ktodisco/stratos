@@ -27,31 +27,36 @@ st_vk_pipeline_state::st_vk_pipeline_state(
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eVertex)
-			.setModule(desc._shader->get_vertex_module());
+			.setModule(desc._shader->get_vertex_module())
+			.setPName("vs_main");
 	}
 	if (desc._shader->has_pixel())
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eFragment)
-			.setModule(desc._shader->get_pixel_module());
+			.setModule(desc._shader->get_pixel_module())
+			.setPName("ps_main");
 	}
 	if (desc._shader->has_domain())
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eTessellationEvaluation)
-			.setModule(desc._shader->get_domain_module());
+			.setModule(desc._shader->get_domain_module())
+			.setPName("ds_main");
 	}
 	if (desc._shader->has_hull())
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eTessellationControl)
-			.setModule(desc._shader->get_hull_module());
+			.setModule(desc._shader->get_hull_module())
+			.setPName("hs_main");
 	}
 	if (desc._shader->has_geometry())
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eGeometry)
-			.setModule(desc._shader->get_geometry_module());
+			.setModule(desc._shader->get_geometry_module())
+			.setPName("gs_main");
 	}
 
 	vk::PipelineInputAssemblyStateCreateInfo input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
@@ -73,7 +78,8 @@ st_vk_pipeline_state::st_vk_pipeline_state(
 		.setFrontFace(vk::FrontFace(desc._rasterizer_desc._winding_order_clockwise))
 		.setDepthClampEnable(false)
 		.setRasterizerDiscardEnable(false)
-		.setDepthBiasEnable(false);
+		.setDepthBiasEnable(false)
+		.setLineWidth(1.0f);
 
 	vk::PipelineMultisampleStateCreateInfo multisample = vk::PipelineMultisampleStateCreateInfo()
 		.setAlphaToCoverageEnable(desc._blend_desc._alpha_to_coverage)
