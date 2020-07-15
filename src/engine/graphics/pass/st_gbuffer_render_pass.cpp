@@ -24,6 +24,12 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	st_render_texture* third_buffer,
 	st_render_texture* depth_buffer)
 {
+	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
+	_pass = std::make_unique<st_render_pass>(
+		3,
+		targets,
+		depth_buffer);
+
 	_vertex_format = std::make_unique<st_vertex_format>();
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
 	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
@@ -47,7 +53,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	gbuffer_state_desc._render_target_formats[2] = third_buffer->get_format();
 	gbuffer_state_desc._depth_stencil_format = depth_buffer->get_format();
 
-	_gbuffer_state = std::make_unique<st_pipeline_state>(gbuffer_state_desc);
+	_gbuffer_state = std::make_unique<st_pipeline_state>(gbuffer_state_desc, _pass.get());
 
 	// TODO: See comment in header regarding multiple materials in a single render pass.
 	_default_parallax_occlusion = std::make_unique<st_parallax_occlusion_material>(
@@ -64,13 +70,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	parallax_occlusion_state_desc._render_target_formats[2] = third_buffer->get_format();
 	parallax_occlusion_state_desc._depth_stencil_format = depth_buffer->get_format();
 
-	_parallax_occlusion_state = std::make_unique<st_pipeline_state>(parallax_occlusion_state_desc);
-
-	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
-	_pass = std::make_unique<st_render_pass>(
-		3,
-		targets,
-		depth_buffer);
+	_parallax_occlusion_state = std::make_unique<st_pipeline_state>(parallax_occlusion_state_desc, _pass.get());
 }
 
 st_gbuffer_render_pass::~st_gbuffer_render_pass()

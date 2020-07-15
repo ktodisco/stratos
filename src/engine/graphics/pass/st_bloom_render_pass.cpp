@@ -20,17 +20,6 @@ st_bloom_render_pass::st_bloom_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
-	_material = std::make_unique<st_bloom_material>(source_buffer);
-
-	st_pipeline_state_desc bloom_state_desc;
-	_material->get_pipeline_state(&bloom_state_desc);
-
-	bloom_state_desc._vertex_format = _vertex_format.get();
-	bloom_state_desc._render_target_count = 1;
-	bloom_state_desc._render_target_formats[0] = target_buffer->get_format();
-
-	_pipeline_state = std::make_unique<st_pipeline_state>(bloom_state_desc);
-
 	std::unique_ptr<st_render_texture> half_target = std::make_unique<st_render_texture>(
 		source_buffer->get_width() / 2,
 		source_buffer->get_height() / 2,
@@ -52,6 +41,17 @@ st_bloom_render_pass::st_bloom_render_pass(
 		1,
 		targets,
 		nullptr);
+
+	_material = std::make_unique<st_bloom_material>(source_buffer);
+
+	st_pipeline_state_desc bloom_state_desc;
+	_material->get_pipeline_state(&bloom_state_desc);
+
+	bloom_state_desc._vertex_format = _vertex_format.get();
+	bloom_state_desc._render_target_count = 1;
+	bloom_state_desc._render_target_formats[0] = target_buffer->get_format();
+
+	_pipeline_state = std::make_unique<st_pipeline_state>(bloom_state_desc, _pass.get());
 
 	// Set up the separable blur pass.
 	_blur_pass = std::make_unique<st_gaussian_blur_render_pass>(

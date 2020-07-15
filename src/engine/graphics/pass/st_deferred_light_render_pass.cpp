@@ -50,6 +50,12 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		depth_buffer,
 		_constant_buffer.get());
 
+	st_render_texture* targets[] = { output_buffer };
+	_pass = std::make_unique<st_render_pass>(
+		1,
+		targets,
+		output_depth);
+
 	st_pipeline_state_desc deferred_light_state_desc;
 	_material->get_pipeline_state(&deferred_light_state_desc);
 
@@ -58,13 +64,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	deferred_light_state_desc._render_target_formats[0] = output_buffer->get_format();
 	deferred_light_state_desc._depth_stencil_format = output_depth->get_format();
 
-	_pipeline_state = std::make_unique<st_pipeline_state>(deferred_light_state_desc);
-
-	st_render_texture* targets[] = { output_buffer };
-	_pass = std::make_unique<st_render_pass>(
-		1,
-		targets,
-		output_depth);
+	_pipeline_state = std::make_unique<st_pipeline_state>(deferred_light_state_desc, _pass.get());
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()

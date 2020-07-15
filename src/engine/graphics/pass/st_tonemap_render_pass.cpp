@@ -19,6 +19,12 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
+	st_render_texture* targets[] = { target_buffer };
+	_pass = std::make_unique<st_render_pass>(
+		1,
+		targets,
+		nullptr);
+
 	_material = std::make_unique<st_tonemap_material>(source_buffer);
 
 	st_pipeline_state_desc tonemap_state_desc;
@@ -28,13 +34,7 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 	tonemap_state_desc._render_target_count = 1;
 	tonemap_state_desc._render_target_formats[0] = target_buffer->get_format();
 
-	_pipeline_state = std::make_unique<st_pipeline_state>(tonemap_state_desc);
-
-	st_render_texture* targets[] = { target_buffer };
-	_pass = std::make_unique<st_render_pass>(
-		1,
-		targets,
-		nullptr);
+	_pipeline_state = std::make_unique<st_pipeline_state>(tonemap_state_desc, _pass.get());
 }
 
 st_tonemap_render_pass::~st_tonemap_render_pass()

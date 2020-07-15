@@ -29,6 +29,8 @@ typedef st_vk_pipeline_state st_platform_pipeline_state;
 class st_pipeline_state : public st_platform_pipeline_state
 {
 public:
-	st_pipeline_state(const struct st_pipeline_state_desc& desc) :
-		st_platform_pipeline_state(desc) {}
+	st_pipeline_state(
+		const struct st_pipeline_state_desc& desc,
+		const class st_render_pass* render_pass) :
+		st_platform_pipeline_state(desc, render_pass) {}
 };
