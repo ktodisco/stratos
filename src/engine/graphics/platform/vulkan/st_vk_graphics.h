@@ -211,8 +211,8 @@ enum e_st_logic_op
 
 enum e_st_fill_mode
 {
-	st_fill_mode_wireframe = 0,
-	st_fill_mode_solid = 1,
+	st_fill_mode_wireframe = vk::PolygonMode::eLine,
+	st_fill_mode_solid = vk::PolygonMode::eFill,
 };
 
 enum e_st_cull_mode

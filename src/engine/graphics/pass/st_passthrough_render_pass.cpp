@@ -17,6 +17,12 @@
 st_passthrough_render_pass::st_passthrough_render_pass(
 	st_render_texture* source_buffer)
 {
+	// TODO: How does Vulkan handle a double-buffer backbuffer as an attachment?
+	_pass = std::make_unique<st_render_pass>(
+		0,
+		nullptr,
+		nullptr);
+
 	// Set up the fullscreen material and state.
 	_material = std::make_unique<st_fullscreen_material>(source_buffer);
 
@@ -27,7 +33,7 @@ st_passthrough_render_pass::st_passthrough_render_pass(
 	fullscreen_state_desc._render_target_count = 1;
 	fullscreen_state_desc._render_target_formats[0] = source_buffer->get_format();
 
-	_pipeline_state = std::make_unique<st_pipeline_state>(fullscreen_state_desc);
+	_pipeline_state = std::make_unique<st_pipeline_state>(fullscreen_state_desc, _pass.get());
 }
 
 st_passthrough_render_pass::~st_passthrough_render_pass()

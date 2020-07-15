@@ -24,9 +24,13 @@ public:
 	void begin(class st_render_context* context);
 	void end(class st_render_context* context);
 
+	const vk::RenderPass& get() const { return _render_pass; }
+	const vk::Viewport& get_viewport() const { return _viewport; }
+
 private:
 	vk::RenderPass _render_pass;
 	std::unique_ptr<class st_vk_framebuffer> _framebuffer;
+	vk::Viewport _viewport;
 };
 
 #endif

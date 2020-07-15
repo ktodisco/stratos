@@ -25,7 +25,7 @@ void load_shader(vk::Device* device, std::string file_name, vk::ShaderModule& sh
 		.setCodeSize(shader_blob.size())
 		.setPCode(reinterpret_cast<uint32_t*>(shader_blob.data()));
 
-	device->createShaderModule(&create_info, nullptr, &shader);
+	VK_VALIDATE(device->createShaderModule(&create_info, nullptr, &shader));
 }
 
 st_vk_shader::st_vk_shader(const char* source, uint8_t type)

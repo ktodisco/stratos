@@ -23,6 +23,16 @@ st_vk_render_pass::st_vk_render_pass(
 {
 	vk::Device* device = st_vk_render_context::get()->get_device();
 
+	// Naively, create the viewport from the first target.
+	if (count > 0)
+	{
+		_viewport = vk::Viewport()
+			.setX(0)
+			.setY(0)
+			.setWidth(targets[0]->get_width())
+			.setHeight(targets[0]->get_height());
+	}
+
 	std::vector<vk::AttachmentDescription> attachment_descs;
 	std::vector<vk::AttachmentReference> attachment_refs;
 	for (int i = 0; i < count; ++i)
@@ -73,7 +83,7 @@ st_vk_render_pass::st_vk_render_pass(
 		.setPSubpasses(&subpass_desc)
 		.setDependencyCount(0);
 
-	device->createRenderPass(&pass_info, nullptr, &_render_pass);
+	VK_VALIDATE(device->createRenderPass(&pass_info, nullptr, &_render_pass));
 
 	_framebuffer = std::make_unique<st_vk_framebuffer>(
 		_render_pass,

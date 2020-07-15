@@ -6,6 +6,8 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <graphics/st_render_pass.h>
+
 #include <memory>
 #include <vector>
 
@@ -34,4 +36,6 @@ private:
 	std::unique_ptr<class st_pipeline_state> _font_state = nullptr;
 
 	std::unique_ptr<class st_vertex_format> _vertex_format = nullptr;
+
+	std::unique_ptr<class st_render_pass> _pass = nullptr;
 };
