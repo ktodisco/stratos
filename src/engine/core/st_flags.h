@@ -3,6 +3,14 @@
 #include <cstdint>
 #include <limits>
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 #define ST_ENUM_FLAG_OPS(Enum, Type)				\
 	inline Type operator|(Enum bit0, Enum bit1 ) { return Type(bit0) | bit1; }
 

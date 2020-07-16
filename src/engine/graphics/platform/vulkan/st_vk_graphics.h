@@ -8,10 +8,9 @@
 
 #define VULKAN_HPP_DISABLE_ENHANCED_MODE
 #define VULKAN_HPP_DISABLE_IMPLICIT_RESULT_VALUE_CAST
-#include <vulkan/vulkan.hpp>
-
+#define VK_USE_PLATFORM_WIN32_KHR
 #include <windows.h>
-#include <vulkan/vulkan_win32.h>
+#include <vulkan/vulkan.hpp>
 
 // Ugh. Windows.
 #undef min

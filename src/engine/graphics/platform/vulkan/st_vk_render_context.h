@@ -10,9 +10,12 @@
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
+#include <graphics/st_render_texture.h>
+
 #include <math/st_vec4f.h>
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -90,6 +93,7 @@ public:
 	vk::Device* get_device() { return std::addressof(_device); }
 	vk::CommandBuffer* get_command_buffer() { return std::addressof(_command_buffer); }
 	vk::PipelineLayout* get_layout() { return std::addressof(_pipeline_layout); }
+	const st_render_texture* get_present_target() { return _present_target.get(); }
 
 	/*void create_graphics_pipeline_state(
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,
@@ -132,6 +136,16 @@ public:
 private:
 
 	static const uint32_t k_backbuffer_count = 2;
+
+	vk::SurfaceKHR _window_surface;
+	vk::Image _backbuffers[k_backbuffer_count];
+	vk::SwapchainKHR _swap_chain;
+
+	// This texture is used by the application as a proxy for the double-buffered backbuffer.
+	// This prevents the implementation from needing to create two framebuffer objects for
+	// each of the backbuffer images and having the double buffering bleed into the first-
+	// class render passes, especially depending on which ones render to the backbuffer.
+	std::unique_ptr<class st_render_texture> _present_target;
 
 	// Maintain a global instance.
 	static st_vk_render_context* _this;
