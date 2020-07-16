@@ -10,19 +10,21 @@
 
 #include <graphics/platform/vulkan/st_vk_texture.h>
 
+#include <system/st_window.h>
+
 #include <iostream>
 #include <vector>
 
 st_vk_render_context* st_vk_render_context::_this = nullptr;
 
-st_vk_render_context::st_vk_render_context(const class st_window* window)
+st_vk_render_context::st_vk_render_context(const st_window* window)
 {
 	std::vector<const char*> layer_names;
+	std::vector<const char*> extension_names;
 
-#if _DEBUG
 	// List all the layers available in the instance.
 	uint32_t layer_count;
-	VK_VALIDATE(vk::enumerateInstanceLayerProperties(&layer_count, static_cast<vk::LayerProperties*>(nullptr)));
+	VK_VALIDATE(vk::enumerateInstanceLayerProperties(&layer_count, nullptr));
 
 	std::vector<vk::LayerProperties> layers;
 	layers.resize(layer_count);
@@ -30,8 +32,10 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	for (auto& layer : layers)
 	{
-		std::cout << "Layer: " << layer.layerName << std::endl;
+#if _DEBUG
+		std::cout << "Layer: " << layer.layerName << "\tImplementation: " << layer.implementationVersion << std::endl;
 		std::cout << "\t" << layer.description << std::endl;
+#endif
 
 		// Naively enable all validation layers.
 		if (strstr(layer.layerName, "validation") != nullptr)
@@ -39,7 +43,25 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 			layer_names.push_back(layer.layerName);
 		}
 	}
+
+	// List all the extensions available in the instance.
+	uint32_t extension_count;
+	VK_VALIDATE(vk::enumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr));
+
+	std::vector<vk::ExtensionProperties> extensions;
+	extensions.resize(extension_count);
+	VK_VALIDATE(vk::enumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data()));
+
+	for (auto& extension : extensions)
+	{
+#if _DEBUG
+		std::cout << "Instance Extension: " << extension.extensionName <<
+			"\tSpec: " << extension.specVersion << std::endl;
 #endif
+
+		// Naively enable all instance extensions.
+		extension_names.push_back(extension.extensionName);
+	}
 
 	// Create the per-application instance object.
 	auto app_info = vk::ApplicationInfo()
@@ -51,13 +73,14 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 		.setPApplicationInfo(&app_info)
 		.setEnabledLayerCount(layer_names.size())
 		.setPpEnabledLayerNames(layer_names.data())
-		.setEnabledExtensionCount(0);
+		.setEnabledExtensionCount(extension_names.size())
+		.setPpEnabledExtensionNames(extension_names.data());
 
 	VK_VALIDATE(vk::createInstance(&create_info, nullptr, &_instance));
 
 	// Obtain the list of physical devices.
 	uint32_t device_count;
-	VK_VALIDATE(_instance.enumeratePhysicalDevices(&device_count, static_cast<vk::PhysicalDevice*>(nullptr)));
+	VK_VALIDATE(_instance.enumeratePhysicalDevices(&device_count, nullptr));
 
 	std::vector<vk::PhysicalDevice> devices;
 	devices.resize(device_count);
@@ -79,6 +102,41 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 		}
 	}
 
+	layer_names.clear();
+	extension_names.clear();
+
+	// List all the device layers available.
+	VK_VALIDATE(_gpu.enumerateDeviceLayerProperties(&layer_count, nullptr));
+
+	layers.clear();
+	layers.resize(layer_count);
+	VK_VALIDATE(_gpu.enumerateDeviceLayerProperties(&layer_count, layers.data()));
+
+	for (auto& layer : layers)
+	{
+#if _DEBUG
+		std::cout << "Device Layer: " << layer.layerName << "\tImplementation: " << layer.implementationVersion << std::endl;
+		std::cout << "\t" << layer.description << std::endl;
+#endif
+	}
+
+	// List all the device extensions available.
+	VK_VALIDATE(_gpu.enumerateDeviceExtensionProperties(nullptr, &extension_count, nullptr));
+
+	extensions.clear();
+	extensions.resize(extension_count);
+	VK_VALIDATE(_gpu.enumerateDeviceExtensionProperties(nullptr, &extension_count, extensions.data()));
+
+	for (auto& extension : extensions)
+	{
+#if _DEBUG
+		std::cout << "Device Extension: " << extension.extensionName <<
+			"\tSpec: " << extension.specVersion << std::endl;
+#endif
+
+		extension_names.push_back(extension.extensionName);
+	}
+
 	// Query the device memory properties.
 	vk::PhysicalDeviceMemoryProperties memory_props;
 	_gpu.getMemoryProperties(&memory_props);
@@ -95,7 +153,7 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	// For the physical device we chose, query the queue families it supports.
 	uint32_t queue_family_count;
-	_gpu.getQueueFamilyProperties(&queue_family_count, static_cast<vk::QueueFamilyProperties*>(nullptr));
+	_gpu.getQueueFamilyProperties(&queue_family_count, nullptr);
 
 	std::vector<vk::QueueFamilyProperties> queue_family_properties;
 	queue_family_properties.resize(queue_family_count);
@@ -128,8 +186,8 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 		.setPQueueCreateInfos(&queues)
 		.setEnabledLayerCount(0)
 		.setPpEnabledLayerNames(nullptr)
-		.setEnabledExtensionCount(0)
-		.setPpEnabledExtensionNames(nullptr)
+		.setEnabledExtensionCount(extension_names.size())
+		.setPpEnabledExtensionNames(extension_names.data())
 		.setPEnabledFeatures(nullptr);
 
 	VK_VALIDATE(_gpu.createDevice(&device_info, nullptr, &_device));
@@ -154,7 +212,38 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 	VK_VALIDATE(_device.createFence(&fence_info, nullptr, &_fence));
 
 	// Create the swap chain.
-	//vk::Win32Sur
+	vk::Win32SurfaceCreateInfoKHR win32_surface_info = vk::Win32SurfaceCreateInfoKHR()
+		.setHinstance(GetModuleHandle(NULL))
+		.setHwnd(window->get_window_handle());
+
+	VK_VALIDATE(_instance.createWin32SurfaceKHR(&win32_surface_info, nullptr, &_window_surface));
+
+	vk::Bool32 surface_support = false;
+	VK_VALIDATE(_gpu.getSurfaceSupportKHR(_queue_family_index, _window_surface, &surface_support));
+	assert(surface_support);
+
+	vk::SwapchainCreateInfoKHR swap_chain_info = vk::SwapchainCreateInfoKHR()
+		.setSurface(_window_surface)
+		.setMinImageCount(k_backbuffer_count)
+		.setImageFormat(vk::Format::eR8G8B8A8Srgb)
+		.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear)
+		.setImageExtent(vk::Extent2D(window->get_width(), window->get_height()))
+		.setImageArrayLayers(1)
+		.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+		.setImageSharingMode(vk::SharingMode::eExclusive)
+		.setQueueFamilyIndexCount(1)
+		.setPQueueFamilyIndices(&_queue_family_index)
+		.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity)
+		.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
+		.setPresentMode(vk::PresentModeKHR::eImmediate)
+		.setClipped(false);
+
+	VK_VALIDATE(_device.createSwapchainKHR(&swap_chain_info, nullptr, &_swap_chain));
+
+	uint32_t backbuffer_count;
+	VK_VALIDATE(_device.getSwapchainImagesKHR(_swap_chain, &backbuffer_count, nullptr));
+	assert(backbuffer_count = k_backbuffer_count);
+	VK_VALIDATE(_device.getSwapchainImagesKHR(_swap_chain, &backbuffer_count, &_backbuffers[0]));
 
 	// Create the generic upload buffer.
 	create_buffer(16 * 1024 * 1024, e_st_buffer_usage::transfer_source | e_st_buffer_usage::transfer_dest, _upload_buffer);
@@ -195,16 +284,28 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	VK_VALIDATE(_device.createPipelineLayout(&pipeline_layout_info, nullptr, &_pipeline_layout));
 
-	// Create the descriptor pool.
-
+	// TODO: Create the descriptor pool.
 
 	_this = this;
+
+	// Create the faux backbuffer target.
+	_present_target = std::make_unique<st_render_texture>(
+		window->get_width(),
+		window->get_height(),
+		st_format_r8g8b8a8_unorm,
+		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
+		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
 }
 
 st_vk_render_context::~st_vk_render_context()
 {
 	_queue.waitIdle();
 	_device.waitIdle();
+
+	_present_target = nullptr;
+
+	_device.destroySwapchainKHR(_swap_chain, nullptr);
+	_instance.destroySurfaceKHR(_window_surface, nullptr);
 
 	_device.destroyPipelineLayout(_pipeline_layout, nullptr);
 	_device.destroyDescriptorSetLayout(_descriptor_layout, nullptr);
