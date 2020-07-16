@@ -155,6 +155,45 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	create_buffer(16 * 1024 * 1024, e_st_buffer_usage::transfer_source | e_st_buffer_usage::transfer_dest, _upload_buffer);
 
+	// Set up the descriptor set layout. This is akin to the root signature in D3D12.
+	std::vector<vk::DescriptorSetLayoutBinding> bindings;
+	bindings.push_back(vk::DescriptorSetLayoutBinding()
+		.setBinding(0)
+		.setDescriptorCount(4)
+		.setDescriptorType(vk::DescriptorType::eSampledImage)
+		.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+	bindings.push_back(vk::DescriptorSetLayoutBinding()
+		.setBinding(0)
+		.setDescriptorCount(4)
+		.setDescriptorType(vk::DescriptorType::eSampler)
+		.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+	bindings.push_back(vk::DescriptorSetLayoutBinding()
+		.setBinding(0)
+		.setDescriptorCount(2)
+		.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+		.setStageFlags(vk::ShaderStageFlagBits::eAll));
+	bindings.push_back(vk::DescriptorSetLayoutBinding()
+		.setBinding(1)
+		.setDescriptorCount(1)
+		.setDescriptorType(vk::DescriptorType::eStorageBuffer)
+		.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+
+	vk::DescriptorSetLayoutCreateInfo layout_info = vk::DescriptorSetLayoutCreateInfo()
+		.setBindingCount(4)
+		.setPBindings(bindings.data());
+
+	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_info, nullptr, &_descriptor_layout));
+
+	vk::PipelineLayoutCreateInfo pipeline_layout_info = vk::PipelineLayoutCreateInfo()
+		.setSetLayoutCount(1)
+		.setPSetLayouts(&_descriptor_layout)
+		.setPushConstantRangeCount(0);
+
+	VK_VALIDATE(_device.createPipelineLayout(&pipeline_layout_info, nullptr, &_pipeline_layout));
+
+	// Create the descriptor pool.
+
+
 	_this = this;
 }
 
@@ -163,6 +202,8 @@ st_vk_render_context::~st_vk_render_context()
 	_queue.waitIdle();
 	_device.waitIdle();
 
+	_device.destroyPipelineLayout(_pipeline_layout, nullptr);
+	_device.destroyDescriptorSetLayout(_descriptor_layout, nullptr);
 	_device.destroyBuffer(_upload_buffer, nullptr);
 	_device.destroyFence(_fence, nullptr);
 	_device.freeCommandBuffers(_command_pool, 1, &_command_buffer);
