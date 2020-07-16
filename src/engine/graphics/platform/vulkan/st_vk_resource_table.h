@@ -15,6 +15,14 @@
 #include <cstdint>
 #include <vector>
 
+// For descriptors, I need:
+// a layout.  the layout is determined by the order and binding locations of the resources
+//	this is actually most akin to the root signature definition in the dx12 layer
+//	could define these statically
+// a descriptor pool to allocate descriptor sets from
+// a descriptor set created using the corresponding layout and allocated from the pool
+// a call to copy or write descriptors to the set
+
 class st_vk_resource_table
 {
 public:

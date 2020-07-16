@@ -141,7 +141,8 @@ st_vk_pipeline_state::st_vk_pipeline_state(
 		.setPMultisampleState(&multisample)
 		.setPDepthStencilState(&depth_stencil)
 		.setPColorBlendState(&color_blend)
-		.setSubpass(0);
+		.setSubpass(0)
+		.setLayout(*st_vk_render_context::get()->get_layout());
 
 	vk::Device* device = st_vk_render_context::get()->get_device();
 

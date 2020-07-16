@@ -89,6 +89,7 @@ public:
 
 	vk::Device* get_device() { return std::addressof(_device); }
 	vk::CommandBuffer* get_command_buffer() { return std::addressof(_command_buffer); }
+	vk::PipelineLayout* get_layout() { return std::addressof(_pipeline_layout); }
 
 	/*void create_graphics_pipeline_state(
 		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,
@@ -150,6 +151,10 @@ private:
 	vk::Buffer _upload_buffer;
 
 	uint32_t _queue_family_index = UINT_MAX;
+
+	vk::DescriptorSetLayout _descriptor_layout;
+	vk::PipelineLayout _pipeline_layout;
+	vk::DescriptorPool _descriptor_pool;
 
 	/*D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissor_rect;
