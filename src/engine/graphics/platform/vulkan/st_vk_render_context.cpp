@@ -272,20 +272,53 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		.setDescriptorType(vk::DescriptorType::eStorageBuffer)
 		.setStageFlags(vk::ShaderStageFlagBits::eFragment));
 
-	vk::DescriptorSetLayoutCreateInfo layout_info = vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(4)
-		.setPBindings(bindings.data());
+	std::vector<vk::DescriptorSetLayoutCreateInfo> layout_infos;
+	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+		.setBindingCount(1)
+		.setPBindings(bindings.data()));
+	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+		.setBindingCount(1)
+		.setPBindings(&bindings.data()[1]));
+	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+		.setBindingCount(1)
+		.setPBindings(&bindings.data()[2]));
+	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+		.setBindingCount(1)
+		.setPBindings(&bindings.data()[3]));
 
-	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_info, nullptr, &_descriptor_layout));
+	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[0], nullptr, &_descriptor_layouts[0]));
+	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[1], nullptr, &_descriptor_layouts[1]));
+	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[2], nullptr, &_descriptor_layouts[2]));
+	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[3], nullptr, &_descriptor_layouts[3]));
 
 	vk::PipelineLayoutCreateInfo pipeline_layout_info = vk::PipelineLayoutCreateInfo()
-		.setSetLayoutCount(1)
-		.setPSetLayouts(&_descriptor_layout)
+		.setSetLayoutCount(4)
+		.setPSetLayouts(&_descriptor_layouts[0])
 		.setPushConstantRangeCount(0);
 
 	VK_VALIDATE(_device.createPipelineLayout(&pipeline_layout_info, nullptr, &_pipeline_layout));
 
-	// TODO: Create the descriptor pool.
+	// Create the descriptor pool.
+	std::vector<vk::DescriptorPoolSize> pool_sizes;
+	pool_sizes.push_back(vk::DescriptorPoolSize()
+		.setType(vk::DescriptorType::eUniformBuffer)
+		.setDescriptorCount(32));
+	pool_sizes.push_back(vk::DescriptorPoolSize()
+		.setType(vk::DescriptorType::eSampledImage)
+		.setDescriptorCount(64));
+	pool_sizes.push_back(vk::DescriptorPoolSize()
+		.setType(vk::DescriptorType::eSampler)
+		.setDescriptorCount(4));
+	pool_sizes.push_back(vk::DescriptorPoolSize()
+		.setType(vk::DescriptorType::eStorageBuffer)
+		.setDescriptorCount(16));
+
+	vk::DescriptorPoolCreateInfo pool_info = vk::DescriptorPoolCreateInfo()
+		.setMaxSets(1024)
+		.setPoolSizeCount(pool_sizes.size())
+		.setPPoolSizes(pool_sizes.data());
+
+	VK_VALIDATE(_device.createDescriptorPool(&pool_info, nullptr, &_descriptor_pool));
 
 	_this = this;
 
@@ -308,8 +341,12 @@ st_vk_render_context::~st_vk_render_context()
 	_device.destroySwapchainKHR(_swap_chain, nullptr);
 	_instance.destroySurfaceKHR(_window_surface, nullptr);
 
+	_device.destroyDescriptorPool(_descriptor_pool, nullptr);
 	_device.destroyPipelineLayout(_pipeline_layout, nullptr);
-	_device.destroyDescriptorSetLayout(_descriptor_layout, nullptr);
+	_device.destroyDescriptorSetLayout(_descriptor_layouts[0], nullptr);
+	_device.destroyDescriptorSetLayout(_descriptor_layouts[1], nullptr);
+	_device.destroyDescriptorSetLayout(_descriptor_layouts[2], nullptr);
+	_device.destroyDescriptorSetLayout(_descriptor_layouts[3], nullptr);
 	_device.destroyBuffer(_upload_buffer, nullptr);
 	_device.destroyFence(_fence, nullptr);
 	_device.destroyFence(_acquire_fence, nullptr);
