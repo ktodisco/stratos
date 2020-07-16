@@ -59,8 +59,8 @@ public:
 	void draw(const struct st_dynamic_drawcall& drawcall) {}
 
 	// TODO: These are temporary and a generic solution is needed.
-	void transition_backbuffer_to_target() {}
-	void transition_backbuffer_to_present() {}
+	void transition_backbuffer_to_target();
+	void transition_backbuffer_to_present();
 
 	/*void transition_targets(
 		uint32_t count,
@@ -160,6 +160,7 @@ private:
 	vk::CommandPool _command_pool;
 	vk::CommandBuffer _command_buffer;
 
+	vk::Fence _acquire_fence;
 	vk::Fence _fence;
 
 	vk::Buffer _upload_buffer;

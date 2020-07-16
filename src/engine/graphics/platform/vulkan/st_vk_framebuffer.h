@@ -19,8 +19,8 @@ public:
 	st_vk_framebuffer(
 		const vk::RenderPass& pass,
 		uint32_t count,
-		class st_render_texture** targets,
-		class st_render_texture* depth_stencil);
+		const class st_render_texture** targets,
+		const class st_render_texture* depth_stencil);
 	~st_vk_framebuffer();
 
 	const vk::Framebuffer& get() const { return _framebuffer; }

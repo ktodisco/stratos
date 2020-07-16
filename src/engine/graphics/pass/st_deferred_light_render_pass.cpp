@@ -50,7 +50,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		depth_buffer,
 		_constant_buffer.get());
 
-	st_render_texture* targets[] = { output_buffer };
+	const st_render_texture* targets[] = { output_buffer };
 	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,

@@ -36,7 +36,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
 	blur_target->set_name("Bloom Blur Target");
 
-	st_render_texture* targets[] = { half_target.get() };
+	const st_render_texture* targets[] = { half_target.get() };
 	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,
