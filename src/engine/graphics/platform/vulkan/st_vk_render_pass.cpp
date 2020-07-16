@@ -18,8 +18,8 @@
 
 st_vk_render_pass::st_vk_render_pass(
 	uint32_t count,
-	class st_render_texture** targets,
-	class st_render_texture* depth_stencil)
+	const st_render_texture** targets,
+	const st_render_texture* depth_stencil)
 {
 	vk::Device* device = st_vk_render_context::get()->get_device();
 

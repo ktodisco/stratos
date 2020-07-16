@@ -18,8 +18,8 @@
 st_vk_framebuffer::st_vk_framebuffer(
 	const vk::RenderPass& pass,
 	uint32_t count,
-	st_render_texture** targets,
-	st_render_texture* depth_stencil)
+	const st_render_texture** targets,
+	const st_render_texture* depth_stencil)
 {
 	vk::Device* device = st_vk_render_context::get()->get_device();
 

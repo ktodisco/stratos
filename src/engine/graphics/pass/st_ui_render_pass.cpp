@@ -20,9 +20,13 @@
 
 st_ui_render_pass::st_ui_render_pass()
 {
+	const st_render_texture* targets[] =
+	{
+		st_render_context::get()->get_present_target()
+	};
 	_pass = std::make_unique<st_render_pass>(
-		0,
-		nullptr,
+		1,
+		targets,
 		nullptr);
 
 	_vertex_format = std::make_unique<st_vertex_format>();

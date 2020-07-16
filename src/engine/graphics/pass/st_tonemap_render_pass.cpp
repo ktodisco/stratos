@@ -19,7 +19,7 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
-	st_render_texture* targets[] = { target_buffer };
+	const st_render_texture* targets[] = { target_buffer };
 	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,

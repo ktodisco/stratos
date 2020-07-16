@@ -210,6 +210,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 	vk::FenceCreateInfo fence_info = vk::FenceCreateInfo();
 
 	VK_VALIDATE(_device.createFence(&fence_info, nullptr, &_fence));
+	VK_VALIDATE(_device.createFence(&fence_info, nullptr, &_acquire_fence));
 
 	// Create the swap chain.
 	vk::Win32SurfaceCreateInfoKHR win32_surface_info = vk::Win32SurfaceCreateInfoKHR()
@@ -229,7 +230,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear)
 		.setImageExtent(vk::Extent2D(window->get_width(), window->get_height()))
 		.setImageArrayLayers(1)
-		.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+		.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
 		.setImageSharingMode(vk::SharingMode::eExclusive)
 		.setQueueFamilyIndexCount(1)
 		.setPQueueFamilyIndices(&_queue_family_index)
@@ -311,6 +312,7 @@ st_vk_render_context::~st_vk_render_context()
 	_device.destroyDescriptorSetLayout(_descriptor_layout, nullptr);
 	_device.destroyBuffer(_upload_buffer, nullptr);
 	_device.destroyFence(_fence, nullptr);
+	_device.destroyFence(_acquire_fence, nullptr);
 	_device.freeCommandBuffers(_command_pool, 1, &_command_buffer);
 	_device.destroyCommandPool(_command_pool, nullptr);
 	_device.destroy(nullptr);
@@ -340,17 +342,159 @@ void st_vk_render_context::begin_frame()
 
 void st_vk_render_context::end_frame()
 {
-	_command_buffer.end();
+}
+
+void st_vk_render_context::transition_backbuffer_to_target()
+{
+	// Transition the present target to the optimal layout for rendering.
+	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
+		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setBaseMipLevel(0)
+		.setLevelCount(1);
+
+	vk::ImageMemoryBarrier barriers[] =
+	{
+		vk::ImageMemoryBarrier()
+		.setImage(_present_target->get_resource())
+		.setOldLayout(vk::ImageLayout::eTransferSrcOptimal)
+		.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setSubresourceRange(range),
+	};
+	_command_buffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		0,
+		nullptr,
+		0,
+		nullptr,
+		std::size(barriers),
+		barriers);
+}
+
+void st_vk_render_context::transition_backbuffer_to_present()
+{
+	// Transition the present target to the optimal layout for copy.
+	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
+		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setBaseMipLevel(0)
+		.setLevelCount(1);
+
+	vk::ImageMemoryBarrier barriers[] =
+	{
+		vk::ImageMemoryBarrier()
+		.setImage(_present_target->get_resource())
+		.setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
+		.setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
+		.setSubresourceRange(range),
+	};
+	_command_buffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		barriers);
 }
 
 void st_vk_render_context::swap()
 {
+	// Copy the present target to the backbuffer.
+	uint32_t backbuffer_index;
+	VK_VALIDATE(_device.acquireNextImageKHR(
+		_swap_chain,
+		std::numeric_limits<uint64_t>::max(),
+		vk::Semaphore(nullptr),
+		_acquire_fence,
+		&backbuffer_index));
+
+	VK_VALIDATE(_device.waitForFences(1, &_acquire_fence, true, std::numeric_limits<uint64_t>::max()));
+	VK_VALIDATE(_device.resetFences(1, &_acquire_fence));
+	
+	// Transition the backbuffer images to the optimal layout for the copy.
+	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
+		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setBaseMipLevel(0)
+		.setLevelCount(1);
+
+	vk::ImageMemoryBarrier barriers[] = 
+	{
+		vk::ImageMemoryBarrier()
+			.setImage(_backbuffers[backbuffer_index])
+			.setOldLayout(vk::ImageLayout::ePresentSrcKHR)
+			.setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+			.setSubresourceRange(range),
+	};
+	_command_buffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		barriers);
+
+	vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
+		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setMipLevel(0);
+
+	vk::ImageCopy region = vk::ImageCopy()
+		.setExtent(vk::Extent3D(_present_target->get_width(), _present_target->get_height(), 1))
+		.setSrcSubresource(subresource)
+		.setDstSubresource(subresource);
+
+	_command_buffer.copyImage(
+		_present_target->get_resource(),
+		vk::ImageLayout::eTransferSrcOptimal,
+		_backbuffers[backbuffer_index],
+		vk::ImageLayout::eTransferDstOptimal,
+		1,
+		&region);
+
+	barriers[0] = vk::ImageMemoryBarrier()
+		.setImage(_backbuffers[backbuffer_index])
+		.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+		.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+		.setSubresourceRange(range);
+	_command_buffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		barriers);
+
+	_command_buffer.end();
+
 	vk::SubmitInfo submit_info = vk::SubmitInfo()
 		.setCommandBufferCount(1)
 		.setPCommandBuffers(&_command_buffer);
 
 	vk::Result result = _device.getFenceStatus(_fence);
 	VK_VALIDATE(_queue.submit(1, &submit_info, _fence));
+
+	vk::PresentInfoKHR present_info = vk::PresentInfoKHR()
+		.setSwapchainCount(1)
+		.setPSwapchains(&_swap_chain)
+		.setPImageIndices(&backbuffer_index);
+
+	VK_VALIDATE(_queue.presentKHR(&present_info));
 
 	// TODO: Better parallelization.
 	VK_VALIDATE(_device.waitForFences(1, &_fence, true, std::numeric_limits<uint64_t>::max()));
