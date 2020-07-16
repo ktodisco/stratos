@@ -31,7 +31,7 @@ st_slider::st_slider(float x, float y, float min_val, float max_val, float* curr
 
 		*current += single_tick * mouse_x;
 
-		*current = max(min_val, min(max_val, *current)); 
+		*current = std::max(min_val, std::min(max_val, *current)); 
 	}
 }
 

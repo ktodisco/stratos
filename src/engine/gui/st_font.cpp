@@ -117,13 +117,13 @@ void st_font::print(
 
 			if (extent_min)
 			{
-				extent_min->x = min(extent_min->x, q.x0);
-				extent_min->y = min(extent_min->y, q.y0);
+				extent_min->x = std::min(extent_min->x, q.x0);
+				extent_min->y = std::min(extent_min->y, q.y0);
 			}
 			if (extent_max)
 			{
-				extent_max->x = max(extent_max->x, q.x1);
-				extent_max->y = max(extent_max->y, q.y1);
+				extent_max->x = std::max(extent_max->x, q.x1);
+				extent_max->y = std::max(extent_max->y, q.y1);
 			}
 
 			drawcall._positions.push_back({ q.x0, q.y0, 0.0f });

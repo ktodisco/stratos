@@ -153,6 +153,10 @@ st_vk_render_context::st_vk_render_context(const class st_window* window)
 
 	VK_VALIDATE(_device.createFence(&fence_info, nullptr, &_fence));
 
+	// Create the swap chain.
+	//vk::Win32Sur
+
+	// Create the generic upload buffer.
 	create_buffer(16 * 1024 * 1024, e_st_buffer_usage::transfer_source | e_st_buffer_usage::transfer_dest, _upload_buffer);
 
 	// Set up the descriptor set layout. This is akin to the root signature in D3D12.
