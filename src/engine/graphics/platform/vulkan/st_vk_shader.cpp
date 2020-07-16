@@ -55,15 +55,15 @@ st_vk_shader::~st_vk_shader()
 	vk::Device* device = st_vk_render_context::get()->get_device();
 
 	if (_type & st_shader_type_vertex)
-		device->destroyShaderModule(_vs);
+		device->destroyShaderModule(_vs, nullptr);
 	if (_type & st_shader_type_pixel)
-		device->destroyShaderModule(_ps);
+		device->destroyShaderModule(_ps, nullptr);
 	if (_type & st_shader_type_domain)
-		device->destroyShaderModule(_ds);
+		device->destroyShaderModule(_ds, nullptr);
 	if (_type & st_shader_type_geometry)
-		device->destroyShaderModule(_gs);
+		device->destroyShaderModule(_gs, nullptr);
 	if (_type & st_shader_type_hull)
-		device->destroyShaderModule(_hs);
+		device->destroyShaderModule(_hs, nullptr);
 }
 
 #endif

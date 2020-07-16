@@ -6,8 +6,16 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-//#define VULKAN_HPP_DISABLE_ENHANCED_MODE
+#define VULKAN_HPP_DISABLE_ENHANCED_MODE
+#define VULKAN_HPP_DISABLE_IMPLICIT_RESULT_VALUE_CAST
 #include <vulkan/vulkan.hpp>
+
+#include <windows.h>
+#include <vulkan/vulkan_win32.h>
+
+// Ugh. Windows.
+#undef min
+#undef max
 
 #define GLUEME(x, y) x##y
 #define GLUE(x, y) GLUEME(x, y)

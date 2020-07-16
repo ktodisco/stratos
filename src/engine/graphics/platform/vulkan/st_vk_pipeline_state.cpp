@@ -153,7 +153,7 @@ st_vk_pipeline_state::~st_vk_pipeline_state()
 {
 	vk::Device* device = st_vk_render_context::get()->get_device();
 
-	device->destroyPipeline(_pipeline);
+	device->destroyPipeline(_pipeline, nullptr);
 }
 
 #endif
