@@ -167,7 +167,7 @@ private:
 
 	uint32_t _queue_family_index = UINT_MAX;
 
-	vk::DescriptorSetLayout _descriptor_layout;
+	vk::DescriptorSetLayout _descriptor_layouts[4];
 	vk::PipelineLayout _pipeline_layout;
 	vk::DescriptorPool _descriptor_pool;
 
