@@ -14,6 +14,16 @@
 
 typedef void* st_graphics_resource;
 
+enum e_st_descriptor_slot
+{
+	st_descriptor_slot_textures,
+	st_descriptor_slot_samplers,
+	st_descriptor_slot_constants,
+	st_descriptor_slot_buffers,
+
+	st_descriptor_slot_count
+};
+
 enum class e_st_buffer_usage : uint32_t
 {
 	index = 0x0001,

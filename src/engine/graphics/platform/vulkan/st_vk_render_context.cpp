@@ -739,4 +739,19 @@ void st_vk_render_context::destroy_buffer(vk::Buffer& resource)
 	_device.destroyBuffer(resource, nullptr);
 }
 
+void st_vk_render_context::create_descriptor_set(e_st_descriptor_slot slot, vk::DescriptorSet* set)
+{
+	vk::DescriptorSetAllocateInfo allocate_info = vk::DescriptorSetAllocateInfo()
+		.setDescriptorPool(_descriptor_pool)
+		.setDescriptorSetCount(1)
+		.setPSetLayouts(&_descriptor_layouts[slot]);
+
+	VK_VALIDATE(_device.allocateDescriptorSets(&allocate_info, set));
+}
+
+void st_vk_render_context::destroy_descriptor_set(vk::DescriptorSet& set)
+{
+	VK_VALIDATE(_device.freeDescriptorSets(_descriptor_pool, 1, &set));
+}
+
 #endif
