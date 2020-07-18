@@ -32,6 +32,8 @@ private:
 	vk::DescriptorSet _constants;
 	vk::DescriptorSet _buffers;
 	vk::DescriptorSet _samplers;
+
+	std::vector<vk::Sampler> _sampler_resources;
 };
 
 #endif

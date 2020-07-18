@@ -10,6 +10,7 @@
 
 #include <graphics/platform/vulkan/st_vk_render_context.h>
 #include <graphics/st_buffer.h>
+#include <graphics/st_constant_buffer.h>
 #include <graphics/st_texture.h>
 
 st_vk_resource_table::st_vk_resource_table()
@@ -26,6 +27,12 @@ st_vk_resource_table::~st_vk_resource_table()
 {
 	st_vk_render_context* context = st_vk_render_context::get();
 
+	for (auto& sampler : _sampler_resources)
+	{
+		context->destroy_sampler(sampler);
+	}
+	_sampler_resources.clear();
+
 	context->destroy_descriptor_set(_textures);
 	context->destroy_descriptor_set(_buffers);
 	context->destroy_descriptor_set(_constants);
@@ -36,7 +43,21 @@ void st_vk_resource_table::set_constant_buffers(uint32_t count, st_constant_buff
 {
 	vk::Device* device = st_vk_render_context::get()->get_device();
 
-	// TODO.
+	std::vector<vk::DescriptorBufferInfo> infos;
+	for (int i = 0; i < count; ++i)
+	{
+		infos.emplace_back() = vk::DescriptorBufferInfo()
+			.setBuffer(cbs[i]->get_resource())
+			.setOffset(0)
+			.setRange(vk::DeviceSize(VK_WHOLE_SIZE));
+	}
+
+	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
+		.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+		.setDescriptorCount(count)
+		.setDstSet(_buffers)
+		.setDstBinding(0)
+		.setPBufferInfo(infos.data());
 }
 
 void st_vk_resource_table::set_textures(uint32_t count, st_texture** textures)
@@ -46,11 +67,12 @@ void st_vk_resource_table::set_textures(uint32_t count, st_texture** textures)
 	std::vector<vk::DescriptorImageInfo> images;
 	for (int i = 0; i < count; ++i)
 	{
+		st_vk_render_context::get()->create_sampler(_sampler_resources.emplace_back());
+
 		images.emplace_back() = vk::DescriptorImageInfo()
 			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 			.setImageView(textures[i]->get_resource_view())
-			// TODO: Samplers.
-			.setSampler(vk::Sampler(nullptr));
+			.setSampler(_sampler_resources.back());
 	}
 
 	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
