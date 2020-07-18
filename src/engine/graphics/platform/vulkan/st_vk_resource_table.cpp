@@ -104,4 +104,11 @@ void st_vk_resource_table::set_buffers(uint32_t count, st_buffer** buffers)
 		.setPBufferInfo(infos.data());
 }
 
+void st_vk_resource_table::bind(st_vk_render_context* context)
+{
+	context->set_shader_resource_table(_textures);
+	context->set_buffer_table(_buffers);
+	context->set_constant_buffer_table(_constants);
+}
+
 #endif

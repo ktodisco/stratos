@@ -19,21 +19,19 @@ class st_vk_geometry
 public:
 
 	st_vk_geometry(
-		const st_vertex_format* format,
+		const class st_vertex_format* format,
 		void* vertex_data,
 		uint32_t vertex_size,
 		uint32_t vertex_count,
 		uint16_t* index_data,
-		uint32_t index_count) {}
-	~st_vk_geometry() {}
+		uint32_t index_count);
+	~st_vk_geometry();
 
-	void draw(struct st_static_drawcall& draw_call) {}
+	void draw(struct st_static_drawcall& draw_call);
 
 private:
-	//Microsoft::WRL::ComPtr<ID3D12Resource> _vertex_buffer;
-	//D3D12_VERTEX_BUFFER_VIEW _vertex_buffer_view;
-	//Microsoft::WRL::ComPtr<ID3D12Resource> _index_buffer;
-	//D3D12_INDEX_BUFFER_VIEW _index_buffer_view;
+	vk::Buffer _vertex_buffer;
+	vk::Buffer _index_buffer;
 	uint32_t _index_count = 0;
 };
 

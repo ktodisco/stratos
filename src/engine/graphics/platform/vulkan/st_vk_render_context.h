@@ -39,15 +39,15 @@ public:
 	void acquire() {}
 	void release() {}
 
-	void set_pipeline_state(const class st_vk_pipeline_state* state) {}
+	void set_pipeline_state(const class st_vk_pipeline_state* state);
 	void set_viewport(int x, int y, int width, int height) {}
 	void set_scissor(int left, int top, int right, int bottom) {}
 	void set_clear_color(float r, float g, float b, float a) {}
 
-	void set_shader_resource_table(uint32_t offset) {}
-	void set_sampler_table(uint32_t offset) {}
-	void set_constant_buffer_table(uint32_t offset) {}
-	void set_buffer_table(uint32_t offset) {}
+	void set_shader_resource_table(const vk::DescriptorSet& set);
+	void set_sampler_table(const vk::DescriptorSet& set);
+	void set_constant_buffer_table(const vk::DescriptorSet& set);
+	void set_buffer_table(const vk::DescriptorSet& set);
 
 	void set_render_targets(
 		uint32_t count,
@@ -55,7 +55,7 @@ public:
 		class st_render_texture* depth_stencil) {}
 
 	void clear(unsigned int clear_flags) {}
-	void draw(const struct st_static_drawcall& drawcall) {}
+	void draw(const struct st_static_drawcall& drawcall);
 	void draw(const struct st_dynamic_drawcall& drawcall) {}
 
 	// TODO: These are temporary and a generic solution is needed.
