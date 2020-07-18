@@ -158,12 +158,13 @@ st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 	_constant_buffer->add_constant("type_cb0", st_shader_constant_type_block);
 
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_constant_buffer(_constant_buffer.get());
+	st_constant_buffer* cbs[] = { _constant_buffer.get() };
+	_resource_table->set_constant_buffers(1, cbs);
 
 	if (_texture)
 	{
 		_texture->set_meta("SPIRV_Cross_Combinedfont_texturefont_sampler");
-		_resource_table->add_texture_resource(_texture);
+		_resource_table->set_textures(1, &_texture);
 	}
 }
 

@@ -30,9 +30,14 @@ st_gbuffer_material::st_gbuffer_material(
 	_mre_texture->set_meta("SPIRV_Cross_Combinedmre_texturemre_sampler");
 
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_constant_buffer(_gbuffer_buffer.get());
-	_resource_table->add_texture_resource(_albedo_texture.get());
-	_resource_table->add_texture_resource(_mre_texture.get());
+	st_constant_buffer* cbs[] = { _gbuffer_buffer.get() };
+	_resource_table->set_constant_buffers(1, cbs);
+
+	st_texture* textures[] = {
+		_albedo_texture.get(),
+		_mre_texture.get()
+	};
+	_resource_table->set_textures(std::size(textures), textures);
 }
 
 st_gbuffer_material::~st_gbuffer_material()

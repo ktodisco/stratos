@@ -25,12 +25,15 @@ st_deferred_light_material::st_deferred_light_material(
 	_depth(depth_texture)
 {
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_constant_buffer(light_buffer);
-	_resource_table->add_texture_resource(_albedo);
-	_resource_table->add_texture_resource(_normal);
-	_resource_table->add_texture_resource(_third);
-	// TODO: The d24_s8 format cannot be used with an SRV.
-	_resource_table->add_texture_resource(_depth);
+	_resource_table->set_constant_buffers(1, &light_buffer);
+
+	st_texture* textures[] = {
+		_albedo,
+		_normal,
+		_third,
+		_depth,
+	};
+	_resource_table->set_textures(std::size(textures), textures);
 }
 
 st_deferred_light_material::~st_deferred_light_material()

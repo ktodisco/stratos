@@ -16,7 +16,7 @@ st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(st_textur
 	_texture(texture)
 {
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_texture_resource(_texture);
+	_resource_table->set_textures(1, &_texture);
 }
 
 st_gaussian_blur_vertical_material::~st_gaussian_blur_vertical_material()
@@ -47,7 +47,7 @@ st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(st_te
 	_texture(texture)
 {
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_texture_resource(_texture);
+	_resource_table->set_textures(1, &_texture);
 }
 
 st_gaussian_blur_horizontal_material::~st_gaussian_blur_horizontal_material()

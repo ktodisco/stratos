@@ -41,7 +41,8 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest);
 	_light_buffer->set_meta("type_StructuredBuffer_st_sphere_light");
 	_resources = std::make_unique<st_resource_table>();
-	_resources->add_buffer_resource(_light_buffer.get());
+	st_buffer* buffers[] = { _light_buffer.get() };
+	_resources->set_buffers(1, buffers);
 
 	_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
