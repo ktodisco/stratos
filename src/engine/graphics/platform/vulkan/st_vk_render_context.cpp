@@ -302,7 +302,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 	std::vector<vk::DescriptorPoolSize> pool_sizes;
 	pool_sizes.push_back(vk::DescriptorPoolSize()
 		.setType(vk::DescriptorType::eUniformBuffer)
-		.setDescriptorCount(32));
+		.setDescriptorCount(512));
 	pool_sizes.push_back(vk::DescriptorPoolSize()
 		.setType(vk::DescriptorType::eSampledImage)
 		.setDescriptorCount(64));

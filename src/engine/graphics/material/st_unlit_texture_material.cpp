@@ -26,8 +26,10 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	_texture->set_meta("SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
 
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_constant_buffer(_view_buffer.get());
-	_resource_table->add_texture_resource(_texture.get());
+	st_constant_buffer* cbs[] = { _view_buffer.get() };
+	_resource_table->set_constant_buffers(1, cbs);
+	st_texture* textures[] = { _texture.get() };
+	_resource_table->set_textures(1, textures);
 }
 
 st_unlit_texture_material::~st_unlit_texture_material()

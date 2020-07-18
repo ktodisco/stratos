@@ -18,7 +18,8 @@ st_phong_material::st_phong_material()
 	_phong_buffer->add_constant("type_cb0", st_shader_constant_type_block);
 
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_constant_buffer(_phong_buffer.get());
+	st_constant_buffer* cbs[] = { _phong_buffer.get() };
+	_resource_table->set_constant_buffers(1, cbs);
 }
 
 st_phong_material::~st_phong_material()

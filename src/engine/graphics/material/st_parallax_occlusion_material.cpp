@@ -31,9 +31,10 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	_normal_texture->set_meta("SPIRV_Cross_Combinednormal_texturenormal_sampler");
 
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->add_constant_buffer(_parallax_occlusion_buffer.get());
-	_resource_table->add_texture_resource(_albedo_texture.get());
-	_resource_table->add_texture_resource(_normal_texture.get());
+	st_constant_buffer* cbs[] = { _parallax_occlusion_buffer.get() };
+	_resource_table->set_constant_buffers(1, cbs);
+	st_texture* textures[] = { _albedo_texture.get(), _normal_texture.get() };
+	_resource_table->set_textures(std::size(textures), textures);
 }
 
 st_parallax_occlusion_material::~st_parallax_occlusion_material()
