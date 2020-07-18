@@ -37,8 +37,8 @@ struct st_vk_drawcall
 */
 struct st_vk_static_drawcall : st_vk_drawcall
 {
-	//struct D3D12_VERTEX_BUFFER_VIEW* _vertex_buffer_view = nullptr;
-	//struct D3D12_INDEX_BUFFER_VIEW* _index_buffer_view = nullptr;
+	const vk::Buffer* _vertex_buffer = nullptr;
+	const vk::Buffer* _index_buffer = nullptr;
 	int32_t _index_count = 0;
 };
 

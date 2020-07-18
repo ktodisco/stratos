@@ -10,8 +10,6 @@
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
-#include <graphics/platform/vulkan/st_vk_descriptor_heap.h>
-
 #include <cstdint>
 #include <vector>
 
@@ -25,7 +23,7 @@ public:
 	void set_textures(uint32_t count, class st_texture** textures);
 	void set_buffers(uint32_t count, class st_buffer** buffers);
 
-	void bind(class st_vk_render_context* context) {}
+	void bind(class st_vk_render_context* context);
 
 private:
 	vk::DescriptorSet _textures;

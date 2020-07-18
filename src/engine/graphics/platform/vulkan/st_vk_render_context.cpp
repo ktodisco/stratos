@@ -8,7 +8,9 @@
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
+#include <graphics/platform/vulkan/st_vk_pipeline_state.h>
 #include <graphics/platform/vulkan/st_vk_texture.h>
+#include <graphics/st_drawcall.h>
 
 #include <system/st_window.h>
 
@@ -355,6 +357,73 @@ st_vk_render_context::~st_vk_render_context()
 	_device.destroy(nullptr);
 
 	_instance.destroy(nullptr);
+}
+
+void st_vk_render_context::set_pipeline_state(const st_vk_pipeline_state* state)
+{
+	_command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, state->get());
+}
+
+void st_vk_render_context::set_shader_resource_table(const vk::DescriptorSet& set)
+{
+	_command_buffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		_pipeline_layout,
+		st_descriptor_slot_textures,
+		1,
+		&set,
+		0,
+		nullptr);
+}
+
+void st_vk_render_context::set_sampler_table(const vk::DescriptorSet& set)
+{
+	_command_buffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		_pipeline_layout,
+		st_descriptor_slot_samplers,
+		1,
+		&set,
+		0,
+		nullptr);
+}
+
+void st_vk_render_context::set_constant_buffer_table(const vk::DescriptorSet& set)
+{
+	_command_buffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		_pipeline_layout,
+		st_descriptor_slot_constants,
+		1,
+		&set,
+		0,
+		nullptr);
+}
+
+void st_vk_render_context::set_buffer_table(const vk::DescriptorSet& set)
+{
+	_command_buffer.bindDescriptorSets(
+		vk::PipelineBindPoint::eGraphics,
+		_pipeline_layout,
+		st_descriptor_slot_buffers,
+		1,
+		&set,
+		0,
+		nullptr);
+}
+
+void st_vk_render_context::draw(const st_static_drawcall& drawcall)
+{
+	vk::DeviceSize offset = vk::DeviceSize(0);
+	_command_buffer.bindVertexBuffers(0, 1, drawcall._vertex_buffer, &offset);
+	_command_buffer.bindIndexBuffer(*drawcall._index_buffer, 0, vk::IndexType::eUint16);
+
+	_command_buffer.drawIndexed(
+		drawcall._index_count,
+		1,
+		0,
+		0,
+		0);
 }
 
 void st_vk_render_context::begin_loading()
