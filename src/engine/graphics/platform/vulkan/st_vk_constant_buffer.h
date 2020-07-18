@@ -24,6 +24,7 @@ public:
 
 	void update(const class st_vk_render_context* context, void* data);
 	size_t get_size() const { return _size; }
+	const vk::Buffer& get_resource() const { return _buffer; } 
 
 private:
 	vk::Buffer _buffer;

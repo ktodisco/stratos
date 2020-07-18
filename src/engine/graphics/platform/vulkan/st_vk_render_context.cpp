@@ -754,4 +754,28 @@ void st_vk_render_context::destroy_descriptor_set(vk::DescriptorSet& set)
 	VK_VALIDATE(_device.freeDescriptorSets(_descriptor_pool, 1, &set));
 }
 
+void st_vk_render_context::create_sampler(vk::Sampler& sampler)
+{
+	vk::SamplerCreateInfo create_info = vk::SamplerCreateInfo()
+		.setMagFilter(vk::Filter::eLinear)
+		.setMinFilter(vk::Filter::eLinear)
+		.setMipmapMode(vk::SamplerMipmapMode::eLinear)
+		.setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+		.setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+		.setAddressModeW(vk::SamplerAddressMode::eClampToEdge)
+		.setMipLodBias(0.0f)
+		.setAnisotropyEnable(false)
+		.setCompareEnable(false)
+		.setMinLod(0)
+		.setMaxLod(15.0f)
+		.setUnnormalizedCoordinates(false);
+
+	VK_VALIDATE(_device.createSampler(&create_info, nullptr, &sampler));
+}
+
+void st_vk_render_context::destroy_sampler(vk::Sampler& sampler)
+{
+	_device.destroySampler(sampler, nullptr);
+}
+
 #endif

@@ -91,6 +91,8 @@ public:
 	void destroy_buffer(vk::Buffer& resource);
 	void create_descriptor_set(e_st_descriptor_slot slot, vk::DescriptorSet* set);
 	void destroy_descriptor_set(vk::DescriptorSet& set);
+	void create_sampler(vk::Sampler& sampler);
+	void destroy_sampler(vk::Sampler& sampler);
 
 	vk::Device* get_device() { return std::addressof(_device); }
 	vk::CommandBuffer* get_command_buffer() { return std::addressof(_command_buffer); }
