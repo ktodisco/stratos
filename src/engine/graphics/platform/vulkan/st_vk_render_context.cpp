@@ -200,14 +200,18 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		.setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
 		.setQueueFamilyIndex(_queue_family_index);
 
-	VK_VALIDATE(_device.createCommandPool(&command_pool_info, nullptr, &_command_pool));
+	VK_VALIDATE(_device.createCommandPool(&command_pool_info, nullptr, &_command_pools[st_command_buffer_graphics]));
+	VK_VALIDATE(_device.createCommandPool(&command_pool_info, nullptr, &_command_pools[st_command_buffer_loading]));
 
 	vk::CommandBufferAllocateInfo command_buffer_info = vk::CommandBufferAllocateInfo()
 		.setCommandBufferCount(1)
-		.setCommandPool(_command_pool)
+		.setCommandPool(_command_pools[st_command_buffer_graphics])
 		.setLevel(vk::CommandBufferLevel::ePrimary);
 
-	VK_VALIDATE(_device.allocateCommandBuffers(&command_buffer_info, &_command_buffer));
+	VK_VALIDATE(_device.allocateCommandBuffers(&command_buffer_info, &_command_buffers[st_command_buffer_graphics]));
+
+	command_buffer_info.setCommandPool(_command_pools[st_command_buffer_loading]);
+	VK_VALIDATE(_device.allocateCommandBuffers(&command_buffer_info, &_command_buffers[st_command_buffer_loading]));
 
 	vk::FenceCreateInfo fence_info = vk::FenceCreateInfo();
 
@@ -331,6 +335,8 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
 		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
+
+	begin_frame();
 }
 
 st_vk_render_context::~st_vk_render_context()
@@ -352,8 +358,16 @@ st_vk_render_context::~st_vk_render_context()
 	_device.destroyBuffer(_upload_buffer, nullptr);
 	_device.destroyFence(_fence, nullptr);
 	_device.destroyFence(_acquire_fence, nullptr);
-	_device.freeCommandBuffers(_command_pool, 1, &_command_buffer);
-	_device.destroyCommandPool(_command_pool, nullptr);
+	_device.freeCommandBuffers(
+		_command_pools[st_command_buffer_graphics],
+		1, 
+		&_command_buffers[st_command_buffer_graphics]);
+	_device.freeCommandBuffers(
+		_command_pools[st_command_buffer_loading],
+		1,
+		&_command_buffers[st_command_buffer_loading]);
+	_device.destroyCommandPool(_command_pools[st_command_buffer_graphics], nullptr);
+	_device.destroyCommandPool(_command_pools[st_command_buffer_loading], nullptr);
 	_device.destroy(nullptr);
 
 	_instance.destroy(nullptr);
@@ -361,12 +375,12 @@ st_vk_render_context::~st_vk_render_context()
 
 void st_vk_render_context::set_pipeline_state(const st_vk_pipeline_state* state)
 {
-	_command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, state->get());
+	_command_buffers[st_command_buffer_graphics].bindPipeline(vk::PipelineBindPoint::eGraphics, state->get());
 }
 
 void st_vk_render_context::set_shader_resource_table(const vk::DescriptorSet& set)
 {
-	_command_buffer.bindDescriptorSets(
+	_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
 		_pipeline_layout,
 		st_descriptor_slot_textures,
@@ -378,7 +392,7 @@ void st_vk_render_context::set_shader_resource_table(const vk::DescriptorSet& se
 
 void st_vk_render_context::set_sampler_table(const vk::DescriptorSet& set)
 {
-	_command_buffer.bindDescriptorSets(
+	_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
 		_pipeline_layout,
 		st_descriptor_slot_samplers,
@@ -390,7 +404,7 @@ void st_vk_render_context::set_sampler_table(const vk::DescriptorSet& set)
 
 void st_vk_render_context::set_constant_buffer_table(const vk::DescriptorSet& set)
 {
-	_command_buffer.bindDescriptorSets(
+	_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
 		_pipeline_layout,
 		st_descriptor_slot_constants,
@@ -402,7 +416,7 @@ void st_vk_render_context::set_constant_buffer_table(const vk::DescriptorSet& se
 
 void st_vk_render_context::set_buffer_table(const vk::DescriptorSet& set)
 {
-	_command_buffer.bindDescriptorSets(
+	_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
 		vk::PipelineBindPoint::eGraphics,
 		_pipeline_layout,
 		st_descriptor_slot_buffers,
@@ -415,10 +429,10 @@ void st_vk_render_context::set_buffer_table(const vk::DescriptorSet& set)
 void st_vk_render_context::draw(const st_static_drawcall& drawcall)
 {
 	vk::DeviceSize offset = vk::DeviceSize(0);
-	_command_buffer.bindVertexBuffers(0, 1, drawcall._vertex_buffer, &offset);
-	_command_buffer.bindIndexBuffer(*drawcall._index_buffer, 0, vk::IndexType::eUint16);
+	_command_buffers[st_command_buffer_graphics].bindVertexBuffers(0, 1, drawcall._vertex_buffer, &offset);
+	_command_buffers[st_command_buffer_graphics].bindIndexBuffer(*drawcall._index_buffer, 0, vk::IndexType::eUint16);
 
-	_command_buffer.drawIndexed(
+	_command_buffers[st_command_buffer_graphics].drawIndexed(
 		drawcall._index_count,
 		1,
 		0,
@@ -426,24 +440,13 @@ void st_vk_render_context::draw(const st_static_drawcall& drawcall)
 		0);
 }
 
-void st_vk_render_context::begin_loading()
-{
-	end_frame();
-	begin_frame();
-}
-
-void st_vk_render_context::end_loading()
-{
-	end_frame();
-	begin_frame();
-}
-
 void st_vk_render_context::begin_frame()
 {
 	vk::CommandBufferBeginInfo begin_info = vk::CommandBufferBeginInfo()
 		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
-	VK_VALIDATE(_command_buffer.begin(&begin_info));
+	VK_VALIDATE(_command_buffers[st_command_buffer_loading].begin(&begin_info));
+	VK_VALIDATE(_command_buffers[st_command_buffer_graphics].begin(&begin_info));
 }
 
 void st_vk_render_context::end_frame()
@@ -468,7 +471,8 @@ void st_vk_render_context::transition_backbuffer_to_target()
 		.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
 		.setSubresourceRange(range),
 	};
-	_command_buffer.pipelineBarrier(
+
+	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::DependencyFlags(),
@@ -498,7 +502,8 @@ void st_vk_render_context::transition_backbuffer_to_present()
 		.setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
 		.setSubresourceRange(range),
 	};
-	_command_buffer.pipelineBarrier(
+
+	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::DependencyFlags(),
@@ -540,7 +545,8 @@ void st_vk_render_context::swap()
 			.setNewLayout(vk::ImageLayout::eTransferDstOptimal)
 			.setSubresourceRange(range),
 	};
-	_command_buffer.pipelineBarrier(
+
+	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::DependencyFlags(),
@@ -562,7 +568,7 @@ void st_vk_render_context::swap()
 		.setSrcSubresource(subresource)
 		.setDstSubresource(subresource);
 
-	_command_buffer.copyImage(
+	_command_buffers[st_command_buffer_graphics].copyImage(
 		_present_target->get_resource(),
 		vk::ImageLayout::eTransferSrcOptimal,
 		_backbuffers[backbuffer_index],
@@ -575,7 +581,7 @@ void st_vk_render_context::swap()
 		.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
 		.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
 		.setSubresourceRange(range);
-	_command_buffer.pipelineBarrier(
+	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::DependencyFlags(),
@@ -586,11 +592,12 @@ void st_vk_render_context::swap()
 		1,
 		barriers);
 
-	_command_buffer.end();
+	_command_buffers[st_command_buffer_loading].end();
+	_command_buffers[st_command_buffer_graphics].end();
 
 	vk::SubmitInfo submit_info = vk::SubmitInfo()
-		.setCommandBufferCount(1)
-		.setPCommandBuffers(&_command_buffer);
+		.setCommandBufferCount(2)
+		.setPCommandBuffers(_command_buffers);
 
 	vk::Result result = _device.getFenceStatus(_fence);
 	VK_VALIDATE(_queue.submit(1, &submit_info, _fence));
@@ -625,6 +632,10 @@ void st_vk_render_context::create_texture(
 	if (usage & e_st_texture_usage::depth_target) flags |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
 	if (usage & e_st_texture_usage::transient_target) flags |= vk::ImageUsageFlagBits::eTransientAttachment;
 	if (usage & e_st_texture_usage::input_target) flags |= vk::ImageUsageFlagBits::eInputAttachment;
+
+	// TODO: For now, create all with eTransferDst. This is the correct usage for the
+	// buffer copy to upload to the image.
+	flags |= vk::ImageUsageFlagBits::eTransferDst;
 
 	vk::ImageCreateInfo create_info = vk::ImageCreateInfo()
 		.setArrayLayers(1)
@@ -695,8 +706,6 @@ void st_vk_render_context::destroy_texture_view(vk::ImageView& resource)
 
 void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 {
-	begin_loading();
-
 	std::vector<vk::BufferImageCopy> regions;
 	uint64_t offset = 0;
 	for (int i = 0; i < texture->get_levels(); ++i)
@@ -714,7 +723,7 @@ void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 			&row_bytes,
 			nullptr);
 
-		_command_buffer.updateBuffer(_upload_buffer, offset, num_bytes, reinterpret_cast<char*>(data) + offset);
+		_command_buffers[st_command_buffer_loading].updateBuffer(_upload_buffer, offset, num_bytes, reinterpret_cast<char*>(data) + offset);
 		offset += num_bytes;
 
 		vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
@@ -734,7 +743,12 @@ void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 		regions.push_back(region);
 	}
 
-	_command_buffer.copyBufferToImage(_upload_buffer, texture->get_resource(), vk::ImageLayout::eTransferDstOptimal, texture->get_levels(), regions.data());
+	_command_buffers[st_command_buffer_loading].copyBufferToImage(
+		_upload_buffer,
+		texture->get_resource(),
+		vk::ImageLayout::eTransferDstOptimal,
+		texture->get_levels(),
+		regions.data());
 
 	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
 		.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -748,7 +762,7 @@ void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 		.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
 		.setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 		.setSubresourceRange(range);
-	_command_buffer.pipelineBarrier(
+	_command_buffers[st_command_buffer_loading].pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::DependencyFlags(),
@@ -758,8 +772,6 @@ void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 		nullptr,
 		1,
 		&barrier);
-
-	end_loading();
 }
 
 void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource)
@@ -775,6 +787,10 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags us
 	if (usage & e_st_buffer_usage::uniform) flags |= vk::BufferUsageFlagBits::eUniformBuffer;
 	if (usage & e_st_buffer_usage::uniform_texel) flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
 	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
+
+	// TODO: For now, create all with eTransferDst. This is the correct usage for the
+	// buffer copy to upload to the image.
+	flags |= vk::BufferUsageFlagBits::eTransferDst;
 
 	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
 		.setUsage(flags)
@@ -800,7 +816,7 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags us
 
 void st_vk_render_context::update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data)
 {
-	_command_buffer.updateBuffer(resource, offset, num_bytes, data);
+	_command_buffers[st_command_buffer_loading].updateBuffer(resource, offset, num_bytes, data);
 }
 
 void st_vk_render_context::destroy_buffer(vk::Buffer& resource)
