@@ -66,8 +66,6 @@ public:
 		uint32_t count,
 		D3D12_RESOURCE_BARRIER* barriers) {}*/
 
-	void begin_loading();
-	void end_loading();
 	void begin_frame();
 	void end_frame();
 	void swap();
@@ -95,7 +93,7 @@ public:
 	void destroy_sampler(vk::Sampler& sampler);
 
 	vk::Device* get_device() { return std::addressof(_device); }
-	vk::CommandBuffer* get_command_buffer() { return std::addressof(_command_buffer); }
+	vk::CommandBuffer* get_command_buffer() { return std::addressof(_command_buffers[st_command_buffer_graphics]); }
 	vk::PipelineLayout* get_layout() { return std::addressof(_pipeline_layout); }
 	const st_render_texture* get_present_target() { return _present_target.get(); }
 
@@ -125,8 +123,16 @@ private:
 
 	uint32_t _device_memory_index = UINT_MAX;
 
-	vk::CommandPool _command_pool;
-	vk::CommandBuffer _command_buffer;
+	enum e_st_command_buffer
+	{
+		st_command_buffer_loading,
+		st_command_buffer_graphics,
+
+		st_command_buffer_count
+	};
+
+	vk::CommandPool _command_pools[st_command_buffer_count];
+	vk::CommandBuffer _command_buffers[st_command_buffer_count];
 
 	vk::Fence _acquire_fence;
 	vk::Fence _fence;
