@@ -225,6 +225,13 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 
 	VK_VALIDATE(_instance.createWin32SurfaceKHR(&win32_surface_info, nullptr, &_window_surface));
 
+	uint32_t surface_format_count;
+	VK_VALIDATE(_gpu.getSurfaceFormatsKHR(_window_surface, &surface_format_count, nullptr));
+
+	std::vector<vk::SurfaceFormatKHR> surface_formats;
+	surface_formats.resize(surface_format_count);
+	VK_VALIDATE(_gpu.getSurfaceFormatsKHR(_window_surface, &surface_format_count, surface_formats.data()));
+
 	vk::Bool32 surface_support = false;
 	VK_VALIDATE(_gpu.getSurfaceSupportKHR(_queue_family_index, _window_surface, &surface_support));
 	assert(surface_support);
@@ -232,7 +239,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 	vk::SwapchainCreateInfoKHR swap_chain_info = vk::SwapchainCreateInfoKHR()
 		.setSurface(_window_surface)
 		.setMinImageCount(k_backbuffer_count)
-		.setImageFormat(vk::Format::eR8G8B8A8Srgb)
+		.setImageFormat(vk::Format::eB8G8R8A8Srgb)
 		.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear)
 		.setImageExtent(vk::Extent2D(window->get_width(), window->get_height()))
 		.setImageArrayLayers(1)
@@ -328,6 +335,8 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 
 	_this = this;
 
+	begin_frame();
+
 	// Create the faux backbuffer target.
 	_present_target = std::make_unique<st_render_texture>(
 		window->get_width(),
@@ -335,8 +344,6 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
 		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
-
-	begin_frame();
 }
 
 st_vk_render_context::~st_vk_render_context()
@@ -661,6 +668,55 @@ void st_vk_render_context::create_texture(
 	_device.allocateMemory(&allocate_info, nullptr, &memory);
 
 	_device.bindImageMemory(resource, memory, 0);
+
+	// Transition the image to its intended state.
+	vk::ImageLayout dst_layout = vk::ImageLayout::eGeneral;
+	if (usage & e_st_texture_usage::copy_source) dst_layout = vk::ImageLayout::eTransferSrcOptimal;
+	if (usage & e_st_texture_usage::copy_dest) dst_layout = vk::ImageLayout::eTransferDstOptimal;
+	if (usage & e_st_texture_usage::sampled) dst_layout = vk::ImageLayout::eTransferDstOptimal;
+	if (usage & e_st_texture_usage::storage) dst_layout = vk::ImageLayout::eTransferDstOptimal;
+	if (usage & e_st_texture_usage::color_target) dst_layout = vk::ImageLayout::eColorAttachmentOptimal;
+	if (usage & e_st_texture_usage::depth_target) dst_layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+	// TODO: What to do for transient and input target types?
+
+	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+
+	if (format == st_format_d16_unorm ||
+		format == st_format_d32_float)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth;
+	}
+	else if (format == st_format_d24_unorm_s8_uint)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth |
+			vk::ImageAspectFlagBits::eStencil;
+	}
+
+	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
+		.setAspectMask(aspect)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setBaseMipLevel(0)
+		.setLevelCount(mip_count);
+	vk::ImageMemoryBarrier barriers[] =
+	{
+		vk::ImageMemoryBarrier()
+		.setImage(resource)
+		.setOldLayout(vk::ImageLayout::ePreinitialized)
+		.setNewLayout(dst_layout)
+		.setSubresourceRange(range),
+	};
+
+	_command_buffers[st_command_buffer_loading].pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		barriers);
 }
 
 void st_vk_render_context::destroy_texture(vk::Image& resource)

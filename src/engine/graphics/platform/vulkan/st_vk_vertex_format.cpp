@@ -28,7 +28,6 @@ void st_vk_vertex_format::platform_finalize()
 		int32_t size = 0;
 		size_t data_size = sizeof(float);
 		e_st_format format = st_format_r32g32b32_float;
-		vk::VertexInputRate input_rate = vk::VertexInputRate::eVertex;
 
 		switch (attr->_type)
 		{
@@ -66,22 +65,22 @@ void st_vk_vertex_format::platform_finalize()
 			break;
 		}
 
-		vk::VertexInputBindingDescription binding = vk::VertexInputBindingDescription()
-			.setBinding(itr)
-			.setInputRate(input_rate)
-			.setStride(size * data_size);
-
 		vk::VertexInputAttributeDescription attribute = vk::VertexInputAttributeDescription()
-			.setBinding(itr)
+			.setBinding(0)
 			.setFormat(vk::Format(format))
 			.setLocation(attr->_unit)
 			.setOffset(offset);
-
-		_binding_descs.push_back(binding);
 		_attribute_descs.push_back(attribute);
 
 		offset += size * data_size;
 	}
+
+	vk::VertexInputBindingDescription binding = vk::VertexInputBindingDescription()
+		.setBinding(0)
+		.setInputRate(vk::VertexInputRate::eVertex)
+		.setStride(offset);
+
+	_binding_descs.push_back(binding);
 
 	_input_layout
 		.setVertexBindingDescriptionCount(_binding_descs.size())

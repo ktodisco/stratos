@@ -98,6 +98,10 @@ int main(int argc, const char** argv)
 
 	window->show();
 
+	// TODO: HACK: Commit all loaded resources.
+	render->transition_backbuffer_to_present();
+	render->swap();
+
 	// Main loop:
 	while (true)
 	{
