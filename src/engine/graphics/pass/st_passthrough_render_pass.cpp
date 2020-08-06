@@ -56,6 +56,8 @@ void st_passthrough_render_pass::render(
 	context->set_scissor(0, 0, params->_width, params->_height);
 	context->set_pipeline_state(_pipeline_state.get());
 
+	_pass->begin(context);
+
 	_material->bind(context, params, identity, identity, identity);
 
 	st_static_drawcall draw_call;
@@ -64,4 +66,6 @@ void st_passthrough_render_pass::render(
 	_fullscreen_quad->draw(draw_call);
 
 	context->draw(draw_call);
+
+	_pass->end(context);
 }

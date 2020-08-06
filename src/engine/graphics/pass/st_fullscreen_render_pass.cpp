@@ -35,7 +35,7 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 		_vertex_format.get(),
 		(void*)verts,
 		static_cast<uint32_t>(sizeof(float) * 3),
-		12,
+		4,
 		(uint16_t*)indices,
 		6);
 }

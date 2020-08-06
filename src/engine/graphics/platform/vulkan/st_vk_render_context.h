@@ -73,6 +73,7 @@ public:
 	void begin_marker(const std::string& marker) {}
 	void end_marker() {}
 
+	// TODO: Add a new argument for the initial state of the texture.
 	void create_texture(
 		uint32_t width,
 		uint32_t height,
