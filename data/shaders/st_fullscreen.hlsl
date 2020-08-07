@@ -9,8 +9,8 @@ struct ps_input
 	float2 uv : TEXCOORD0;
 };
 
-Texture2D tex : register(t0);
-SamplerState tex_sampler : register(s0);
+[[vk::binding(0, 0)]] Texture2D tex : register(t0);
+[[vk::binding(0, 1)]] SamplerState tex_sampler : register(s0);
 
 ps_input vs_main(vs_input input)
 {

@@ -9,7 +9,7 @@ struct ps_input
 	float4 position : SV_POSITION;
 };
 
-cbuffer cb0 : register(b0)
+[[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
 	float4x4 mvp;
 	float3 constant_color;

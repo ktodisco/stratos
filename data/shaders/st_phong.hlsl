@@ -12,7 +12,7 @@ struct ps_input
 	float3 normal : TEXCOORD0;
 };
 
-cbuffer cb0 : register(b0)
+[[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
 	float4x4 mvp;
 }

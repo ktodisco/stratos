@@ -261,43 +261,59 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 
 	// Create the generic upload buffer.
 	create_buffer(16 * 1024 * 1024, e_st_buffer_usage::transfer_source | e_st_buffer_usage::transfer_dest, _upload_buffer);
+	// TODO: Map the buffer memory, and update image upload to copy to mapped memory instead.
 
 	// Set up the descriptor set layout. This is akin to the root signature in D3D12.
-	std::vector<vk::DescriptorSetLayoutBinding> bindings;
-	bindings.push_back(vk::DescriptorSetLayoutBinding()
-		.setBinding(0)
-		.setDescriptorCount(4)
-		.setDescriptorType(vk::DescriptorType::eSampledImage)
-		.setStageFlags(vk::ShaderStageFlagBits::eFragment));
-	bindings.push_back(vk::DescriptorSetLayoutBinding()
-		.setBinding(0)
-		.setDescriptorCount(4)
-		.setDescriptorType(vk::DescriptorType::eSampler)
-		.setStageFlags(vk::ShaderStageFlagBits::eFragment));
-	bindings.push_back(vk::DescriptorSetLayoutBinding()
-		.setBinding(0)
-		.setDescriptorCount(2)
-		.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-		.setStageFlags(vk::ShaderStageFlagBits::eAll));
-	bindings.push_back(vk::DescriptorSetLayoutBinding()
-		.setBinding(1)
-		.setDescriptorCount(1)
-		.setDescriptorType(vk::DescriptorType::eStorageBuffer)
-		.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+	std::vector<vk::DescriptorSetLayoutBinding> textureBindings;
+	for (uint32_t i = 0; i < 4; ++i)
+	{
+		textureBindings.push_back(vk::DescriptorSetLayoutBinding()
+			.setBinding(i)
+			.setDescriptorCount(1)
+			.setDescriptorType(vk::DescriptorType::eSampledImage)
+			.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+	}
+	std::vector<vk::DescriptorSetLayoutBinding> samplerBindings;
+	for (uint32_t i = 0; i < 4; ++i)
+	{
+		samplerBindings.push_back(vk::DescriptorSetLayoutBinding()
+			.setBinding(i)
+			.setDescriptorCount(1)
+			.setDescriptorType(vk::DescriptorType::eSampler)
+			.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+	}
+	std::vector<vk::DescriptorSetLayoutBinding> constantBindings;
+	for (uint32_t i = 0; i < 2; ++i)
+	{
+		constantBindings.push_back(vk::DescriptorSetLayoutBinding()
+			.setBinding(i)
+			.setDescriptorCount(1)
+			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+			.setStageFlags(vk::ShaderStageFlagBits::eAll));
+	}
+	std::vector<vk::DescriptorSetLayoutBinding> bufferBindings;
+	for (uint32_t i = 0; i < 1; ++i)
+	{
+		bufferBindings.push_back(vk::DescriptorSetLayoutBinding()
+			.setBinding(i)
+			.setDescriptorCount(1)
+			.setDescriptorType(vk::DescriptorType::eStorageBuffer)
+			.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+	}
 
 	std::vector<vk::DescriptorSetLayoutCreateInfo> layout_infos;
 	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(1)
-		.setPBindings(bindings.data()));
+		.setBindingCount(textureBindings.size())
+		.setPBindings(textureBindings.data()));
 	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(1)
-		.setPBindings(&bindings.data()[1]));
+		.setBindingCount(samplerBindings.size())
+		.setPBindings(samplerBindings.data()));
 	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(1)
-		.setPBindings(&bindings.data()[2]));
+		.setBindingCount(constantBindings.size())
+		.setPBindings(constantBindings.data()));
 	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(1)
-		.setPBindings(&bindings.data()[3]));
+		.setBindingCount(bufferBindings.size())
+		.setPBindings(bufferBindings.data()));
 
 	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[0], nullptr, &_descriptor_layouts[0]));
 	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[1], nullptr, &_descriptor_layouts[1]));
@@ -735,8 +751,9 @@ void st_vk_render_context::create_texture_view(st_vk_texture* texture, vk::Image
 	}
 	else if (texture->get_format() == st_format_d24_unorm_s8_uint)
 	{
-		aspect = vk::ImageAspectFlagBits::eDepth |
-			vk::ImageAspectFlagBits::eStencil;
+		// TODO: Can only create one image view per aspect, per Vulkan spec.
+		aspect = vk::ImageAspectFlagBits::eDepth;
+			//| vk::ImageAspectFlagBits::eStencil;
 	}
 
 	vk::ImageSubresourceRange subresource_range = vk::ImageSubresourceRange()
@@ -779,6 +796,8 @@ void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 			&row_bytes,
 			nullptr);
 
+		// TODO: Use the host-mapped upload buffer, then call flushMappedMemoryRanges on the appropriate range.
+		// Maintain a write-head for the mapped buffer so that subsequent uploads do not overlap writes.
 		_command_buffers[st_command_buffer_loading].updateBuffer(_upload_buffer, offset, num_bytes, reinterpret_cast<char*>(data) + offset);
 		offset += num_bytes;
 

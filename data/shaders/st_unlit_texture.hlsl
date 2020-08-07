@@ -12,13 +12,13 @@ struct ps_input
 	float2 uv : TEXCOORD0;
 };
 
-cbuffer cb0 : register(b0)
+[[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
 	float4x4 mvp;
 }
 
-Texture2D diffuse_texture : register(t0);
-SamplerState diffuse_sampler : register(s0);
+[[vk::binding(0, 0)]] Texture2D diffuse_texture : register(t0);
+[[vk::binding(0, 1)]] SamplerState diffuse_sampler : register(s0);
 
 ps_input vs_main(vs_input input)
 {

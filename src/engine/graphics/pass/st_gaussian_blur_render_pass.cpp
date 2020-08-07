@@ -24,7 +24,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		source_buffer->get_width(),
 		source_buffer->get_height(),
 		source_buffer->get_format(),
-		e_st_texture_usage::color_target,
+		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
 	_intermediate_target->set_name("Gaussian Blur Intermediate");
 

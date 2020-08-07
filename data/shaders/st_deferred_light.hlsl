@@ -11,12 +11,12 @@ struct ps_input
 	float2 uv : TEXCOORD0;
 };
 
-Texture2D albedo_texture : register(t0);
-Texture2D normal_texture : register(t1);
-Texture2D third_texture : register(t2);
-Texture2D depth_texture : register(t3);
+[[vk::binding(0, 0)]] Texture2D albedo_texture : register(t0);
+[[vk::binding(1, 0)]] Texture2D normal_texture : register(t1);
+[[vk::binding(2, 0)]] Texture2D third_texture : register(t2);
+[[vk::binding(3, 0)]] Texture2D depth_texture : register(t3);
 
-cbuffer cb0 : register(b0)
+[[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
 	float4x4 inverse_vp;
 	float4 eye;
@@ -29,7 +29,7 @@ struct st_sphere_light
 	float4 color_radius;
 };
 
-StructuredBuffer<st_sphere_light> light_buffer : register(t4);
+[[vk::binding(0, 3)]] StructuredBuffer<st_sphere_light> light_buffer : register(t4);
 
 ps_input vs_main(vs_input input)
 {

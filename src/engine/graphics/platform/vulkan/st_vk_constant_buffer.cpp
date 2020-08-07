@@ -13,7 +13,7 @@
 st_vk_constant_buffer::st_vk_constant_buffer(const size_t size)
 	: _size(size)
 {
-	st_vk_render_context::get()->create_buffer(_size, e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest, _buffer);
+	st_vk_render_context::get()->create_buffer(_size, e_st_buffer_usage::uniform | e_st_buffer_usage::transfer_dest, _buffer);
 }
 
 st_vk_constant_buffer::~st_vk_constant_buffer()
