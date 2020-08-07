@@ -15,19 +15,19 @@ struct ps_input
 	float2 uv : TEXCOORD2;
 };
 
-cbuffer cb0 : register(b0)
+[[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
 	float4x4 model;
 	float4x4 mvp;
 	float4 eye;
 }
 
-Texture2D diffuse_texture : register(t0);
-Texture2D normal_texture : register(t1);
-Texture2D mre_texture : register(t2);
-SamplerState diffuse_sampler : register(s0);
-SamplerState normal_sampler : register(s1);
-SamplerState mre_sampler : register(s2);
+[[vk::binding(0, 0)]] Texture2D diffuse_texture : register(t0);
+[[vk::binding(1, 0)]] Texture2D normal_texture : register(t1);
+[[vk::binding(2, 0)]] Texture2D mre_texture : register(t2);
+[[vk::binding(0, 1)]] SamplerState diffuse_sampler : register(s0);
+[[vk::binding(1, 1)]] SamplerState normal_sampler : register(s1);
+[[vk::binding(2, 1)]] SamplerState mre_sampler : register(s2);
 
 ps_input vs_main(vs_input input)
 {

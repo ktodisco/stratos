@@ -55,9 +55,11 @@ void st_vk_resource_table::set_constant_buffers(uint32_t count, st_constant_buff
 	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
 		.setDescriptorType(vk::DescriptorType::eUniformBuffer)
 		.setDescriptorCount(count)
-		.setDstSet(_buffers)
+		.setDstSet(_constants)
 		.setDstBinding(0)
 		.setPBufferInfo(infos.data());
+
+	device->updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
 void st_vk_resource_table::set_textures(uint32_t count, st_texture** textures)
@@ -81,6 +83,17 @@ void st_vk_resource_table::set_textures(uint32_t count, st_texture** textures)
 		.setDstSet(_textures)
 		.setDstBinding(0)
 		.setPImageInfo(images.data());
+
+	device->updateDescriptorSets(1, &write_set, 0, nullptr);
+
+	write_set = vk::WriteDescriptorSet()
+		.setDescriptorType(vk::DescriptorType::eSampler)
+		.setDescriptorCount(count)
+		.setDstSet(_samplers)
+		.setDstBinding(0)
+		.setPImageInfo(images.data());
+
+	device->updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
 void st_vk_resource_table::set_buffers(uint32_t count, st_buffer** buffers)
@@ -102,11 +115,14 @@ void st_vk_resource_table::set_buffers(uint32_t count, st_buffer** buffers)
 		.setDstSet(_buffers)
 		.setDstBinding(0)
 		.setPBufferInfo(infos.data());
+
+	device->updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
 void st_vk_resource_table::bind(st_vk_render_context* context)
 {
 	context->set_shader_resource_table(_textures);
+	context->set_sampler_table(_samplers);
 	context->set_buffer_table(_buffers);
 	context->set_constant_buffer_table(_constants);
 }
