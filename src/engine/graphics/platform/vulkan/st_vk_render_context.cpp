@@ -260,8 +260,27 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 	VK_VALIDATE(_device.getSwapchainImagesKHR(_swap_chain, &backbuffer_count, &_backbuffers[0]));
 
 	// Create the generic upload buffer.
-	create_buffer(16 * 1024 * 1024, e_st_buffer_usage::transfer_source | e_st_buffer_usage::transfer_dest, _upload_buffer);
-	// TODO: Map the buffer memory, and update image upload to copy to mapped memory instead.
+	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
+		.setUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst)
+		.setQueueFamilyIndexCount(1)
+		.setPQueueFamilyIndices(&_queue_family_index)
+		.setSize(16 * 1024 * 1024);
+
+	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &_upload_buffer));
+
+	// Allocate memory for the buffer.
+	vk::MemoryRequirements memory_reqs;
+	_device.getBufferMemoryRequirements(_upload_buffer, &memory_reqs);
+
+	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
+		.setAllocationSize(memory_reqs.size)
+		.setMemoryTypeIndex(_device_memory_index);
+
+	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &_upload_buffer_memory));
+
+	VK_VALIDATE(_device.bindBufferMemory(_upload_buffer, _upload_buffer_memory, 0));
+	VK_VALIDATE(_device.mapMemory(_upload_buffer_memory, vk::DeviceSize(), memory_reqs.size, vk::MemoryMapFlags(), &_upload_buffer_head));
+	_upload_buffer_offset = 0;
 
 	// Set up the descriptor set layout. This is akin to the root signature in D3D12.
 	std::vector<vk::DescriptorSetLayoutBinding> textureBindings;
@@ -470,6 +489,9 @@ void st_vk_render_context::begin_frame()
 
 	VK_VALIDATE(_command_buffers[st_command_buffer_loading].begin(&begin_info));
 	VK_VALIDATE(_command_buffers[st_command_buffer_graphics].begin(&begin_info));
+
+	// Begin writing to the head of the upload buffer again.
+	_upload_buffer_offset = 0;
 }
 
 void st_vk_render_context::end_frame()
@@ -796,10 +818,17 @@ void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 			&row_bytes,
 			nullptr);
 
-		// TODO: Use the host-mapped upload buffer, then call flushMappedMemoryRanges on the appropriate range.
-		// Maintain a write-head for the mapped buffer so that subsequent uploads do not overlap writes.
-		_command_buffers[st_command_buffer_loading].updateBuffer(_upload_buffer, offset, num_bytes, reinterpret_cast<char*>(data) + offset);
-		offset += num_bytes;
+		memcpy(
+			reinterpret_cast<uint8_t*>(_upload_buffer_head) + _upload_buffer_offset,
+			reinterpret_cast<uint8_t*>(data) + offset,
+			num_bytes);
+
+		// This flush may have a performance cost.
+		vk::MappedMemoryRange mapped_range = vk::MappedMemoryRange()
+			.setMemory(_upload_buffer_memory)
+			.setOffset(vk::DeviceSize(_upload_buffer_offset))
+			.setSize(vk::DeviceSize(num_bytes));
+		VK_VALIDATE(_device.flushMappedMemoryRanges(1, &mapped_range));
 
 		vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
 			.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -809,13 +838,16 @@ void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 
 		vk::BufferImageCopy region = vk::BufferImageCopy()
 			.setBufferImageHeight(level_height)
-			.setBufferRowLength(row_bytes)
-			.setBufferOffset(offset)
+			.setBufferRowLength(level_width)
+			.setBufferOffset(_upload_buffer_offset)
 			.setImageExtent(vk::Extent3D(level_width, level_height, 1))
 			.setImageOffset(vk::Offset3D(0, 0, 0))
 			.setImageSubresource(subresource);
 
 		regions.push_back(region);
+
+		offset += num_bytes;
+		_upload_buffer_offset += num_bytes;
 	}
 
 	_command_buffers[st_command_buffer_loading].copyBufferToImage(
@@ -863,10 +895,6 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags us
 	if (usage & e_st_buffer_usage::uniform_texel) flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
 	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
 
-	// TODO: For now, create all with eTransferDst. This is the correct usage for the
-	// buffer copy to upload to the image.
-	flags |= vk::BufferUsageFlagBits::eTransferDst;
-
 	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
 		.setUsage(flags)
 		.setQueueFamilyIndexCount(1)
@@ -884,9 +912,9 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags us
 		.setMemoryTypeIndex(_device_memory_index);
 
 	vk::DeviceMemory memory;
-	_device.allocateMemory(&allocate_info, nullptr, &memory);
+	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &memory));
 
-	_device.bindBufferMemory(resource, memory, 0);
+	VK_VALIDATE(_device.bindBufferMemory(resource, memory, 0));
 }
 
 void st_vk_render_context::update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data)

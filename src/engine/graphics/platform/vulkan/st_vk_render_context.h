@@ -85,6 +85,8 @@ public:
 	void create_texture_view(class st_vk_texture* texture, vk::ImageView& resource);
 	void destroy_texture_view(vk::ImageView& resource);
 	void upload_texture(class st_vk_texture* texture, void* data);
+	// TODO: In the unified architexture, create_buffer would take a base Buffer* and
+	// the Vulkan implementation would contain both a vkBuffer and vkDeviceMemory.
 	void create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource);
 	void update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data);
 	void destroy_buffer(vk::Buffer& resource);
@@ -139,6 +141,9 @@ private:
 	vk::Fence _fence;
 
 	vk::Buffer _upload_buffer;
+	vk::DeviceMemory _upload_buffer_memory;
+	void* _upload_buffer_head;
+	size_t _upload_buffer_offset;
 
 	uint32_t _queue_family_index = UINT_MAX;
 
