@@ -64,7 +64,7 @@ st_vk_pipeline_state::st_vk_pipeline_state(
 
 	vk::Rect2D scissor = vk::Rect2D()
 		.setOffset(vk::Offset2D())
-		.setExtent(vk::Extent2D(render_pass->get_viewport().x, render_pass->get_viewport().y));
+		.setExtent(vk::Extent2D(render_pass->get_viewport().width, render_pass->get_viewport().height));
 
 	vk::PipelineViewportStateCreateInfo viewport = vk::PipelineViewportStateCreateInfo()
 		.setViewportCount(1)

@@ -28,8 +28,10 @@ struct st_vertex
 	st_vec4f _color = st_vec4f::zero_vector();
 	st_vec2f _uv = st_vec2f::zero_vector();
 
-	uint32_t _joints[4] = { 0, 0, 0, 0 };
-	float _weights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	// TODO: To re-enable these, more robust runtime handling of varying vertex types needs to be
+	// implemented. I.e. support both static and animated verts as separate types.
+	//uint32_t _joints[4] = { 0, 0, 0, 0 };
+	//float _weights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 };
 
 struct st_model_data

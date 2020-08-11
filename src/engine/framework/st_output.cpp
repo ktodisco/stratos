@@ -132,14 +132,14 @@ void st_output::update(st_frame_params* params)
 	params->_height = height;
 
 	_gbuffer_pass->render(_render_context, params);
-	//_deferred_pass->render(_render_context, params);
-	//_bloom_pass->render(_render_context, params);
-	//_tonemap_pass->render(_render_context, params);
+	_deferred_pass->render(_render_context, params);
+	_bloom_pass->render(_render_context, params);
+	_tonemap_pass->render(_render_context, params);
 
 	_render_context->transition_backbuffer_to_target();
 
-	//_passthrough_pass->render(_render_context, params);
-	//_ui_pass->render(_render_context, params);
+	_passthrough_pass->render(_render_context, params);
+	_ui_pass->render(_render_context, params);
 
 	// Swap the frame buffers and release the context.
 	_render_context->transition_backbuffer_to_present();

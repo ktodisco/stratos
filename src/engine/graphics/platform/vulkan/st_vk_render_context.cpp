@@ -146,10 +146,17 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 	// Fill out the device memory type indices.
 	for (int i = 0; i < memory_props.memoryTypeCount; ++i)
 	{
-		if (memory_props.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)
+		if (memory_props.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal &&
+			_device_memory_index == UINT_MAX)
 		{
 			_device_memory_index = i;
-			break;
+		}
+
+		if (memory_props.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostVisible &&
+			memory_props.memoryTypes[i].propertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent &&
+			_mapped_memory_index == UINT_MAX)
+		{
+			_mapped_memory_index = i;
 		}
 	}
 
@@ -274,7 +281,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 
 	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
 		.setAllocationSize(memory_reqs.size)
-		.setMemoryTypeIndex(_device_memory_index);
+		.setMemoryTypeIndex(_mapped_memory_index);
 
 	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &_upload_buffer_memory));
 
