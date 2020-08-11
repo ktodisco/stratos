@@ -372,7 +372,7 @@ void parse_joint_data(std::ifstream &file, st_model_data* model, st_egg_parser_s
 			file >> data; open_parens -= 1;
 
 			// Add the joint and weight to the vertices it influences.
-			for (int i = 0; i < vertices.size(); i++)
+			/*for (int i = 0; i < vertices.size(); i++)
 			{
 				st_vertex* vertex = &model->_vertices[vertices[i]];
 				uint32_t joint_index = 0;
@@ -387,7 +387,7 @@ void parse_joint_data(std::ifstream &file, st_model_data* model, st_egg_parser_s
 				{
 					printf("WARNING: Vertex %d is influencd by more than four joints.\n", vertices[i]);
 				}
-			}
+			}*/
 		}
 		else if (strcmp(data, "<Joint>") == 0)
 		{

@@ -125,6 +125,7 @@ private:
 	vk::Queue _queue;
 
 	uint32_t _device_memory_index = UINT_MAX;
+	uint32_t _mapped_memory_index = UINT_MAX;
 
 	enum e_st_command_buffer
 	{
