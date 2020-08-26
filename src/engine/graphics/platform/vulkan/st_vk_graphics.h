@@ -258,3 +258,17 @@ enum e_st_stencil_op
 	st_stencil_op_incr = vk::StencilOp::eIncrementAndWrap,
 	st_stencil_op_decr = vk::StencilOp::eDecrementAndWrap,
 };
+
+enum e_st_texture_state
+{
+	st_texture_state_common = vk::ImageLayout::ePreinitialized,
+	st_texture_state_render_target = vk::ImageLayout::eColorAttachmentOptimal,
+	st_texture_state_depth_stencil_target = vk::ImageLayout::eDepthStencilAttachmentOptimal,
+	st_texture_state_depth_target = vk::ImageLayout::eDepthAttachmentOptimal,
+	st_texture_state_non_pixel_shader_read = vk::ImageLayout::eShaderReadOnlyOptimal,
+	st_texture_state_pixel_shader_read = vk::ImageLayout::eShaderReadOnlyOptimal,
+	st_texture_state_depth_read = vk::ImageLayout::eDepthReadOnlyOptimal,
+	st_texture_state_present = vk::ImageLayout::ePresentSrcKHR,
+	st_texture_state_copy_source = vk::ImageLayout::eTransferSrcOptimal,
+	st_texture_state_copy_dest = vk::ImageLayout::eTransferDstOptimal,
+};

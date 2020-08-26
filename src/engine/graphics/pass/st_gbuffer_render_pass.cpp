@@ -24,7 +24,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	st_render_texture* third_buffer,
 	st_render_texture* depth_buffer)
 {
-	const st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
+	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
 	_pass = std::make_unique<st_render_pass>(
 		3,
 		targets,

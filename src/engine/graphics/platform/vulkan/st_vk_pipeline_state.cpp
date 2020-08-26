@@ -129,7 +129,6 @@ st_vk_pipeline_state::st_vk_pipeline_state(
 		.setPAttachments(attachment_states.data())
 		.setLogicOpEnable(false);
 
-	// TODO: Set the descriptor set layout.
 	vk::GraphicsPipelineCreateInfo create_info = vk::GraphicsPipelineCreateInfo()
 		.setStageCount(stages.size())
 		.setPStages(stages.data())

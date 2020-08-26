@@ -15,8 +15,8 @@ class st_vk_render_pass
 public:
 	st_vk_render_pass(
 		uint32_t count,
-		const class st_render_texture** targets,
-		const class st_render_texture* depth_stencil);
+		class st_render_texture** targets,
+		class st_render_texture* depth_stencil);
 	~st_vk_render_pass();
 
 	void begin(

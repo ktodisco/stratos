@@ -385,6 +385,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		window->get_height(),
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
+		st_texture_state_present,
 		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
 }
 
@@ -508,50 +509,47 @@ void st_vk_render_context::end_frame()
 void st_vk_render_context::transition_backbuffer_to_target()
 {
 	// Transition the present target to the optimal layout for rendering.
-	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-		.setAspectMask(vk::ImageAspectFlagBits::eColor)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1)
-		.setBaseMipLevel(0)
-		.setLevelCount(1);
-
-	vk::ImageMemoryBarrier barriers[] =
-	{
-		vk::ImageMemoryBarrier()
-		.setImage(_present_target->get_resource())
-		.setOldLayout(vk::ImageLayout::eTransferSrcOptimal)
-		.setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
-		.setSubresourceRange(range),
-	};
-
-	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::DependencyFlags(),
-		0,
-		nullptr,
-		0,
-		nullptr,
-		std::size(barriers),
-		barriers);
+	transition_target(_present_target.get(), st_texture_state_present, st_texture_state_render_target);
 }
 
 void st_vk_render_context::transition_backbuffer_to_present()
 {
 	// Transition the present target to the optimal layout for copy.
+	transition_target(_present_target.get(), st_texture_state_render_target, st_texture_state_present);
+}
+
+void st_vk_render_context::transition_target(
+	st_vk_texture* texture,
+	e_st_texture_state old_state,
+	e_st_texture_state new_state)
+{
+	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+
+	if (texture->get_format() == st_format_d16_unorm ||
+		texture->get_format() == st_format_d32_float)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth;
+	}
+	else if (texture->get_format() == st_format_d24_unorm_s8_uint)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth |
+			vk::ImageAspectFlagBits::eStencil;
+	}
+
+	// Transition the present target to the optimal layout for copy.
 	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-		.setAspectMask(vk::ImageAspectFlagBits::eColor)
+		.setAspectMask(aspect)
 		.setBaseArrayLayer(0)
 		.setLayerCount(1)
 		.setBaseMipLevel(0)
-		.setLevelCount(1);
+		.setLevelCount(texture->get_levels());
 
 	vk::ImageMemoryBarrier barriers[] =
 	{
 		vk::ImageMemoryBarrier()
-		.setImage(_present_target->get_resource())
-		.setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
-		.setNewLayout(vk::ImageLayout::eTransferSrcOptimal)
+		.setImage(texture->get_resource())
+		.setOldLayout(vk::ImageLayout(old_state))
+		.setNewLayout(vk::ImageLayout(new_state))
 		.setSubresourceRange(range),
 	};
 

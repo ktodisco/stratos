@@ -25,10 +25,11 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		source_buffer->get_height(),
 		source_buffer->get_format(),
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
+		st_texture_state_pixel_shader_read,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
 	_intermediate_target->set_name("Gaussian Blur Intermediate");
 
-	const st_render_texture* vertical_blur_targets[] = { _intermediate_target.get() };
+	st_render_texture* vertical_blur_targets[] = { _intermediate_target.get() };
 	_vertical_blur_pass = std::make_unique<st_render_pass>(
 		1,
 		vertical_blur_targets,
@@ -50,7 +51,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		vertical_blur_state_desc,
 		_vertical_blur_pass.get());
 
-	const st_render_texture* horizontal_blur_targets[] = { target_buffer };
+	st_render_texture* horizontal_blur_targets[] = { target_buffer };
 	_horizontal_blur_pass = std::make_unique<st_render_pass>(
 		1,
 		horizontal_blur_targets,
@@ -90,13 +91,13 @@ void st_gaussian_blur_render_pass::render(
 
 		context->set_pipeline_state(_vertical_blur_state.get());
 
+		_vertical_blur_material->bind(context, params, identity, identity, identity);
+
 		st_vec4f clears[] =
 		{
 			{ 0.0f, 0.0f, 0.0f, 1.0f },
 		};
 		_vertical_blur_pass->begin(context, clears, std::size(clears));
-
-		_vertical_blur_material->bind(context, params, identity, identity, identity);
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -113,13 +114,13 @@ void st_gaussian_blur_render_pass::render(
 
 		context->set_pipeline_state(_horizontal_blur_state.get());
 
+		_horizontal_blur_material->bind(context, params, identity, identity, identity);
+
 		st_vec4f clears[] =
 		{
 			{ 0.0f, 0.0f, 0.0f, 1.0f },
 		};
 		_horizontal_blur_pass->begin(context, clears, std::size(clears));
-
-		_horizontal_blur_material->bind(context, params, identity, identity, identity);
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";

@@ -18,14 +18,16 @@ st_deferred_light_material::st_deferred_light_material(
 	st_texture* normal_texture,
 	st_texture* third_texture,
 	st_texture* depth_texture,
-	st_constant_buffer* light_buffer) :
+	st_constant_buffer* constants,
+	st_buffer* light_buffer) :
 	_albedo(albedo_texture),
 	_normal(normal_texture),
 	_third(third_texture),
 	_depth(depth_texture)
 {
 	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->set_constant_buffers(1, &light_buffer);
+	_resource_table->set_constant_buffers(1, &constants);
+	_resource_table->set_buffers(1, &light_buffer);
 
 	st_texture* textures[] = {
 		_albedo,
@@ -61,7 +63,10 @@ void st_deferred_light_material::bind(
 	_third->set_meta("SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");
 	_depth->set_meta("SPIRV_Cross_Combineddepth_textureSPIRV_Cross_DummySampler");
 
-	// TODO: Call transition on the input textures.
+	_albedo->transition(context, st_texture_state_pixel_shader_read);
+	_normal->transition(context, st_texture_state_pixel_shader_read);
+	_third->transition(context, st_texture_state_pixel_shader_read);
+	_depth->transition(context, st_texture_state_pixel_shader_read);
 
 	_resource_table->bind(context);
 }

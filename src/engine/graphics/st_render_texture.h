@@ -32,6 +32,7 @@ public:
 		uint32_t height,
 		e_st_format format,
 		e_st_texture_usage_flags usage,
+		e_st_texture_state initial_state,
 		st_vec4f clear) :
-		st_platform_render_texture(width, height, format, usage, clear) {}
+		st_platform_render_texture(width, height, format, usage, initial_state, clear) {}
 };

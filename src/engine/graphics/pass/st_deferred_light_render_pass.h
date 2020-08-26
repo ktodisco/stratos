@@ -28,7 +28,6 @@ private:
 	std::unique_ptr<class st_render_pass> _pass = nullptr;
 	std::unique_ptr<class st_constant_buffer> _constant_buffer = nullptr;
 	std::unique_ptr<class st_buffer> _light_buffer = nullptr;
-	std::unique_ptr<class st_resource_table> _resources = nullptr;
 };
 
 struct st_deferred_light_cb

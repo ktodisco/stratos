@@ -17,7 +17,7 @@
 st_passthrough_render_pass::st_passthrough_render_pass(
 	st_render_texture* source_buffer)
 {
-	const st_render_texture* targets[] =
+	st_render_texture* targets[] =
 	{
 		st_render_context::get()->get_present_target()
 	};

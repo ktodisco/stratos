@@ -19,9 +19,11 @@ public:
 	st_vk_framebuffer(
 		const vk::RenderPass& pass,
 		uint32_t count,
-		const class st_render_texture** targets,
-		const class st_render_texture* depth_stencil);
+		class st_render_texture** targets,
+		class st_render_texture* depth_stencil);
 	~st_vk_framebuffer();
+
+	void transition(class st_render_context* context);
 
 	const vk::Framebuffer& get() const { return _framebuffer; }
 	uint32_t get_width() const { return _width; }
@@ -29,6 +31,8 @@ public:
 
 private:
 	vk::Framebuffer _framebuffer;
+	std::vector<class st_render_texture*> _targets;
+	class st_render_texture* _depth_stencil = nullptr;
 
 	// TODO: Delete these when render pass begin takes a desc that defines the clear values and viewports.
 	uint32_t _width = 0;

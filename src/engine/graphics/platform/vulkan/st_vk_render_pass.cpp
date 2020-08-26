@@ -18,8 +18,8 @@
 
 st_vk_render_pass::st_vk_render_pass(
 	uint32_t count,
-	const st_render_texture** targets,
-	const st_render_texture* depth_stencil)
+	st_render_texture** targets,
+	st_render_texture* depth_stencil)
 {
 	vk::Device* device = st_vk_render_context::get()->get_device();
 
@@ -30,7 +30,9 @@ st_vk_render_pass::st_vk_render_pass(
 			.setX(0)
 			.setY(0)
 			.setWidth(targets[0]->get_width())
-			.setHeight(targets[0]->get_height());
+			.setHeight(targets[0]->get_height())
+			.setMinDepth(0.0f)
+			.setMaxDepth(1.0f);
 	}
 
 	std::vector<vk::AttachmentDescription> attachment_descs;
@@ -65,13 +67,13 @@ st_vk_render_pass::st_vk_render_pass(
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
-			.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			.setInitialLayout(vk::ImageLayout::eDepthAttachmentOptimal)
+			.setFinalLayout(vk::ImageLayout::eDepthAttachmentOptimal);
 		attachment_descs.push_back(ds_desc);
 
 		vk::AttachmentReference ds_ref = vk::AttachmentReference()
 			.setAttachment(attachment_descs.size() - 1)
-			.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+			.setLayout(vk::ImageLayout::eDepthAttachmentOptimal);
 
 		subpass_desc.setPDepthStencilAttachment(&ds_ref);
 	}
@@ -124,6 +126,8 @@ void st_vk_render_pass::begin(
 		.setFramebuffer(_framebuffer->get())
 		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(_framebuffer->get_width(), _framebuffer->get_height())))
 		.setRenderPass(_render_pass);
+
+	_framebuffer->transition(context);
 
 	command_buffer->beginRenderPass(&begin_info, vk::SubpassContents::eInline);
 }
