@@ -25,6 +25,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		source_buffer->get_height() / 2,
 		source_buffer->get_format(),
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
+		st_texture_state_pixel_shader_read,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
 	half_target->set_name("Bloom Half Res");
 
@@ -33,10 +34,11 @@ st_bloom_render_pass::st_bloom_render_pass(
 		source_buffer->get_height() / 2,
 		source_buffer->get_format(),
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
+		st_texture_state_pixel_shader_read,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
 	blur_target->set_name("Bloom Blur Target");
 
-	const st_render_texture* targets[] = { half_target.get() };
+	st_render_texture* targets[] = { half_target.get() };
 	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,
@@ -79,14 +81,14 @@ void st_bloom_render_pass::render(
 	context->set_scissor(0, 0, _targets[0]->get_width(), _targets[0]->get_height());
 	context->set_pipeline_state(_pipeline_state.get());
 
+	_material->bind(context, params, identity, identity, identity);
+
 	st_vec4f clears[] =
 	{
 		{ 0.0f, 0.0f, 0.0f, 1.0f },
 	};
 
 	_pass->begin(context, clears, std::size(clears));
-
-	_material->bind(context, params, identity, identity, identity);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";

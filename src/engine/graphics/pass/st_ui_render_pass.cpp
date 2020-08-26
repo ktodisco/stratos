@@ -20,7 +20,7 @@
 
 st_ui_render_pass::st_ui_render_pass()
 {
-	const st_render_texture* targets[] =
+	st_render_texture* targets[] =
 	{
 		st_render_context::get()->get_present_target()
 	};

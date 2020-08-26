@@ -40,18 +40,16 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		sizeof(st_sphere_light_data),
 		e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest);
 	_light_buffer->set_meta("type_StructuredBuffer_st_sphere_light");
-	_resources = std::make_unique<st_resource_table>();
-	st_buffer* buffers[] = { _light_buffer.get() };
-	_resources->set_buffers(1, buffers);
 
 	_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
 		normal_buffer,
 		third_buffer,
 		depth_buffer,
-		_constant_buffer.get());
+		_constant_buffer.get(),
+		_light_buffer.get());
 
-	const st_render_texture* targets[] = { output_buffer };
+	st_render_texture* targets[] = { output_buffer };
 	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,
@@ -86,7 +84,7 @@ void st_deferred_light_render_pass::render(
 	context->set_pipeline_state(_pipeline_state.get());
 
 	// Set global pass resource tables.
-	_resources->bind(context);
+	_material->bind(context, params, identity, identity, identity);
 
 	st_vec4f clears[] =
 	{
@@ -117,8 +115,6 @@ void st_deferred_light_render_pass::render(
 	light_data._position_power = st_vec4f(params->_light->_position, params->_light->_power);
 	light_data._color_radius = st_vec4f(params->_light->_color, params->_light->_radius);
 	_light_buffer->update(context, &light_data, 1);
-
-	_material->bind(context, params, identity, identity, identity);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";

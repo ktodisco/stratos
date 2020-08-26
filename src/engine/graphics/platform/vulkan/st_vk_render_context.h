@@ -62,9 +62,10 @@ public:
 	void transition_backbuffer_to_target();
 	void transition_backbuffer_to_present();
 
-	/*void transition_targets(
-		uint32_t count,
-		D3D12_RESOURCE_BARRIER* barriers) {}*/
+	void transition_target(
+		st_vk_texture* texture,
+		e_st_texture_state old_state,
+		e_st_texture_state new_state);
 
 	void begin_frame();
 	void end_frame();
@@ -98,7 +99,7 @@ public:
 	vk::Device* get_device() { return std::addressof(_device); }
 	vk::CommandBuffer* get_command_buffer() { return std::addressof(_command_buffers[st_command_buffer_graphics]); }
 	vk::PipelineLayout* get_layout() { return std::addressof(_pipeline_layout); }
-	const st_render_texture* get_present_target() { return _present_target.get(); }
+	st_render_texture* get_present_target() { return _present_target.get(); }
 
 	static st_vk_render_context* get() { return _this; }
 

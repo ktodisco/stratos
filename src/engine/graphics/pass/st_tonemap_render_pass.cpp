@@ -19,7 +19,7 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
-	const st_render_texture* targets[] = { target_buffer };
+	st_render_texture* targets[] = { target_buffer };
 	_pass = std::make_unique<st_render_pass>(
 		1,
 		targets,
@@ -54,14 +54,14 @@ void st_tonemap_render_pass::render(
 	context->set_scissor(0, 0, params->_width, params->_height);
 	context->set_pipeline_state(_pipeline_state.get());
 
+	_material->bind(context, params, identity, identity, identity);
+
 	st_vec4f clears[] =
 	{
 		{ 0.0f, 0.0f, 0.0f, 1.0f },
 	};
 
 	_pass->begin(context, clears, std::size(clears));
-
-	_material->bind(context, params, identity, identity, identity);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";

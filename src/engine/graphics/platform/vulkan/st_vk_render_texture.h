@@ -24,6 +24,7 @@ public:
 		uint32_t height,
 		e_st_format format,
 		e_st_texture_usage_flags usage,
+		e_st_texture_state initial_state,
 		const st_vec4f& clear);
 	~st_vk_render_texture();
 };

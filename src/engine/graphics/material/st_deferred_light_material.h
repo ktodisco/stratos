@@ -16,7 +16,8 @@ public:
 		class st_texture* normal_texture,
 		class st_texture* third_texture,
 		class st_texture* depth_texture,
-		class st_constant_buffer* light_buffer);
+		class st_constant_buffer* constants,
+		class st_buffer* light_buffer);
 	~st_deferred_light_material();
 
 	virtual void bind(
