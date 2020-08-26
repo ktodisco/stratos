@@ -89,7 +89,15 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 	context->set_scissor(0, 0, params->_width, params->_height);
 	context->set_pipeline_state(_gbuffer_state.get());
 
-	_pass->begin(context);
+	st_vec4f clears[] =
+	{
+		{ 0.0f, 0.0f, 0.0f, 1.0f },
+		{ 0.0f, 0.0f, 0.0f, 0.0f },
+		{ 0.0f, 0.0f, 0.0f, 0.0f },
+		{ 1.0f, 0.0f, 0.0f, 0.0f }
+	};
+
+	_pass->begin(context, clears, std::size(clears));
 
 	// Clear viewport.
 	context->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);

@@ -61,5 +61,7 @@ void st_deferred_light_material::bind(
 	_third->set_meta("SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");
 	_depth->set_meta("SPIRV_Cross_Combineddepth_textureSPIRV_Cross_DummySampler");
 
+	// TODO: Call transition on the input textures.
+
 	_resource_table->bind(context);
 }

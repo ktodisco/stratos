@@ -40,7 +40,7 @@ st_vk_render_pass::st_vk_render_pass(
 		vk::AttachmentDescription desc = vk::AttachmentDescription()
 			.setFormat(vk::Format(targets[i]->get_format()))
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(vk::AttachmentLoadOp::eLoad)
+			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
 			.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
 			.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
@@ -63,7 +63,7 @@ st_vk_render_pass::st_vk_render_pass(
 		vk::AttachmentDescription ds_desc = vk::AttachmentDescription()
 			.setFormat(vk::Format(depth_stencil->get_format()))
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(vk::AttachmentLoadOp::eLoad)
+			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
 			.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
@@ -100,12 +100,27 @@ st_vk_render_pass::~st_vk_render_pass()
 	_framebuffer = nullptr;
 }
 
-void st_vk_render_pass::begin(st_render_context* context)
+void st_vk_render_pass::begin(
+	st_render_context* context,
+	class st_vec4f* clear_values,
+	const uint8_t clear_count)
 {
 	vk::CommandBuffer* command_buffer = context->get_command_buffer();
 
+	std::vector<st_vec4f> inputs(clear_values, clear_values + clear_count);
+	std::vector<vk::ClearValue> clears;
+	clears.resize(inputs.size());
+	std::transform(inputs.begin(), inputs.end(), clears.begin(),
+		[](st_vec4f& value) {
+			std::array<float, 4> a;
+			std::copy(value.axes, value.axes + 4, a.begin());
+			return vk::ClearValue().setColor(vk::ClearColorValue().setFloat32(a));
+		}
+	);
+
 	vk::RenderPassBeginInfo begin_info = vk::RenderPassBeginInfo()
-		.setClearValueCount(0)
+		.setPClearValues(clears.data())
+		.setClearValueCount(clears.size())
 		.setFramebuffer(_framebuffer->get())
 		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(_framebuffer->get_width(), _framebuffer->get_height())))
 		.setRenderPass(_render_pass);

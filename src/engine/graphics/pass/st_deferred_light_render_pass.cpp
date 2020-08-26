@@ -88,7 +88,13 @@ void st_deferred_light_render_pass::render(
 	// Set global pass resource tables.
 	_resources->bind(context);
 
-	_pass->begin(context);
+	st_vec4f clears[] =
+	{
+		{ 0.0f, 0.0f, 0.0f, 1.0f },
+		{ 1.0f, 0.0f, 0.0f, 0.0f }
+	};
+
+	_pass->begin(context, clears, std::size(clears));
 
 	// Update the light information.
 	st_mat4f perspective;

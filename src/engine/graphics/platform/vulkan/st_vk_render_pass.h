@@ -10,8 +10,6 @@
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
-class st_render_texture;
-
 class st_vk_render_pass
 {
 public:
@@ -21,7 +19,10 @@ public:
 		const class st_render_texture* depth_stencil);
 	~st_vk_render_pass();
 
-	void begin(class st_render_context* context);
+	void begin(
+		class st_render_context* context,
+		class st_vec4f* clear_values,
+		const uint8_t clear_count);
 	void end(class st_render_context* context);
 
 	const vk::RenderPass& get() const { return _render_pass; }
