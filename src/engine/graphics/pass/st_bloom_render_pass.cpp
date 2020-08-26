@@ -79,7 +79,12 @@ void st_bloom_render_pass::render(
 	context->set_scissor(0, 0, _targets[0]->get_width(), _targets[0]->get_height());
 	context->set_pipeline_state(_pipeline_state.get());
 
-	_pass->begin(context);
+	st_vec4f clears[] =
+	{
+		{ 0.0f, 0.0f, 0.0f, 1.0f },
+	};
+
+	_pass->begin(context, clears, std::size(clears));
 
 	_material->bind(context, params, identity, identity, identity);
 

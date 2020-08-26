@@ -26,9 +26,9 @@ bool vk_validate(vk::Result result);
 
 enum e_st_primitive_topology_type
 {
-	st_primitive_topology_type_point = 0,
-	st_primitive_topology_type_line = 1,
-	st_primitive_topology_type_triangle = 2,
+	st_primitive_topology_type_point = vk::PrimitiveTopology::ePointList,
+	st_primitive_topology_type_line = vk::PrimitiveTopology::eLineList,
+	st_primitive_topology_type_triangle = vk::PrimitiveTopology::eTriangleList,
 };
 
 enum e_st_primitive_topology

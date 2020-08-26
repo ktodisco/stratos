@@ -89,7 +89,12 @@ void st_gaussian_blur_render_pass::render(
 		st_render_marker marker("Vertical Blur");
 
 		context->set_pipeline_state(_vertical_blur_state.get());
-		_vertical_blur_pass->begin(context);
+
+		st_vec4f clears[] =
+		{
+			{ 0.0f, 0.0f, 0.0f, 1.0f },
+		};
+		_vertical_blur_pass->begin(context, clears, std::size(clears));
 
 		_vertical_blur_material->bind(context, params, identity, identity, identity);
 
@@ -107,7 +112,12 @@ void st_gaussian_blur_render_pass::render(
 		st_render_marker marker("Horizontal Blur");
 
 		context->set_pipeline_state(_horizontal_blur_state.get());
-		_horizontal_blur_pass->begin(context);
+
+		st_vec4f clears[] =
+		{
+			{ 0.0f, 0.0f, 0.0f, 1.0f },
+		};
+		_horizontal_blur_pass->begin(context, clears, std::size(clears));
 
 		_horizontal_blur_material->bind(context, params, identity, identity, identity);
 
