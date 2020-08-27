@@ -71,7 +71,7 @@ void st_vk_framebuffer::transition(st_render_context* context)
 
 	if (_depth_stencil)
 	{
-		_depth_stencil->transition(context, st_texture_state_depth_target);
+		_depth_stencil->transition(context, st_texture_state_depth_stencil_target);
 	}
 }
 

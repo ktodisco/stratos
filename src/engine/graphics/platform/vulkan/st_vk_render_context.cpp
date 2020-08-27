@@ -21,6 +21,9 @@ st_vk_render_context* st_vk_render_context::_this = nullptr;
 
 st_vk_render_context::st_vk_render_context(const st_window* window)
 {
+	uint32_t api_version;
+	vk::enumerateInstanceVersion(&api_version);
+
 	std::vector<const char*> layer_names;
 	std::vector<const char*> extension_names;
 
@@ -69,7 +72,8 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 	auto app_info = vk::ApplicationInfo()
 		.setPApplicationName("Stratos Renderer")
 		.setPEngineName("Stratos")
-		.setEngineVersion(1);
+		.setEngineVersion(1)
+		.setApiVersion(api_version);
 
 	auto create_info = vk::InstanceCreateInfo()
 		.setPApplicationInfo(&app_info)
@@ -138,6 +142,9 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 
 		extension_names.push_back(extension.extensionName);
 	}
+
+	// Query the device capabilities.
+	_gpu.getProperties(&_caps);
 
 	// Query the device memory properties.
 	vk::PhysicalDeviceMemoryProperties memory_props;
@@ -504,6 +511,17 @@ void st_vk_render_context::begin_frame()
 
 void st_vk_render_context::end_frame()
 {
+	if (_upload_buffer_offset > 0)
+	{
+		size_t flush_size = align_value(_upload_buffer_offset, static_cast<uint32_t>(_caps.limits.nonCoherentAtomSize));
+
+		// This flush may have a performance cost.
+		vk::MappedMemoryRange mapped_range = vk::MappedMemoryRange()
+			.setMemory(_upload_buffer_memory)
+			.setOffset(vk::DeviceSize(0))
+			.setSize(vk::DeviceSize(flush_size));
+		VK_VALIDATE(_device.flushMappedMemoryRanges(1, &mapped_range));
+	}
 }
 
 void st_vk_render_context::transition_backbuffer_to_target()
@@ -810,30 +828,28 @@ void st_vk_render_context::upload_texture(st_vk_texture* texture, void* data)
 	uint64_t offset = 0;
 	for (int i = 0; i < texture->get_levels(); ++i)
 	{
-		uint32_t level_width = texture->get_width() >> i;
-		uint32_t level_height = texture->get_height() >> i;
+		uint32_t level_width = std::max(texture->get_width() >> i, 1u);
+		uint32_t level_height = std::max(texture->get_height() >> i, 1u);
 
+		size_t bpp;
 		size_t row_bytes;
 		size_t num_bytes;
 		get_surface_info(
 			level_width,
 			level_height,
 			texture->get_format(),
+			&bpp,
 			&num_bytes,
 			&row_bytes,
 			nullptr);
+
+		// Align the upload buffer offset to the pixel size to satisfy Vulkan requirement.
+		_upload_buffer_offset = align_value(_upload_buffer_offset, bpp);
 
 		memcpy(
 			reinterpret_cast<uint8_t*>(_upload_buffer_head) + _upload_buffer_offset,
 			reinterpret_cast<uint8_t*>(data) + offset,
 			num_bytes);
-
-		// This flush may have a performance cost.
-		vk::MappedMemoryRange mapped_range = vk::MappedMemoryRange()
-			.setMemory(_upload_buffer_memory)
-			.setOffset(vk::DeviceSize(_upload_buffer_offset))
-			.setSize(vk::DeviceSize(num_bytes));
-		VK_VALIDATE(_device.flushMappedMemoryRanges(1, &mapped_range));
 
 		vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
 			.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -924,7 +940,7 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags us
 
 void st_vk_render_context::update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data)
 {
-	_command_buffers[st_command_buffer_loading].updateBuffer(resource, offset, num_bytes, data);
+	_command_buffers[st_command_buffer_loading].updateBuffer(resource, offset, align_value(num_bytes, 4), data);
 }
 
 void st_vk_render_context::destroy_buffer(vk::Buffer& resource)

@@ -37,8 +37,7 @@ ps_input vs_main(vs_input input)
 	
 	float2 texcoord_base = float2(0.5f, 0.5f);
 	result.uv = input.position.xy * texcoord_base + texcoord_base;
-	
-	// TODO: Vulkan has flipped the y coordinate space for screenspace, so we need to account for that.
+
 	result.position = float4(input.position.xy, 0.0f, 1.0f);
 	
 	return result;

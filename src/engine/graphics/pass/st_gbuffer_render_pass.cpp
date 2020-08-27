@@ -85,6 +85,19 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 	st_mat4f perspective;
 	perspective.make_perspective_rh(st_degrees_to_radians(45.0f), (float)params->_width / (float)params->_height, 0.1f, 10000.0f);
 
+#if defined(ST_GRAPHICS_API_VULKAN)
+	// Vulkan requires a correction to the projection matrix to account for both framebuffer coordinate
+	// and depth range changes.
+	st_mat4f vk_correction =
+	{
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.5f, 0.5f,
+		0.0f, 0.0f, 0.0f, 1.0f,
+	};
+	perspective = vk_correction * perspective;
+#endif
+
 	context->set_viewport(0, 0, params->_width, params->_height);
 	context->set_scissor(0, 0, params->_width, params->_height);
 	context->set_pipeline_state(_gbuffer_state.get());
