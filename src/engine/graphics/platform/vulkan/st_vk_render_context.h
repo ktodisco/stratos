@@ -122,6 +122,7 @@ private:
 
 	vk::Instance _instance;
 	vk::PhysicalDevice _gpu;
+	vk::PhysicalDeviceProperties _caps;
 	vk::Device _device;
 	vk::Queue _queue;
 

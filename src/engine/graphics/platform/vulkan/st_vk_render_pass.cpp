@@ -67,13 +67,13 @@ st_vk_render_pass::st_vk_render_pass(
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(vk::AttachmentLoadOp::eClear)
 			.setStoreOp(vk::AttachmentStoreOp::eStore)
-			.setInitialLayout(vk::ImageLayout::eDepthAttachmentOptimal)
-			.setFinalLayout(vk::ImageLayout::eDepthAttachmentOptimal);
+			.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		attachment_descs.push_back(ds_desc);
 
 		vk::AttachmentReference ds_ref = vk::AttachmentReference()
 			.setAttachment(attachment_descs.size() - 1)
-			.setLayout(vk::ImageLayout::eDepthAttachmentOptimal);
+			.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
 		subpass_desc.setPDepthStencilAttachment(&ds_ref);
 	}

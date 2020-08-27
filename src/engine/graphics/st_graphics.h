@@ -282,6 +282,7 @@ inline bool get_surface_info(
 	size_t width,
 	size_t height,
 	e_st_format fmt,
+	size_t* out_bpp,
 	size_t* out_num_bytes,
 	size_t* out_row_bytes,
 	size_t* out_num_rows)
@@ -410,6 +411,10 @@ inline bool get_surface_info(
 	static_assert(sizeof(size_t) == 8, "Not a 64-bit platform!");
 #endif
 
+	if (out_bpp)
+	{
+		*out_bpp = static_cast<size_t>(bpe);
+	}
 	if (out_num_bytes)
 	{
 		*out_num_bytes = static_cast<size_t>(num_bytes);

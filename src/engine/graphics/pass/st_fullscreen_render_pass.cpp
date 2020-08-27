@@ -19,25 +19,29 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 
 	const float verts[] =
 	{
-		1.0f, 1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f,
+#if defined(ST_GRAPHICS_API_VULKAN)
 		-1.0f, 1.0f, 0.0f,
+		3.0f, 1.0f, 0.0f,
+		-1.0f, -3.0f, 0.0f,
+#else
+		-1.0f, -1.0f, 0.0f,
+		3.0f, -1.0f, 0.0f,
+		-1.0f, 3.0f, 0.0f,
+#endif
 	};
 
 	const uint16_t indices[] =
 	{
-		2, 1, 0,
-		3, 2, 0,
+		0, 1, 2
 	};
 
 	_fullscreen_quad = std::make_unique<st_geometry>(
 		_vertex_format.get(),
 		(void*)verts,
 		static_cast<uint32_t>(sizeof(float) * 3),
-		4,
+		3,
 		(uint16_t*)indices,
-		6);
+		3);
 }
 
 st_fullscreen_render_pass::~st_fullscreen_render_pass()

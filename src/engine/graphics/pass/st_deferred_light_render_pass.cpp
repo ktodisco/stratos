@@ -102,7 +102,7 @@ void st_deferred_light_render_pass::render(
 	constant_data._inverse_vp = (params->_view * perspective).inverse();
 	constant_data._inverse_vp.transpose();
 	constant_data._eye = st_vec4f(params->_eye, 0.0f);
-#if defined(ST_GRAPHICS_API_OPENGL)
+#if defined(ST_GRAPHICS_API_OPENGL) || defined(ST_GRAPHICS_API_VULKAN)
 	constant_data._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.0f, 0.0f);
 #else
 	constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);
