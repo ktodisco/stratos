@@ -92,8 +92,8 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 	{
 		1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, -1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.5f, 0.5f,
-		0.0f, 0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 0.5f, 0.0f,
+		0.0f, 0.0f, 0.5f, 1.0f,
 	};
 	perspective = vk_correction * perspective;
 #endif
