@@ -14,7 +14,7 @@ st_vk_render_texture::st_vk_render_texture(
 	e_st_format format,
 	e_st_texture_usage_flags usage,
 	e_st_texture_state initial_state,
-	const st_vec4f& clear) : st_texture(width, height, 1, format, usage, initial_state)
+	const st_vec4f& clear) : st_texture(width, height, 1, format, usage, initial_state, nullptr)
 {
 }
 

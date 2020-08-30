@@ -261,7 +261,7 @@ enum e_st_stencil_op
 
 enum e_st_texture_state
 {
-	st_texture_state_common = vk::ImageLayout::ePreinitialized,
+	st_texture_state_common = vk::ImageLayout::eUndefined,
 	st_texture_state_render_target = vk::ImageLayout::eColorAttachmentOptimal,
 	st_texture_state_depth_stencil_target = vk::ImageLayout::eDepthStencilAttachmentOptimal,
 	st_texture_state_depth_target = vk::ImageLayout::eDepthAttachmentOptimal,

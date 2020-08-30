@@ -23,6 +23,6 @@ public:
 	virtual void update(struct st_frame_params* params) override;
 
 private:
-	std::unique_ptr<class st_material> _material;
+	std::unique_ptr<class st_material> _material = nullptr;
 	std::unique_ptr<class st_geometry> _geometry = nullptr;
 };

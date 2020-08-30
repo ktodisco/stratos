@@ -18,7 +18,8 @@ st_vk_texture::st_vk_texture(
 	uint32_t levels,
 	e_st_format format,
 	e_st_texture_usage_flags usage,
-	e_st_texture_state initial_state)
+	e_st_texture_state initial_state,
+	void* data)
 	: _width(width), _height(height), _levels(levels), _format(format), _usage(usage)
 {
 	st_vk_render_context* context = st_vk_render_context::get();
@@ -29,19 +30,18 @@ st_vk_texture::st_vk_texture(
 		levels,
 		format,
 		usage,
+		initial_state,
+		data,
 		_handle);
 	st_vk_render_context::get()->create_texture_view(this, _view);
-	transition(context, initial_state);
+
+	_state = initial_state;
 }
 
 st_vk_texture::~st_vk_texture()
 {
-
-}
-
-void st_vk_texture::load_from_data(void* data)
-{
-	st_vk_render_context::get()->upload_texture(this, data);
+	st_vk_render_context::get()->destroy_texture_view(_view);
+	st_vk_render_context::get()->destroy_texture(_handle);
 }
 
 void st_vk_texture::bind(class st_dx12_render_context* context)
