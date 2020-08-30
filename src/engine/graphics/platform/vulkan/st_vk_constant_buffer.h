@@ -28,6 +28,7 @@ public:
 
 private:
 	vk::Buffer _buffer;
+	vk::DeviceMemory _memory;
 	size_t _size;
 };
 

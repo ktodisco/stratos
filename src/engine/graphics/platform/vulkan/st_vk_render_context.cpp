@@ -444,6 +444,7 @@ st_vk_render_context::~st_vk_render_context()
 	_device.destroyDescriptorSetLayout(_descriptor_layouts[1], nullptr);
 	_device.destroyDescriptorSetLayout(_descriptor_layouts[2], nullptr);
 	_device.destroyDescriptorSetLayout(_descriptor_layouts[3], nullptr);
+	_device.freeMemory(_upload_buffer_memory, nullptr);
 	_device.destroyBuffer(_upload_buffer, nullptr);
 	_device.destroyFence(_fence, nullptr);
 	_device.destroyFence(_acquire_fence, nullptr);
@@ -722,7 +723,8 @@ void st_vk_render_context::create_texture(
 	e_st_texture_usage_flags usage,
 	e_st_texture_state initial_state,
 	void* data,
-	vk::Image& resource)
+	vk::Image& resource,
+	vk::DeviceMemory& memory)
 {
 	vk::ImageUsageFlags flags;
 
@@ -759,10 +761,8 @@ void st_vk_render_context::create_texture(
 		.setAllocationSize(memory_reqs.size)
 		.setMemoryTypeIndex(_device_memory_index);
 
-	vk::DeviceMemory memory;
-	_device.allocateMemory(&allocate_info, nullptr, &memory);
-
-	_device.bindImageMemory(resource, memory, 0);
+	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &memory));
+	VK_VALIDATE(_device.bindImageMemory(resource, memory, 0));
 
 	// Transition the image to its intended state.
 	vk::ImageLayout dst_layout = (data != nullptr) ? vk::ImageLayout::eTransferDstOptimal : vk::ImageLayout(initial_state);
@@ -891,8 +891,9 @@ void st_vk_render_context::create_texture(
 	}
 }
 
-void st_vk_render_context::destroy_texture(vk::Image& resource)
+void st_vk_render_context::destroy_texture(vk::Image& resource, vk::DeviceMemory& memory)
 {
+	_device.freeMemory(memory, nullptr);
 	_device.destroyImage(resource, nullptr);
 }
 
@@ -933,7 +934,7 @@ void st_vk_render_context::destroy_texture_view(vk::ImageView& resource)
 	_device.destroyImageView(resource, nullptr);
 }
 
-void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource)
+void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource, vk::DeviceMemory& memory)
 {
 	vk::BufferUsageFlags flags;
 
@@ -963,7 +964,6 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags us
 		.setAllocationSize(memory_reqs.size)
 		.setMemoryTypeIndex(_device_memory_index);
 
-	vk::DeviceMemory memory;
 	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &memory));
 
 	VK_VALIDATE(_device.bindBufferMemory(resource, memory, 0));
@@ -974,8 +974,9 @@ void st_vk_render_context::update_buffer(vk::Buffer& resource, size_t offset, si
 	_command_buffers[st_command_buffer_loading].updateBuffer(resource, offset, align_value(num_bytes, 4), data);
 }
 
-void st_vk_render_context::destroy_buffer(vk::Buffer& resource)
+void st_vk_render_context::destroy_buffer(vk::Buffer& resource, vk::DeviceMemory& memory)
 {
+	_device.freeMemory(memory, nullptr);
 	_device.destroyBuffer(resource, nullptr);
 }
 

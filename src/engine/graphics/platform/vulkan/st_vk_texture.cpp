@@ -32,7 +32,8 @@ st_vk_texture::st_vk_texture(
 		usage,
 		initial_state,
 		data,
-		_handle);
+		_handle,
+		_memory);
 	st_vk_render_context::get()->create_texture_view(this, _view);
 
 	_state = initial_state;
@@ -41,7 +42,7 @@ st_vk_texture::st_vk_texture(
 st_vk_texture::~st_vk_texture()
 {
 	st_vk_render_context::get()->destroy_texture_view(_view);
-	st_vk_render_context::get()->destroy_texture(_handle);
+	st_vk_render_context::get()->destroy_texture(_handle, _memory);
 }
 
 void st_vk_texture::bind(class st_dx12_render_context* context)
