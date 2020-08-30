@@ -15,7 +15,6 @@ st_entity::st_entity()
 
 st_entity::~st_entity()
 {
-	_components.clear();
 }
 
 void st_entity::add_component(std::unique_ptr<st_component> comp)

@@ -13,12 +13,12 @@
 st_vk_buffer::st_vk_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage_flags usage)
 	: _count(count), _usage(usage), _element_size(element_size)
 {
-	st_vk_render_context::get()->create_buffer(_count * _element_size, _usage, _buffer);
+	st_vk_render_context::get()->create_buffer(_count * _element_size, _usage, _buffer, _memory);
 }
 
 st_vk_buffer::~st_vk_buffer()
 {
-	st_vk_render_context::get()->destroy_buffer(_buffer);
+	st_vk_render_context::get()->destroy_buffer(_buffer, _memory);
 }
 
 void st_vk_buffer::update(const class st_vk_render_context* context, void* data, const uint32_t count)

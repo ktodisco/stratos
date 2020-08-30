@@ -13,12 +13,12 @@
 st_vk_constant_buffer::st_vk_constant_buffer(const size_t size)
 	: _size(size)
 {
-	st_vk_render_context::get()->create_buffer(_size, e_st_buffer_usage::uniform | e_st_buffer_usage::transfer_dest, _buffer);
+	st_vk_render_context::get()->create_buffer(_size, e_st_buffer_usage::uniform | e_st_buffer_usage::transfer_dest, _buffer, _memory);
 }
 
 st_vk_constant_buffer::~st_vk_constant_buffer()
 {
-	st_vk_render_context::get()->destroy_buffer(_buffer);
+	st_vk_render_context::get()->destroy_buffer(_buffer, _memory);
 }
 
 void st_vk_constant_buffer::update(const class st_vk_render_context* context, void* data)

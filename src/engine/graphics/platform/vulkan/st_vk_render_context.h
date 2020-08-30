@@ -82,15 +82,16 @@ public:
 		e_st_texture_usage_flags usage,
 		e_st_texture_state initial_state,
 		void* data,
-		vk::Image& resource);
-	void destroy_texture(vk::Image& resource);
+		vk::Image& resource,
+		vk::DeviceMemory& memory);
+	void destroy_texture(vk::Image& resource, vk::DeviceMemory& memory);
 	void create_texture_view(class st_vk_texture* texture, vk::ImageView& resource);
 	void destroy_texture_view(vk::ImageView& resource);
 	// TODO: In the unified architexture, create_buffer would take a base Buffer* and
 	// the Vulkan implementation would contain both a vkBuffer and vkDeviceMemory.
-	void create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource);
+	void create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource, vk::DeviceMemory& memory);
 	void update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data);
-	void destroy_buffer(vk::Buffer& resource);
+	void destroy_buffer(vk::Buffer& resource, vk::DeviceMemory& memory);
 	void create_descriptor_set(e_st_descriptor_slot slot, vk::DescriptorSet* set);
 	void destroy_descriptor_set(vk::DescriptorSet& set);
 	void create_sampler(vk::Sampler& sampler);

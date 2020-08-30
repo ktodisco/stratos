@@ -31,7 +31,9 @@ public:
 
 private:
 	vk::Buffer _vertex_buffer;
+	vk::DeviceMemory _vertex_memory;
 	vk::Buffer _index_buffer;
+	vk::DeviceMemory _index_memory;
 	uint32_t _index_count = 0;
 };
 

@@ -32,6 +32,7 @@ private:
 	size_t _element_size;
 
 	vk::Buffer _buffer;
+	vk::DeviceMemory _memory;
 };
 
 #endif

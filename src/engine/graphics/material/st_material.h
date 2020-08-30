@@ -42,6 +42,7 @@ enum st_material_type
 class st_material
 {
 public:
+	virtual ~st_material() {}
 	virtual void bind(
 		class st_render_context* context,
 		const struct st_frame_params* params,
