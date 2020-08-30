@@ -39,6 +39,7 @@ public:
 		uint32_t levels,
 		e_st_format format,
 		e_st_texture_usage_flags usage,
-		e_st_texture_state initial_state) :
-		st_platform_texture(width, height, levels, format, usage, initial_state) {}
+		e_st_texture_state initial_state,
+		void* data) :
+		st_platform_texture(width, height, levels, format, usage, initial_state, data) {}
 };

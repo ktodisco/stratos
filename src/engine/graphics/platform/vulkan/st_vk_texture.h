@@ -20,10 +20,10 @@ public:
 		uint32_t levels,
 		e_st_format format,
 		e_st_texture_usage_flags usage,
-		e_st_texture_state initial_state);
+		e_st_texture_state initial_state,
+		void* data);
 	~st_vk_texture();
 
-	void load_from_data(void* data);
 	void set_meta(const char* name) {}
 
 	void bind(class st_dx12_render_context* context);

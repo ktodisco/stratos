@@ -40,6 +40,7 @@ void st_gaussian_blur_vertical_material::bind(
 	const st_mat4f& transform)
 {
 	_texture->set_meta("SPIRV_Cross_Combinedtextex_sampler");
+	_texture->transition(context, st_texture_state_pixel_shader_read);
 	_resource_table->bind(context);
 }
 
@@ -71,5 +72,6 @@ void st_gaussian_blur_horizontal_material::bind(
 	const st_mat4f& transform)
 {
 	_texture->set_meta("SPIRV_Cross_Combinedtextex_sampler");
+	_texture->transition(context, st_texture_state_pixel_shader_read);
 	_resource_table->bind(context);
 }

@@ -99,7 +99,6 @@ int main(int argc, const char** argv)
 	window->show();
 
 	// TODO: HACK: Commit all loaded resources.
-	render->transition_backbuffer_to_present();
 	render->swap();
 
 	// Main loop:
@@ -138,6 +137,8 @@ int main(int argc, const char** argv)
 		// Draw to screen.
 		output->update(&params);
 	}
+
+	scene = nullptr;
 
 	st_imgui::shutdown();
 	st_job::shutdown();

@@ -74,18 +74,18 @@ public:
 	void begin_marker(const std::string& marker) {}
 	void end_marker() {}
 
-	// TODO: Add a new argument for the initial state of the texture.
 	void create_texture(
 		uint32_t width,
 		uint32_t height,
 		uint32_t mip_count,
 		e_st_format format,
 		e_st_texture_usage_flags usage,
+		e_st_texture_state initial_state,
+		void* data,
 		vk::Image& resource);
 	void destroy_texture(vk::Image& resource);
 	void create_texture_view(class st_vk_texture* texture, vk::ImageView& resource);
 	void destroy_texture_view(vk::ImageView& resource);
-	void upload_texture(class st_vk_texture* texture, void* data);
 	// TODO: In the unified architexture, create_buffer would take a base Buffer* and
 	// the Vulkan implementation would contain both a vkBuffer and vkDeviceMemory.
 	void create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource);
