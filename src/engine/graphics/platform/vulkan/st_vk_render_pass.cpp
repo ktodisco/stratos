@@ -60,6 +60,7 @@ st_vk_render_pass::st_vk_render_pass(
 		.setColorAttachmentCount(count)
 		.setPColorAttachments(attachment_refs.data());
 
+	vk::AttachmentReference ds_ref;
 	if (depth_stencil)
 	{
 		vk::AttachmentDescription ds_desc = vk::AttachmentDescription()
@@ -71,7 +72,7 @@ st_vk_render_pass::st_vk_render_pass(
 			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		attachment_descs.push_back(ds_desc);
 
-		vk::AttachmentReference ds_ref = vk::AttachmentReference()
+		ds_ref = vk::AttachmentReference()
 			.setAttachment(attachment_descs.size() - 1)
 			.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 
