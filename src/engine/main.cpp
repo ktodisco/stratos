@@ -99,6 +99,7 @@ int main(int argc, const char** argv)
 	window->show();
 
 	// TODO: HACK: Commit all loaded resources.
+	render->end_frame();
 	render->swap();
 
 	// Main loop:
