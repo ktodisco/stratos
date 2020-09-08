@@ -12,6 +12,8 @@
 
 #include <cassert>
 
+vk::DispatchLoaderDynamic vk::defaultDispatchLoaderDynamic = vk::DispatchLoaderDynamic();
+
 bool vk_validate(vk::Result result)
 {
 	bool ret = true;
