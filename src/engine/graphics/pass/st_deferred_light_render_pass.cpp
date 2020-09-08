@@ -94,15 +94,11 @@ void st_deferred_light_render_pass::render(
 
 	_pass->begin(context, clears, std::size(clears));
 
-	// Update the light information.
-	st_mat4f perspective;
-	perspective.make_perspective_rh(st_degrees_to_radians(45.0f), (float)params->_width / (float)params->_height, 0.1f, 10000.0f);
-
 	st_deferred_light_cb constant_data;
-	constant_data._inverse_vp = (params->_view * perspective).inverse();
+	constant_data._inverse_vp = (params->_view * params->_projection).inverse();
 	constant_data._inverse_vp.transpose();
 	constant_data._eye = st_vec4f(params->_eye, 0.0f);
-#if defined(ST_GRAPHICS_API_OPENGL) || defined(ST_GRAPHICS_API_VULKAN)
+#if defined(ST_GRAPHICS_API_OPENGL)
 	constant_data._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.0f, 0.0f);
 #else
 	constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);

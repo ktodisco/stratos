@@ -34,10 +34,12 @@ st_entity* st_scene::add_entity(
 	st_vec3f position,
 	st_model_data* model,
 	const char* albedo,
-	const char* mre)
+	const char* mre,
+	float emissive)
 {
 	std::unique_ptr<st_entity> entity = std::make_unique<st_entity>();
-	std::unique_ptr<st_material> material = std::make_unique<st_gbuffer_material>(albedo, mre);
+	std::unique_ptr<st_gbuffer_material> material = std::make_unique<st_gbuffer_material>(albedo, mre);
+	material->set_emissive(emissive);
 	std::unique_ptr<st_model_component> model_component = std::make_unique<st_model_component>(entity.get(), model, std::move(material));
 	entity->add_component(std::move(model_component));
 	sim->add_entity(entity.get());
@@ -58,7 +60,7 @@ st_entity* st_scene::add_light(
 	const char* albedo,
 	const char* mre)
 {
-	st_entity* entity = add_entity(sim, position, model, albedo, mre);
+	st_entity* entity = add_entity(sim, position, model, albedo, mre, power);
 
 	std::unique_ptr<st_light_component> light_component = std::make_unique<st_light_component>(entity, color , power);
 	entity->add_component(std::move(light_component));
@@ -75,7 +77,7 @@ void st_scene::setup_lighting_test(class st_sim* sim)
 	assimp_import_model("data/models/plane.ply", &plane_model);
 
 #define CREATE_ENTITY(name, x, y, z, model, albedo, mre) \
-	st_entity* name = add_entity(sim, { x, y ,z }, &model, albedo, mre)
+	st_entity* name = add_entity(sim, { x, y ,z }, &model, albedo, mre, 0.0f)
 
 	CREATE_ENTITY(floor_entity, 0.0f, 0.0f, 0.0f, plane_model, "data/textures/floor.dds", "data/textures/dielectric_25_roughness.png");
 	floor_entity->scale(0.5f);

@@ -83,7 +83,7 @@ int main(int argc, const char** argv)
 	std::unique_ptr<st_scene> scene = std::make_unique<st_scene>();
 
 	// Create camera.
-	std::unique_ptr<st_camera> camera = std::make_unique<st_camera>(st_vec3f({ 0.0f, 1.8f, 3.5f }));
+	std::unique_ptr<st_camera> camera = std::make_unique<st_camera>(st_vec3f({ 0.0f, 1.8f, 3.5f }), window->get_width(), window->get_height());
 	camera->set_yaw(180.0f);
 	camera->set_pitch(20.0f);
 

@@ -133,12 +133,6 @@ void st_output::update(st_frame_params* params)
 
 	_render_context->begin_frame();
 
-	// Update viewport in case window was resized.
-	uint32_t width = _window->get_width();
-	uint32_t height = _window->get_height();
-	params->_width = width;
-	params->_height = height;
-
 	_gbuffer_pass->render(_render_context, params);
 	_deferred_pass->render(_render_context, params);
 	_bloom_pass->render(_render_context, params);
