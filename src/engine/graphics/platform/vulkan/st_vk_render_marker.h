@@ -15,8 +15,8 @@
 class st_vk_render_marker
 {
 public:
-	st_vk_render_marker(const std::string& message) {}
-	~st_vk_render_marker() {}
+	st_vk_render_marker(const std::string& message);
+	~st_vk_render_marker();
 };
 
 #endif

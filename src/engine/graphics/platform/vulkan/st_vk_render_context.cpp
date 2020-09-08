@@ -17,10 +17,16 @@
 #include <iostream>
 #include <vector>
 
+extern vk::DispatchLoaderDynamic vk::defaultDispatchLoaderDynamic;
 st_vk_render_context* st_vk_render_context::_this = nullptr;
 
 st_vk_render_context::st_vk_render_context(const st_window* window)
 {
+	_vk_library = LoadLibrary("vulkan-1.dll");
+	PFN_vkGetInstanceProcAddr fp = (PFN_vkGetInstanceProcAddr)GetProcAddress((HMODULE)_vk_library, "vkGetInstanceProcAddr");
+
+	vk::defaultDispatchLoaderDynamic.init(fp);
+
 	uint32_t api_version;
 	vk::enumerateInstanceVersion(&api_version);
 
@@ -47,6 +53,16 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		{
 			layer_names.push_back(layer.layerName);
 		}
+
+		if (strstr(layer.layerName, "RENDERDOC") != nullptr)
+		{
+			HMODULE rdoc = GetModuleHandle("renderdoc.dll");
+			if (rdoc)
+			{
+				layer_names.push_back(layer.layerName);
+			}
+		}
+
 	}
 
 	// List all the extensions available in the instance.
@@ -83,6 +99,8 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		.setPpEnabledExtensionNames(extension_names.data());
 
 	VK_VALIDATE(vk::createInstance(&create_info, nullptr, &_instance));
+
+	vk::defaultDispatchLoaderDynamic.init(_instance);
 
 	// Obtain the list of physical devices.
 	uint32_t device_count;
@@ -141,6 +159,11 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 #endif
 
 		extension_names.push_back(extension.extensionName);
+
+		if (strcmp(extension.extensionName, "VK_EXT_debug_marker") == 0)
+		{
+			_has_markers = true;
+		}
 	}
 
 	// Query the device capabilities.
@@ -461,6 +484,8 @@ st_vk_render_context::~st_vk_render_context()
 	_device.destroy(nullptr);
 
 	_instance.destroy(nullptr);
+
+	FreeLibrary((HMODULE)_vk_library);
 }
 
 void st_vk_render_context::set_pipeline_state(const st_vk_pipeline_state* state)
@@ -713,6 +738,25 @@ void st_vk_render_context::swap()
 	// TODO: Better parallelization.
 	VK_VALIDATE(_device.waitForFences(1, &_fence, true, std::numeric_limits<uint64_t>::max()));
 	VK_VALIDATE(_device.resetFences(1, &_fence));
+}
+
+void st_vk_render_context::begin_marker(const std::string& marker)
+{
+	if (_has_markers)
+	{
+		vk::DebugMarkerMarkerInfoEXT marker_info = vk::DebugMarkerMarkerInfoEXT()
+			.setPMarkerName(marker.c_str());
+
+		_command_buffers[st_command_buffer_graphics].debugMarkerBeginEXT(&marker_info);
+	}
+}
+
+void st_vk_render_context::end_marker()
+{
+	if (_has_markers)
+	{
+		_command_buffers[st_command_buffer_graphics].debugMarkerEndEXT();
+	}
 }
 
 void st_vk_render_context::create_texture(

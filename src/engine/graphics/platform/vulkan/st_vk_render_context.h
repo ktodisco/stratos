@@ -71,8 +71,8 @@ public:
 	void end_frame();
 	void swap();
 
-	void begin_marker(const std::string& marker) {}
-	void end_marker() {}
+	void begin_marker(const std::string& marker);
+	void end_marker();
 
 	void create_texture(
 		uint32_t width,
@@ -155,18 +155,8 @@ private:
 	vk::PipelineLayout _pipeline_layout;
 	vk::DescriptorPool _descriptor_pool;
 
-	/*D3D12_VIEWPORT _viewport;
-	D3D12_RECT _scissor_rect;
-
-	// Dynamic geometry buffers.
-	Microsoft::WRL::ComPtr<ID3D12Resource> _dynamic_vertex_buffer;
-	size_t _dynamic_vertex_bytes_written = 0;
-	Microsoft::WRL::ComPtr<ID3D12Resource> _dynamic_index_buffer;
-	size_t _dynamic_index_bytes_written = 0;
-
-	// State tracking.
-	float _clear_color[4] = { 0 };
-	uint32_t _frame_index = 0;*/
+	void* _vk_library = nullptr;
+	bool _has_markers = false;
 };
 
 #endif
