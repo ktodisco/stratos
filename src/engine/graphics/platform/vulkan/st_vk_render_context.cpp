@@ -820,13 +820,12 @@ void st_vk_render_context::create_texture(
 				(level_width < 4 || level_height < 4))
 				break;
 
-			size_t bpp;
+			size_t bpp = bits_per_pixel(format);
 			size_t num_bytes;
 			get_surface_info(
 				level_width,
 				level_height,
 				format,
-				&bpp,
 				&num_bytes,
 				nullptr,
 				nullptr);
