@@ -22,7 +22,8 @@ public:
 		st_vec3f position,
 		struct st_model_data* model,
 		const char* albedo,
-		const char* mre);
+		const char* mre,
+		float emissive);
 	class st_entity* add_light(
 		class st_sim* sim,
 		st_vec3f position,

@@ -16,7 +16,7 @@ class st_camera
 public:
 	// The camera assumes an initial direction along the positive z axis, and
 	// up vector along the positive y.
-	st_camera(const st_vec3f& eye);
+	st_camera(const st_vec3f& eye, uint32_t width, uint32_t height);
 	~st_camera();
 
 	void update(struct st_frame_params* params);
@@ -30,6 +30,8 @@ public:
 private:
 	float _yaw = 0.0f;
 	float _pitch = 0.0f;
+	uint32_t _width = 0;
+	uint32_t _height = 0;
 	st_vec3f _position;
 	st_mat4f _transform;
 };
