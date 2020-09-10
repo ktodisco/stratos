@@ -29,6 +29,8 @@ st_dx12_texture::st_dx12_texture(
 		height,
 		levels,
 		format,
+		usage,
+		initial_state,
 		data,
 		_handle.GetAddressOf());
 

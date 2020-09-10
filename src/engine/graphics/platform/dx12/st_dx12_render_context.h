@@ -83,6 +83,8 @@ public:
 		uint32_t height,
 		uint32_t mip_count,
 		e_st_format format,
+		e_st_texture_usage_flags usage,
+		e_st_texture_state initial_state,
 		void* data,
 		ID3D12Resource** resource);
 	void create_target(
