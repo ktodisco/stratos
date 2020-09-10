@@ -18,7 +18,9 @@
 class st_dx12_pipeline_state
 {
 public:
-	st_dx12_pipeline_state(const struct st_pipeline_state_desc& desc);
+	st_dx12_pipeline_state(
+		const struct st_pipeline_state_desc& desc,
+		const class st_render_pass* render_pass);
 	~st_dx12_pipeline_state();
 
 	ID3D12PipelineState* get_state() const { return _pipeline_state.Get(); }

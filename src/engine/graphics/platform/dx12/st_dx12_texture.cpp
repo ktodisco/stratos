@@ -14,39 +14,36 @@
 
 #include <string>
 
-st_dx12_texture::st_dx12_texture()
+st_dx12_texture::st_dx12_texture(
+	uint32_t width,
+	uint32_t height,
+	uint32_t levels,
+	e_st_format format,
+	e_st_texture_usage_flags usage,
+	e_st_texture_state initial_state,
+	void* data)
+	: _width(width), _height(height), _levels(levels), _format(format), _usage(usage)
 {
-}
-
-st_dx12_texture::st_dx12_texture(uint32_t width, uint32_t height) :
-	_width(width), _height(height)
-{
-}
-
-st_dx12_texture::~st_dx12_texture()
-{
-}
-
-void st_dx12_texture::load_from_data(uint32_t width, uint32_t height, uint32_t levels, e_st_format format, void* data)
-{
-	_format = format;
-	_levels = levels;
-
 	st_dx12_render_context::get()->create_texture(
 		width,
 		height,
 		levels,
 		format,
 		data,
-		_handle.GetAddressOf(),
-		&_sampler,
-		&_srv);
+		_handle.GetAddressOf());
+
+	_state = initial_state;
 }
 
-void st_dx12_texture::bind(class st_dx12_render_context* context)
+st_dx12_texture::~st_dx12_texture()
 {
-	context->set_shader_resource_table(_srv);
-	context->set_sampler_table(_sampler);
+	_handle = nullptr;
+}
+
+void st_dx12_texture::transition(st_dx12_render_context* context, e_st_texture_state new_state)
+{
+	context->transition(this, _state, new_state);
+	_state = new_state;
 }
 
 void st_dx12_texture::set_name(std::string name)

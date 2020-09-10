@@ -83,7 +83,6 @@ void st_gaussian_blur_render_pass::render(
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->set_viewport(0, 0, _intermediate_target->get_width(), _intermediate_target->get_height());
 	context->set_scissor(0, 0, _intermediate_target->get_width(), _intermediate_target->get_height());
 
 	{

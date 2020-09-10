@@ -10,8 +10,9 @@
 
 #include <graphics/platform/dx12/st_dx12_render_context.h>
 
-st_dx12_buffer::st_dx12_buffer(const uint32_t count, const size_t element_size) :
+st_dx12_buffer::st_dx12_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage_flags usage) :
 	_count(count),
+	_usage(usage),
 	_element_size(element_size)
 {
 	// Structured buffers in DX12 are recommended to be 128-byte aligned.

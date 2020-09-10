@@ -77,7 +77,6 @@ void st_bloom_render_pass::render(
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->set_viewport(0, 0, _targets[0]->get_width(), _targets[0]->get_height());
 	context->set_scissor(0, 0, _targets[0]->get_width(), _targets[0]->get_height());
 	context->set_pipeline_state(_pipeline_state.get());
 

@@ -18,7 +18,9 @@
 
 #include <graphics/platform/dx12/d3dx12.h>
 
-st_dx12_pipeline_state::st_dx12_pipeline_state(const st_pipeline_state_desc& desc)
+st_dx12_pipeline_state::st_dx12_pipeline_state(
+	const st_pipeline_state_desc& desc,
+	const st_render_pass* render_pass)
 {
 	// Construct the DX12 pipeline state description using our internal representation.
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_desc = {};

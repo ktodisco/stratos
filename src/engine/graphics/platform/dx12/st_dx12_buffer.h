@@ -16,7 +16,7 @@
 class st_dx12_buffer
 {
 public:
-	st_dx12_buffer(const uint32_t count, const size_t element_size);
+	st_dx12_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage_flags usage);
 	~st_dx12_buffer();
 
 	void update(const class st_dx12_render_context* context, void* data, const uint32_t count);
@@ -28,6 +28,7 @@ public:
 
 private:
 	uint32_t _count;
+	e_st_buffer_usage_flags _usage;
 	size_t _element_size;
 	Microsoft::WRL::ComPtr<ID3D12Resource> _buffer;
 	uint8_t* _buffer_head = nullptr;

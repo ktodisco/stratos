@@ -9,8 +9,8 @@
 #include <core/st_flags.h>
 
 //#define ST_GRAPHICS_API_OPENGL
-//#define ST_GRAPHICS_API_DX12
-#define ST_GRAPHICS_API_VULKAN
+#define ST_GRAPHICS_API_DX12
+//#define ST_GRAPHICS_API_VULKAN
 
 typedef void* st_graphics_resource;
 

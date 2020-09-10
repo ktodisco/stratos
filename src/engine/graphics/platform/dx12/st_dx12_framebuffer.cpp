@@ -32,26 +32,15 @@ st_dx12_framebuffer::~st_dx12_framebuffer()
 
 void st_dx12_framebuffer::bind(st_render_context* context)
 {
-	// Transition the render textures to render targets.
-	std::vector<D3D12_RESOURCE_BARRIER> barriers;
-
 	for (auto& t : _targets)
 	{
-		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-			t->get_resource(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
+		t->transition(context, st_texture_state_render_target);
 	}
 
 	if (_depth_stencil)
 	{
-		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-			_depth_stencil->get_resource(),
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-			D3D12_RESOURCE_STATE_DEPTH_WRITE));
+		_depth_stencil->transition(context, st_texture_state_depth_target);
 	}
-
-	context->transition_targets(barriers.size(), &barriers[0]);
 
 	// Bind them.
 	context->set_render_targets(_target_count, &_targets[0], _depth_stencil);
@@ -59,26 +48,15 @@ void st_dx12_framebuffer::bind(st_render_context* context)
 
 void st_dx12_framebuffer::unbind(st_render_context* context)
 {
-	// Transition the render textures to shader resources.
-	std::vector<D3D12_RESOURCE_BARRIER> barriers;
-
 	for (auto& t : _targets)
 	{
-		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-			t->get_resource(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		t->transition(context, st_texture_state_pixel_shader_read);
 	}
 
 	if (_depth_stencil)
 	{
-		barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(
-			_depth_stencil->get_resource(),
-			D3D12_RESOURCE_STATE_DEPTH_WRITE,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
+		_depth_stencil->transition(context, st_texture_state_pixel_shader_read);
 	}
-
-	context->transition_targets(barriers.size(), &barriers[0]);
 
 	context->set_render_targets(0, nullptr, nullptr);
 }
