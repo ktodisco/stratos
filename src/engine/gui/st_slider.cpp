@@ -10,6 +10,14 @@
 
 #include <gui/st_font.h>
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 st_slider::st_slider(float x, float y, float min_val, float max_val, float* current, struct st_frame_params* params)
 {
 	// Draw the slider line.

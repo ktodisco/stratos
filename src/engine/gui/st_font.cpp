@@ -25,6 +25,14 @@
 #include <stdio.h>
 #endif
 
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
+
 st_font::st_font(const char* path, float char_height, int image_width, int image_height)
 	: _image_width(image_width), _image_height(image_height)
 {

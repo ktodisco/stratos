@@ -252,3 +252,17 @@ enum e_st_stencil_op
 	st_stencil_op_incr			= D3D12_STENCIL_OP_INCR,
 	st_stencil_op_decr			= D3D12_STENCIL_OP_DECR,
 };
+
+enum e_st_texture_state
+{
+	st_texture_state_common = D3D12_RESOURCE_STATE_COMMON,
+	st_texture_state_render_target = D3D12_RESOURCE_STATE_RENDER_TARGET,
+	st_texture_state_depth_stencil_target = D3D12_RESOURCE_STATE_RENDER_TARGET,
+	st_texture_state_depth_target = D3D12_RESOURCE_STATE_DEPTH_WRITE,
+	st_texture_state_non_pixel_shader_read = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+	st_texture_state_pixel_shader_read = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+	st_texture_state_depth_read = D3D12_RESOURCE_STATE_DEPTH_READ,
+	st_texture_state_present = D3D12_RESOURCE_STATE_PRESENT,
+	st_texture_state_copy_source = D3D12_RESOURCE_STATE_COPY_SOURCE,
+	st_texture_state_copy_dest = D3D12_RESOURCE_STATE_COPY_DEST,
+};

@@ -40,7 +40,6 @@ public:
 	void release() {}
 
 	void set_pipeline_state(const class st_vk_pipeline_state* state);
-	void set_viewport(int x, int y, int width, int height) {}
 	void set_scissor(int left, int top, int right, int bottom) {}
 	void set_clear_color(float r, float g, float b, float a) {}
 
@@ -62,7 +61,7 @@ public:
 	void transition_backbuffer_to_target();
 	void transition_backbuffer_to_present();
 
-	void transition_target(
+	void transition(
 		st_vk_texture* texture,
 		e_st_texture_state old_state,
 		e_st_texture_state new_state);

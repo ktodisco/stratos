@@ -81,7 +81,6 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 {
 	st_render_marker marker("st_gbuffer_render_pass::render");
 
-	context->set_viewport(0, 0, params->_width, params->_height);
 	context->set_scissor(0, 0, params->_width, params->_height);
 	context->set_pipeline_state(_gbuffer_state.get());
 

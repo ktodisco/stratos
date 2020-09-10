@@ -256,6 +256,9 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		assert(false);
 	}
 
+	// The command list starts open, so close it first.
+	_command_list->Close();
+
 	// Create a default root signature.
 	D3D12_FEATURE_DATA_ROOT_SIGNATURE feature_data = {};
 	feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
@@ -337,12 +340,21 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 	// Set the global instance.
 	_this = this;
 
-	// The command list starts open, so close it first.
-	end_loading();
+	begin_frame();
+
+	// Create the faux backbuffer target.
+	_present_target = std::make_unique<st_render_texture>(
+		window->get_width(),
+		window->get_height(),
+		st_format_r8g8b8a8_unorm,
+		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
+		st_texture_state_copy_source,
+		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
 }
 
 st_dx12_render_context::~st_dx12_render_context()
 {
+	_present_target = nullptr;
 }
 
 void st_dx12_render_context::acquire()
@@ -358,16 +370,8 @@ void st_dx12_render_context::set_pipeline_state(const st_dx12_pipeline_state* st
 	_command_list->SetPipelineState(state->get_state());
 }
 
-void st_dx12_render_context::set_viewport(int x, int y, int width, int height)
+void st_dx12_render_context::set_viewport(const D3D12_VIEWPORT& viewport)
 {
-	D3D12_VIEWPORT viewport{};
-	viewport.TopLeftX = x;
-	viewport.TopLeftY = y;
-	viewport.Width = width;
-	viewport.Height = height;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-
 	_command_list->RSSetViewports(1, &viewport);
 }
 
@@ -587,11 +591,19 @@ void st_dx12_render_context::transition_backbuffer_to_present()
 			D3D12_RESOURCE_STATE_PRESENT));
 }
 
-void st_dx12_render_context::transition_targets(
-	uint32_t count,
-	D3D12_RESOURCE_BARRIER* barriers)
+void st_dx12_render_context::transition(
+	st_dx12_texture* texture,
+	e_st_texture_state old_state,
+	e_st_texture_state new_state)
 {
-	_command_list->ResourceBarrier(count, barriers);
+	// TODO: It's bad practice to transition one at a time. These should be accumulated
+	// and then flushed all at once.
+	D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+		texture->get_resource(),
+		D3D12_RESOURCE_STATE_DEPTH_WRITE,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+	_command_list->ResourceBarrier(1, &barrier);
 }
 
 void st_dx12_render_context::begin_loading()
@@ -719,12 +731,8 @@ void st_dx12_render_context::create_texture(
 	uint32_t mip_count,
 	e_st_format format,
 	void* data,
-	ID3D12Resource** resource,
-	uint32_t* sampler_offset,
-	uint32_t* srv_offset)
+	ID3D12Resource** resource)
 {
-	begin_loading();
-
 	DXGI_FORMAT real_format = (DXGI_FORMAT)format;
 
 	D3D12_RESOURCE_DESC texture_desc{};
@@ -847,9 +855,6 @@ void st_dx12_render_context::create_texture(
 			*resource,
 			D3D12_RESOURCE_STATE_COPY_DEST,
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
-
-	// TODO: It's not the most elegant to wait on each texture to load synchronously.
-	end_loading();
 }
 
 void st_dx12_render_context::create_target(
@@ -860,8 +865,6 @@ void st_dx12_render_context::create_target(
 	ID3D12Resource** resource,
 	st_dx12_descriptor* rtv_offset)
 {
-	begin_loading();
-
 	D3D12_RESOURCE_FLAGS flags;
 	D3D12_RESOURCE_STATES resource_state;
 
@@ -953,8 +956,6 @@ void st_dx12_render_context::create_target(
 				D3D12_RESOURCE_STATE_RENDER_TARGET,
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
-
-	end_loading();
 }
 
 void st_dx12_render_context::destroy_target(st_dx12_descriptor target)

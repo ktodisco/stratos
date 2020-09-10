@@ -21,20 +21,20 @@
 class st_dx12_texture
 {
 public:
-	st_dx12_texture();
-	st_dx12_texture(uint32_t width, uint32_t height);
-	~st_dx12_texture();
-
-	void load_from_data(
+	st_dx12_texture() = delete;
+	st_dx12_texture(
 		uint32_t width,
 		uint32_t height,
 		uint32_t levels,
 		e_st_format format,
+		e_st_texture_usage_flags usage,
+		e_st_texture_state initial_state,
 		void* data);
+	~st_dx12_texture();
+
+	void transition(class st_dx12_render_context* context, e_st_texture_state new_state);
+
 	void set_meta(const char* name) {}
-
-	void bind(class st_dx12_render_context* context);
-
 	void set_name(std::string name);
 
 	ID3D12Resource* get_resource() const { return _handle.Get(); }
@@ -50,8 +50,8 @@ protected:
 	uint32_t _height;
 	uint32_t _levels = 1;
 	e_st_format _format;
-	uint32_t _sampler;
-	uint32_t _srv;
+	e_st_texture_usage_flags _usage = static_cast<e_st_texture_usage_flags>(0);
+	e_st_texture_state _state = st_texture_state_common;
 
 	friend class st_dx12_render_texture;
 };

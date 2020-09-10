@@ -59,7 +59,7 @@ void st_vk_texture::transition(st_vk_render_context* context, e_st_texture_state
 {
 	if (new_state != _state)
 	{
-		context->transition_target(this, _state, new_state);
+		context->transition(this, _state, new_state);
 		_state = new_state;
 	}
 }

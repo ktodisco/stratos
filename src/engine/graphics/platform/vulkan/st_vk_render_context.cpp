@@ -594,7 +594,7 @@ void st_vk_render_context::transition_backbuffer_to_present()
 	_present_target->transition(this, st_texture_state_copy_source);
 }
 
-void st_vk_render_context::transition_target(
+void st_vk_render_context::transition(
 	st_vk_texture* texture,
 	e_st_texture_state old_state,
 	e_st_texture_state new_state)

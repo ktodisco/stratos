@@ -38,7 +38,7 @@ public:
 	void release();
 
 	void set_pipeline_state(const class st_dx12_pipeline_state* state);
-	void set_viewport(int x, int y, int width, int height);
+	void set_viewport(const D3D12_VIEWPORT& viewport);
 	void set_scissor(int left, int top, int right, int bottom);
 	void set_clear_color(float r, float g, float b, float a);
 
@@ -60,9 +60,10 @@ public:
 	void transition_backbuffer_to_target();
 	void transition_backbuffer_to_present();
 
-	void transition_targets(
-		uint32_t count,
-		D3D12_RESOURCE_BARRIER* barriers);
+	void transition(
+		class st_dx12_texture* texture,
+		e_st_texture_state old_state,
+		e_st_texture_state new_state);
 
 	void begin_loading();
 	void end_loading();
@@ -83,9 +84,7 @@ public:
 		uint32_t mip_count,
 		e_st_format format,
 		void* data,
-		ID3D12Resource** resource,
-		uint32_t* sampler_offset,
-		uint32_t* srv_offset);
+		ID3D12Resource** resource);
 	void create_target(
 		uint32_t width,
 		uint32_t height,
@@ -117,6 +116,7 @@ public:
 	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }
 	ID3D12GraphicsCommandList* get_command_list() const { return _command_list.Get(); }
 	st_dx12_descriptor_heap* get_gui_heap() const { return _gui_srv_heap.get(); }
+	st_render_texture* get_present_target() { return _present_target.get(); }
 
 	static st_dx12_render_context* get();
 
@@ -129,6 +129,8 @@ private:
 
 	D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissor_rect;
+
+	std::unique_ptr<class st_render_texture> _present_target;
 
 	Microsoft::WRL::ComPtr<IDXGISwapChain3> _swap_chain;
 	Microsoft::WRL::ComPtr<ID3D12Device> _device;
