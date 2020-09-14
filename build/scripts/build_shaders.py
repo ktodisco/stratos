@@ -30,8 +30,22 @@ def convert_hlsl_to_spirv(shader_dir, hlsl_files, output_dir):
 		subprocess.call([converter, "--input", os.path.join(shader_dir, hlsl_file), "--output", os.path.join(output_dir, vertex_file), "--entry", "vs_main", "--stage", "vs", "--target", "spirv"])
 		subprocess.call([converter, "--input", os.path.join(shader_dir, hlsl_file), "--output", os.path.join(output_dir, fragment_file), "--entry", "ps_main", "--stage", "ps", "--target", "spirv"])
 
+def build_sm6(shader_dir, hlsl_files, output_dir):
+	converter = os.path.join("..", "DirectXShaderCompiler", "dxc.exe")
+	
+	for hlsl_file in hlsl_files:
+		basename = os.path.splitext(hlsl_file)[0]
+		vertex_file = basename + "_vert.cso"
+		fragment_file = basename + "_frag.cso"
+		
+		print("Converting %s to %s and %s." % (hlsl_file, vertex_file, fragment_file))
+		
+		# Run conversions.
+		subprocess.call([converter, "-E", "vs_main", "-T", "vs_6_0", "-Fo", os.path.join(output_dir, vertex_file), os.path.join(shader_dir, hlsl_file)])
+		subprocess.call([converter, "-E", "ps_main", "-T", "ps_6_0", "-Fo", os.path.join(output_dir, fragment_file), os.path.join(shader_dir, hlsl_file)])
+
 if __name__ == "__main__":
-	usage = [__file__, "<directory>", "<target> (glsl|spirv)", "<output directory>"]
+	usage = [__file__, "<directory>", "<target> (glsl|spirv|sm6)", "<output directory>"]
 	
 	if not len(sys.argv) == len(usage):
 		print("Usage: " + ' '.join(usage))
@@ -49,3 +63,5 @@ if __name__ == "__main__":
 			convert_hlsl_to_glsl(shader_directory, hlsl_files, output_directory)
 		if target_type == 'spirv':
 			convert_hlsl_to_spirv(shader_directory, hlsl_files, output_directory)
+		if target_type == 'dxil':
+			build_sm6(shader_directory, hlsl_files, output_directory)

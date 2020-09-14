@@ -16,66 +16,26 @@
 
 extern char g_root_path[256];
 
-st_dx12_shader::st_dx12_shader(const char* source, uint8_t type)
+void load_shader(std::string filename, ID3DBlob** blob)
 {
-	// Compile the shaders from source.
-	uint32_t compile_flags = 0;
-#if defined(_DEBUG)
-	compile_flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-	Microsoft::WRL::ComPtr<ID3DBlob> errors;
 	std::wstring full_path =
 		str_to_wstr(g_root_path) +
-		str_to_wstr(source) +
-		str_to_wstr(".hlsl");
+		str_to_wstr(filename) +
+		str_to_wstr(".cso");
 
+	D3DReadFileToBlob(full_path.c_str(), blob);
+}
+
+st_dx12_shader::st_dx12_shader(const char* filename, uint8_t type)
+{
 	if (type & st_shader_type_vertex)
 	{
-		HRESULT result = D3DCompileFromFile(
-			full_path.c_str(),
-			nullptr,
-			D3D_COMPILE_STANDARD_FILE_INCLUDE,
-			"vs_main",
-			"vs_5_0",
-			compile_flags,
-			0,
-			&_vs,
-			&errors);
-
-		if (result != S_OK)
-		{
-			if (errors)
-			{
-				OutputDebugStringA((char*)errors->GetBufferPointer());
-			}
-
-			assert(false);
-		}
+		load_shader(std::string(filename) + std::string("_vert"), _vs.GetAddressOf());
 	}
 
 	if (type & st_shader_type_pixel)
 	{
-		HRESULT result = D3DCompileFromFile(
-			(LPCWSTR)full_path.c_str(),
-			nullptr,
-			D3D_COMPILE_STANDARD_FILE_INCLUDE,
-			"ps_main",
-			"ps_5_0",
-			compile_flags,
-			0,
-			&_ps,
-			&errors);
-
-		if (result != S_OK)
-		{
-			if (errors)
-			{
-				OutputDebugStringA((char*)errors->GetBufferPointer());
-			}
-
-			assert(false);
-		}
+		load_shader(std::string(filename) + std::string("_frag"), _ps.GetAddressOf());
 	}
 
 	// TODO: Other shader types.
