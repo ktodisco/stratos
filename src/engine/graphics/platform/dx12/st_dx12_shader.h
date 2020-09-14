@@ -21,7 +21,7 @@
 class st_dx12_shader
 {
 public:
-	st_dx12_shader(const char* source, uint8_t type);
+	st_dx12_shader(const char* filename, uint8_t type);
 	~st_dx12_shader();
 
 	ID3DBlob* get_vertex_blob() const { return _vs.Get(); }
