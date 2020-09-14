@@ -44,8 +44,11 @@ st_dx12_texture::~st_dx12_texture()
 
 void st_dx12_texture::transition(st_dx12_render_context* context, e_st_texture_state new_state)
 {
-	context->transition(this, _state, new_state);
-	_state = new_state;
+	if (_state != new_state)
+	{
+		context->transition(this, _state, new_state);
+		_state = new_state;
+	}
 }
 
 void st_dx12_texture::set_name(std::string name)

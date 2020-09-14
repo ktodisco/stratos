@@ -350,6 +350,7 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
 		st_texture_state_copy_source,
 		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
+	_present_target->set_name("Present Target");
 }
 
 st_dx12_render_context::~st_dx12_render_context()
@@ -596,12 +597,14 @@ void st_dx12_render_context::transition(
 	e_st_texture_state old_state,
 	e_st_texture_state new_state)
 {
+	assert(old_state != new_state);
+
 	// TODO: It's bad practice to transition one at a time. These should be accumulated
 	// and then flushed all at once.
 	D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 		texture->get_resource(),
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		D3D12_RESOURCE_STATES(old_state),
+		D3D12_RESOURCE_STATES(new_state));
 
 	_command_list->ResourceBarrier(1, &barrier);
 }
@@ -642,7 +645,11 @@ void st_dx12_render_context::begin_frame()
 
 void st_dx12_render_context::end_frame()
 {
-	_command_list->Close();
+	HRESULT result = _command_list->Close();
+	if (result != S_OK)
+	{
+		assert(false);
+	}
 }
 
 void st_dx12_render_context::swap()
@@ -696,24 +703,22 @@ void st_dx12_render_context::create_buffer(size_t size, ID3D12Resource** resourc
 		1
 	};
 
-	D3D12_RESOURCE_DESC resource_desc{
-		D3D12_RESOURCE_DIMENSION_BUFFER,
-		0,
-		size,
-		1,
-		1,
-		1,
-		DXGI_FORMAT_UNKNOWN,
-		1,
-		0,
-		D3D12_TEXTURE_LAYOUT_ROW_MAJOR,
-		D3D12_RESOURCE_FLAG_NONE
-	};
+	D3D12_RESOURCE_DESC buffer_desc{};
+	buffer_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	buffer_desc.Width = size;
+	buffer_desc.Height = 1;
+	buffer_desc.DepthOrArraySize = 1;
+	buffer_desc.MipLevels = 1;
+	buffer_desc.Format = DXGI_FORMAT_UNKNOWN;
+	buffer_desc.SampleDesc.Count = 1;
+	buffer_desc.SampleDesc.Quality = 0;
+	buffer_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	buffer_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
 	HRESULT result = _device->CreateCommittedResource(
 		&heap_properties,
 		D3D12_HEAP_FLAG_NONE,
-		&resource_desc,
+		&buffer_desc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		__uuidof(ID3D12Resource),
@@ -737,12 +742,17 @@ void st_dx12_render_context::create_texture(
 {
 	DXGI_FORMAT real_format = (DXGI_FORMAT)format;
 
+	D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
+	if (usage & e_st_texture_usage::color_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	if (usage & e_st_texture_usage::depth_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	if (usage & e_st_texture_usage::storage) flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
 	D3D12_RESOURCE_DESC texture_desc{};
 	texture_desc.MipLevels = mip_count;
 	texture_desc.Format = real_format;
 	texture_desc.Width = width;
 	texture_desc.Height = height;
-	texture_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	texture_desc.Flags = flags;
 	texture_desc.DepthOrArraySize = 1;
 	texture_desc.SampleDesc.Count = 1;
 	texture_desc.SampleDesc.Quality = 0;
@@ -867,21 +877,19 @@ void st_dx12_render_context::create_target(
 	uint32_t height,
 	e_st_format format,
 	const st_vec4f& clear,
+	e_st_texture_state initial_state,
 	ID3D12Resource** resource,
 	st_dx12_descriptor* rtv_offset)
 {
 	D3D12_RESOURCE_FLAGS flags;
-	D3D12_RESOURCE_STATES resource_state;
 
 	switch (format)
 	{
 	case st_format_d24_unorm_s8_uint:
 		flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-		resource_state = D3D12_RESOURCE_STATE_DEPTH_WRITE;
 		break;
 	default:
 		flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		resource_state = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		break;
 	}
 
@@ -924,7 +932,7 @@ void st_dx12_render_context::create_target(
 		&heap_properties,
 		D3D12_HEAP_FLAG_NONE,
 		&target_desc,
-		resource_state,
+		D3D12_RESOURCE_STATES(initial_state),
 		&clear_value,
 		__uuidof(ID3D12Resource),
 		(void**)resource);
@@ -938,12 +946,6 @@ void st_dx12_render_context::create_target(
 		_device->CreateDepthStencilView(*resource, nullptr, dsv_handle._handle);
 
 		*rtv_offset = dsv_handle._offset;
-
-		_command_list->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-			(*resource),
-				D3D12_RESOURCE_STATE_DEPTH_WRITE,
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
 	else
 	{
@@ -954,12 +956,6 @@ void st_dx12_render_context::create_target(
 		_device->CreateRenderTargetView(*resource, nullptr, rtv_handle._handle);
 
 		*rtv_offset = rtv_handle._offset;
-
-		_command_list->ResourceBarrier(1,
-			&CD3DX12_RESOURCE_BARRIER::Transition(
-			(*resource),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
 	}
 }
 
