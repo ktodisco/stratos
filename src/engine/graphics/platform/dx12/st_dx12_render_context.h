@@ -92,6 +92,7 @@ public:
 		uint32_t height,
 		e_st_format format,
 		const st_vec4f& clear,
+		e_st_texture_state initial_state,
 		ID3D12Resource** resource,
 		st_dx12_descriptor* rtv_offset);
 	void destroy_target(st_dx12_descriptor target);

@@ -80,6 +80,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		e_st_texture_usage::depth_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
 		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }));
+	_deferred_depth->set_name("Deferred Depth");
 
 	_bloom_target = std::make_unique<st_render_texture>(
 		_window->get_width(),

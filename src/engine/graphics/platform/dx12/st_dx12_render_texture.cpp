@@ -23,6 +23,7 @@ st_dx12_render_texture::st_dx12_render_texture(
 		height,
 		format,
 		clear,
+		initial_state,
 		_handle.GetAddressOf(),
 		&_rtv);
 }
