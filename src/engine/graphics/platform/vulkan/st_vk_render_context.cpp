@@ -301,7 +301,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 		.setUsage(vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst)
 		.setQueueFamilyIndexCount(1)
 		.setPQueueFamilyIndices(&_queue_family_index)
-		.setSize(16 * 1024 * 1024);
+		.setSize(128 * 1024 * 1024);
 
 	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &_upload_buffer));
 

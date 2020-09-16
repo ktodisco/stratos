@@ -154,7 +154,8 @@ private:
 
 	// Data upload heap.
 	Microsoft::WRL::ComPtr<ID3D12Resource> _upload_buffer;
-	uint8_t* _upload_buffer_start = 0;
+	void* _upload_buffer_head = nullptr;
+	size_t _upload_buffer_offset = 0;
 
 	// Dynamic geometry buffers.
 	Microsoft::WRL::ComPtr<ID3D12Resource> _dynamic_vertex_buffer;
