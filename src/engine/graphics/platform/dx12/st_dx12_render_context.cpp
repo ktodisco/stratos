@@ -163,12 +163,12 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
 		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-	// Create the data upload heap. Let's just make it 16K for now.
-	create_buffer(16 * 1024 * 1024, _upload_buffer.GetAddressOf());
+	// Create the data upload heap. Let's just make it 128K for now.
+	create_buffer(128 * 1024 * 1024, _upload_buffer.GetAddressOf());
 	
 	// Map the upload buffer.
 	D3D12_RANGE map_range{0, 0};
-	_upload_buffer->Map(0, &map_range, reinterpret_cast<void**>(&_upload_buffer_start));
+	_upload_buffer->Map(0, &map_range, reinterpret_cast<void**>(&_upload_buffer_head));
 
 	// Create frame resources.
 	for (uint32_t rtv_itr = 0; rtv_itr < k_backbuffer_count; ++rtv_itr)
@@ -567,29 +567,12 @@ void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
 
 void st_dx12_render_context::transition_backbuffer_to_target()
 {
-	_command_list->ResourceBarrier(
-		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(_backbuffers[_frame_index].Get(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_RENDER_TARGET));
-
-	D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle = _rtv_heap->get_handle_cpu(_frame_index);
-	D3D12_CPU_DESCRIPTOR_HANDLE dsv_handle = _dsv_heap->get_handle_cpu(0);
-	_command_list->OMSetRenderTargets(1, &rtv_handle, false, &dsv_handle);
-
-	// TODO: It would be more ideal if this internally had st_render_targets for the
-	// backbuffer and depth/stencil buffer.
-	_bound_targets[0] = rtv_handle;
-	_bound_depth_stencil = dsv_handle;
+	_present_target->transition(this, st_texture_state_render_target);
 }
 
 void st_dx12_render_context::transition_backbuffer_to_present()
 {
-	_command_list->ResourceBarrier(
-		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(_backbuffers[_frame_index].Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PRESENT));
+	_present_target->transition(this, st_texture_state_copy_source);
 }
 
 void st_dx12_render_context::transition(
@@ -641,10 +624,26 @@ void st_dx12_render_context::begin_frame()
 
 	_dynamic_vertex_bytes_written = 0;
 	_dynamic_index_bytes_written = 0;
+
+	_upload_buffer_offset = 0;
 }
 
 void st_dx12_render_context::end_frame()
 {
+	_command_list->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(_backbuffers[_frame_index].Get(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_COPY_DEST));
+
+	_command_list->CopyResource(_backbuffers[_frame_index].Get(), _present_target->get_resource());
+
+	_command_list->ResourceBarrier(
+		1,
+		&CD3DX12_RESOURCE_BARRIER::Transition(_backbuffers[_frame_index].Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_PRESENT));
+
 	HRESULT result = _command_list->Close();
 	if (result != S_OK)
 	{
@@ -818,7 +817,10 @@ void st_dx12_render_context::create_texture(
 		uint32_t* row_count = reinterpret_cast<uint32_t*>(row_sizes_bytes + mip_count);
 		uint64_t required_size = 0;
 		_device->GetCopyableFootprints(&texture_desc, 0, mip_count, 0, layouts, row_count, row_sizes_bytes, &required_size);
-    
+
+		_upload_buffer_offset = align_value(_upload_buffer_offset, D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT);
+		size_t initial_offset = _upload_buffer_offset;
+
 		for (uint32_t i = 0; i < mip_count; ++i)
 		{
 			if (row_sizes_bytes[i] > size_t(-1))
@@ -828,12 +830,18 @@ void st_dx12_render_context::create_texture(
 
 			D3D12_MEMCPY_DEST DestData =
 			{
-				_upload_buffer_start + layouts[i].Offset,
+				reinterpret_cast<uint8_t*>(_upload_buffer_head) + _upload_buffer_offset,
 				layouts[i].Footprint.RowPitch,
 				size_t(layouts[i].Footprint.RowPitch) * size_t(row_count[i])
 			};
 
 			MemcpySubresource(&DestData, &subresources[i], static_cast<size_t>(row_sizes_bytes[i]), row_count[i], layouts[i].Footprint.Depth);
+
+			_upload_buffer_offset += (layouts[i].Footprint.RowPitch * layouts[i].Footprint.Height * layouts[i].Footprint.Depth) / 4;
+
+			// The offset of the layout needs to be adjusted by the amount we've written into the upload buffer
+			// to this point in the frame, for when it's used as a copy location below.
+			layouts[i].Offset += initial_offset;
 		}
 
 		for (uint32_t i = 0; i < mip_count; ++i)
