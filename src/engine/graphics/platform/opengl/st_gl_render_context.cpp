@@ -9,6 +9,7 @@
 #if defined(ST_GRAPHICS_API_OPENGL)
 
 #include <graphics/platform/opengl/st_gl_drawcall.h>
+#include <graphics/platform/opengl/st_gl_framebuffer.h>
 #include <graphics/platform/opengl/st_gl_pipeline_state.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_texture.h>
@@ -98,11 +99,24 @@ st_gl_render_context::st_gl_render_context(const st_window* window)
 		st_texture_state_copy_source,
 		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
 
+	st_render_texture* targets[] =
+	{
+		_present_target.get(),
+	};
+
+	_present_framebuffer = std::make_unique<st_gl_framebuffer>(
+		1,
+		targets,
+		nullptr);
+
 	_this = this;
 }
 
 st_gl_render_context::~st_gl_render_context()
 {
+	_present_framebuffer = nullptr;
+	_present_target = nullptr;
+
 	// Destroy the GL context.
 	wglDeleteContext(_gl_context);
 }
@@ -268,7 +282,7 @@ void st_gl_render_context::end_frame()
 void st_gl_render_context::swap()
 {
 	// Copy the present target to the backbuffer.
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, _present_target->get_handle());
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, _present_framebuffer->get_handle());
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glBlitFramebuffer(
 		0,

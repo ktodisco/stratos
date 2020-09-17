@@ -26,56 +26,54 @@ st_gl_texture::st_gl_texture(
 {
 	glGenTextures(1, &_handle);
 
-	GLenum pixel_format;
-	GLenum type;
-	get_pixel_format_and_type(format, pixel_format, type);
-
 	glBindTexture(GL_TEXTURE_2D, _handle);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, pixel_format, type, 0);
-
-	glBindTexture(GL_TEXTURE_2D, _handle);
 	glTexStorage2D(GL_TEXTURE_2D, levels, format, width, height);
 
-	if (is_compressed(format))
+	if (data)
 	{
-		uint8_t* bits = reinterpret_cast<uint8_t*>(data);
-
-		for (uint32_t mip = 0; mip < levels; ++mip)
+		if (is_compressed(format))
 		{
-			uint32_t level_width = width >> mip;
-			uint32_t level_height = height >> mip;
+			uint8_t* bits = reinterpret_cast<uint8_t*>(data);
 
-			size_t row_bytes;
-			size_t num_rows;
-			get_surface_info(level_width, level_height, format, nullptr, &row_bytes, &num_rows);
+			for (uint32_t mip = 0; mip < levels; ++mip)
+			{
+				uint32_t level_width = width >> mip;
+				uint32_t level_height = height >> mip;
 
-			glCompressedTexSubImage2D(
-				GL_TEXTURE_2D,
-				mip,
-				0,
-				0,
-				level_width,
-				level_height,
-				format,
-				row_bytes * num_rows,
-				bits);
+				size_t row_bytes;
+				size_t num_rows;
+				get_surface_info(level_width, level_height, format, nullptr, &row_bytes, &num_rows);
 
-			bits += row_bytes * num_rows;
+				glCompressedTexSubImage2D(
+					GL_TEXTURE_2D,
+					mip,
+					0,
+					0,
+					level_width,
+					level_height,
+					format,
+					row_bytes * num_rows,
+					bits);
+
+				bits += row_bytes * num_rows;
+			}
+		}
+		else
+		{
+			GLenum pixel_format;
+			GLenum type;
+			get_pixel_format_and_type(format, pixel_format, type);
+
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, pixel_format, type, data);
 		}
 	}
-	else
-	{
-		GLenum pixel_format;
-		GLenum type;
-		get_pixel_format_and_type(format, pixel_format, type);
 
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, pixel_format, type, data);
-	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 st_gl_texture::~st_gl_texture()
