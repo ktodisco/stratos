@@ -266,3 +266,27 @@ enum e_st_stencil_op
 	st_stencil_op_incr			= GL_INCR_WRAP,
 	st_stencil_op_decr			= GL_DECR_WRAP,
 };
+
+enum e_st_texture_state
+{
+	st_texture_state_common,
+	st_texture_state_render_target,
+	st_texture_state_depth_stencil_target,
+	st_texture_state_depth_target,
+	st_texture_state_non_pixel_shader_read,
+	st_texture_state_pixel_shader_read,
+	st_texture_state_depth_read,
+	st_texture_state_present,
+	st_texture_state_copy_source,
+	st_texture_state_copy_dest,
+};
+
+struct st_gl_viewport
+{
+	float x;
+	float y;
+	float width;
+	float height;
+	float min_depth;
+	float max_depth;
+};

@@ -16,17 +16,18 @@
 class st_gl_texture
 {
 public:
-	st_gl_texture();
-	st_gl_texture(uint32_t width, uint32_t height);
-	~st_gl_texture();
-
-	void reserve_data(uint32_t width, uint32_t height, e_st_format format);
-	void load_from_data(
+	st_gl_texture() = delete;
+	st_gl_texture(
 		uint32_t width,
 		uint32_t height,
 		uint32_t levels,
 		e_st_format format,
+		e_st_texture_usage_flags usage,
+		e_st_texture_state initial_state,
 		void* data);
+	~st_gl_texture();
+
+	void transition(class st_gl_render_context* context, e_st_texture_state new_state) {}
 
 	// TODO: This meta information is not ideal for textures that are shared between different
 	// passes.  One solution is to enforce it to be named on-the-fly.  Another solution is to

@@ -14,25 +14,17 @@
 #include <cassert>
 #include <string>
 
-st_gl_texture::st_gl_texture()
+st_gl_texture::st_gl_texture(
+	uint32_t width,
+	uint32_t height,
+	uint32_t levels,
+	e_st_format format,
+	e_st_texture_usage_flags usage,
+	e_st_texture_state initial_state,
+	void* data) :
+	_width(width), _height(height), _levels(levels), _format(format)
 {
 	glGenTextures(1, &_handle);
-}
-
-st_gl_texture::st_gl_texture(uint32_t width, uint32_t height)
-	: _width(width), _height(height)
-{
-	glGenTextures(1, &_handle);
-}
-
-st_gl_texture::~st_gl_texture()
-{
-	glDeleteTextures(1, &_handle);
-}
-
-void st_gl_texture::reserve_data(uint32_t width, uint32_t height, e_st_format format)
-{
-	_format = format;
 
 	GLenum pixel_format;
 	GLenum type;
@@ -45,17 +37,6 @@ void st_gl_texture::reserve_data(uint32_t width, uint32_t height, e_st_format fo
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, pixel_format, type, 0);
-}
-
-void st_gl_texture::load_from_data(
-	uint32_t width,
-	uint32_t height,
-	uint32_t levels,
-	e_st_format format,
-	void* data)
-{
-	_format = format;
-	_levels = levels;
 
 	glBindTexture(GL_TEXTURE_2D, _handle);
 	glTexStorage2D(GL_TEXTURE_2D, levels, format, width, height);
@@ -95,6 +76,11 @@ void st_gl_texture::load_from_data(
 
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, pixel_format, type, data);
 	}
+}
+
+st_gl_texture::~st_gl_texture()
+{
+	glDeleteTextures(1, &_handle);
 }
 
 void st_gl_texture::set_meta(const char* name)

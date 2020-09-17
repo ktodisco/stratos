@@ -25,7 +25,9 @@ public:
 		uint32_t width,
 		uint32_t height,
 		e_st_format format,
-		const st_vec4f& clear);
+		e_st_texture_usage_flags usage,
+		e_st_texture_state initial_state,
+		st_vec4f clear);
 	~st_gl_render_texture();
 };
 
