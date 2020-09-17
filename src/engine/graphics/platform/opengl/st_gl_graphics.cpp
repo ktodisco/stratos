@@ -25,5 +25,6 @@ void gl_message_callback(
 			type,
 			severity,
 			message );
+		assert(false);
 	}
 }

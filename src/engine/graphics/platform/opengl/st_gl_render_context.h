@@ -55,6 +55,7 @@ private:
 	static st_gl_render_context* _this;
 
 	std::unique_ptr<class st_render_texture> _present_target;
+	std::unique_ptr<class st_gl_framebuffer> _present_framebuffer;
 
 	HDC _device_context;
 	HGLRC _gl_context;

@@ -35,7 +35,7 @@ void st_gl_resource_table::set_textures(uint32_t count, st_texture** textures)
 		GLuint sampler;
 		glGenSamplers(1, &sampler);
 		glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, textures[i]->get_levels() > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-		glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, textures[i]->get_levels() > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+		glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
 

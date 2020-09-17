@@ -14,13 +14,14 @@
 
 #include <Windows.h>
 
+#define GLUEME(x, y) x##y
+#define GLUE(x, y) GLUEME(x, y)
 #define ST_GL_CALL(call) \
 	call; \
-	GLenum er = glGetError(); \
-	if (er != GL_NO_ERROR) \
+	GLenum GLUE(er, __LINE__) = glGetError(); \
+	if (GLUE(er, __LINE__) != GL_NO_ERROR) \
 	{ \
-		int* brk = 0; \
-		*brk = 0; \
+		assert(false); \
 	}
 
 void gl_message_callback(
