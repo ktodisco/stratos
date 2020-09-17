@@ -16,7 +16,7 @@
 class st_gl_buffer
 {
 public:
-	st_gl_buffer(const uint32_t count, const size_t element_size);
+	st_gl_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage_flags usage);
 	~st_gl_buffer();
 
 	void update(const class st_gl_render_context* context, void* data, const uint32_t count);

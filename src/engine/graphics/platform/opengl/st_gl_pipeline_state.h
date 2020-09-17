@@ -15,7 +15,9 @@
 class st_gl_pipeline_state
 {
 public:
-	st_gl_pipeline_state(const st_pipeline_state_desc& desc);
+	st_gl_pipeline_state(
+		const st_pipeline_state_desc& desc,
+		const class st_render_pass* render_pass);
 	~st_gl_pipeline_state();
 
 	const st_pipeline_state_desc& get_state() const { return _state_desc; }

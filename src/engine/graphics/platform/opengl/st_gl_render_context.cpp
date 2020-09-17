@@ -11,11 +11,14 @@
 #include <graphics/platform/opengl/st_gl_drawcall.h>
 #include <graphics/platform/opengl/st_gl_pipeline_state.h>
 #include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_render_texture.h>
 #include <graphics/st_shader.h>
 
 #include <system/st_window.h>
 
 #include <cstdio>
+
+st_gl_render_context* st_gl_render_context::_this = nullptr;
 
 st_gl_render_context::st_gl_render_context(const st_window* window)
 {
@@ -85,6 +88,17 @@ st_gl_render_context::st_gl_render_context(const st_window* window)
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback((GLDEBUGPROC)gl_message_callback, 0);
 #endif
+
+	// Create the faux backbuffer target.
+	_present_target = std::make_unique<st_render_texture>(
+		window->get_width(),
+		window->get_height(),
+		st_format_r8g8b8a8_unorm,
+		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
+		st_texture_state_copy_source,
+		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
+
+	_this = this;
 }
 
 st_gl_render_context::~st_gl_render_context()
@@ -128,9 +142,9 @@ void st_gl_render_context::set_pipeline_state(const st_gl_pipeline_state* state)
 		state_desc._rasterizer_desc._cull_mode);
 }
 
-void st_gl_render_context::set_viewport(int x, int y, int width, int height)
+void st_gl_render_context::set_viewport(const st_gl_viewport& viewport)
 {
-	glViewport(x, y, width, height);
+	glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 }
 
 void st_gl_render_context::set_scissor(int left, int top, int right, int bottom)
@@ -253,6 +267,23 @@ void st_gl_render_context::end_frame()
 
 void st_gl_render_context::swap()
 {
+	// Copy the present target to the backbuffer.
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, _present_target->get_handle());
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(
+		0,
+		0,
+		_present_target->get_width(),
+		_present_target->get_height(),
+		0,
+		0,
+		_present_target->get_width(),
+		_present_target->get_height(),
+		GL_COLOR_BUFFER_BIT,
+		GL_NEAREST);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 	SwapBuffers(_device_context);
 }
 

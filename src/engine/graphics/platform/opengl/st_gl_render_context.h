@@ -10,6 +10,8 @@
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
+#include <memory>
+
 class st_gl_render_context
 {
 public:
@@ -21,7 +23,7 @@ public:
 	void release();
 
 	void set_pipeline_state(const class st_gl_pipeline_state* state);
-	void set_viewport(int x, int y, int width, int height);
+	void set_viewport(const st_gl_viewport& viewport);
 	void set_scissor(int left, int top, int right, int bottom);
 	void set_clear_color(float r, float g, float b, float a);
 
@@ -38,6 +40,9 @@ public:
 	void swap();
 
 	const class st_gl_shader* get_bound_shader() const { return _bound_shader; }
+	class st_render_texture* get_present_target() const { return _present_target.get(); }
+
+	static st_gl_render_context* get() { return _this; }
 
 private:
 	void set_depth_state(bool enable, GLenum func);
@@ -46,6 +51,11 @@ private:
 	void set_depth_mask(bool enable);
 
 private:
+	// Maintain a global instance.
+	static st_gl_render_context* _this;
+
+	std::unique_ptr<class st_render_texture> _present_target;
+
 	HDC _device_context;
 	HGLRC _gl_context;
 

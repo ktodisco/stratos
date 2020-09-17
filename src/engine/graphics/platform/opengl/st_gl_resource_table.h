@@ -18,14 +18,14 @@ public:
 	st_gl_resource_table();
 	~st_gl_resource_table();
 
-	void add_constant_buffer(class st_gl_constant_buffer* cb);
-	void add_texture_resource(class st_gl_texture* sr);
-	void add_buffer_resource(class st_gl_buffer* br);
+	void set_constant_buffers(uint32_t count, class st_constant_buffer** cbs);
+	void set_textures(uint32_t count, class st_texture** textures);
+	void set_buffers(uint32_t count, class st_buffer** buffers);
 
 	void bind(class st_gl_render_context* context);
 
 private:
-	std::vector<st_gl_texture*> _srvs;
+	std::vector<st_texture*> _srvs;
 	std::vector<GLuint> _samplers;
 };
 

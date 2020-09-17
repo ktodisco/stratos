@@ -11,7 +11,7 @@
 #include <graphics/platform/opengl/st_gl_render_context.h>
 #include <graphics/platform/opengl/st_gl_shader.h>
 
-st_gl_buffer::st_gl_buffer(const uint32_t count, const size_t element_size)
+st_gl_buffer::st_gl_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage_flags usage)
 	: _count(count), _element_size(element_size)
 {
 	glGenBuffers(1, &_buffer);
