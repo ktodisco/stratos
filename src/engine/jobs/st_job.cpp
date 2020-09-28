@@ -142,7 +142,7 @@ void st_job::wait(int32_t* counter)
 		*/
 		else
 		{
-			while (*counter > 0)
+			while (*reinterpret_cast<std::atomic_int*>(counter) > 0)
 			{
 				impl->_work_exhausted.wait();
 			}
@@ -161,7 +161,7 @@ static int _st_job_instance_thread_worker(void* data)
 		if (!_st_job_schedule(impl, &parent_fiber))
 		{
 			impl->_work_exhausted.wake_all();
-			impl->_work_added.wait_for(1000);
+			impl->_work_added.wait_for(1);
 		}
 	}
 
