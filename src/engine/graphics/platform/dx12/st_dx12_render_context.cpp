@@ -10,6 +10,7 @@
 
 #include <core/st_core.h>
 
+#include <graphics/platform/dx12/st_dx12_buffer.h>
 #include <graphics/platform/dx12/st_dx12_pipeline_state.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_render_texture.h>
@@ -371,9 +372,10 @@ void st_dx12_render_context::set_pipeline_state(const st_dx12_pipeline_state* st
 	_command_list->SetPipelineState(state->get_state());
 }
 
-void st_dx12_render_context::set_viewport(const D3D12_VIEWPORT& viewport)
+void st_dx12_render_context::set_viewport(const st_viewport& viewport)
 {
-	_command_list->RSSetViewports(1, &viewport);
+	const D3D12_VIEWPORT* vp = reinterpret_cast<const D3D12_VIEWPORT*>(&viewport);
+	_command_list->RSSetViewports(1, vp);
 }
 
 void st_dx12_render_context::set_scissor(int left, int top, int right, int bottom)
@@ -492,8 +494,18 @@ void st_dx12_render_context::clear(unsigned int clear_flags)
 void st_dx12_render_context::draw(const st_static_drawcall& drawcall)
 {
 	_command_list->IASetPrimitiveTopology((D3D12_PRIMITIVE_TOPOLOGY)drawcall._draw_mode);
-	_command_list->IASetVertexBuffers(0, 1, drawcall._vertex_buffer_view);
-	_command_list->IASetIndexBuffer(drawcall._index_buffer_view);
+
+	D3D12_VERTEX_BUFFER_VIEW vbv;
+	vbv.BufferLocation = drawcall._vertex_buffer->get_resource()->GetGPUVirtualAddress();
+	vbv.SizeInBytes = drawcall._vertex_buffer->get_count() * drawcall._vertex_buffer->get_element_size();
+	vbv.StrideInBytes = drawcall._vertex_buffer->get_element_size();
+	_command_list->IASetVertexBuffers(0, 1, &vbv);
+
+	D3D12_INDEX_BUFFER_VIEW ibv;
+	ibv.BufferLocation = drawcall._index_buffer->get_resource()->GetGPUVirtualAddress();
+	ibv.SizeInBytes = drawcall._index_buffer->get_count() * drawcall._index_buffer->get_element_size();
+	ibv.Format = DXGI_FORMAT_R16_UINT;
+	_command_list->IASetIndexBuffer(&ibv);
 	_command_list->DrawIndexedInstanced(drawcall._index_count, 1, 0, 0, 0);
 }
 

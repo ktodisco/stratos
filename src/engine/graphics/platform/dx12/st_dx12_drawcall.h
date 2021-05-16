@@ -37,8 +37,8 @@ struct st_dx12_drawcall
 */
 struct st_dx12_static_drawcall : st_dx12_drawcall
 {
-	struct D3D12_VERTEX_BUFFER_VIEW* _vertex_buffer_view = nullptr;
-	struct D3D12_INDEX_BUFFER_VIEW* _index_buffer_view = nullptr;
+	class st_dx12_buffer* _vertex_buffer = nullptr;
+	class st_dx12_buffer* _index_buffer = nullptr;
 	int32_t _index_count = 0;
 };
 

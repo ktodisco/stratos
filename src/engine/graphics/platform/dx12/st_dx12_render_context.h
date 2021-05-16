@@ -38,7 +38,7 @@ public:
 	void release();
 
 	void set_pipeline_state(const class st_dx12_pipeline_state* state);
-	void set_viewport(const D3D12_VIEWPORT& viewport);
+	void set_viewport(const st_viewport& viewport);
 	void set_scissor(int left, int top, int right, int bottom);
 	void set_clear_color(float r, float g, float b, float a);
 

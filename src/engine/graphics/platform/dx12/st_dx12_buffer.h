@@ -19,7 +19,7 @@ public:
 	st_dx12_buffer(const uint32_t count, const size_t element_size, const e_st_buffer_usage_flags usage);
 	~st_dx12_buffer();
 
-	void update(const class st_dx12_render_context* context, void* data, const uint32_t count);
+	void update(const class st_dx12_render_context* context, void* data, const size_t offset, const uint32_t count);
 	void set_meta(std::string name) {}
 
 	ID3D12Resource* get_resource() const { return _buffer.Get(); }

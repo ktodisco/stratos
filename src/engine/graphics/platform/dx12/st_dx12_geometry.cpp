@@ -8,6 +8,7 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <graphics/platform/dx12/st_dx12_buffer.h>
 #include <graphics/platform/dx12/st_dx12_render_context.h>
 
 #include <graphics/geometry/st_vertex_attribute.h>
@@ -25,47 +26,14 @@ st_dx12_geometry::st_dx12_geometry(
 	uint32_t index_count)
 {
 	// Create the vertex buffer resource.
-	const uint32_t vertex_buffer_size = vertex_count * vertex_size;
-
-	st_dx12_render_context::get()->create_buffer(vertex_buffer_size, _vertex_buffer.GetAddressOf());
-
-	// Map the buffer to a CPU write address and copy the data.
-	uint8_t* buffer_begin;
-	D3D12_RANGE range = { 0, 0 };
-	HRESULT result = _vertex_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
-
-	if (result != S_OK)
-	{
-		assert(false);
-	}
-
-	memcpy(buffer_begin, vertex_data, vertex_buffer_size);
-	_vertex_buffer->Unmap(0, nullptr);
-
-	_vertex_buffer_view.BufferLocation = _vertex_buffer->GetGPUVirtualAddress();
-	_vertex_buffer_view.StrideInBytes = vertex_size;
-	_vertex_buffer_view.SizeInBytes = vertex_buffer_size;
+	_vertex_buffer = std::make_unique<st_dx12_buffer>(vertex_count, vertex_size, e_st_buffer_usage::vertex);
+	_vertex_buffer->update(st_dx12_render_context::get(), vertex_data, 0, vertex_count);
 
 	// Create the index buffer resource.
 	_index_count = index_count;
-	const uint32_t index_buffer_size = _index_count * sizeof(uint16_t);
 
-	st_dx12_render_context::get()->create_buffer(index_buffer_size, _index_buffer.GetAddressOf());
-
-	// Map the buffer to a CPU write address and copy the data.
-	result = _index_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
-
-	if (result != S_OK)
-	{
-		assert(false);
-	}
-
-	memcpy(buffer_begin, index_data, index_buffer_size);
-	_index_buffer->Unmap(0, nullptr);
-
-	_index_buffer_view.BufferLocation = _index_buffer->GetGPUVirtualAddress();
-	_index_buffer_view.Format = DXGI_FORMAT_R16_UINT;
-	_index_buffer_view.SizeInBytes = index_buffer_size;
+	_index_buffer = std::make_unique<st_dx12_buffer>(index_count, sizeof(uint16_t), e_st_buffer_usage::index);
+	_index_buffer->update(st_dx12_render_context::get(), index_data, 0, index_count);
 }
 
 st_dx12_geometry::~st_dx12_geometry()
@@ -74,8 +42,8 @@ st_dx12_geometry::~st_dx12_geometry()
 
 void st_dx12_geometry::draw(st_static_drawcall& draw_call)
 {
-	draw_call._vertex_buffer_view = &_vertex_buffer_view;
-	draw_call._index_buffer_view = &_index_buffer_view;
+	draw_call._vertex_buffer = _vertex_buffer.get();
+	draw_call._index_buffer = _index_buffer.get();
 	draw_call._index_count = _index_count;
 	draw_call._draw_mode = st_primitive_topology_triangles;
 }

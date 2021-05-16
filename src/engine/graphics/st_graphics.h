@@ -9,8 +9,8 @@
 #include <core/st_flags.h>
 
 //#define ST_GRAPHICS_API_OPENGL
-//#define ST_GRAPHICS_API_DX12
-#define ST_GRAPHICS_API_VULKAN
+#define ST_GRAPHICS_API_DX12
+//#define ST_GRAPHICS_API_VULKAN
 
 typedef void* st_graphics_resource;
 
@@ -71,6 +71,16 @@ enum e_st_shader_constant_type
 	st_shader_constant_type_mat4,
 	st_shader_constant_type_block,
 };
+
+struct st_viewport
+{
+	float x;
+	float y;
+	float width;
+	float height;
+	float min_depth;
+	float max_depth;
+}
 
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
 
