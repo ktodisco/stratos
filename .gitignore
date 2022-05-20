@@ -1,3 +1,8 @@
 build/st-win64
 blog/
 *.cap
+*.db
+*.bin
+*.vcxproj.user
+*.recipe
+*.vcxproj.*.txt
