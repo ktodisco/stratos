@@ -51,6 +51,12 @@ link_directories ("C:/VulkanSDK/1.3.204.1/Lib")
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}")
 file (GLOB_RECURSE ST_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
+foreach (SOURCE IN LISTS ST_SOURCE_FILES)
+	file(RELATIVE_PATH SOURCE_RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${SOURCE}")
+	get_filename_component(SOURCE_PATH "${SOURCE_RELATIVE}" PATH)
+	source_group("${SOURCE_PATH}" FILES "${SOURCE_RELATIVE}")
+endforeach()
+
 # On Windows, we're not going to worry about CRT secure warnings.
 if (MSVC)
 	set (CMAKE_CXX_FLAGS "$(CMAKE_CXX_FLAGS) /EHsc /MP")
@@ -75,6 +81,6 @@ add_custom_command (TARGET stratos PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${
 add_custom_target (ALWAYS_COPY_DATA COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/always_copy_data.h)
 add_custom_command (TARGET ALWAYS_COPY_DATA POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../../data $<TARGET_FILE_DIR:stratos>/data)
 
-add_custom_command (TARGET ALWAYS_COPY_DATA PRE_BUILD COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../../build/scripts/build_shaders.py ${CMAKE_CURRENT_SOURCE_DIR}/../../data/shaders glsl $<TARGET_FILE_DIR:stratos>/data/shaders)
-add_custom_command (TARGET ALWAYS_COPY_DATA PRE_BUILD COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../../build/scripts/build_shaders.py ${CMAKE_CURRENT_SOURCE_DIR}/../../data/shaders spirv $<TARGET_FILE_DIR:stratos>/data/shaders)
-add_custom_command (TARGET ALWAYS_COPY_DATA PRE_BUILD COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../../build/scripts/build_shaders.py ${CMAKE_CURRENT_SOURCE_DIR}/../../data/shaders dxil $<TARGET_FILE_DIR:stratos>/data/shaders)
+add_custom_command (TARGET stratos PRE_BUILD COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../../build/scripts/build_shaders.py ${CMAKE_CURRENT_SOURCE_DIR}/../../data/shaders glsl $<TARGET_FILE_DIR:stratos>/data/shaders)
+add_custom_command (TARGET stratos PRE_BUILD COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../../build/scripts/build_shaders.py ${CMAKE_CURRENT_SOURCE_DIR}/../../data/shaders spirv $<TARGET_FILE_DIR:stratos>/data/shaders)
+add_custom_command (TARGET stratos PRE_BUILD COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/../../build/scripts/build_shaders.py ${CMAKE_CURRENT_SOURCE_DIR}/../../data/shaders dxil $<TARGET_FILE_DIR:stratos>/data/shaders)
