@@ -27,12 +27,21 @@ typedef st_vk_geometry st_platform_geometry;
 class st_geometry : public st_platform_geometry
 {
 public:
+
 	st_geometry(
 		const st_vertex_format* format,
 		void* vertex_data,
 		uint32_t vertex_size,
 		uint32_t vertex_count,
 		uint16_t* index_data,
-		uint32_t index_count) :
-		st_platform_geometry(format, vertex_data, vertex_size, vertex_count, index_data, index_count) {}
+		uint32_t index_count);
+
+private:
+	std::unique_ptr<st_buffer> _vertex_buffer;
+	std::unique_ptr<st_buffer> _index_buffer;
+
+	std::unique_ptr<st_buffer_view> _vertex_buffer_view;
+	std::unique_ptr<st_buffer_view> _index_buffer_view;
+
+	uint32_t _index_count = 0;
 };

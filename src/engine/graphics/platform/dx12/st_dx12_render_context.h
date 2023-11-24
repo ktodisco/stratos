@@ -27,74 +27,118 @@ static T align_value(T value, uint32_t alignment)
 	return (value + ((T)alignment - 1)) & ~((T)alignment - 1);
 }
 
-class st_dx12_render_context
+class st_dx12_render_context : public st_render_context
 {
 public:
 
 	st_dx12_render_context(const class st_window* window);
 	~st_dx12_render_context();
 
-	void acquire();
-	void release();
+	void acquire() override;
+	void release() override;
 
-	void set_pipeline_state(const class st_dx12_pipeline_state* state);
-	void set_viewport(const D3D12_VIEWPORT& viewport);
-	void set_scissor(int left, int top, int right, int bottom);
-	void set_clear_color(float r, float g, float b, float a);
+	void set_pipeline(const st_pipeline* state) override;
+	void set_viewport(const st_viewport& viewport) override;
+	void set_scissor(int left, int top, int right, int bottom) override;
+	void set_clear_color(float r, float g, float b, float a) override;
 
-	void set_shader_resource_table(uint32_t offset);
-	void set_sampler_table(uint32_t offset);
-	void set_constant_buffer_table(uint32_t offset);
-	void set_buffer_table(uint32_t offset);
+	void set_shader_resource_table(uint32_t offset) override;
+	void set_sampler_table(uint32_t offset) override;
+	void set_constant_buffer_table(uint32_t offset) override;
+	void set_buffer_table(uint32_t offset) override;
 
 	void set_render_targets(
 		uint32_t count,
-		class st_render_texture** targets,
-		class st_render_texture* depth_stencil);
+		st_render_texture** targets,
+		st_render_texture* depth_stencil) override;
 
-	void clear(unsigned int clear_flags);
-	void draw(const struct st_static_drawcall& drawcall);
-	void draw(const struct st_dynamic_drawcall& drawcall);
+	void clear(unsigned int clear_flags) override;
+	void draw(const struct st_static_drawcall& drawcall) override;
+	void draw(const struct st_dynamic_drawcall& drawcall) override;
 
 	// TODO: These are temporary and a generic solution is needed.
-	void transition_backbuffer_to_target();
-	void transition_backbuffer_to_present();
+	void transition_backbuffer_to_target() override;
+	void transition_backbuffer_to_present() override;
 
-	void transition(
-		class st_dx12_texture* texture,
-		e_st_texture_state old_state,
-		e_st_texture_state new_state);
+	void begin_loading() override;
+	void end_loading() override;
+	void begin_frame() override;
+	void end_frame() override;
+	void swap() override;
 
-	void begin_loading();
-	void end_loading();
-	void begin_frame();
-	void end_frame();
-	void swap();
+	void begin_marker(const std::string& marker) override;
+	void end_marker() override;
 
-	void begin_marker(const std::string& marker);
-	void end_marker();
-
-	void create_graphics_pipeline_state(
-		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& pipeline_desc,
-		ID3D12PipelineState** pipeline_state);
-	void create_buffer(size_t size, ID3D12Resource** resource);
-	void create_texture(
+	// Textures.
+	std::unique_ptr<st_texture> create_texture(
 		uint32_t width,
 		uint32_t height,
-		uint32_t mip_count,
+		uint32_t levels,
 		e_st_format format,
 		e_st_texture_usage_flags usage,
 		e_st_texture_state initial_state,
-		void* data,
-		ID3D12Resource** resource);
-	void create_target(
+		void* data) override;
+	void set_texture_meta(st_texture* texture, const char* name) override;
+	void set_texture_name(st_texture* texture, std::string name) override;
+	void transition(
+		st_texture* texture,
+		e_st_texture_state old_state,
+		e_st_texture_state new_state) override;
+	std::unique_ptr<st_render_texture> create_render_target_view(
 		uint32_t width,
 		uint32_t height,
 		e_st_format format,
-		const st_vec4f& clear,
+		e_st_texture_usage_flags usage,
 		e_st_texture_state initial_state,
-		ID3D12Resource** resource,
-		st_dx12_descriptor* rtv_offset);
+		st_vec4f clear) override;
+
+	// Buffers.
+	std::unique_ptr<st_buffer> create_buffer(
+		const uint32_t count,
+		const size_t element_size,
+		const e_st_buffer_usage_flags usage) override;
+	// TODO: Map and Unmap.
+	void update_buffer(st_buffer* buffer, void* data, const uint32_t count) override;
+	void set_buffer_meta(st_buffer* buffer, std::string name) override;
+
+	// Constant buffers.
+	std::unique_ptr<st_constant_buffer> create_constant_buffer(const size_t size) override;
+	void add_constant(
+		st_constant_buffer* buffer,
+		const std::string& name,
+		const e_st_shader_constant_type constant_type) override;
+	void update_constant_buffer(st_constant_buffer* buffer, void* data) override;
+
+	// Resource tables.
+	std::unique_ptr<st_resource_table> create_resource_table() override;
+	void set_constant_buffers(st_resource_table* table, uint32_t count, st_constant_buffer** cbs) override;
+	void set_textures(st_resource_table* table, uint32_t count, st_texture** textures) override;
+	void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) override;
+	void bind_resource_table(st_resource_table* table) override;
+
+	// Shaders.
+	std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) override;
+
+	// Pipelines.
+	std::unique_ptr<st_pipeline> create_pipeline(const struct st_pipeline_state_desc& desc) override;
+
+	// Geometry.
+	std::unique_ptr<st_vertex_format> create_vertex_format(
+		const st_vertex_attribute* attributes,
+		uint32_t attribute_count) override;
+
+	// Render passes.
+	std::unique_ptr<st_render_pass> create_render_pass(
+		uint32_t count,
+		st_render_texture** targets,
+		st_render_texture* depth_stencil) override;
+	void begin_render_pass(
+		st_render_pass* pass,
+		st_vec4f* clear_values,
+		const uint8_t clear_count) override;
+	void end_render_pass() override;
+
+	void create_buffer_internal(size_t size, ID3D12Resource** resource);
 	void destroy_target(st_dx12_descriptor target);
 
 	st_dx12_descriptor create_constant_buffer_view(
@@ -119,7 +163,6 @@ public:
 	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }
 	ID3D12GraphicsCommandList* get_command_list() const { return _command_list.Get(); }
 	st_dx12_descriptor_heap* get_gui_heap() const { return _gui_srv_heap.get(); }
-	st_render_texture* get_present_target() { return _present_target.get(); }
 
 	static st_dx12_render_context* get();
 
@@ -133,7 +176,7 @@ private:
 	D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissor_rect;
 
-	std::unique_ptr<class st_render_texture> _present_target;
+	std::unique_ptr<st_texture> _present_target;
 
 	Microsoft::WRL::ComPtr<IDXGISwapChain3> _swap_chain;
 	Microsoft::WRL::ComPtr<ID3D12Device> _device;

@@ -10,7 +10,32 @@
 #include <math/st_vec2f.h>
 #include <math/st_vec3f.h>
 
+#include <system/st_window.h>
+
 #include <cassert>
+#include <memory>
+
+std::unique_ptr<st_render_context> st_graphics_create_context(e_st_graphics_api api, const st_window* window)
+{
+	std::unique_ptr<st_render_context> context;
+	
+	switch (api)
+	{
+	case e_st_graphics_api::dx12:
+		context = std::make_unique<st_dx12_render_context>(window);
+		break;
+	case e_st_graphics_api::opengl:
+		context = std::make_unique<st_opengl_render_context(window);
+		break;
+	case e_st_graphics_api::vulkan:
+		context = std::make_unique<st_vulkan_render_context(window);
+		break;
+	default:
+		break;
+	}
+
+	return std::move(context);
+}
 
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type)
 {

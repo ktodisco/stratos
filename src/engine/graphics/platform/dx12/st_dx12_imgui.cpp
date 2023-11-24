@@ -12,7 +12,7 @@
 
 #include <system/st_window.h>
 
-#if defined(ST_GRAPHICS_API_DX12)
+#if 0
 
 #include <imgui.h>
 #include <examples/imgui_impl_dx12.h>

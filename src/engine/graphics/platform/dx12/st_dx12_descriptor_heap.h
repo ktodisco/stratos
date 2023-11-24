@@ -14,8 +14,6 @@
 #include <list>
 #include <memory>
 
-typedef uint32_t st_dx12_descriptor;
-
 struct st_dx12_cpu_descriptor_handle
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE _handle;
