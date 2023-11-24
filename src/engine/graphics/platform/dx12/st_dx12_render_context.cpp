@@ -10,14 +10,14 @@
 
 #include <core/st_core.h>
 
+#include <graphics/platform/dx12/st_dx12_conversion.h>
 #include <graphics/platform/dx12/st_dx12_framebuffer.h>
 
-#include <graphics/platform/dx12/st_dx12_pipeline_state.h>
+#include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
-#include <graphics/geometry/st_vertex_format.h>
 
 #include <system/st_window.h>
 
@@ -507,7 +507,7 @@ void st_dx12_render_context::clear(unsigned int clear_flags)
 
 void st_dx12_render_context::draw(const st_static_drawcall& drawcall)
 {
-	_command_list->IASetPrimitiveTopology((D3D12_PRIMITIVE_TOPOLOGY)drawcall._draw_mode);
+	_command_list->IASetPrimitiveTopology(convert_topology(drawcall._draw_mode));
 	_command_list->IASetVertexBuffers(0, 1, drawcall._vertex_buffer_view);
 	_command_list->IASetIndexBuffer(drawcall._index_buffer_view);
 	_command_list->DrawIndexedInstanced(drawcall._index_count, 1, 0, 0, 0);
@@ -607,7 +607,7 @@ std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
 	texture->_format = format;
 	texture->_usage = usage;
 
-	DXGI_FORMAT real_format = (DXGI_FORMAT)format;
+	DXGI_FORMAT real_format = convert_format(format);
 
 	D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
 	if (usage & e_st_texture_usage::color_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
@@ -809,7 +809,7 @@ std::unique_ptr<st_render_texture> st_dx12_render_context::create_render_target_
 	target_desc.Width = width;
 	target_desc.Height = height;
 	target_desc.MipLevels = 1;
-	target_desc.Format = (DXGI_FORMAT)format;
+	target_desc.Format = convert_format(format);
 	target_desc.Flags = flags;
 	target_desc.DepthOrArraySize = 1;
 	target_desc.SampleDesc.Count = 1;
@@ -817,7 +817,7 @@ std::unique_ptr<st_render_texture> st_dx12_render_context::create_render_target_
 	target_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
 	D3D12_CLEAR_VALUE clear_value = {};
-	clear_value.Format = (DXGI_FORMAT)format;
+	clear_value.Format = convert_format(format);
 
 	if (format == st_format_d24_unorm_s8_uint)
 	{
@@ -1128,8 +1128,8 @@ std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(const st_pi
 
 	// Rasterizer state.
 	D3D12_RASTERIZER_DESC raster_desc = {};
-	raster_desc.CullMode = (D3D12_CULL_MODE)desc._rasterizer_desc._cull_mode;
-	raster_desc.FillMode = (D3D12_FILL_MODE)desc._rasterizer_desc._fill_mode;
+	raster_desc.CullMode = convert_cull_mode(desc._rasterizer_desc._cull_mode);
+	raster_desc.FillMode = convert_fill_mode(desc._rasterizer_desc._fill_mode);
 	raster_desc.FrontCounterClockwise = !desc._rasterizer_desc._winding_order_clockwise;
 	raster_desc.DepthClipEnable = false;
 
@@ -1143,15 +1143,15 @@ std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(const st_pi
 	{
 		D3D12_RENDER_TARGET_BLEND_DESC target_blend = {};
 		target_blend.BlendEnable = desc._blend_desc._target_blend[target_itr]._blend;
-		target_blend.BlendOp = (D3D12_BLEND_OP)desc._blend_desc._target_blend[target_itr]._blend_op;
-		target_blend.BlendOpAlpha = (D3D12_BLEND_OP)desc._blend_desc._target_blend[target_itr]._blend_op_alpha;
-		target_blend.DestBlend = (D3D12_BLEND)desc._blend_desc._target_blend[target_itr]._dst_blend;
-		target_blend.DestBlendAlpha = (D3D12_BLEND)desc._blend_desc._target_blend[target_itr]._dst_blend_alpha;
-		target_blend.LogicOp = (D3D12_LOGIC_OP)desc._blend_desc._target_blend[target_itr]._logic_op;
+		target_blend.BlendOp = convert_blend_op(desc._blend_desc._target_blend[target_itr]._blend_op);
+		target_blend.BlendOpAlpha = convert_blend_op(desc._blend_desc._target_blend[target_itr]._blend_op_alpha);
+		target_blend.DestBlend = convert_blend(desc._blend_desc._target_blend[target_itr]._dst_blend);
+		target_blend.DestBlendAlpha = convert_blend(desc._blend_desc._target_blend[target_itr]._dst_blend_alpha);
+		target_blend.LogicOp = convert_logic_op(desc._blend_desc._target_blend[target_itr]._logic_op);
 		target_blend.LogicOpEnable = desc._blend_desc._target_blend[target_itr]._logic;
 		target_blend.RenderTargetWriteMask = desc._blend_desc._target_blend[target_itr]._write_mask;
-		target_blend.SrcBlend = (D3D12_BLEND)desc._blend_desc._target_blend[target_itr]._src_blend;
-		target_blend.SrcBlendAlpha = (D3D12_BLEND)desc._blend_desc._target_blend[target_itr]._src_blend_alpha;
+		target_blend.SrcBlend = convert_blend(desc._blend_desc._target_blend[target_itr]._src_blend);
+		target_blend.SrcBlendAlpha = convert_blend(desc._blend_desc._target_blend[target_itr]._src_blend_alpha);
 
 		blend_desc.RenderTarget[target_itr] = target_blend;
 	}
@@ -1161,40 +1161,40 @@ std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(const st_pi
 	// Depth/stencil state.
 	D3D12_DEPTH_STENCIL_DESC depth_stencil_desc = {};
 	depth_stencil_desc.DepthEnable = desc._depth_stencil_desc._depth_enable;
-	depth_stencil_desc.DepthWriteMask = (D3D12_DEPTH_WRITE_MASK)desc._depth_stencil_desc._depth_mask;
-	depth_stencil_desc.DepthFunc = (D3D12_COMPARISON_FUNC)desc._depth_stencil_desc._depth_compare;
+	depth_stencil_desc.DepthWriteMask = convert_depth_write_mask(desc._depth_stencil_desc._depth_mask);
+	depth_stencil_desc.DepthFunc = convert_comparison_func(desc._depth_stencil_desc._depth_compare);
 	depth_stencil_desc.StencilEnable = desc._depth_stencil_desc._stencil_enable;
 	depth_stencil_desc.StencilReadMask = desc._depth_stencil_desc._stencil_read_mask;
 	depth_stencil_desc.StencilWriteMask = desc._depth_stencil_desc._stencil_write_mask;
 
 	D3D12_DEPTH_STENCILOP_DESC front_desc = {};
-	front_desc.StencilFailOp = (D3D12_STENCIL_OP)desc._depth_stencil_desc._front_stencil._stencil_fail_op;
-	front_desc.StencilDepthFailOp = (D3D12_STENCIL_OP)desc._depth_stencil_desc._front_stencil._depth_fail_op;
-	front_desc.StencilPassOp = (D3D12_STENCIL_OP)desc._depth_stencil_desc._front_stencil._stencil_pass_op;
-	front_desc.StencilFunc = (D3D12_COMPARISON_FUNC)desc._depth_stencil_desc._front_stencil._stencil_func;
+	front_desc.StencilFailOp = convert_stencil_op(desc._depth_stencil_desc._front_stencil._stencil_fail_op);
+	front_desc.StencilDepthFailOp = convert_stencil_op(desc._depth_stencil_desc._front_stencil._depth_fail_op);
+	front_desc.StencilPassOp = convert_stencil_op(desc._depth_stencil_desc._front_stencil._stencil_pass_op);
+	front_desc.StencilFunc = convert_comparison_func(desc._depth_stencil_desc._front_stencil._stencil_func);
 	depth_stencil_desc.FrontFace = front_desc;
 
 	D3D12_DEPTH_STENCILOP_DESC back_desc = {};
-	back_desc.StencilFailOp = (D3D12_STENCIL_OP)desc._depth_stencil_desc._back_stencil._stencil_fail_op;
-	back_desc.StencilDepthFailOp = (D3D12_STENCIL_OP)desc._depth_stencil_desc._back_stencil._depth_fail_op;
-	back_desc.StencilPassOp = (D3D12_STENCIL_OP)desc._depth_stencil_desc._back_stencil._stencil_pass_op;
-	back_desc.StencilFunc = (D3D12_COMPARISON_FUNC)desc._depth_stencil_desc._back_stencil._stencil_func;
+	back_desc.StencilFailOp = convert_stencil_op(desc._depth_stencil_desc._back_stencil._stencil_fail_op);
+	back_desc.StencilDepthFailOp = convert_stencil_op(desc._depth_stencil_desc._back_stencil._depth_fail_op);
+	back_desc.StencilPassOp = convert_stencil_op(desc._depth_stencil_desc._back_stencil._stencil_pass_op);
+	back_desc.StencilFunc = convert_comparison_func(desc._depth_stencil_desc._back_stencil._stencil_func);
 	depth_stencil_desc.BackFace = back_desc;
 
 	pipeline_desc.DepthStencilState = depth_stencil_desc;
 
 	// Primitive topology.
-	pipeline_desc.PrimitiveTopologyType = (D3D12_PRIMITIVE_TOPOLOGY_TYPE)desc._primitive_topology_type;
+	pipeline_desc.PrimitiveTopologyType = convert_topology_type(desc._primitive_topology_type);
 
 	// Render targets.
 	pipeline_desc.NumRenderTargets = desc._render_target_count;
 	for (uint32_t target_itr = 0; target_itr < desc._render_target_count; ++target_itr)
 	{
-		pipeline_desc.RTVFormats[target_itr] = (DXGI_FORMAT)desc._render_target_formats[target_itr];
+		pipeline_desc.RTVFormats[target_itr] = convert_format(desc._render_target_formats[target_itr]);
 	}
 
 	// Depth/stencil format.
-	pipeline_desc.DSVFormat = (DXGI_FORMAT)desc._depth_stencil_format;
+	pipeline_desc.DSVFormat = convert_format(desc._depth_stencil_format);
 
 	// Multisampling.
 	pipeline_desc.SampleDesc.Count = desc._sample_desc._count;
@@ -1493,7 +1493,7 @@ st_dx12_descriptor st_dx12_render_context::create_shader_resource_view(
 	// Create the shader resource view.
 	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
 	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srv_desc.Format = (DXGI_FORMAT)format;
+	srv_desc.Format = convert_format(format);
 	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srv_desc.Texture2D.MipLevels = levels;
 

@@ -17,6 +17,251 @@
 
 typedef void* st_graphics_resource;
 
+enum e_st_primitive_topology_type
+{
+	st_primitive_topology_type_point,
+	st_primitive_topology_type_line,
+	st_primitive_topology_type_triangle,
+};
+
+enum e_st_primitive_topology
+{
+	st_primitive_topology_points,
+	st_primitive_topology_lines,
+	st_primitive_topology_triangles,
+};
+
+enum e_st_format
+{
+	st_format_unknown,
+	st_format_r32g32b32a32_typeless,
+	st_format_r32g32b32a32_float,
+	st_format_r32g32b32a32_uint,
+	st_format_r32g32b32a32_sint,
+	st_format_r32g32b32_typeless,
+	st_format_r32g32b32_float,
+	st_format_r32g32b32_uint,
+	st_format_r32g32b32_sint,
+	st_format_r16g16b16a16_typeless,
+	st_format_r16g16b16a16_float,
+	st_format_r16g16b16a16_unorm,
+	st_format_r16g16b16a16_uint,
+	st_format_r16g16b16a16_snorm,
+	st_format_r16g16b16a16_sint,
+	st_format_r32g32_typeless,
+	st_format_r32g32_float,
+	st_format_r32g32_uint,
+	st_format_r32g32_sint,
+	st_format_r32g8x24_typeless,
+	st_format_d32_float_s8x24_uint,
+	st_format_r32_float_x8x24_typeless,
+	st_format_x32_typeless_g8x24_uint,
+	st_format_r10g10b10a2_typeless,
+	st_format_r10g10b10a2_unorm,
+	st_format_r10g10b10a2_uint,
+	st_format_r11g11b10_float,
+	st_format_r8g8b8a8_typeless,
+	st_format_r8g8b8a8_unorm,
+	st_format_r8g8b8a8_unorm_srgb,
+	st_format_r8g8b8a8_uint,
+	st_format_r8g8b8a8_snorm,
+	st_format_r8g8b8a8_sint,
+	st_format_r16g16_typeless,
+	st_format_r16g16_float,
+	st_format_r16g16_unorm,
+	st_format_r16g16_uint,
+	st_format_r16g16_snorm,
+	st_format_r16g16_sint,
+	st_format_r32_typeless,
+	st_format_d32_float,
+	st_format_r32_float,
+	st_format_r32_uint,
+	st_format_r32_sint,
+	st_format_r24g8_typeless,
+	st_format_d24_unorm_s8_uint,
+	st_format_r24_unorm_x8_typeless,
+	st_format_x24_typeless_g8_uint,
+	st_format_r8g8_typeless,
+	st_format_r8g8_unorm,
+	st_format_r8g8_uint,
+	st_format_r8g8_snorm,
+	st_format_r8g8_sint,
+	st_format_r16_typeless,
+	st_format_r16_float,
+	st_format_d16_unorm,
+	st_format_r16_unorm,
+	st_format_r16_uint,
+	st_format_r16_snorm,
+	st_format_r16_sint,
+	st_format_r8_typeless,
+	st_format_r8_unorm,
+	st_format_r8_uint,
+	st_format_r8_snorm,
+	st_format_r8_sint,
+	st_format_a8_unorm,
+	st_format_r1_unorm,
+	st_format_r9g9b9e5_sharedexp,
+	st_format_r8g8_b8g8_unorm,
+	st_format_g8r8_g8b8_unorm,
+	st_format_bc1_typeless,
+	st_format_bc1_unorm,
+	st_format_bc1_unorm_srgb,
+	st_format_bc2_typeless,
+	st_format_bc2_unorm,
+	st_format_bc2_unorm_srgb,
+	st_format_bc3_typeless,
+	st_format_bc3_unorm,
+	st_format_bc3_unorm_srgb,
+	st_format_bc4_typeless,
+	st_format_bc4_unorm,
+	st_format_bc4_snorm,
+	st_format_bc5_typeless,
+	st_format_bc5_unorm,
+	st_format_bc5_snorm,
+	st_format_b5g6r5_unorm,
+	st_format_b5g5r5a1_unorm,
+	st_format_b8g8r8a8_unorm,
+	st_format_b8g8r8x8_unorm,
+	st_format_r10g10b10_xr_bias_a2_unorm,
+	st_format_b8g8r8a8_typeless,
+	st_format_b8g8r8a8_unorm_srgb,
+	st_format_b8g8r8x8_typeless,
+	st_format_b8g8r8x8_unorm_srgb,
+	st_format_bc6h_typeless,
+	st_format_bc6h_uf16,
+	st_format_bc6h_sf16,
+	st_format_bc7_typeless,
+	st_format_bc7_unorm,
+	st_format_bc7_unorm_srgb,
+	st_format_ayuv,
+	st_format_y410,
+	st_format_y416,
+	st_format_nv12,
+	st_format_p010,
+	st_format_p016,
+	st_format_420_opaque,
+	st_format_yuy2,
+	st_format_y210,
+	st_format_y216,
+	st_format_nv11,
+	st_format_ai44,
+	st_format_ia44,
+	st_format_p8,
+	st_format_a8p8,
+	st_format_b4g4r4a4_unorm,
+	st_format_p208,
+	st_format_v208,
+	st_format_v408,
+	st_format_force_uint
+};
+
+enum e_st_blend
+{
+	st_blend_zero,
+	st_blend_one,
+	st_blend_src_color,
+	st_blend_inv_src_color,
+	st_blend_src_alpha,
+	st_blend_inv_src_alpha,
+	st_blend_dst_alpha,
+	st_blend_inv_dst_alpha,
+	st_blend_dst_color,
+	st_blend_inv_dst_color,
+	st_blend_src_alpha_sat,
+	st_blend_blend_factor,
+	st_blend_inv_blend_factor,
+	st_blend_src1_color,
+	st_blend_inv_src1_color,
+	st_blend_src1_alpha,
+	st_blend_inv_src1_alpha,
+};
+
+enum e_st_blend_op
+{
+	st_blend_op_add,
+	st_blend_op_sub,
+	st_blend_op_rev_sub,
+	st_blend_op_min,
+	st_blend_op_max,
+};
+
+enum e_st_logic_op
+{
+	st_logic_op_clear,
+	st_logic_op_set,
+	st_logic_op_copy,
+	st_logic_op_copy_inverted,
+	st_logic_op_noop,
+	st_logic_op_invert,
+	st_logic_op_and,
+	st_logic_op_nand,
+	st_logic_op_or,
+	st_logic_op_nor,
+	st_logic_op_xor,
+	st_logic_op_equiv,
+	st_logic_op_and_reverse,
+	st_logic_op_and_inverted,
+	st_logic_op_or_reverse,
+	st_logic_op_or_inverted,
+};
+
+enum e_st_fill_mode
+{
+	st_fill_mode_wireframe,
+	st_fill_mode_solid,
+};
+
+enum e_st_cull_mode
+{
+	st_cull_mode_none,
+	st_cull_mode_front,
+	st_cull_mode_back,
+};
+
+enum e_st_depth_write_mask
+{
+	st_depth_write_mask_zero,
+	st_depth_write_mask_all,
+};
+
+enum e_st_compare_func
+{
+	st_compare_func_never,
+	st_compare_func_less,
+	st_compare_func_equal,
+	st_compare_func_less_equal,
+	st_compare_func_greater,
+	st_compare_func_not_equal,
+	st_compare_func_greater_equal,
+	st_compare_func_always,
+};
+
+enum e_st_stencil_op
+{
+	st_stencil_op_keep,
+	st_stencil_op_zero,
+	st_stencil_op_replace,
+	st_stencil_op_incr_sat,
+	st_stencil_op_decr_sat,
+	st_stencil_op_invert,
+	st_stencil_op_incr,
+	st_stencil_op_decr,
+};
+
+enum e_st_texture_state
+{
+	st_texture_state_common,
+	st_texture_state_render_target,
+	st_texture_state_depth_stencil_target,
+	st_texture_state_depth_target,
+	st_texture_state_non_pixel_shader_read,
+	st_texture_state_pixel_shader_read,
+	st_texture_state_depth_read,
+	st_texture_state_present,
+	st_texture_state_copy_source,
+	st_texture_state_copy_dest,
+};
+
 enum e_st_descriptor_slot
 {
 	st_descriptor_slot_textures,
@@ -101,7 +346,6 @@ struct st_render_pass {};
 struct st_render_texture {};
 struct st_resource_table {};
 struct st_shader {};
-struct st_static_drawcall {};
 struct st_texture {};
 struct st_vertex_format
 {
