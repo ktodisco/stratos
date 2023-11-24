@@ -6,15 +6,12 @@
 
 #include <graphics/geometry/st_geometry.h>
 
-#include <graphics/st_render_context.h>
-
 #include <graphics/geometry/st_vertex_attribute.h>
-#include <graphics/geometry/st_vertex_format.h>
 #include <graphics/st_drawcall.h>
 
 #include <cassert>
 
-st_dx12_geometry::st_dx12_geometry(
+st_geometry::st_geometry(
 	const st_vertex_format* format,
 	void* vertex_data,
 	uint32_t vertex_size,
@@ -70,16 +67,14 @@ st_dx12_geometry::st_dx12_geometry(
 	//_index_buffer_view.SizeInBytes = index_buffer_size;
 }
 
-st_dx12_geometry::~st_dx12_geometry()
+st_geometry::~st_geometry()
 {
 }
 
-void st_dx12_geometry::draw(st_static_drawcall& draw_call)
+void st_geometry::draw(st_static_drawcall& draw_call)
 {
-	draw_call._vertex_buffer_view = &_vertex_buffer_view;
-	draw_call._index_buffer_view = &_index_buffer_view;
+	draw_call._vertex_buffer_view = _vertex_buffer_view.get();
+	draw_call._index_buffer_view = _index_buffer_view.get();
 	draw_call._index_count = _index_count;
 	draw_call._draw_mode = st_primitive_topology_triangles;
 }
-
-#endif

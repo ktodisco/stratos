@@ -8,23 +8,9 @@
 
 #include <graphics/st_graphics.h>
 
-#if defined(ST_GRAPHICS_API_OPENGL)
-#include <graphics/platform/opengl/st_gl_geometry.h>
+#include <graphics/st_drawcall.h>
 
-typedef st_gl_geometry st_platform_geometry;
-#elif defined(ST_GRAPHICS_API_DX12)
-#include <graphics/platform/dx12/st_dx12_geometry.h>
-
-typedef st_dx12_geometry st_platform_geometry;
-#elif defined(ST_GRAPHICS_API_VULKAN)
-#include <graphics/platform/vulkan/st_vk_geometry.h>
-
-typedef st_vk_geometry st_platform_geometry;
-#else
-#error Graphics API not defined.
-#endif
-
-class st_geometry : public st_platform_geometry
+class st_geometry
 {
 public:
 
@@ -35,6 +21,9 @@ public:
 		uint32_t vertex_count,
 		uint16_t* index_data,
 		uint32_t index_count);
+	~st_geometry();
+
+	void draw(st_static_drawcall& draw_call);
 
 private:
 	std::unique_ptr<st_buffer> _vertex_buffer;

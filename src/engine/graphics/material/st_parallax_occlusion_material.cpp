@@ -7,10 +7,7 @@
 #include <graphics/material/st_parallax_occlusion_material.h>
 
 #include <framework/st_frame_params.h>
-#include <graphics/st_constant_buffer.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
-#include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
 
@@ -21,20 +18,21 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	const char* albedo_texture,
 	const char* normal_texture)
 {
-	_parallax_occlusion_buffer = std::make_unique<st_constant_buffer>(sizeof(st_parallax_occlusion_cb));
-	_parallax_occlusion_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	st_render_context* context = st_render_context::get();
+	_parallax_occlusion_buffer = context->create_constant_buffer(sizeof(st_parallax_occlusion_cb));
+	context->add_constant(_parallax_occlusion_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
-	_albedo_texture->set_meta("SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
+	context->set_texture_meta(_albedo_texture.get(), "SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
 
 	_normal_texture = st_texture_loader::load(normal_texture);
-	_normal_texture->set_meta("SPIRV_Cross_Combinednormal_texturenormal_sampler");
+	context->set_texture_meta(_normal_texture.get(), "SPIRV_Cross_Combinednormal_texturenormal_sampler");
 
-	_resource_table = std::make_unique<st_resource_table>();
+	_resource_table = context->create_resource_table();
 	st_constant_buffer* cbs[] = { _parallax_occlusion_buffer.get() };
-	_resource_table->set_constant_buffers(1, cbs);
+	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 	st_texture* textures[] = { _albedo_texture.get(), _normal_texture.get() };
-	_resource_table->set_textures(std::size(textures), textures);
+	context->set_textures(_resource_table.get(), std::size(textures), textures);
 }
 
 st_parallax_occlusion_material::~st_parallax_occlusion_material()
@@ -57,9 +55,9 @@ void st_parallax_occlusion_material::bind(
 	pom_cb._model = transform_t;
 	pom_cb._mvp = mvp;
 	pom_cb._eye = st_vec4f(params->_eye, 0.0f);
-	_parallax_occlusion_buffer->update(context, &pom_cb);
+	context->update_constant_buffer(_parallax_occlusion_buffer.get(), &pom_cb);
 
-	_resource_table->bind(context);
+	context->bind_resource_table(_resource_table.get());
 }
 
 void st_parallax_occlusion_material::get_pipeline_state(

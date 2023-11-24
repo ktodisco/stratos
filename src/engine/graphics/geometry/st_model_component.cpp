@@ -10,7 +10,6 @@
 #include <graphics/geometry/st_geometry.h>
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
-#include <graphics/geometry/st_vertex_format.h>
 #include <graphics/material/st_material.h>
 
 #include <entity/st_entity.h>
@@ -21,7 +20,7 @@ st_model_component::st_model_component(st_entity* entity, st_model_data* model, 
 	st_component(entity),
 	_material(std::move(material))
 {
-	assert(model->_vertex_format.is_finalized());
+	//assert(model->_vertex_format.is_finalized());
 
 	_geometry = std::make_unique<st_geometry>(
 		&model->_vertex_format,

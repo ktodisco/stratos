@@ -76,5 +76,5 @@ void st_animation_component::play(st_animation* animation)
 {
 	_playing = new st_animation_playback();
 	_playing->_animation = animation;
-	_playing->_time == std::chrono::milliseconds::zero();
+	_playing->_time = std::chrono::milliseconds::zero();
 }

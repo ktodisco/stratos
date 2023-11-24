@@ -34,7 +34,7 @@ struct st_drawcall
 ** least several frames, and probably longer.
 */
 
-struct st_dx12_static_drawcall : st_drawcall
+struct st_static_drawcall : st_drawcall
 {
 	st_buffer_view* _vertex_buffer_view = nullptr;
 	st_buffer_view* _index_buffer_view = nullptr;

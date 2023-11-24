@@ -8,8 +8,6 @@
 
 #include <graphics/st_graphics.h>
 
-#include <graphics/st_texture.h>
-
 #include <math/st_mat4f.h>
 #include <math/st_vec3f.h>
 

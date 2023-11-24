@@ -8,6 +8,8 @@
 
 #include <core/st_flags.h>
 
+#include <math/st_vec4f.h>
+
 #include <memory>
 #include <string>
 
@@ -340,9 +342,9 @@ struct st_viewport
 struct st_buffer {};
 struct st_buffer_view {};
 struct st_constant_buffer {};
-struct st_dynamic_drawcall {};
 struct st_pipeline {};
 struct st_render_pass {};
+// TODO: Convert this to st_texture_view.
 struct st_render_texture {};
 struct st_resource_table {};
 struct st_shader {};
@@ -403,7 +405,6 @@ public:
 	virtual void set_texture_name(st_texture* texture, std::string name) = 0;
 	virtual void transition(
 		st_texture* texture,
-		e_st_texture_state old_state,
 		e_st_texture_state new_state) = 0;
 	virtual std::unique_ptr<st_render_texture> create_render_target_view(
 		uint32_t width,
@@ -445,7 +446,7 @@ public:
 
 	// Geometry.
 	virtual std::unique_ptr<st_vertex_format> create_vertex_format(
-		const st_vertex_attribute* attributes,
+		const struct st_vertex_attribute* attributes,
 		uint32_t attribute_count) = 0;
 
 	// Render passes.
@@ -458,9 +459,13 @@ public:
 		st_vec4f* clear_values,
 		const uint8_t clear_count) = 0;
 	virtual void end_render_pass() = 0;
-};
 
-std::unique_ptr<st_render_context> st_graphics_create_context(e_st_graphics_api api, const class st_window* window);
+	static std::unique_ptr<st_render_context> create(e_st_graphics_api api, const class st_window* window);
+	static st_render_context* get();
+
+protected:
+	static st_render_context* _this;
+};
 
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
 

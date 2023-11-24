@@ -6,17 +6,15 @@
 
 #include <graphics/material/st_bloom_material.h>
 
-#include <graphics/st_pipeline_state.h>
-#include <graphics/st_render_context.h>
-#include <graphics/st_resource_table.h>
+#include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_shader_manager.h>
-#include <graphics/st_texture.h>
 
 st_bloom_material::st_bloom_material(st_texture* texture) :
 	_texture(texture)
 {
-	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->set_textures(1, &_texture);
+	st_render_context* context = st_render_context::get();
+	_resource_table = context->create_resource_table();
+	context->set_textures(_resource_table.get(), 1, &_texture);
 }
 
 st_bloom_material::~st_bloom_material()
@@ -39,7 +37,7 @@ void st_bloom_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	_texture->set_meta("SPIRV_Cross_Combinedtextex_sampler");
-	_texture->transition(context, st_texture_state_pixel_shader_read);
-	_resource_table->bind(context);
+	context->set_texture_meta(_texture, "SPIRV_Cross_Combinedtextex_sampler");
+	context->transition(_texture, st_texture_state_pixel_shader_read);
+	context->bind_resource_table(_resource_table.get());
 }

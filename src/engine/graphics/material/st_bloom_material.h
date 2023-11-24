@@ -27,6 +27,6 @@ public:
 	st_material_type get_material_type() override { return st_material_type_bloom; }
 
 private:
-	class st_texture* _texture;
+	struct st_texture* _texture;
 	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 };

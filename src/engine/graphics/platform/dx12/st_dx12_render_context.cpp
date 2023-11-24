@@ -764,12 +764,12 @@ void st_dx12_render_context::set_texture_name(st_texture* texture_, std::string 
 
 void st_dx12_render_context::transition(
 	st_texture* texture_,
-	e_st_texture_state old_state,
 	e_st_texture_state new_state)
 {
-	assert(old_state != new_state);
-
 	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
+	e_st_texture_state old_state = texture->_state;
+
+	assert(old_state != new_state);
 
 	// TODO: It's bad practice to transition one at a time. These should be accumulated
 	// and then flushed all at once.

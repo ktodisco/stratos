@@ -6,8 +6,6 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_render_pass.h>
-
 #include <memory>
 #include <vector>
 
@@ -30,12 +28,12 @@ private:
 		const class st_mat4f& view);
 
 	std::unique_ptr<class st_constant_color_material> _default_material = nullptr;
-	std::unique_ptr<class st_pipeline_state> _default_state = nullptr;
+	std::unique_ptr<struct st_pipeline> _default_state = nullptr;
 
 	std::unique_ptr<class st_font_material> _font_material = nullptr;
-	std::unique_ptr<class st_pipeline_state> _font_state = nullptr;
+	std::unique_ptr<struct st_pipeline> _font_state = nullptr;
 
-	std::unique_ptr<class st_vertex_format> _vertex_format = nullptr;
+	std::unique_ptr<struct st_vertex_format> _vertex_format = nullptr;
 
-	std::unique_ptr<class st_render_pass> _pass = nullptr;
+	std::unique_ptr<struct st_render_pass> _pass = nullptr;
 };

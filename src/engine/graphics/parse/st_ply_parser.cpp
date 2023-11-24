@@ -8,7 +8,6 @@
 
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
-#include <graphics/geometry/st_vertex_format.h>
 
 #include <cassert>
 #include <fstream>
@@ -260,11 +259,12 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 
 	delete[] tan1;
 
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_tangent, 2));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 3));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 4));
+	std::vector<st_vertex_attribute> attributes;
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, 0));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_normal, 1));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, 2));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, 3));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, 4));
 
-	model->_vertex_format.finalize();
+	model->_vertex_format = st_render_context::get()->create_vertex_format(attributes.data(), attributes.size());
 }

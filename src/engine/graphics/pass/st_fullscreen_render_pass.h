@@ -8,8 +8,6 @@
 
 #include <graphics/geometry/st_geometry.h>
 #include <graphics/material/st_material.h>
-#include <graphics/st_pipeline_state.h>
-#include <graphics/geometry/st_vertex_format.h>
 
 #include <memory>
 
@@ -24,5 +22,5 @@ protected:
 	std::unique_ptr<st_geometry> _fullscreen_quad = nullptr;
 
 	std::unique_ptr<st_material> _material = nullptr;
-	std::unique_ptr<st_pipeline_state> _pipeline_state = nullptr;
+	std::unique_ptr<st_pipeline> _pipeline = nullptr;
 };

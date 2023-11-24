@@ -6,12 +6,8 @@
 
 #include <graphics/material/st_deferred_light_material.h>
 
-#include <graphics/st_constant_buffer.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
-#include <graphics/st_resource_table.h>
 #include <graphics/st_shader_manager.h>
-#include <graphics/st_texture.h>
 
 st_deferred_light_material::st_deferred_light_material(
 	st_texture* albedo_texture,
@@ -25,9 +21,10 @@ st_deferred_light_material::st_deferred_light_material(
 	_third(third_texture),
 	_depth(depth_texture)
 {
-	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->set_constant_buffers(1, &constants);
-	_resource_table->set_buffers(1, &light_buffer);
+	st_render_context* context = st_render_context::get();
+	_resource_table = context->create_resource_table();
+	context->set_constant_buffers(_resource_table.get(), 1, &constants);
+	context->set_buffers(_resource_table.get(), 1, &light_buffer);
 
 	st_texture* textures[] = {
 		_albedo,
@@ -35,7 +32,7 @@ st_deferred_light_material::st_deferred_light_material(
 		_third,
 		_depth,
 	};
-	_resource_table->set_textures(std::size(textures), textures);
+	context->set_textures(_resource_table.get(), std::size(textures), textures);
 }
 
 st_deferred_light_material::~st_deferred_light_material()
@@ -58,15 +55,15 @@ void st_deferred_light_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	_albedo->set_meta("SPIRV_Cross_Combinedalbedo_textureSPIRV_Cross_DummySampler");
-	_normal->set_meta("SPIRV_Cross_Combinednormal_textureSPIRV_Cross_DummySampler");
-	_third->set_meta("SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");
-	_depth->set_meta("SPIRV_Cross_Combineddepth_textureSPIRV_Cross_DummySampler");
+	context->set_texture_meta(_albedo, "SPIRV_Cross_Combinedalbedo_textureSPIRV_Cross_DummySampler");
+	context->set_texture_meta(_normal, "SPIRV_Cross_Combinednormal_textureSPIRV_Cross_DummySampler");
+	context->set_texture_meta(_third, "SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");
+	context->set_texture_meta(_depth, "SPIRV_Cross_Combineddepth_textureSPIRV_Cross_DummySampler");
 
-	_albedo->transition(context, st_texture_state_pixel_shader_read);
-	_normal->transition(context, st_texture_state_pixel_shader_read);
-	_third->transition(context, st_texture_state_pixel_shader_read);
-	_depth->transition(context, st_texture_state_pixel_shader_read);
+	context->transition(_albedo, st_texture_state_pixel_shader_read);
+	context->transition(_normal, st_texture_state_pixel_shader_read);
+	context->transition(_third, st_texture_state_pixel_shader_read);
+	context->transition(_depth, st_texture_state_pixel_shader_read);
 
-	_resource_table->bind(context);
+	context->bind_resource_table(_resource_table.get());
 }

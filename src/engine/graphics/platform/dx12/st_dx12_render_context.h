@@ -82,7 +82,6 @@ public:
 	void set_texture_name(st_texture* texture, std::string name) override;
 	void transition(
 		st_texture* texture,
-		e_st_texture_state old_state,
 		e_st_texture_state new_state) override;
 	std::unique_ptr<st_render_texture> create_render_target_view(
 		uint32_t width,

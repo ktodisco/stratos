@@ -15,7 +15,14 @@
 #include <cassert>
 #include <memory>
 
-std::unique_ptr<st_render_context> st_graphics_create_context(e_st_graphics_api api, const st_window* window)
+st_render_context* st_render_context::_this = nullptr;
+
+st_render_context* st_render_context::get()
+{
+	return _this;
+}
+
+std::unique_ptr<st_render_context> st_render_context::create(e_st_graphics_api api, const st_window* window)
 {
 	std::unique_ptr<st_render_context> context;
 	
@@ -33,6 +40,8 @@ std::unique_ptr<st_render_context> st_graphics_create_context(e_st_graphics_api 
 	default:
 		break;
 	}
+
+	_this = context.get();
 
 	return std::move(context);
 }
