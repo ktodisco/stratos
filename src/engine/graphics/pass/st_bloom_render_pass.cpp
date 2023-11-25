@@ -18,7 +18,10 @@ st_bloom_render_pass::st_bloom_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
+	st_render_context* context = st_render_context::get();
+
 	std::unique_ptr<st_render_texture> half_target = std::make_unique<st_render_texture>(
+		context,
 		source_buffer->get_width() / 2,
 		source_buffer->get_height() / 2,
 		source_buffer->get_format(),
@@ -28,6 +31,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		"Bloom Half Res");
 
 	std::unique_ptr<st_render_texture> blur_target = std::make_unique<st_render_texture>(
+		context,
 		source_buffer->get_width() / 2,
 		source_buffer->get_height() / 2,
 		source_buffer->get_format(),
@@ -35,8 +39,6 @@ st_bloom_render_pass::st_bloom_render_pass(
 		st_texture_state_pixel_shader_read,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Bloom Blur Target");
-
-	st_render_context* context = st_render_context::get();
 
 	st_render_texture* targets[] = { half_target.get() };
 	_pass = context->create_render_pass(

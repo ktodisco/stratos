@@ -7,6 +7,7 @@
 #include <graphics/st_render_texture.h>
 
 st_render_texture::st_render_texture(
+	st_render_context* context,
 	uint32_t width,
 	uint32_t height,
 	e_st_format format,
@@ -15,8 +16,6 @@ st_render_texture::st_render_texture(
 	st_vec4f clear,
 	const char* name) : _width(width), _height(height), _format(format)
 {
-	st_render_context* context = st_render_context::get();
-
 	_texture = context->create_texture(
 		width,
 		height,

@@ -30,8 +30,6 @@
 
 extern char g_root_path[256];
 
-st_dx12_render_context* st_dx12_render_context::_this = nullptr;
-
 st_dx12_render_context::st_dx12_render_context(const st_window* window)
 {
 	UINT dxgi_factory_flags = 0;
@@ -346,13 +344,11 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 	create_buffer_internal(k_dynamic_buffer_size, _dynamic_vertex_buffer.GetAddressOf());
 	create_buffer_internal(k_dynamic_buffer_size, _dynamic_index_buffer.GetAddressOf());
 
-	// Set the global instance.
-	_this = this;
-
 	begin_frame();
 
 	// Create the faux backbuffer target.
 	_present_target = std::make_unique<st_render_texture>(
+		this,
 		window->get_width(),
 		window->get_height(),
 		st_format_r8g8b8a8_unorm,
@@ -756,7 +752,7 @@ std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			*texture->_handle.GetAddressOf(),
 			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATES(initial_state)));
+			convert_resource_state(initial_state)));
 
 	texture->_state = initial_state;
 
@@ -780,14 +776,15 @@ void st_dx12_render_context::transition(
 	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
 	e_st_texture_state old_state = texture->_state;
 
-	assert(old_state != new_state);
+	if (old_state == new_state)
+		return;
 
 	// TODO: It's bad practice to transition one at a time. These should be accumulated
 	// and then flushed all at once.
 	D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 		texture->_handle.Get(),
-		D3D12_RESOURCE_STATES(old_state),
-		D3D12_RESOURCE_STATES(new_state));
+		convert_resource_state(old_state),
+		convert_resource_state(new_state));
 
 	texture->_state = new_state;
 
@@ -832,6 +829,7 @@ std::unique_ptr<st_buffer> st_dx12_render_context::create_buffer(
 	std::unique_ptr<st_dx12_buffer> buffer = std::make_unique<st_dx12_buffer>();
 	buffer->_count = count;
 	buffer->_element_size = element_size;
+	buffer->_usage = usage;
 
 	// Structured buffers in DX12 are recommended to be 128-byte aligned.
 	const uint32_t k_min_buffer_size = 128;
@@ -841,9 +839,6 @@ std::unique_ptr<st_buffer> st_dx12_render_context::create_buffer(
 	create_buffer_internal(
 		align_value(buffer->_count * buffer->_element_size, k_min_buffer_size),
 		buffer->_buffer.GetAddressOf());
-
-	D3D12_RANGE range = {};
-	buffer->_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer->_buffer_head));
 
 	return std::move(buffer);
 }
@@ -885,11 +880,64 @@ void st_dx12_render_context::create_buffer_internal(size_t size, ID3D12Resource*
 	}
 }
 
-void st_dx12_render_context::update_buffer(st_buffer* _buffer, void* data, const uint32_t count)
+std::unique_ptr<st_buffer_view> st_dx12_render_context::create_buffer_view(st_buffer* buffer_)
 {
-	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(_buffer);
+	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
 
-	memcpy(buffer->_buffer_head, data, count * buffer->_element_size);
+	std::unique_ptr<st_dx12_buffer_view> buffer_view = std::make_unique<st_dx12_buffer_view>();
+	if (buffer->_usage & e_st_buffer_usage::vertex)
+	{
+		buffer_view->vertex.BufferLocation = buffer->_buffer->GetGPUVirtualAddress();
+		buffer_view->vertex.StrideInBytes = buffer->_element_size;
+		buffer_view->vertex.SizeInBytes = buffer->_element_size * buffer->_count;
+	}
+	else if (buffer->_usage & e_st_buffer_usage::index)
+	{
+		buffer_view->index.BufferLocation = buffer->_buffer->GetGPUVirtualAddress();
+		buffer_view->index.SizeInBytes = buffer->_element_size * buffer->_count;
+		buffer_view->index.Format = DXGI_FORMAT_R16_UINT;
+	}
+	else
+	{
+		// TODO.
+	}
+
+	return std::move(buffer_view);
+}
+
+void st_dx12_render_context::map(
+	st_buffer* buffer_,
+	uint32_t subresource,
+	const st_range& range_,
+	void** outData)
+{
+	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
+
+	D3D12_RANGE range { range_.begin, range_.end };
+	HRESULT result = buffer->_buffer->Map(subresource, &range, outData);
+
+	if (result != S_OK)
+	{
+		assert(false);
+	}
+}
+
+void st_dx12_render_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range_)
+{
+	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
+
+	D3D12_RANGE range{ range_.begin, range_.end };
+	buffer->_buffer->Unmap(subresource, &range);
+}
+
+void st_dx12_render_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
+{
+	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
+
+	uint8_t* head;
+	map(buffer_, 0, { 0, 0 }, (void**)&head);  
+	memcpy(head, data, count * buffer->_element_size);
+	unmap(buffer_, 0, { 0, 0 });
 }
 
 void st_dx12_render_context::set_buffer_meta(st_buffer* buffer, std::string name)
@@ -906,7 +954,7 @@ std::unique_ptr<st_constant_buffer> st_dx12_render_context::create_constant_buff
 
 	// We store the original size so that the memcpy in update does not overread
 	// the bounds of the passed memory.
-	st_dx12_render_context::get()->create_buffer_internal(
+	create_buffer_internal(
 		align_value(cb->_size, k_min_cb_size),
 		cb->_constant_buffer.GetAddressOf());
 
@@ -947,7 +995,7 @@ void st_dx12_render_context::set_constant_buffers(
 	{
 		st_dx12_constant_buffer* cb = static_cast<st_dx12_constant_buffer*>(cbs[i]);
 
-		st_dx12_descriptor cbv = st_dx12_render_context::get()->create_constant_buffer_view(
+		st_dx12_descriptor cbv = create_constant_buffer_view(
 			cb->_constant_buffer->GetGPUVirtualAddress(),
 			cb->_size);
 		table->_cbvs.push_back(cbv);
@@ -972,11 +1020,11 @@ void st_dx12_render_context::set_textures(
 			format = st_format_r24_unorm_x8_typeless;
 		}
 
-		st_dx12_descriptor srv = st_dx12_render_context::get()->create_shader_resource_view(
+		st_dx12_descriptor srv = create_shader_resource_view(
 			sr->_handle.Get(),
 			format,
 			sr->_levels);
-		st_dx12_descriptor sampler = st_dx12_render_context::get()->create_shader_sampler();
+		st_dx12_descriptor sampler = create_shader_sampler();
 
 		table->_srvs.push_back(srv);
 		table->_samplers.push_back(sampler);
@@ -994,7 +1042,7 @@ void st_dx12_render_context::set_buffers(
 	{
 		st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffers[i]);
 
-		st_dx12_descriptor srv = st_dx12_render_context::get()->create_buffer_view(
+		st_dx12_descriptor srv = create_buffer_view(
 			buffer->_buffer.Get(),
 			buffer->_count,
 			buffer->_element_size);
@@ -1059,7 +1107,7 @@ std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(const st_pi
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_desc = {};
 
 	// Set the root signature from the graphics context.
-	pipeline_desc.pRootSignature = st_dx12_render_context::get()->get_root_signature();
+	pipeline_desc.pRootSignature = get_root_signature();
 
 	// Get the input layout from the vertex format.
 	const st_dx12_vertex_format* vertex_format = static_cast<const st_dx12_vertex_format*>(desc._vertex_format);
@@ -1510,11 +1558,6 @@ st_dx12_descriptor st_dx12_render_context::create_buffer_view(
 void st_dx12_render_context::destroy_buffer_view(st_dx12_descriptor offset)
 {
 	_cbv_srv_heap->deallocate_handle(offset);
-}
-
-st_dx12_render_context* st_dx12_render_context::get()
-{
-	return _this;
 }
 
 #endif

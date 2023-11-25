@@ -17,8 +17,11 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
+	st_render_context* context = st_render_context::get();
+
 	// Set up the intermediate render target between the two blur passes.
 	_intermediate_target = std::make_unique<st_render_texture>(
+		context,
 		source_buffer->get_width(),
 		source_buffer->get_height(),
 		source_buffer->get_format(),
@@ -26,8 +29,6 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		st_texture_state_pixel_shader_read,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Gaussian Blur Intermediate");
-
-	st_render_context* context = st_render_context::get();
 
 	st_render_texture* vertical_blur_targets[] = { _intermediate_target.get() };
 	_vertical_blur_pass = context->create_render_pass(

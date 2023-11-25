@@ -353,6 +353,12 @@ struct st_vertex_format
 	uint32_t _vertex_size;
 };
 
+struct st_range
+{
+	size_t begin;
+	size_t end;
+};
+
 class st_render_context
 {
 public:
@@ -414,7 +420,9 @@ public:
 		const uint32_t count,
 		const size_t element_size,
 		const e_st_buffer_usage_flags usage) = 0;
-	// TODO: create_buffer_view
+	virtual std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) = 0;
+	virtual void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) = 0;
+	virtual void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) = 0;
 	virtual void update_buffer(st_buffer* buffer, void* data, const uint32_t count) = 0;
 	virtual void set_buffer_meta(st_buffer* buffer, std::string name) = 0;
 

@@ -29,10 +29,11 @@
 
 #include <Windows.h>
 
-st_output::st_output(const st_window* window, st_render_context* render_context) :
-	_window(window), _render_context(render_context)
+st_output::st_output(const st_window* window, st_render_context* context) :
+	_window(window), _render_context(context)
 {
 	_gbuffer_albedo_target = std::make_unique<st_render_texture>(
+		context,
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r8g8b8a8_unorm,
@@ -41,6 +42,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
 		"Gbuffer Albedo");
 	_gbuffer_normal_target = std::make_unique<st_render_texture>(
+		context,
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r32g32b32a32_float,
@@ -49,6 +51,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
 		"Gbuffer Normal");
 	_gbuffer_third_target = std::make_unique<st_render_texture>(
+		context,
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r16g16b16a16_float,
@@ -57,6 +60,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
 		"Gbuffer Third");
 	_depth_stencil_target = std::make_unique<st_render_texture>(
+		context,
 		_window->get_width(),
 		_window->get_height(),
 		st_format_d24_unorm_s8_uint,
@@ -66,6 +70,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		"Gbuffer Depth");
 
 	_deferred_target = std::make_unique<st_render_texture>(
+		context,
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r16g16b16a16_float,
@@ -74,6 +79,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Deferred Target");
 	_deferred_depth = std::make_unique<st_render_texture>(
+		context,
 		_window->get_width(),
 		_window->get_height(),
 		st_format_d24_unorm_s8_uint,
@@ -83,6 +89,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		"Deferred Depth");
 
 	_bloom_target = std::make_unique<st_render_texture>(
+		context,
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r16g16b16a16_float,
@@ -92,6 +99,7 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		"Bloom Target");
 
 	_tonemap_target = std::make_unique<st_render_texture>(
+		context,
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r8g8b8a8_unorm,

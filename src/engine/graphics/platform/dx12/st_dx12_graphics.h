@@ -33,7 +33,6 @@ struct st_dx12_buffer : public st_buffer
 	e_st_buffer_usage_flags _usage;
 	size_t _element_size;
 	Microsoft::WRL::ComPtr<ID3D12Resource> _buffer;
-	uint8_t* _buffer_head = nullptr;
 };
 
 struct st_dx12_buffer_view : public st_buffer_view

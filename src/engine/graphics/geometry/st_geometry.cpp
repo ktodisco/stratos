@@ -22,49 +22,39 @@ st_geometry::st_geometry(
 	// Create the vertex buffer resource.
 	const uint32_t vertex_buffer_size = vertex_count * vertex_size;
 
-	_vertex_buffer = st_render_context::get()->create_buffer(
+	st_render_context* context = st_render_context::get();
+
+	_vertex_buffer = context->create_buffer(
 		vertex_count,
 		vertex_size,
 		e_st_buffer_usage::vertex);
 
-	// TODO.
 	// Map the buffer to a CPU write address and copy the data.
-	//uint8_t* buffer_begin;
-	//D3D12_RANGE range = { 0, 0 };
-	//HRESULT result = _vertex_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
-	//
-	//if (result != S_OK)
-	//{
-	//	assert(false);
-	//}
-	//
-	//memcpy(buffer_begin, vertex_data, vertex_buffer_size);
-	//_vertex_buffer->Unmap(0, nullptr);
-	//
-	//_vertex_buffer_view.BufferLocation = _vertex_buffer->GetGPUVirtualAddress();
-	//_vertex_buffer_view.StrideInBytes = vertex_size;
-	//_vertex_buffer_view.SizeInBytes = vertex_buffer_size;
-	//
-	//// Create the index buffer resource.
-	//_index_count = index_count;
-	//const uint32_t index_buffer_size = _index_count * sizeof(uint16_t);
-	//
-	//st_dx12_render_context::get()->create_buffer(index_buffer_size, _index_buffer.GetAddressOf());
-	//
-	//// Map the buffer to a CPU write address and copy the data.
-	//result = _index_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
-	//
-	//if (result != S_OK)
-	//{
-	//	assert(false);
-	//}
-	//
-	//memcpy(buffer_begin, index_data, index_buffer_size);
-	//_index_buffer->Unmap(0, nullptr);
-	//
-	//_index_buffer_view.BufferLocation = _index_buffer->GetGPUVirtualAddress();
-	//_index_buffer_view.Format = DXGI_FORMAT_R16_UINT;
-	//_index_buffer_view.SizeInBytes = index_buffer_size;
+	uint8_t* buffer_begin;
+	st_range range = { 0, 0 };
+	context->map(_vertex_buffer.get(), 0, range, reinterpret_cast<void**>(&buffer_begin));
+	
+	memcpy(buffer_begin, vertex_data, vertex_buffer_size);
+	context->unmap(_vertex_buffer.get(), 0, range);
+	
+	_vertex_buffer_view = context->create_buffer_view(_vertex_buffer.get());
+	
+	// Create the index buffer resource.
+	_index_count = index_count;
+	const uint32_t index_buffer_size = _index_count * sizeof(uint16_t);
+	
+	_index_buffer = context->create_buffer(
+		index_count,
+		sizeof(uint16_t),
+		e_st_buffer_usage::index);
+	
+	// Map the buffer to a CPU write address and copy the data.
+	context->map(_index_buffer.get(), 0, range, reinterpret_cast<void**>(&buffer_begin));
+	
+	memcpy(buffer_begin, index_data, index_buffer_size);
+	context->unmap(_index_buffer.get(), 0, range);
+	
+	_index_buffer_view = context->create_buffer_view(_index_buffer.get());
 }
 
 st_geometry::~st_geometry()

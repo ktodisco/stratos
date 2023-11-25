@@ -129,8 +129,8 @@ int main(int argc, const char** argv)
 		// Perform the late update.
 		sim->late_update(&params);
 
-#if !defined(ST_GRAPHICS_API_OPENGL) && !defined(ST_GRAPHICS_API_VULKAN)
-		// TODO: ImGui is broken on OpenGL and Vulkan right now.
+#if 0
+		// TODO: ImGui is broken on all backends right now.
 		st_imgui::new_frame();
 		ImGui::ShowDemoWindow();
 #endif

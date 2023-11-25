@@ -38,13 +38,15 @@ void st_dx12_framebuffer::bind(st_render_context* context)
 		views.push_back(t->get_view());
 	}
 
+	const st_texture_view* ds_view = nullptr;
 	if (_depth_stencil)
 	{
 		context->transition(_depth_stencil->get_texture(), st_texture_state_depth_target);
+		ds_view = _depth_stencil->get_view();
 	}
 
 	// Bind them.
-	context->set_render_targets(_target_count, views.data(), _depth_stencil->get_view());
+	context->set_render_targets(_target_count, views.data(), ds_view);
 }
 
 void st_dx12_framebuffer::unbind(st_render_context* context)

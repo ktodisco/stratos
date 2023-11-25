@@ -93,7 +93,9 @@ public:
 		const uint32_t count,
 		const size_t element_size,
 		const e_st_buffer_usage_flags usage) override;
-	// TODO: Map and Unmap.
+	std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) override;
+	void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) override;
+	void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) override;
 	void update_buffer(st_buffer* buffer, void* data, const uint32_t count) override;
 	void set_buffer_meta(st_buffer* buffer, std::string name) override;
 
@@ -160,14 +162,9 @@ public:
 	ID3D12GraphicsCommandList* get_command_list() const { return _command_list.Get(); }
 	st_dx12_descriptor_heap* get_gui_heap() const { return _gui_srv_heap.get(); }
 
-	static st_dx12_render_context* get();
-
 private:
 
 	static const uint32_t k_backbuffer_count = 2;
-
-	// Maintain a global instance.
-	static st_dx12_render_context* _this;
 
 	D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissor_rect;

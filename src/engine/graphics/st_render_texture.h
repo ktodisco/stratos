@@ -18,6 +18,7 @@ class st_render_texture
 public:
 
 	st_render_texture(
+		st_render_context* context,
 		uint32_t width,
 		uint32_t height,
 		e_st_format format,
