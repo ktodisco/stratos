@@ -13,7 +13,6 @@
 #include <vector>
 
 class st_window;
-class st_render_context;
 
 /*
 ** Represents the output stage of the frame.
@@ -31,7 +30,7 @@ public:
 private:
 
 	const st_window* _window;
-	st_render_context* _render_context;
+	class st_render_context* _render_context;
 
 	std::unique_ptr<class st_gbuffer_render_pass> _gbuffer_pass;
 	std::unique_ptr<class st_deferred_light_render_pass> _deferred_pass;

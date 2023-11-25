@@ -33,6 +33,6 @@ private:
 	std::unique_ptr<class st_material> _vertical_blur_material = nullptr;
 	std::unique_ptr<class st_material> _horizontal_blur_material = nullptr;
 
-	std::unique_ptr<class st_pipeline_state> _vertical_blur_state = nullptr;
-	std::unique_ptr<class st_pipeline_state> _horizontal_blur_state = nullptr;
+	std::unique_ptr<class st_pipeline> _vertical_blur_state = nullptr;
+	std::unique_ptr<class st_pipeline> _horizontal_blur_state = nullptr;
 };

@@ -23,7 +23,7 @@ st_model_component::st_model_component(st_entity* entity, st_model_data* model, 
 	//assert(model->_vertex_format.is_finalized());
 
 	_geometry = std::make_unique<st_geometry>(
-		&model->_vertex_format,
+		model->_vertex_format.get(),
 		&model->_vertices[0],
 		(uint32_t)sizeof(model->_vertices[0]),
 		(uint32_t)model->_vertices.size(),

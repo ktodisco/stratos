@@ -23,7 +23,7 @@
 #include <graphics/geometry/st_model_component.h>
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/st_light_component.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_shader_manager.h>
 
 #include <gui/st_button.h>
@@ -70,11 +70,11 @@ int main(int argc, const char** argv)
 	std::unique_ptr<st_window> window = std::make_unique<st_window>("Stratos Renderer", 1280, 720, input.get());
 
 	// Create the rendering context for the window.
-	std::unique_ptr<st_render_context> render = std::make_unique<st_render_context>(window.get());
+	std::unique_ptr<st_render_context> render = st_render_context::create(e_st_graphics_api::dx12, window.get());
 
 	// Create the shader manager, loading all the shaders.
 	std::unique_ptr<st_shader_manager> shader_manager =
-		std::make_unique<st_shader_manager>();
+		std::make_unique<st_shader_manager>(render.get());
 
 	// Create objects for phases of the frame: sim, physics, and output.
 	std::unique_ptr<st_sim> sim = std::make_unique<st_sim>();

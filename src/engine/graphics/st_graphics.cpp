@@ -6,6 +6,8 @@
 
 #include <graphics/st_graphics.h>
 
+#include <graphics/platform/dx12/st_dx12_render_context.h>
+
 #include <math/st_mat4f.h>
 #include <math/st_vec2f.h>
 #include <math/st_vec3f.h>
@@ -32,10 +34,10 @@ std::unique_ptr<st_render_context> st_render_context::create(e_st_graphics_api a
 		context = std::make_unique<st_dx12_render_context>(window);
 		break;
 	case e_st_graphics_api::opengl:
-		context = std::make_unique<st_opengl_render_context(window);
+		//context = std::make_unique<st_opengl_render_context(window);
 		break;
 	case e_st_graphics_api::vulkan:
-		context = std::make_unique<st_vulkan_render_context(window);
+		//context = std::make_unique<st_vulkan_render_context(window);
 		break;
 	default:
 		break;

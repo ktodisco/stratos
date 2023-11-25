@@ -344,11 +344,10 @@ struct st_buffer_view {};
 struct st_constant_buffer {};
 struct st_pipeline {};
 struct st_render_pass {};
-// TODO: Convert this to st_texture_view.
-struct st_render_texture {};
 struct st_resource_table {};
 struct st_shader {};
 struct st_texture {};
+struct st_texture_view {};
 struct st_vertex_format
 {
 	uint32_t _vertex_size;
@@ -372,13 +371,15 @@ public:
 
 	virtual void set_render_targets(
 		uint32_t count,
-		st_render_texture** targets,
-		st_render_texture* depth_stencil) = 0;
+		const st_texture_view** targets,
+		const st_texture_view* depth_stencil) = 0;
 
 	virtual void clear(unsigned int clear_flags) = 0;
 	virtual void draw(const struct st_static_drawcall& drawcall) = 0;
 	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
 
+	// Backbuffer.
+	virtual class st_render_texture* get_present_target() = 0;
 	// TODO: These are temporary and a generic solution is needed.
 	virtual void transition_backbuffer_to_target() = 0;
 	virtual void transition_backbuffer_to_present() = 0;
@@ -406,13 +407,7 @@ public:
 	virtual void transition(
 		st_texture* texture,
 		e_st_texture_state new_state) = 0;
-	virtual std::unique_ptr<st_render_texture> create_render_target_view(
-		uint32_t width,
-		uint32_t height,
-		e_st_format format,
-		e_st_texture_usage_flags usage,
-		e_st_texture_state initial_state,
-		st_vec4f clear) = 0;
+	virtual std::unique_ptr<st_texture_view> create_texture_view(st_texture* texture) = 0;
 
 	// Buffers.
 	virtual std::unique_ptr<st_buffer> create_buffer(
@@ -452,8 +447,8 @@ public:
 	// Render passes.
 	virtual std::unique_ptr<st_render_pass> create_render_pass(
 		uint32_t count,
-		st_render_texture** targets,
-		st_render_texture* depth_stencil) = 0;
+		class st_render_texture** targets,
+		class st_render_texture* depth_stencil) = 0;
 	virtual void begin_render_pass(
 		st_render_pass* pass,
 		st_vec4f* clear_values,

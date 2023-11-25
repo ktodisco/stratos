@@ -111,18 +111,19 @@ void egg_to_model(const char* filename, st_model_data* model)
 	}
 
 	// Sort out the model's vertex format.
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_tangent, 2));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_color, 3));
-	model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 4));
+	std::vector<st_vertex_attribute> attributes;
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, 0));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_normal, 1));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, 2));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, 3));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, 4));
 
 	if (state._vertex_format & egg_vertex_attribute_joints)
-		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_joints, 4));
+		attributes.push_back(st_vertex_attribute(st_vertex_attribute_joints, 4));
 	if (state._vertex_format & egg_vertex_attribute_weights)
-		model->_vertex_format.add_attribute(st_vertex_attribute(st_vertex_attribute_weights, 5));
+		attributes.push_back(st_vertex_attribute(st_vertex_attribute_weights, 5));
 
-	model->_vertex_format.finalize();
+	model->_vertex_format = st_render_context::get()->create_vertex_format(attributes.data(), attributes.size());
 }
 
 void parse_coordinate_system(std::ifstream &file, st_egg_parser_state* state)

@@ -8,7 +8,6 @@
 
 #include <graphics/platform/dx12/st_dx12_descriptor_heap.h>
 #include <graphics/platform/dx12/st_dx12_render_context.h>
-#include <graphics/st_render_context.h>
 
 #include <system/st_window.h>
 

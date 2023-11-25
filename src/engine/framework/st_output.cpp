@@ -15,8 +15,7 @@
 #include <graphics/pass/st_passthrough_render_pass.h>
 #include <graphics/pass/st_tonemap_render_pass.h>
 #include <graphics/pass/st_ui_render_pass.h>
-#include <graphics/st_render_context.h>
-#include <graphics/st_render_marker.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_render_texture.h>
 
 #include <math/st_mat4f.h>
@@ -39,31 +38,32 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
-	_gbuffer_albedo_target->set_name("Gbuffer Albedo");
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
+		"Gbuffer Albedo");
 	_gbuffer_normal_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r32g32b32a32_float,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
-	_gbuffer_normal_target->set_name("Gbuffer Normal");
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
+		"Gbuffer Normal");
 	_gbuffer_third_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r16g16b16a16_float,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }));
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
+		"Gbuffer Third");
 	_depth_stencil_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
 		st_format_d24_unorm_s8_uint,
 		e_st_texture_usage::depth_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }));
-	_depth_stencil_target->set_name("Gbuffer Depth");
+		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }),
+		"Gbuffer Depth");
 
 	_deferred_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
@@ -71,16 +71,16 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_format_r16g16b16a16_float,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
-	_deferred_target->set_name("Deferred Target");
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
+		"Deferred Target");
 	_deferred_depth = std::make_unique<st_render_texture>(
 		_window->get_width(),
 		_window->get_height(),
 		st_format_d24_unorm_s8_uint,
 		e_st_texture_usage::depth_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }));
-	_deferred_depth->set_name("Deferred Depth");
+		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }),
+		"Deferred Depth");
 
 	_bloom_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
@@ -88,8 +88,8 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_format_r16g16b16a16_float,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
-	_bloom_target->set_name("Bloom Target");
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
+		"Bloom Target");
 
 	_tonemap_target = std::make_unique<st_render_texture>(
 		_window->get_width(),
@@ -97,8 +97,8 @@ st_output::st_output(const st_window* window, st_render_context* render_context)
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }));
-	_tonemap_target->set_name("Tonemap Target");
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
+		"Tonemap Target");
 
 	_gbuffer_pass = std::make_unique<st_gbuffer_render_pass>(
 		_gbuffer_albedo_target.get(),

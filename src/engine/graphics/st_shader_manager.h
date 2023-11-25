@@ -38,15 +38,15 @@ enum e_st_shader
 class st_shader_manager
 {
 public:
-	st_shader_manager();
+	st_shader_manager(class st_render_context* context);
 	~st_shader_manager();
 
-	const class st_shader* get_shader(e_st_shader shader);
+	const struct st_shader* get_shader(e_st_shader shader);
 
 	static st_shader_manager* get();
 
 private:
-	std::map<e_st_shader, std::unique_ptr<class st_shader>> _shaders;
+	std::map<e_st_shader, std::unique_ptr<struct st_shader>> _shaders;
 
 	static st_shader_manager* _this;
 };

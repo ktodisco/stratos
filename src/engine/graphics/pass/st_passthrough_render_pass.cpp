@@ -9,19 +9,20 @@
 #include <framework/st_frame_params.h>
 
 #include <graphics/material/st_fullscreen_material.h>
-#include <graphics/st_pipeline_state.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
 st_passthrough_render_pass::st_passthrough_render_pass(
 	st_render_texture* source_buffer)
 {
+	st_render_context* context = st_render_context::get();
+
 	st_render_texture* targets[] =
 	{
 		st_render_context::get()->get_present_target()
 	};
-	_pass = std::make_unique<st_render_pass>(
+	_pass = context->create_render_pass(
 		1,
 		targets,
 		nullptr);
@@ -36,7 +37,7 @@ st_passthrough_render_pass::st_passthrough_render_pass(
 	fullscreen_state_desc._render_target_count = 1;
 	fullscreen_state_desc._render_target_formats[0] = source_buffer->get_format();
 
-	_pipeline_state = std::make_unique<st_pipeline_state>(fullscreen_state_desc, _pass.get());
+	_pipeline = context->create_pipeline(fullscreen_state_desc);
 }
 
 st_passthrough_render_pass::~st_passthrough_render_pass()
@@ -47,13 +48,13 @@ void st_passthrough_render_pass::render(
 	st_render_context* context,
 	const st_frame_params* params)
 {
-	st_render_marker marker("st_passthrough_render_pass::render");
+	st_render_marker marker(context, "st_passthrough_render_pass::render");
 
 	st_mat4f identity;
 	identity.make_identity();
 
 	context->set_scissor(0, 0, params->_width, params->_height);
-	context->set_pipeline_state(_pipeline_state.get());
+	context->set_pipeline(_pipeline.get());
 
 	_material->bind(context, params, identity, identity, identity);
 
@@ -61,8 +62,7 @@ void st_passthrough_render_pass::render(
 	{
 		{ 0.0f, 0.0f, 0.0f, 1.0f },
 	};
-
-	_pass->begin(context, clears, std::size(clears));
+	context->begin_render_pass(_pass.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -71,5 +71,5 @@ void st_passthrough_render_pass::render(
 
 	context->draw(draw_call);
 
-	_pass->end(context);
+	context->end_render_pass();
 }

@@ -8,7 +8,6 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
-#include <graphics/st_render_context.h>
 #include <graphics/st_render_texture.h>
 
 st_dx12_framebuffer::st_dx12_framebuffer(
@@ -32,30 +31,32 @@ st_dx12_framebuffer::~st_dx12_framebuffer()
 
 void st_dx12_framebuffer::bind(st_render_context* context)
 {
+	std::vector<const st_texture_view*> views;
 	for (auto& t : _targets)
 	{
-		t->transition(context, st_texture_state_render_target);
+		context->transition(t->get_texture(), st_texture_state_render_target);
+		views.push_back(t->get_view());
 	}
 
 	if (_depth_stencil)
 	{
-		_depth_stencil->transition(context, st_texture_state_depth_target);
+		context->transition(_depth_stencil->get_texture(), st_texture_state_depth_target);
 	}
 
 	// Bind them.
-	context->set_render_targets(_target_count, &_targets[0], _depth_stencil);
+	context->set_render_targets(_target_count, views.data(), _depth_stencil->get_view());
 }
 
 void st_dx12_framebuffer::unbind(st_render_context* context)
 {
 	for (auto& t : _targets)
 	{
-		t->transition(context, st_texture_state_pixel_shader_read);
+		context->transition(t->get_texture(), st_texture_state_pixel_shader_read);
 	}
 
 	if (_depth_stencil)
 	{
-		_depth_stencil->transition(context, st_texture_state_pixel_shader_read);
+		context->transition(_depth_stencil->get_texture(), st_texture_state_pixel_shader_read);
 	}
 
 	context->set_render_targets(0, nullptr, nullptr);

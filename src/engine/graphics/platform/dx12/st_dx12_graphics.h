@@ -94,9 +94,9 @@ struct st_dx12_texture : public st_texture
 	e_st_texture_state _state = st_texture_state_common;
 };
 
-struct st_dx12_render_texture : public st_dx12_texture
+struct st_dx12_texture_view : public st_texture_view
 {
-	st_dx12_descriptor _rtv;
+	st_dx12_descriptor _handle;
 };
 
 struct st_dx12_vertex_format : public st_vertex_format

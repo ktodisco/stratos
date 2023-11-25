@@ -58,7 +58,7 @@ std::unique_ptr<st_texture> load_stb_texture(const char* fullpath)
 		return nullptr;
 	}
 
-	std::unique_ptr<st_texture> ret = std::make_unique<st_texture>(
+	std::unique_ptr<st_texture> ret = st_render_context::get()->create_texture(
 		width,
 		height,
 		1,
@@ -169,7 +169,7 @@ std::unique_ptr<st_texture> load_dds_texture(const char* fullpath)
 	CloseHandle(hFile);
 
 	// CreateTextureFromDDS.
-	auto texture = std::make_unique<st_texture>(
+	auto texture = st_render_context::get()->create_texture(
 		header->width,
 		header->height,
 		header->mipMapCount,

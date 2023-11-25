@@ -7,13 +7,14 @@
 #include <graphics/material/st_deferred_light_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 
 st_deferred_light_material::st_deferred_light_material(
-	st_texture* albedo_texture,
-	st_texture* normal_texture,
-	st_texture* third_texture,
-	st_texture* depth_texture,
+	st_render_texture* albedo_texture,
+	st_render_texture* normal_texture,
+	st_render_texture* third_texture,
+	st_render_texture* depth_texture,
 	st_constant_buffer* constants,
 	st_buffer* light_buffer) :
 	_albedo(albedo_texture),
@@ -27,10 +28,10 @@ st_deferred_light_material::st_deferred_light_material(
 	context->set_buffers(_resource_table.get(), 1, &light_buffer);
 
 	st_texture* textures[] = {
-		_albedo,
-		_normal,
-		_third,
-		_depth,
+		_albedo->get_texture(),
+		_normal->get_texture(),
+		_third->get_texture(),
+		_depth->get_texture(),
 	};
 	context->set_textures(_resource_table.get(), std::size(textures), textures);
 }
@@ -55,15 +56,15 @@ void st_deferred_light_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	context->set_texture_meta(_albedo, "SPIRV_Cross_Combinedalbedo_textureSPIRV_Cross_DummySampler");
-	context->set_texture_meta(_normal, "SPIRV_Cross_Combinednormal_textureSPIRV_Cross_DummySampler");
-	context->set_texture_meta(_third, "SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");
-	context->set_texture_meta(_depth, "SPIRV_Cross_Combineddepth_textureSPIRV_Cross_DummySampler");
+	context->set_texture_meta(_albedo->get_texture(), "SPIRV_Cross_Combinedalbedo_textureSPIRV_Cross_DummySampler");
+	context->set_texture_meta(_normal->get_texture(), "SPIRV_Cross_Combinednormal_textureSPIRV_Cross_DummySampler");
+	context->set_texture_meta(_third->get_texture(), "SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");
+	context->set_texture_meta(_depth->get_texture(), "SPIRV_Cross_Combineddepth_textureSPIRV_Cross_DummySampler");
 
-	context->transition(_albedo, st_texture_state_pixel_shader_read);
-	context->transition(_normal, st_texture_state_pixel_shader_read);
-	context->transition(_third, st_texture_state_pixel_shader_read);
-	context->transition(_depth, st_texture_state_pixel_shader_read);
+	context->transition(_albedo->get_texture(), st_texture_state_pixel_shader_read);
+	context->transition(_normal->get_texture(), st_texture_state_pixel_shader_read);
+	context->transition(_third->get_texture(), st_texture_state_pixel_shader_read);
+	context->transition(_depth->get_texture(), st_texture_state_pixel_shader_read);
 
 	context->bind_resource_table(_resource_table.get());
 }

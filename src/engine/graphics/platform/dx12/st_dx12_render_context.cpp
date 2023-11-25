@@ -16,6 +16,7 @@
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
 
@@ -357,8 +358,8 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
 		st_texture_state_copy_source,
-		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
-	set_texture_name(_present_target.get(), "Present Target");
+		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
+		"Present Target");
 }
 
 st_dx12_render_context::~st_dx12_render_context()
@@ -437,12 +438,13 @@ void st_dx12_render_context::set_buffer_table(uint32_t offset)
 
 void st_dx12_render_context::set_render_targets(
 	uint32_t count,
-	st_render_texture** targets,
-	st_render_texture* depth_stencil)
+	const st_texture_view** targets,
+	const st_texture_view* depth_stencil)
 {
 	for (uint32_t target_itr = 0; target_itr < count; ++target_itr)
 	{
-		D3D12_CPU_DESCRIPTOR_HANDLE target_handle = _rtv_heap->get_handle_cpu(targets[target_itr]->get_rtv());
+		const st_dx12_texture_view* texture_view = static_cast<const st_dx12_texture_view*>(targets[target_itr]);
+		D3D12_CPU_DESCRIPTOR_HANDLE target_handle = _rtv_heap->get_handle_cpu(texture_view->_handle);
 		_bound_targets[target_itr] = target_handle;
 	}
 
@@ -454,7 +456,8 @@ void st_dx12_render_context::set_render_targets(
 
 	if (depth_stencil)
 	{
-		D3D12_CPU_DESCRIPTOR_HANDLE depth_handle = _dsv_heap->get_handle_cpu(depth_stencil->get_rtv());
+		const st_dx12_texture_view* ds_view = static_cast<const st_dx12_texture_view*>(depth_stencil);
+		D3D12_CPU_DESCRIPTOR_HANDLE depth_handle = _dsv_heap->get_handle_cpu(ds_view->_handle);
 		_bound_depth_stencil = depth_handle;
 	}
 
@@ -507,9 +510,12 @@ void st_dx12_render_context::clear(unsigned int clear_flags)
 
 void st_dx12_render_context::draw(const st_static_drawcall& drawcall)
 {
+	const st_dx12_buffer_view* vertex_view = static_cast<const st_dx12_buffer_view*>(drawcall._vertex_buffer_view);
+	const st_dx12_buffer_view* index_view = static_cast<const st_dx12_buffer_view*>(drawcall._index_buffer_view);
+
 	_command_list->IASetPrimitiveTopology(convert_topology(drawcall._draw_mode));
-	_command_list->IASetVertexBuffers(0, 1, drawcall._vertex_buffer_view);
-	_command_list->IASetIndexBuffer(drawcall._index_buffer_view);
+	_command_list->IASetVertexBuffers(0, 1, &vertex_view->vertex);
+	_command_list->IASetIndexBuffer(&index_view->index);
 	_command_list->DrawIndexedInstanced(drawcall._index_count, 1, 0, 0, 0);
 }
 
@@ -522,10 +528,10 @@ void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
 	HRESULT result = _dynamic_vertex_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
 	buffer_begin += _dynamic_vertex_bytes_written;
 
-	D3D12_VERTEX_BUFFER_VIEW dynamic_vertex_buffer_view;
-	dynamic_vertex_buffer_view.BufferLocation = _dynamic_vertex_buffer->GetGPUVirtualAddress() + _dynamic_vertex_bytes_written;
-	dynamic_vertex_buffer_view.StrideInBytes = 20;
-	dynamic_vertex_buffer_view.SizeInBytes = drawcall._positions.size() * 20;
+	st_dx12_buffer_view dynamic_vertex_buffer_view;
+	dynamic_vertex_buffer_view.vertex.BufferLocation = _dynamic_vertex_buffer->GetGPUVirtualAddress() + _dynamic_vertex_bytes_written;
+	dynamic_vertex_buffer_view.vertex.StrideInBytes = 20;
+	dynamic_vertex_buffer_view.vertex.SizeInBytes = drawcall._positions.size() * 20;
 
 	if (result != S_OK)
 	{
@@ -558,10 +564,10 @@ void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
 	result = _dynamic_index_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
 	buffer_begin += _dynamic_index_bytes_written;
 
-	D3D12_INDEX_BUFFER_VIEW dynamic_index_buffer_view;
-	dynamic_index_buffer_view.BufferLocation = _dynamic_index_buffer->GetGPUVirtualAddress() + _dynamic_index_bytes_written;
-	dynamic_index_buffer_view.Format = DXGI_FORMAT_R16_UINT;
-	dynamic_index_buffer_view.SizeInBytes = sizeof(uint16_t) * drawcall._indices.size();
+	st_dx12_buffer_view dynamic_index_buffer_view;
+	dynamic_index_buffer_view.index.BufferLocation = _dynamic_index_buffer->GetGPUVirtualAddress() + _dynamic_index_bytes_written;
+	dynamic_index_buffer_view.index.Format = DXGI_FORMAT_R16_UINT;
+	dynamic_index_buffer_view.index.SizeInBytes = sizeof(uint16_t) * drawcall._indices.size();
 
 	if (result != S_OK)
 	{
@@ -581,14 +587,19 @@ void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
 	draw(static_draw);
 }
 
+st_render_texture* st_dx12_render_context::get_present_target()
+{
+	return _present_target.get();
+}
+
 void st_dx12_render_context::transition_backbuffer_to_target()
 {
-	_present_target->transition(this, st_texture_state_render_target);
+	transition(_present_target->get_texture(), st_texture_state_render_target);
 }
 
 void st_dx12_render_context::transition_backbuffer_to_present()
 {
-	_present_target->transition(this, st_texture_state_copy_source);
+	transition(_present_target->get_texture(), st_texture_state_copy_source);
 }
 
 std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
@@ -678,18 +689,18 @@ std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
 			bits += num_bytes;
 		}
 
-		size_t alloc_size = (sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(uint32_t) + sizeof(uint64_t)) * mip_count;
+		size_t alloc_size = (sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(uint32_t) + sizeof(uint64_t)) * levels;
 		auto layouts = reinterpret_cast<D3D12_PLACED_SUBRESOURCE_FOOTPRINT*>(malloc(alloc_size));
 
-		uint64_t* row_sizes_bytes = reinterpret_cast<uint64_t*>(layouts + mip_count);
-		uint32_t* row_count = reinterpret_cast<uint32_t*>(row_sizes_bytes + mip_count);
+		uint64_t* row_sizes_bytes = reinterpret_cast<uint64_t*>(layouts + levels);
+		uint32_t* row_count = reinterpret_cast<uint32_t*>(row_sizes_bytes + levels);
 		uint64_t required_size = 0;
-		_device->GetCopyableFootprints(&texture_desc, 0, mip_count, 0, layouts, row_count, row_sizes_bytes, &required_size);
+		_device->GetCopyableFootprints(&texture_desc, 0, levels, 0, layouts, row_count, row_sizes_bytes, &required_size);
 
 		_upload_buffer_offset = align_value(_upload_buffer_offset, D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT);
 		size_t initial_offset = _upload_buffer_offset;
 
-		for (uint32_t i = 0; i < mip_count; ++i)
+		for (uint32_t i = 0; i < levels; ++i)
 		{
 			if (row_sizes_bytes[i] > size_t(-1))
 			{
@@ -712,7 +723,7 @@ std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
 			layouts[i].Offset += initial_offset;
 		}
 
-		for (uint32_t i = 0; i < mip_count; ++i)
+		for (uint32_t i = 0; i < levels; ++i)
 		{
 			// Copy the upload heap to the texture 2D.
 			D3D12_TEXTURE_COPY_LOCATION dest_location
@@ -783,94 +794,34 @@ void st_dx12_render_context::transition(
 	_command_list->ResourceBarrier(1, &barrier);
 }
 
-std::unique_ptr<st_render_texture> st_dx12_render_context::create_render_target_view(
-	uint32_t width,
-	uint32_t height,
-	e_st_format format,
-	e_st_texture_usage_flags usage,
-	e_st_texture_state initial_state,
-	st_vec4f clear)
+std::unique_ptr<st_texture_view> st_dx12_render_context::create_texture_view(st_texture* texture_)
 {
-	std::unique_ptr<st_dx12_render_texture> target = std::make_unique<st_dx12_render_texture>();
+	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
 
-	D3D12_RESOURCE_FLAGS flags;
+	std::unique_ptr<st_dx12_texture_view> texture_view = std::make_unique<st_dx12_texture_view>();
 
-	switch (format)
+	if (texture->_format == st_format_d24_unorm_s8_uint)
 	{
-	case st_format_d24_unorm_s8_uint:
-		flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-		break;
-	default:
-		flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		break;
-	}
-
-	D3D12_RESOURCE_DESC target_desc = {};
-	target_desc.Width = width;
-	target_desc.Height = height;
-	target_desc.MipLevels = 1;
-	target_desc.Format = convert_format(format);
-	target_desc.Flags = flags;
-	target_desc.DepthOrArraySize = 1;
-	target_desc.SampleDesc.Count = 1;
-	target_desc.SampleDesc.Quality = 0;
-	target_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-
-	D3D12_CLEAR_VALUE clear_value = {};
-	clear_value.Format = convert_format(format);
-
-	if (format == st_format_d24_unorm_s8_uint)
-	{
-		clear_value.DepthStencil.Depth = clear.x;
-		clear_value.DepthStencil.Stencil = (uint8_t)clear.y;
-	}
-	else
-	{
-		clear_value.Color[0] = clear.x;
-		clear_value.Color[1] = clear.y;
-		clear_value.Color[2] = clear.z;
-		clear_value.Color[3] = clear.w;
-	}
-
-	D3D12_HEAP_PROPERTIES heap_properties{
-		D3D12_HEAP_TYPE_DEFAULT,
-		D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
-		D3D12_MEMORY_POOL_UNKNOWN,
-		1,
-		1
-	};
-
-	HRESULT hr = _device->CreateCommittedResource(
-		&heap_properties,
-		D3D12_HEAP_FLAG_NONE,
-		&target_desc,
-		D3D12_RESOURCE_STATES(initial_state),
-		&clear_value,
-		__uuidof(ID3D12Resource),
-		(void**)target->_handle.GetAddressOf());
-
-	if (format == st_format_d24_unorm_s8_uint)
-	{
-		ST_NAME_DX12_OBJECT(*target->_handle.GetAddressOf(), str_to_wstr("Depth-Stencil Target").c_str());
+		ST_NAME_DX12_OBJECT(*texture->_handle.GetAddressOf(), str_to_wstr("Depth-Stencil Target").c_str());
 
 		// Create the depth/stencil view.
 		st_dx12_cpu_descriptor_handle dsv_handle = _dsv_heap->allocate_handle();
-		_device->CreateDepthStencilView(*target->_handle.GetAddressOf(), nullptr, dsv_handle._handle);
+		_device->CreateDepthStencilView(*texture->_handle.GetAddressOf(), nullptr, dsv_handle._handle);
 
-		target->_rtv = dsv_handle._offset;
+		texture_view->_handle = dsv_handle._offset;
 	}
 	else
 	{
-		ST_NAME_DX12_OBJECT(*target->_handle.GetAddressOf(), str_to_wstr("Render Target").c_str());
+		ST_NAME_DX12_OBJECT(*texture->_handle.GetAddressOf(), str_to_wstr("Render Target").c_str());
 
 		// Create the render target view.
 		st_dx12_cpu_descriptor_handle rtv_handle = _rtv_heap->allocate_handle();
-		_device->CreateRenderTargetView(*target->_handle.GetAddressOf(), nullptr, rtv_handle._handle);
+		_device->CreateRenderTargetView(*texture->_handle.GetAddressOf(), nullptr, rtv_handle._handle);
 
-		target->_rtv = rtv_handle._offset;
+		texture_view->_handle = rtv_handle._offset;
 	}
 
-	return std::move(target);
+	return std::move(texture_view);
 }
 
 std::unique_ptr<st_buffer> st_dx12_render_context::create_buffer(
@@ -1111,7 +1062,8 @@ std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(const st_pi
 	pipeline_desc.pRootSignature = st_dx12_render_context::get()->get_root_signature();
 
 	// Get the input layout from the vertex format.
-	pipeline_desc.InputLayout = desc._vertex_format->get_layout();
+	const st_dx12_vertex_format* vertex_format = static_cast<const st_dx12_vertex_format*>(desc._vertex_format);
+	pipeline_desc.InputLayout = vertex_format->_input_layout;
 
 	const st_dx12_shader* shader = static_cast<const st_dx12_shader*>(desc._shader);
 
@@ -1336,7 +1288,7 @@ std::unique_ptr<st_render_pass> st_dx12_render_context::create_render_pass(
 	// Naively, create the viewport from the first target.
 	if (count > 0)
 	{
-		st_dx12_render_texture* t = static_cast<st_dx12_render_texture*>(targets[0]);
+		const st_dx12_texture* t = static_cast<const st_dx12_texture*>(targets[0]->get_texture());
 
 		pass->_viewport =
 		{
@@ -1415,7 +1367,8 @@ void st_dx12_render_context::end_frame()
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_COPY_DEST));
 
-	_command_list->CopyResource(_backbuffers[_frame_index].Get(), _present_target->get_resource());
+	st_dx12_texture* target = static_cast<st_dx12_texture*>(_present_target->get_texture());
+	_command_list->CopyResource(_backbuffers[_frame_index].Get(), target->_handle.Get());
 
 	_command_list->ResourceBarrier(
 		1,

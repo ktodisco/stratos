@@ -27,12 +27,12 @@ private:
 	std::unique_ptr<class st_vertex_format> _vertex_format = nullptr;
 
 	std::unique_ptr<class st_gbuffer_material> _default_gbuffer = nullptr;
-	std::unique_ptr<class st_pipeline_state> _gbuffer_state = nullptr;
+	std::unique_ptr<class st_pipeline> _gbuffer_state = nullptr;
 
 	// TODO: This is pretty ugly.  We need more automatic handling of arbitrary
 	// materials in the same pass.
 	std::unique_ptr<class st_parallax_occlusion_material> _default_parallax_occlusion = nullptr;
-	std::unique_ptr<class st_pipeline_state> _parallax_occlusion_state = nullptr;
+	std::unique_ptr<class st_pipeline> _parallax_occlusion_state = nullptr;
 
 	std::unique_ptr<class st_render_pass> _pass = nullptr;
 };

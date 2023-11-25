@@ -49,13 +49,15 @@ public:
 
 	void set_render_targets(
 		uint32_t count,
-		st_render_texture** targets,
-		st_render_texture* depth_stencil) override;
+		const st_texture_view** targets,
+		const st_texture_view* depth_stencil) override;
 
 	void clear(unsigned int clear_flags) override;
 	void draw(const struct st_static_drawcall& drawcall) override;
 	void draw(const struct st_dynamic_drawcall& drawcall) override;
 
+	// Backbuffer.
+	st_render_texture* get_present_target() override;
 	// TODO: These are temporary and a generic solution is needed.
 	void transition_backbuffer_to_target() override;
 	void transition_backbuffer_to_present() override;
@@ -70,6 +72,7 @@ public:
 	void end_marker() override;
 
 	// Textures.
+	// TODO: Fast clear value.
 	std::unique_ptr<st_texture> create_texture(
 		uint32_t width,
 		uint32_t height,
@@ -83,13 +86,7 @@ public:
 	void transition(
 		st_texture* texture,
 		e_st_texture_state new_state) override;
-	std::unique_ptr<st_render_texture> create_render_target_view(
-		uint32_t width,
-		uint32_t height,
-		e_st_format format,
-		e_st_texture_usage_flags usage,
-		e_st_texture_state initial_state,
-		st_vec4f clear) override;
+	std::unique_ptr<st_texture_view> create_texture_view(st_texture* texture) override;
 
 	// Buffers.
 	std::unique_ptr<st_buffer> create_buffer(
@@ -129,8 +126,8 @@ public:
 	// Render passes.
 	std::unique_ptr<st_render_pass> create_render_pass(
 		uint32_t count,
-		st_render_texture** targets,
-		st_render_texture* depth_stencil) override;
+		class st_render_texture** targets,
+		class st_render_texture* depth_stencil) override;
 	void begin_render_pass(
 		st_render_pass* pass,
 		st_vec4f* clear_values,
@@ -175,7 +172,7 @@ private:
 	D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissor_rect;
 
-	std::unique_ptr<st_texture> _present_target;
+	std::unique_ptr<class st_render_texture> _present_target;
 
 	Microsoft::WRL::ComPtr<IDXGISwapChain3> _swap_chain;
 	Microsoft::WRL::ComPtr<ID3D12Device> _device;

@@ -7,14 +7,16 @@
 #include <graphics/material/st_gaussian_blur_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 
-st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(st_texture* texture) :
+st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(st_render_texture* texture) :
 	_texture(texture)
 {
 	st_render_context* context = st_render_context::get();
 	_resource_table = context->create_resource_table();
-	context->set_textures(_resource_table.get(), 1, &_texture);
+	st_texture* t = _texture->get_texture();
+	context->set_textures(_resource_table.get(), 1, &t);
 }
 
 st_gaussian_blur_vertical_material::~st_gaussian_blur_vertical_material()
@@ -37,17 +39,18 @@ void st_gaussian_blur_vertical_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	context->set_texture_meta(_texture, "SPIRV_Cross_Combinedtextex_sampler");
-	context->transition(_texture, st_texture_state_pixel_shader_read);
+	context->set_texture_meta(_texture->get_texture(), "SPIRV_Cross_Combinedtextex_sampler");
+	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
 	context->bind_resource_table(_resource_table.get());
 }
 
-st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(st_texture* texture) :
+st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(st_render_texture* texture) :
 	_texture(texture)
 {
 	st_render_context* context = st_render_context::get();
 	_resource_table = context->create_resource_table();
-	context->set_textures(_resource_table.get(), 1, &_texture);
+	st_texture* t = _texture->get_texture();
+	context->set_textures(_resource_table.get(), 1, &t);
 }
 
 st_gaussian_blur_horizontal_material::~st_gaussian_blur_horizontal_material()
@@ -70,7 +73,7 @@ void st_gaussian_blur_horizontal_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	context->set_texture_meta(_texture, "SPIRV_Cross_Combinedtextex_sampler");
-	context->transition(_texture, st_texture_state_pixel_shader_read);
+	context->set_texture_meta(_texture->get_texture(), "SPIRV_Cross_Combinedtextex_sampler");
+	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
 	context->bind_resource_table(_resource_table.get());
 }
