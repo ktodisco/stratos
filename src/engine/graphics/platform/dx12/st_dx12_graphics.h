@@ -44,13 +44,6 @@ struct st_dx12_buffer_view : public st_buffer_view
 	};
 };
 
-struct st_dx12_constant_buffer : public st_constant_buffer
-{
-	size_t _size;
-	Microsoft::WRL::ComPtr<ID3D12Resource> _constant_buffer;
-	uint8_t* _constant_buffer_head = nullptr;
-};
-
 struct st_dx12_pipeline : public st_pipeline
 {
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipeline;

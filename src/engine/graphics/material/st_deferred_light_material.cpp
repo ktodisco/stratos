@@ -15,7 +15,7 @@ st_deferred_light_material::st_deferred_light_material(
 	st_render_texture* normal_texture,
 	st_render_texture* third_texture,
 	st_render_texture* depth_texture,
-	st_constant_buffer* constants,
+	st_buffer* constants,
 	st_buffer* light_buffer) :
 	_albedo(albedo_texture),
 	_normal(normal_texture),

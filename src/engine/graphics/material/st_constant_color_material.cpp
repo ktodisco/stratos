@@ -12,11 +12,11 @@
 st_constant_color_material::st_constant_color_material()
 {
 	st_render_context* context = st_render_context::get();
-	_color_buffer = context->create_constant_buffer(sizeof(st_constant_color_cb));
+	_color_buffer = context->create_buffer(1, sizeof(st_constant_color_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_color_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_resource_table = context->create_resource_table();
-	st_constant_buffer* cbs[] = { _color_buffer.get() };
+	st_buffer* cbs[] = { _color_buffer.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
@@ -47,7 +47,7 @@ void st_constant_color_material::bind(
 	st_constant_color_cb cb_data{};
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
-	context->update_constant_buffer(_color_buffer.get(), &cb_data);
+	context->update_buffer(_color_buffer.get(), &cb_data, 1);
 
 	context->bind_resource_table(_resource_table.get());
 }

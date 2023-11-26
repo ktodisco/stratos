@@ -100,16 +100,14 @@ public:
 	void set_buffer_meta(st_buffer* buffer, std::string name) override;
 
 	// Constant buffers.
-	std::unique_ptr<st_constant_buffer> create_constant_buffer(const size_t size) override;
 	void add_constant(
-		st_constant_buffer* buffer,
+		st_buffer* buffer,
 		const std::string& name,
 		const e_st_shader_constant_type constant_type) override;
-	void update_constant_buffer(st_constant_buffer* buffer, void* data) override;
 
 	// Resource tables.
 	std::unique_ptr<st_resource_table> create_resource_table() override;
-	void set_constant_buffers(st_resource_table* table, uint32_t count, st_constant_buffer** cbs) override;
+	void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) override;
 	void set_textures(st_resource_table* table, uint32_t count, st_texture** textures) override;
 	void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) override;
 	void bind_resource_table(st_resource_table* table) override;
@@ -136,8 +134,14 @@ public:
 		const uint8_t clear_count) override;
 	void end_render_pass() override;
 
+	ID3D12Device* get_device() const { return _device.Get(); }
+	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }
+	ID3D12GraphicsCommandList* get_command_list() const { return _command_list.Get(); }
+	st_dx12_descriptor_heap* get_gui_heap() const { return _gui_srv_heap.get(); }
+
+private:
+
 	void create_buffer_internal(size_t size, ID3D12Resource** resource);
-	void destroy_target(st_dx12_descriptor target);
 
 	st_dx12_descriptor create_constant_buffer_view(
 		D3D12_GPU_VIRTUAL_ADDRESS gpu_address,
@@ -157,12 +161,7 @@ public:
 		size_t element_size);
 	void destroy_buffer_view(st_dx12_descriptor offset);
 
-	ID3D12Device* get_device() const { return _device.Get(); }
-	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }
-	ID3D12GraphicsCommandList* get_command_list() const { return _command_list.Get(); }
-	st_dx12_descriptor_heap* get_gui_heap() const { return _gui_srv_heap.get(); }
-
-private:
+	void destroy_target(st_dx12_descriptor target);
 
 	static const uint32_t k_backbuffer_count = 2;
 

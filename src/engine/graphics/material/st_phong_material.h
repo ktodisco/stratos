@@ -30,7 +30,7 @@ public:
 	st_material_type get_material_type() override { return st_material_type_phong; }
 
 private:
-	std::unique_ptr<class st_constant_buffer> _phong_buffer = nullptr;
+	std::unique_ptr<struct st_buffer> _phong_buffer = nullptr;
 
-	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
+	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

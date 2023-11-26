@@ -28,7 +28,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 {
 	st_render_context* context = st_render_context::get();
 
-	_constant_buffer = context->create_constant_buffer(sizeof(st_deferred_light_cb));
+	_constant_buffer = context->create_buffer(1, sizeof(st_deferred_light_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_light_buffer = context->create_buffer(
@@ -99,7 +99,7 @@ void st_deferred_light_render_pass::render(
 	constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);
 #endif
 
-	context->update_constant_buffer(_constant_buffer.get(), &constant_data);
+	context->update_buffer(_constant_buffer.get(), &constant_data, 1);
 
 	// New light buffer.
 	st_sphere_light_data light_data;

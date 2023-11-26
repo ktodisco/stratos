@@ -19,7 +19,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	const char* normal_texture)
 {
 	st_render_context* context = st_render_context::get();
-	_parallax_occlusion_buffer = context->create_constant_buffer(sizeof(st_parallax_occlusion_cb));
+	_parallax_occlusion_buffer = context->create_buffer(1, sizeof(st_parallax_occlusion_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_parallax_occlusion_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
@@ -29,7 +29,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	context->set_texture_meta(_normal_texture.get(), "SPIRV_Cross_Combinednormal_texturenormal_sampler");
 
 	_resource_table = context->create_resource_table();
-	st_constant_buffer* cbs[] = { _parallax_occlusion_buffer.get() };
+	st_buffer* cbs[] = { _parallax_occlusion_buffer.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 	st_texture* textures[] = { _albedo_texture.get(), _normal_texture.get() };
 	context->set_textures(_resource_table.get(), std::size(textures), textures);
@@ -55,7 +55,7 @@ void st_parallax_occlusion_material::bind(
 	pom_cb._model = transform_t;
 	pom_cb._mvp = mvp;
 	pom_cb._eye = st_vec4f(params->_eye, 0.0f);
-	context->update_constant_buffer(_parallax_occlusion_buffer.get(), &pom_cb);
+	context->update_buffer(_parallax_occlusion_buffer.get(), &pom_cb, 1);
 
 	context->bind_resource_table(_resource_table.get());
 }

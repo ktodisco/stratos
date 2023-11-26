@@ -341,7 +341,6 @@ struct st_viewport
 
 struct st_buffer {};
 struct st_buffer_view {};
-struct st_constant_buffer {};
 struct st_pipeline {};
 struct st_render_pass {};
 struct st_resource_table {};
@@ -427,16 +426,14 @@ public:
 	virtual void set_buffer_meta(st_buffer* buffer, std::string name) = 0;
 
 	// Constant buffers.
-	virtual std::unique_ptr<st_constant_buffer> create_constant_buffer(const size_t size) = 0;
 	virtual void add_constant(
-		st_constant_buffer* buffer,
+		st_buffer* buffer,
 		const std::string& name,
 		const e_st_shader_constant_type constant_type) = 0;
-	virtual void update_constant_buffer(st_constant_buffer* buffer, void* data) = 0;
 
 	// Resource tables.
 	virtual std::unique_ptr<st_resource_table> create_resource_table() = 0;
-	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, st_constant_buffer** cbs) = 0;
+	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) = 0;
 	virtual void set_textures(st_resource_table* table, uint32_t count, st_texture** textures) = 0;
 	virtual void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) = 0;
 	virtual void bind_resource_table(st_resource_table* table) = 0;

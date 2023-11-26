@@ -833,11 +833,17 @@ std::unique_ptr<st_buffer> st_dx12_render_context::create_buffer(
 
 	// Structured buffers in DX12 are recommended to be 128-byte aligned.
 	const uint32_t k_min_buffer_size = 128;
+	// Constant buffers in DX12 must be 256-byte aligned.
+	const uint32_t k_min_cb_size = 256;
+
+	uint32_t min_size = k_min_buffer_size;
+	if (usage & e_st_buffer_usage::uniform)
+		min_size = k_min_cb_size;
 
 	// We store the original size so that the memcpy in update does not overread
 	// the bounds of the passed memory.
 	create_buffer_internal(
-		align_value(buffer->_count * buffer->_element_size, k_min_buffer_size),
+		align_value(buffer->_count * buffer->_element_size, min_size),
 		buffer->_buffer.GetAddressOf());
 
 	return std::move(buffer);
@@ -944,38 +950,11 @@ void st_dx12_render_context::set_buffer_meta(st_buffer* buffer, std::string name
 {
 }
 
-std::unique_ptr<st_constant_buffer> st_dx12_render_context::create_constant_buffer(const size_t size)
-{
-	std::unique_ptr<st_dx12_constant_buffer> cb = std::make_unique<st_dx12_constant_buffer>();
-	cb->_size = size;
-
-	// Constant buffers in DX12 must be 256-byte aligned.
-	const uint32_t k_min_cb_size = 256;
-
-	// We store the original size so that the memcpy in update does not overread
-	// the bounds of the passed memory.
-	create_buffer_internal(
-		align_value(cb->_size, k_min_cb_size),
-		cb->_constant_buffer.GetAddressOf());
-
-	D3D12_RANGE range = {};
-	cb->_constant_buffer->Map(0, &range, reinterpret_cast<void**>(&cb->_constant_buffer_head));
-
-	return std::move(cb);
-}
-
 void st_dx12_render_context::add_constant(
-	st_constant_buffer* buffer,
+	st_buffer* buffer,
 	const std::string& name,
 	const e_st_shader_constant_type constant_type)
 {
-}
-
-void st_dx12_render_context::update_constant_buffer(st_constant_buffer* _buffer, void* data)
-{
-	st_dx12_constant_buffer* buffer = static_cast<st_dx12_constant_buffer*>(_buffer);
-
-	memcpy(buffer->_constant_buffer_head, data, buffer->_size);
 }
 
 std::unique_ptr<st_resource_table> st_dx12_render_context::create_resource_table()
@@ -987,17 +966,17 @@ std::unique_ptr<st_resource_table> st_dx12_render_context::create_resource_table
 void st_dx12_render_context::set_constant_buffers(
 	st_resource_table* _table,
 	uint32_t count,
-	st_constant_buffer** cbs)
+	st_buffer** cbs)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
 
 	for (uint32_t i = 0; i < count; ++i)
 	{
-		st_dx12_constant_buffer* cb = static_cast<st_dx12_constant_buffer*>(cbs[i]);
+		st_dx12_buffer* cb = static_cast<st_dx12_buffer*>(cbs[i]);
 
 		st_dx12_descriptor cbv = create_constant_buffer_view(
-			cb->_constant_buffer->GetGPUVirtualAddress(),
-			cb->_size);
+			cb->_buffer->GetGPUVirtualAddress(),
+			cb->_element_size);
 		table->_cbvs.push_back(cbv);
 	}
 }

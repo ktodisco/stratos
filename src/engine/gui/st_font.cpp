@@ -162,11 +162,11 @@ st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 {
 	st_render_context* context = st_render_context::get();
 
-	_constant_buffer = context->create_constant_buffer(sizeof(st_font_cb));
+	_constant_buffer = context->create_buffer(1, sizeof(st_font_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_resource_table = context->create_resource_table();
-	st_constant_buffer* cbs[] = { _constant_buffer.get() };
+	st_buffer* cbs[] = { _constant_buffer.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 
 	if (_texture)
@@ -206,7 +206,7 @@ void st_font_material::bind(
 	st_font_cb cb_data{};
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
-	context->update_constant_buffer(_constant_buffer.get(), &cb_data);
+	context->update_buffer(_constant_buffer.get(), &cb_data, 1);
 
 	context->bind_resource_table(_resource_table.get());
 }

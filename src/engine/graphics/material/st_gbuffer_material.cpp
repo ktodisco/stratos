@@ -18,7 +18,7 @@ st_gbuffer_material::st_gbuffer_material(
 	const char* mre_texture)
 {
 	st_render_context* context = st_render_context::get();
-	_gbuffer_buffer = context->create_constant_buffer(sizeof(st_gbuffer_cb));
+	_gbuffer_buffer = context->create_buffer(1, sizeof(st_gbuffer_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_gbuffer_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
@@ -28,7 +28,7 @@ st_gbuffer_material::st_gbuffer_material(
 	context->set_texture_meta(_mre_texture.get(), "SPIRV_Cross_Combinedmre_texturemre_sampler");
 
 	_resource_table = context->create_resource_table();
-	st_constant_buffer* cbs[] = { _gbuffer_buffer.get() };
+	st_buffer* cbs[] = { _gbuffer_buffer.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 
 	st_texture* textures[] = {
@@ -67,7 +67,7 @@ void st_gbuffer_material::bind(
 	gbuffer_cb._model = transform;
 	gbuffer_cb._mvp = mvp;
 	gbuffer_cb._emissive = _emissive;
-	context->update_constant_buffer(_gbuffer_buffer.get(), &gbuffer_cb);
+	context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 1);
 
 	context->bind_resource_table(_resource_table.get());
 }
