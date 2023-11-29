@@ -79,6 +79,7 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 		st_format_r8_unorm,
 		e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
+		st_vec4f::zero_vector(),
 		image_data);
 	delete[] image_data;
 

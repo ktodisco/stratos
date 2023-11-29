@@ -605,6 +605,7 @@ std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
 	e_st_format format,
 	e_st_texture_usage_flags usage,
 	e_st_texture_state initial_state,
+	const st_vec4f& clear,
 	void* data)
 {
 	std::unique_ptr<st_dx12_texture> texture = std::make_unique<st_dx12_texture>();
@@ -632,6 +633,28 @@ std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
 	texture_desc.SampleDesc.Quality = 0;
 	texture_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
+	bool is_target = false;
+	D3D12_CLEAR_VALUE clear_value = {};
+	if (usage & e_st_texture_usage::color_target ||
+		usage & e_st_texture_usage::depth_target)
+	{
+		is_target = true;
+		clear_value.Format = (DXGI_FORMAT)format;
+
+		if (format == st_format_d24_unorm_s8_uint)
+		{
+			clear_value.DepthStencil.Depth = clear.x;
+			clear_value.DepthStencil.Stencil = (uint8_t)clear.y;
+		}
+		else
+		{
+			clear_value.Color[0] = clear.x;
+			clear_value.Color[1] = clear.y;
+			clear_value.Color[2] = clear.z;
+			clear_value.Color[3] = clear.w;
+		}
+	}
+
 	D3D12_HEAP_PROPERTIES heap_properties{
 		D3D12_HEAP_TYPE_DEFAULT,
 		D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
@@ -645,7 +668,7 @@ std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
 		D3D12_HEAP_FLAG_NONE,
 		&texture_desc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
-		nullptr,
+		is_target ? &clear_value : nullptr,
 		__uuidof(ID3D12Resource),
 		(void**)texture->_handle.GetAddressOf());
 

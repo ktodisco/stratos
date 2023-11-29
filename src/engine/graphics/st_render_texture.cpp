@@ -23,8 +23,8 @@ st_render_texture::st_render_texture(
 		format,
 		usage,
 		initial_state,
+		clear,
 		nullptr);
-		//clear);
 	context->set_texture_name(_texture.get(), name);
 	_view = context->create_texture_view(_texture.get());
 }

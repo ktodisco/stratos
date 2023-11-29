@@ -65,6 +65,7 @@ std::unique_ptr<st_texture> load_stb_texture(const char* fullpath)
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
+		st_vec4f::zero_vector(),
 		data);
 
 	stbi_image_free(data);
@@ -176,6 +177,7 @@ std::unique_ptr<st_texture> load_dds_texture(const char* fullpath)
 		get_st_format(header->ddspf),
 		e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
+		st_vec4f::zero_vector(),
 		bit_data);
 
 	return std::move(texture);

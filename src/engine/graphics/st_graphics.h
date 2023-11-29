@@ -406,6 +406,7 @@ public:
 		e_st_format format,
 		e_st_texture_usage_flags usage,
 		e_st_texture_state initial_state,
+		const st_vec4f& clear,
 		void* data) = 0;
 	virtual void set_texture_meta(st_texture* texture, const char* name) = 0;
 	virtual void set_texture_name(st_texture* texture, std::string name) = 0;
