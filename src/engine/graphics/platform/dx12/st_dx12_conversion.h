@@ -8,6 +8,8 @@
 
 #include <graphics/st_graphics.h>
 
+#if defined(ST_GRAPHICS_API_DX12)
+
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
@@ -315,3 +317,5 @@ inline D3D12_RESOURCE_STATES convert_resource_state(e_st_texture_state state)
 {
 	return resource_state_mappings[state];
 }
+
+#endif
