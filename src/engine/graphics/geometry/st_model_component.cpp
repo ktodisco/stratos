@@ -7,7 +7,6 @@
 #include <graphics/geometry/st_model_component.h>
 
 #include <graphics/animation/st_animation.h>
-#include <graphics/geometry/st_geometry.h>
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_material.h>
@@ -22,7 +21,7 @@ st_model_component::st_model_component(st_entity* entity, st_model_data* model, 
 {
 	//assert(model->_vertex_format.is_finalized());
 
-	_geometry = std::make_unique<st_geometry>(
+	_geometry = st_render_context::get()->create_geometry(
 		model->_vertex_format.get(),
 		&model->_vertices[0],
 		(uint32_t)sizeof(model->_vertices[0]),
@@ -41,7 +40,8 @@ void st_model_component::update(st_frame_params* params)
 	draw_call._name = "st_model_component";
 	draw_call._transform = get_entity()->get_transform();
 	draw_call._material = _material.get();
-	_geometry->draw(draw_call);
+	draw_call._geometry = _geometry.get();
+	draw_call._draw_mode = st_primitive_topology_triangles;
 
 	while (params->_static_drawcall_lock.test_and_set(std::memory_order_acquire)) {}
 	params->_static_drawcalls.push_back(draw_call);

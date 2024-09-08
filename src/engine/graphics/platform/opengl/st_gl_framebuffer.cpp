@@ -9,7 +9,6 @@
 #if defined(ST_GRAPHICS_API_OPENGL)
 
 #include <graphics/st_render_texture.h>
-#include <graphics/st_texture.h>
 
 #include <cassert>
 #include <vector>
@@ -27,11 +26,12 @@ st_gl_framebuffer::st_gl_framebuffer(
 	st_render_texture** target = targets;
 	for (uint32_t color_target = 0; color_target < count; ++color_target)
 	{
+		st_gl_texture* texture = static_cast<st_gl_texture*>((*target)->get_texture());
 		glFramebufferTexture2D(
 			GL_FRAMEBUFFER,
 			color_attachment,
 			GL_TEXTURE_2D,
-			(*target)->get_handle(),
+			texture->_handle,
 			0);
 
 		target++;
@@ -40,11 +40,12 @@ st_gl_framebuffer::st_gl_framebuffer(
 
 	if (depth_stencil)
 	{
+		st_gl_texture* ds = static_cast<st_gl_texture*>(depth_stencil->get_texture());
 		glFramebufferTexture2D(
 			GL_FRAMEBUFFER,
 			GL_DEPTH_STENCIL_ATTACHMENT,
 			GL_TEXTURE_2D,
-			depth_stencil->get_handle(),
+			ds->_handle,
 			0);
 	}
 

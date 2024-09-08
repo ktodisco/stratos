@@ -67,9 +67,10 @@ void st_passthrough_render_pass::render(
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
 	draw_call._transform = identity;
-	_fullscreen_quad->draw(draw_call);
+	draw_call._geometry = _fullscreen_quad.get();
+	draw_call._draw_mode = st_primitive_topology_triangles;
 
 	context->draw(draw_call);
 
-	context->end_render_pass();
+	context->end_render_pass(_pass.get());
 }

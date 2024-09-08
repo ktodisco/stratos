@@ -8,6 +8,9 @@
 
 #include <graphics/pass/st_fullscreen_render_pass.h>
 
+#include <math/st_mat4f.h>
+#include <math/st_vec4f.h>
+
 #include <memory>
 
 class st_deferred_light_render_pass : public st_fullscreen_render_pass

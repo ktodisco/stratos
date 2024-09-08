@@ -126,5 +126,5 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 		context->draw(d);
 	}
 
-	context->end_render_pass();
+	context->end_render_pass(_pass.get());
 }

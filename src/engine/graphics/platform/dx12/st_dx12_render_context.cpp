@@ -506,13 +506,15 @@ void st_dx12_render_context::clear(unsigned int clear_flags)
 
 void st_dx12_render_context::draw(const st_static_drawcall& drawcall)
 {
-	const st_dx12_buffer_view* vertex_view = static_cast<const st_dx12_buffer_view*>(drawcall._vertex_buffer_view);
-	const st_dx12_buffer_view* index_view = static_cast<const st_dx12_buffer_view*>(drawcall._index_buffer_view);
+	st_dx12_geometry* geometry = static_cast<st_dx12_geometry*>(drawcall._geometry);
+
+	const st_dx12_buffer_view* vertex_view = static_cast<const st_dx12_buffer_view*>(geometry->_vertex_buffer_view.get());
+	const st_dx12_buffer_view* index_view = static_cast<const st_dx12_buffer_view*>(geometry->_index_buffer_view.get());
 
 	_command_list->IASetPrimitiveTopology(convert_topology(drawcall._draw_mode));
 	_command_list->IASetVertexBuffers(0, 1, &vertex_view->vertex);
 	_command_list->IASetIndexBuffer(&index_view->index);
-	_command_list->DrawIndexedInstanced(drawcall._index_count, 1, 0, 0, 0);
+	_command_list->DrawIndexedInstanced(geometry->_index_count, 1, 0, 0, 0);
 }
 
 void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
@@ -574,16 +576,13 @@ void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
 	_dynamic_index_buffer->Unmap(0, nullptr);
 	_dynamic_index_bytes_written += sizeof(uint16_t) * drawcall._indices.size();
 
-	st_static_drawcall static_draw;
-	static_draw._draw_mode = drawcall._draw_mode;
-	static_draw._vertex_buffer_view = &dynamic_vertex_buffer_view;
-	static_draw._index_buffer_view = &dynamic_index_buffer_view;
-	static_draw._index_count = drawcall._indices.size();
-
-	draw(static_draw);
+	_command_list->IASetPrimitiveTopology(convert_topology(drawcall._draw_mode));
+	_command_list->IASetVertexBuffers(0, 1, &dynamic_vertex_buffer_view.vertex);
+	_command_list->IASetIndexBuffer(&dynamic_index_buffer_view.index);
+	_command_list->DrawIndexedInstanced(drawcall._indices.size(), 1, 0, 0, 0);
 }
 
-st_render_texture* st_dx12_render_context::get_present_target()
+st_render_texture* st_dx12_render_context::get_present_target() const
 {
 	return _present_target.get();
 }
@@ -1328,6 +1327,54 @@ std::unique_ptr<st_vertex_format> st_dx12_render_context::create_vertex_format(
 	return std::move(vertex_format);
 }
 
+std::unique_ptr<st_geometry> st_dx12_render_context::create_geometry(
+	const st_vertex_format* format,
+	void* vertex_data,
+	uint32_t vertex_size,
+	uint32_t vertex_count,
+	uint16_t* index_data,
+	uint32_t index_count)
+{
+	std::unique_ptr<st_dx12_geometry> geometry = std::make_unique<st_dx12_geometry>();
+
+	// Create the vertex buffer resource.
+	const uint32_t vertex_buffer_size = vertex_count * vertex_size;
+
+	geometry->_vertex_buffer = create_buffer(
+		vertex_count,
+		vertex_size,
+		e_st_buffer_usage::vertex);
+
+	// Map the buffer to a CPU write address and copy the data.
+	uint8_t* buffer_begin;
+	st_range range = { 0, 0 };
+	map(geometry->_vertex_buffer.get(), 0, range, reinterpret_cast<void**>(&buffer_begin));
+
+	memcpy(buffer_begin, vertex_data, vertex_buffer_size);
+	unmap(geometry->_vertex_buffer.get(), 0, range);
+
+	geometry->_vertex_buffer_view = create_buffer_view(geometry->_vertex_buffer.get());
+
+	// Create the index buffer resource.
+	geometry->_index_count = index_count;
+	const uint32_t index_buffer_size = index_count * sizeof(uint16_t);
+
+	geometry->_index_buffer = create_buffer(
+		index_count,
+		sizeof(uint16_t),
+		e_st_buffer_usage::index);
+
+	// Map the buffer to a CPU write address and copy the data.
+	map(geometry->_index_buffer.get(), 0, range, reinterpret_cast<void**>(&buffer_begin));
+
+	memcpy(buffer_begin, index_data, index_buffer_size);
+	unmap(geometry->_index_buffer.get(), 0, range);
+
+	geometry->_index_buffer_view = create_buffer_view(geometry->_index_buffer.get());
+
+	return std::move(geometry);
+}
+
 std::unique_ptr<st_render_pass> st_dx12_render_context::create_render_pass(
 	uint32_t count,
 	st_render_texture** targets,
@@ -1369,7 +1416,7 @@ void st_dx12_render_context::begin_render_pass(
 	pass->_framebuffer->bind(this);
 }
 
-void st_dx12_render_context::end_render_pass()
+void st_dx12_render_context::end_render_pass(st_render_pass* pass)
 {
 }
 

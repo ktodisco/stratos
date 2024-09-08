@@ -42,6 +42,7 @@ public:
 	void set_scissor(int left, int top, int right, int bottom) override;
 	void set_clear_color(float r, float g, float b, float a) override;
 
+	// TODO: These actually need to be private and maybe specific to dx12.
 	void set_shader_resource_table(uint32_t offset) override;
 	void set_sampler_table(uint32_t offset) override;
 	void set_constant_buffer_table(uint32_t offset) override;
@@ -57,7 +58,7 @@ public:
 	void draw(const struct st_dynamic_drawcall& drawcall) override;
 
 	// Backbuffer.
-	st_render_texture* get_present_target() override;
+	st_render_texture* get_present_target() const override;
 	// TODO: These are temporary and a generic solution is needed.
 	void transition_backbuffer_to_target() override;
 	void transition_backbuffer_to_present() override;
@@ -123,6 +124,13 @@ public:
 	std::unique_ptr<st_vertex_format> create_vertex_format(
 		const st_vertex_attribute* attributes,
 		uint32_t attribute_count) override;
+	std::unique_ptr<st_geometry> create_geometry(
+		const st_vertex_format* format,
+		void* vertex_data,
+		uint32_t vertex_size,
+		uint32_t vertex_count,
+		uint16_t* index_data,
+		uint32_t index_count) override;
 
 	// Render passes.
 	std::unique_ptr<st_render_pass> create_render_pass(
@@ -133,7 +141,7 @@ public:
 		st_render_pass* pass,
 		st_vec4f* clear_values,
 		const uint8_t clear_count) override;
-	void end_render_pass() override;
+	void end_render_pass(st_render_pass* pass) override;
 
 	ID3D12Device* get_device() const { return _device.Get(); }
 	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }

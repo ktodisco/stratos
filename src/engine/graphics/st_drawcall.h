@@ -33,13 +33,11 @@ struct st_drawcall
 ** The vertex array object referenced by this draw call should live for at
 ** least several frames, and probably longer.
 */
-
 struct st_static_drawcall : st_drawcall
 {
-	st_buffer_view* _vertex_buffer_view = nullptr;
-	st_buffer_view* _index_buffer_view = nullptr;
-	int32_t _index_count = 0;
+	st_geometry* _geometry;
 };
+
 /*
 ** Draw call with dynamic geometry.
 ** Geometry referenced by this draw call should only a single frame.

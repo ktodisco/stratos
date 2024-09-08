@@ -25,6 +25,9 @@ public:
 	void set(float val);
 	void set(const struct st_vec2f& vec);
 	void set(const struct st_vec3f& vec);
+	// MSVC linker has trouble comprehending the validity of the const definition,
+	// so work around it with a non-const definition.
+	void set(struct st_vec3f& vec);
 	void set(const struct st_vec4f& vec);
 	void set(const struct st_mat4f& mat);
 	void set(const struct st_mat4f* mats, uint32_t count);
@@ -97,7 +100,7 @@ private:
 ** Vertex shader and fragment shader linked together.
 ** @see st_shader
 */
-class st_gl_shader
+class st_gl_shader : public st_shader
 {
 public:
 	st_gl_shader(const char* source, uint8_t type);
@@ -115,8 +118,7 @@ public:
 	st_gl_shader_storage_block get_shader_storage_block(const char* name) const;
 
 	void use() const;
-
-private:
+	
 	uint32_t _handle;
 	st_gl_shader_component* _vs;
 	st_gl_shader_component* _fs;

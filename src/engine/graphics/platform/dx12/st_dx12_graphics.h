@@ -44,6 +44,17 @@ struct st_dx12_buffer_view : public st_buffer_view
 	};
 };
 
+struct st_dx12_geometry : public st_geometry
+{
+	std::unique_ptr<st_buffer> _vertex_buffer;
+	std::unique_ptr<st_buffer> _index_buffer;
+
+	std::unique_ptr<st_buffer_view> _vertex_buffer_view;
+	std::unique_ptr<st_buffer_view> _index_buffer_view;
+
+	uint32_t _index_count = 0;
+};
+
 struct st_dx12_pipeline : public st_pipeline
 {
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipeline;

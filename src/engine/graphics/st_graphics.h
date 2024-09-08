@@ -13,7 +13,7 @@
 #include <memory>
 #include <string>
 
-//#define ST_GRAPHICS_API_OPENGL
+#define ST_GRAPHICS_API_OPENGL
 #define ST_GRAPHICS_API_DX12
 //#define ST_GRAPHICS_API_VULKAN
 
@@ -341,6 +341,7 @@ struct st_viewport
 
 struct st_buffer {};
 struct st_buffer_view {};
+struct st_geometry {};
 struct st_pipeline {};
 struct st_render_pass {};
 struct st_resource_table {};
@@ -384,7 +385,7 @@ public:
 	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
 
 	// Backbuffer.
-	virtual class st_render_texture* get_present_target() = 0;
+	virtual class st_render_texture* get_present_target() const = 0;
 	// TODO: These are temporary and a generic solution is needed.
 	virtual void transition_backbuffer_to_target() = 0;
 	virtual void transition_backbuffer_to_present() = 0;
@@ -449,6 +450,13 @@ public:
 	virtual std::unique_ptr<st_vertex_format> create_vertex_format(
 		const struct st_vertex_attribute* attributes,
 		uint32_t attribute_count) = 0;
+	virtual std::unique_ptr<st_geometry> create_geometry(
+		const st_vertex_format* format,
+		void* vertex_data,
+		uint32_t vertex_size,
+		uint32_t vertex_count,
+		uint16_t* index_data,
+		uint32_t index_count) = 0;
 
 	// Render passes.
 	virtual std::unique_ptr<st_render_pass> create_render_pass(
@@ -459,7 +467,7 @@ public:
 		st_render_pass* pass,
 		st_vec4f* clear_values,
 		const uint8_t clear_count) = 0;
-	virtual void end_render_pass() = 0;
+	virtual void end_render_pass(st_render_pass* pass) = 0;
 
 	static std::unique_ptr<st_render_context> create(e_st_graphics_api api, const class st_window* window);
 	static st_render_context* get();
@@ -472,12 +480,12 @@ size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_t
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 #include <graphics/platform/opengl/st_gl_graphics.h>
-#elif defined(ST_GRAPHICS_API_DX12)
+#endif
+#if defined(ST_GRAPHICS_API_DX12)
 #include <graphics/platform/dx12/st_dx12_graphics.h>
-#elif defined(ST_GRAPHICS_API_VULKAN)
+#endif
+#if defined(ST_GRAPHICS_API_VULKAN)
 #include <graphics/platform/vulkan/st_vk_graphics.h>
-#else
-#error Graphics API not defined.
 #endif
 
 #include <algorithm>

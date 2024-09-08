@@ -6,8 +6,9 @@
 
 #include <graphics/pass/st_fullscreen_render_pass.h>
 
-#include <graphics/geometry/st_geometry.h>
+#include <graphics/st_graphics.h>
 #include <graphics/geometry/st_vertex_attribute.h>
+#include <graphics/material/st_material.h>
 
 #include <cstdint>
 
@@ -19,7 +20,8 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 
 	const float verts[] =
 	{
-#if defined(ST_GRAPHICS_API_VULKAN)
+		// TODO: Vulkan dynamic switch.
+#if 0 // defined(ST_GRAPHICS_API_VULKAN)
 		-1.0f, 1.0f, 0.0f,
 		3.0f, 1.0f, 0.0f,
 		-1.0f, -3.0f, 0.0f,
@@ -35,7 +37,7 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 		0, 1, 2
 	};
 
-	_fullscreen_quad = std::make_unique<st_geometry>(
+	_fullscreen_quad = st_render_context::get()->create_geometry(
 		_vertex_format.get(),
 		(void*)verts,
 		static_cast<uint32_t>(sizeof(float) * 3),
