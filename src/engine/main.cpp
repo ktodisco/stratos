@@ -58,9 +58,29 @@ st_font* g_font = nullptr;
 
 static void set_root_path(const char* exepath);
 
+e_st_graphics_api get_api(int argc, const char** argv)
+{
+	for (int i = 0; i < argc; ++i)
+	{
+		if (strcmp(argv[i], "-api") == 0 && i < (argc + 1))
+		{
+			i++;
+			if (strcmp(argv[i], "dx12") == 0)
+				return e_st_graphics_api::dx12;
+			else if (strcmp(argv[i], "opengl") == 0)
+				return e_st_graphics_api::opengl;
+			else if (strcmp(argv[i], "vulkan") == 0)
+				return e_st_graphics_api::vulkan;
+		}
+	}
+
+	return e_st_graphics_api::dx12;
+}
+
 int main(int argc, const char** argv)
 {
 	set_root_path(argv[0]);
+	e_st_graphics_api api = get_api(argc, argv);
 
 	st_job::startup(0xffff, 256, 256);
 
@@ -70,7 +90,7 @@ int main(int argc, const char** argv)
 	std::unique_ptr<st_window> window = std::make_unique<st_window>("Stratos Renderer", 1280, 720, input.get());
 
 	// Create the rendering context for the window.
-	std::unique_ptr<st_render_context> render = st_render_context::create(e_st_graphics_api::dx12, window.get());
+	std::unique_ptr<st_render_context> render = st_render_context::create(api, window.get());
 
 	// Create the shader manager, loading all the shaders.
 	std::unique_ptr<st_shader_manager> shader_manager =
