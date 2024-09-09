@@ -436,6 +436,11 @@ void st_gl_render_context::update_buffer(st_buffer* buffer_, void* data, const u
 		map(buffer_, 0, { 0, buffer->_element_size * buffer->_count }, (void**)&head);
 		memcpy(head, data, count * buffer->_element_size);
 		unmap(buffer_, 0, { 0, 0 });
+
+		const st_gl_shader* shader = get_bound_shader();
+
+		st_gl_shader_storage_block ssb = shader->get_shader_storage_block(buffer->_name.c_str());
+		ssb.set(buffer->_buffer, data, count * buffer->_element_size);
 	}
 	else if (buffer->_usage & e_st_buffer_usage::uniform)
 	{
@@ -639,7 +644,8 @@ std::unique_ptr<st_vertex_format> st_gl_render_context::create_vertex_format(
 	format->_vertex_size = (uint32_t)vertex_size;
 
 	format->_attributes.reserve(attribute_count);
-	memcpy(format->_attributes.data(), attributes, sizeof(st_vertex_attribute) * attribute_count);
+	for (uint32_t itr = 0; itr < attribute_count; ++itr)
+		format->_attributes.push_back(attributes[itr]);
 	return std::move(format);
 }
 
