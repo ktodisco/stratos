@@ -126,6 +126,9 @@ public:
 		const uint8_t clear_count) override;
 	void end_render_pass(st_render_pass* pass) override;
 
+	// Informational.
+	e_st_graphics_api get_api() { return e_st_graphics_api::opengl; }
+
 private:
 	void set_depth_state(bool enable, GLenum func);
 	void set_cull_state(bool enable, GLenum mode);

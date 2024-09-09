@@ -469,6 +469,9 @@ public:
 		const uint8_t clear_count) = 0;
 	virtual void end_render_pass(st_render_pass* pass) = 0;
 
+	// Informational.
+	virtual e_st_graphics_api get_api() = 0;
+
 	static std::unique_ptr<st_render_context> create(e_st_graphics_api api, const class st_window* window);
 	static st_render_context* get();
 

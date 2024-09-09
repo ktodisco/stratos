@@ -143,6 +143,9 @@ public:
 		const uint8_t clear_count) override;
 	void end_render_pass(st_render_pass* pass) override;
 
+	// Informational.
+	e_st_graphics_api get_api() { return e_st_graphics_api::dx12; }
+
 	ID3D12Device* get_device() const { return _device.Get(); }
 	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }
 	ID3D12GraphicsCommandList* get_command_list() const { return _command_list.Get(); }

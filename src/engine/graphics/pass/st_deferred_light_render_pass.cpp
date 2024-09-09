@@ -92,11 +92,10 @@ void st_deferred_light_render_pass::render(
 	constant_data._inverse_vp = (params->_view * params->_projection).inverse();
 	constant_data._inverse_vp.transpose();
 	constant_data._eye = st_vec4f(params->_eye, 0.0f);
-#if defined(ST_GRAPHICS_API_OPENGL)
-	constant_data._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.0f, 0.0f);
-#else
-	constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);
-#endif
+	if (st_render_context::get()->get_api() == e_st_graphics_api::opengl)
+		constant_data._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.0f, 0.0f);
+	else
+		constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);
 
 	context->update_buffer(_constant_buffer.get(), &constant_data, 1);
 
