@@ -10,6 +10,7 @@
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_material.h>
+#include <graphics/st_render_context.h>
 
 #include <entity/st_entity.h>
 

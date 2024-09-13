@@ -18,7 +18,7 @@ class st_render_texture
 public:
 
 	st_render_texture(
-		st_render_context* context,
+		class st_render_context* context,
 		uint32_t width,
 		uint32_t height,
 		e_st_format format,
@@ -40,6 +40,6 @@ private:
 	uint32_t _height;
 	e_st_format _format;
 
-	std::unique_ptr<st_texture> _texture;
-	std::unique_ptr<st_texture_view> _view;
+	std::unique_ptr<struct st_texture> _texture;
+	std::unique_ptr<struct st_texture_view> _view;
 };

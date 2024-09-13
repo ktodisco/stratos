@@ -6,7 +6,7 @@
 
 #include <graphics/st_shader_manager.h>
 
-#include <graphics/st_graphics.h>
+#include <graphics/st_render_context.h>
 
 st_shader_manager* st_shader_manager::_this = nullptr;
 

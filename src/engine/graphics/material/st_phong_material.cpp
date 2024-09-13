@@ -7,6 +7,7 @@
 #include <graphics/material/st_phong_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_render_context.h>
 #include <graphics/st_shader_manager.h>
 
 st_phong_material::st_phong_material()

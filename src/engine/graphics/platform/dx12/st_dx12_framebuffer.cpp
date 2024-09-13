@@ -8,6 +8,7 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
+#include <graphics/st_render_context.h>
 #include <graphics/st_render_texture.h>
 
 st_dx12_framebuffer::st_dx12_framebuffer(

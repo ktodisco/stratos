@@ -8,14 +8,22 @@
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
-#include <graphics/platform/vulkan/st_vk_pipeline_state.h>
-#include <graphics/platform/vulkan/st_vk_texture.h>
+#include <graphics/platform/vulkan/st_vk_conversion.h>
+#include <graphics/platform/vulkan/st_vk_framebuffer.h>
+
+#include <graphics/geometry/st_vertex_attribute.h>
+
 #include <graphics/st_drawcall.h>
+#include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_shader_manager.h>
 
 #include <system/st_window.h>
 
 #include <iostream>
+#include <fstream>
 #include <vector>
+
+extern char g_root_path[256];
 
 extern vk::DispatchLoaderDynamic vk::defaultDispatchLoaderDynamic;
 st_vk_render_context* st_vk_render_context::_this = nullptr;
@@ -28,7 +36,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 	vk::defaultDispatchLoaderDynamic.init(fp);
 
 	uint32_t api_version;
-	vk::enumerateInstanceVersion(&api_version);
+	VK_VALIDATE(vk::enumerateInstanceVersion(&api_version));
 
 	std::vector<const char*> layer_names;
 	std::vector<const char*> extension_names;
@@ -54,6 +62,8 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 			layer_names.push_back(layer.layerName);
 		}
 
+#if 0
+		// TODO: This crashes the application when launching through Renderdoc.
 		if (strstr(layer.layerName, "RENDERDOC") != nullptr)
 		{
 			HMODULE rdoc = GetModuleHandle("renderdoc.dll");
@@ -62,6 +72,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 				layer_names.push_back(layer.layerName);
 			}
 		}
+#endif
 
 	}
 
@@ -412,12 +423,14 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 
 	// Create the faux backbuffer target.
 	_present_target = std::make_unique<st_render_texture>(
+		this,
 		window->get_width(),
 		window->get_height(),
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
 		st_texture_state_copy_source,
-		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f });
+		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
+		"Backbuffer");
 
 	// Transition the backbuffer images from the undefined state.
 	for (uint32_t i = 0; i < backbuffer_count; ++i)
@@ -453,8 +466,8 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 
 st_vk_render_context::~st_vk_render_context()
 {
-	_queue.waitIdle();
-	_device.waitIdle();
+	VK_VALIDATE(_queue.waitIdle());
+	VK_VALIDATE(_device.waitIdle());
 
 	_present_target = nullptr;
 
@@ -488,71 +501,66 @@ st_vk_render_context::~st_vk_render_context()
 	FreeLibrary((HMODULE)_vk_library);
 }
 
-void st_vk_render_context::set_pipeline_state(const st_vk_pipeline_state* state)
+void st_vk_render_context::set_pipeline(const st_pipeline* pipeline_)
 {
-	_command_buffers[st_command_buffer_graphics].bindPipeline(vk::PipelineBindPoint::eGraphics, state->get());
+	const st_vk_pipeline* pipeline = static_cast<const st_vk_pipeline*>(pipeline_);
+	_command_buffers[st_command_buffer_graphics].bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->_pipeline);
 }
 
-void st_vk_render_context::set_shader_resource_table(const vk::DescriptorSet& set)
+void st_vk_render_context::set_viewport(const st_viewport& viewport)
 {
-	_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
-		vk::PipelineBindPoint::eGraphics,
-		_pipeline_layout,
-		st_descriptor_slot_textures,
-		1,
-		&set,
-		0,
-		nullptr);
+	vk::Viewport view = vk::Viewport()
+		.setWidth(viewport._width)
+		.setHeight(viewport._height)
+		.setX(viewport._x)
+		.setY(viewport._y)
+		.setMinDepth(viewport._min_depth)
+		.setMaxDepth(viewport._max_depth);
+	_command_buffers[st_command_buffer_graphics].setViewport(0, 1, &view);
+
 }
 
-void st_vk_render_context::set_sampler_table(const vk::DescriptorSet& set)
+void st_vk_render_context::set_scissor(int left, int top, int right, int bottom)
 {
-	_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
-		vk::PipelineBindPoint::eGraphics,
-		_pipeline_layout,
-		st_descriptor_slot_samplers,
-		1,
-		&set,
-		0,
-		nullptr);
-}
-
-void st_vk_render_context::set_constant_buffer_table(const vk::DescriptorSet& set)
-{
-	_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
-		vk::PipelineBindPoint::eGraphics,
-		_pipeline_layout,
-		st_descriptor_slot_constants,
-		1,
-		&set,
-		0,
-		nullptr);
-}
-
-void st_vk_render_context::set_buffer_table(const vk::DescriptorSet& set)
-{
-	_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
-		vk::PipelineBindPoint::eGraphics,
-		_pipeline_layout,
-		st_descriptor_slot_buffers,
-		1,
-		&set,
-		0,
-		nullptr);
+	vk::Rect2D scissor = vk::Rect2D()
+		.setOffset({ left, top })
+		.setExtent({ uint32_t(right - left), uint32_t(bottom - top) });
+	_command_buffers[st_command_buffer_graphics].setScissor(0, 1, &scissor);
 }
 
 void st_vk_render_context::draw(const st_static_drawcall& drawcall)
 {
+	st_vk_geometry* geometry = static_cast<st_vk_geometry*>(drawcall._geometry);
+	st_vk_buffer* vertex_buffer = static_cast<st_vk_buffer*>(geometry->_vertex_buffer.get());
+	st_vk_buffer* index_buffer = static_cast<st_vk_buffer*>(geometry->_index_buffer.get());
+
 	vk::DeviceSize offset = vk::DeviceSize(0);
-	_command_buffers[st_command_buffer_graphics].bindVertexBuffers(0, 1, drawcall._vertex_buffer, &offset);
-	_command_buffers[st_command_buffer_graphics].bindIndexBuffer(*drawcall._index_buffer, 0, vk::IndexType::eUint16);
+	_command_buffers[st_command_buffer_graphics].bindVertexBuffers(0, 1, &vertex_buffer->_buffer, &offset);
+	_command_buffers[st_command_buffer_graphics].bindIndexBuffer(index_buffer->_buffer, 0, vk::IndexType::eUint16);
 
 	_command_buffers[st_command_buffer_graphics].drawIndexed(
-		drawcall._index_count,
+		geometry->_index_count,
 		1,
 		0,
 		0,
 		0);
+}
+
+st_render_texture* st_vk_render_context::get_present_target() const
+{
+	return _present_target.get();
+}
+
+void st_vk_render_context::transition_backbuffer_to_target()
+{
+	// Transition the present target to the optimal layout for rendering.
+	transition(_present_target->get_texture(), st_texture_state_render_target);
+}
+
+void st_vk_render_context::transition_backbuffer_to_present()
+{
+	// Transition the present target to the optimal layout for copy.
+	transition(_present_target->get_texture(), st_texture_state_copy_source);
 }
 
 void st_vk_render_context::begin_frame()
@@ -582,65 +590,6 @@ void st_vk_render_context::end_frame()
 	}
 }
 
-void st_vk_render_context::transition_backbuffer_to_target()
-{
-	// Transition the present target to the optimal layout for rendering.
-	_present_target->transition(this, st_texture_state_render_target);
-}
-
-void st_vk_render_context::transition_backbuffer_to_present()
-{
-	// Transition the present target to the optimal layout for copy.
-	_present_target->transition(this, st_texture_state_copy_source);
-}
-
-void st_vk_render_context::transition(
-	st_vk_texture* texture,
-	e_st_texture_state old_state,
-	e_st_texture_state new_state)
-{
-	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
-
-	if (texture->get_format() == st_format_d16_unorm ||
-		texture->get_format() == st_format_d32_float)
-	{
-		aspect = vk::ImageAspectFlagBits::eDepth;
-	}
-	else if (texture->get_format() == st_format_d24_unorm_s8_uint)
-	{
-		aspect = vk::ImageAspectFlagBits::eDepth |
-			vk::ImageAspectFlagBits::eStencil;
-	}
-
-	// Transition the present target to the optimal layout for copy.
-	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-		.setAspectMask(aspect)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1)
-		.setBaseMipLevel(0)
-		.setLevelCount(texture->get_levels());
-
-	vk::ImageMemoryBarrier barriers[] =
-	{
-		vk::ImageMemoryBarrier()
-		.setImage(texture->get_resource())
-		.setOldLayout(vk::ImageLayout(old_state))
-		.setNewLayout(vk::ImageLayout(new_state))
-		.setSubresourceRange(range),
-	};
-
-	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::DependencyFlags(),
-		0,
-		nullptr,
-		0,
-		nullptr,
-		1,
-		barriers);
-}
-
 void st_vk_render_context::swap()
 {
 	// Copy the present target to the backbuffer.
@@ -654,7 +603,7 @@ void st_vk_render_context::swap()
 
 	VK_VALIDATE(_device.waitForFences(1, &_acquire_fence, true, std::numeric_limits<uint64_t>::max()));
 	VK_VALIDATE(_device.resetFences(1, &_acquire_fence));
-	
+
 	// Transition the backbuffer images to the optimal layout for the copy.
 	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
 		.setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -663,13 +612,13 @@ void st_vk_render_context::swap()
 		.setBaseMipLevel(0)
 		.setLevelCount(1);
 
-	vk::ImageMemoryBarrier barriers[] = 
+	vk::ImageMemoryBarrier barriers[] =
 	{
 		vk::ImageMemoryBarrier()
-			.setImage(_backbuffers[backbuffer_index])
-			.setOldLayout(vk::ImageLayout::ePresentSrcKHR)
-			.setNewLayout(vk::ImageLayout::eTransferDstOptimal)
-			.setSubresourceRange(range),
+		.setImage(_backbuffers[backbuffer_index])
+		.setOldLayout(vk::ImageLayout::ePresentSrcKHR)
+		.setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+		.setSubresourceRange(range),
 	};
 
 	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
@@ -694,8 +643,10 @@ void st_vk_render_context::swap()
 		.setSrcSubresource(subresource)
 		.setDstSubresource(subresource);
 
+	st_vk_texture* target = static_cast<st_vk_texture*>(_present_target->get_texture());
+
 	_command_buffers[st_command_buffer_graphics].copyImage(
-		_present_target->get_resource(),
+		target->_handle,
 		vk::ImageLayout::eTransferSrcOptimal,
 		_backbuffers[backbuffer_index],
 		vk::ImageLayout::eTransferDstOptimal,
@@ -718,8 +669,8 @@ void st_vk_render_context::swap()
 		1,
 		barriers);
 
-	_command_buffers[st_command_buffer_loading].end();
-	_command_buffers[st_command_buffer_graphics].end();
+	VK_VALIDATE(_command_buffers[st_command_buffer_loading].end());
+	VK_VALIDATE(_command_buffers[st_command_buffer_graphics].end());
 
 	vk::SubmitInfo submit_info = vk::SubmitInfo()
 		.setCommandBufferCount(2)
@@ -759,17 +710,23 @@ void st_vk_render_context::end_marker()
 	}
 }
 
-void st_vk_render_context::create_texture(
+std::unique_ptr<st_texture> st_vk_render_context::create_texture(
 	uint32_t width,
 	uint32_t height,
 	uint32_t mip_count,
 	e_st_format format,
 	e_st_texture_usage_flags usage,
 	e_st_texture_state initial_state,
-	void* data,
-	vk::Image& resource,
-	vk::DeviceMemory& memory)
+	const st_vec4f& clear,
+	void* data)
 {
+	std::unique_ptr<st_vk_texture> texture = std::make_unique<st_vk_texture>();
+	texture->_width = width;
+	texture->_height = height;
+	texture->_levels = mip_count;
+	texture->_format = format;
+	texture->_usage = usage;
+
 	vk::ImageUsageFlags flags;
 
 	if (usage & e_st_texture_usage::copy_source) flags |= vk::ImageUsageFlagBits::eTransferSrc;
@@ -788,28 +745,28 @@ void st_vk_render_context::create_texture(
 	vk::ImageCreateInfo create_info = vk::ImageCreateInfo()
 		.setArrayLayers(1)
 		.setImageType(vk::ImageType::e2D)
-		.setFormat((vk::Format)format)
+		.setFormat(convert_format(format))
 		.setExtent(vk::Extent3D(width, height, 1))
 		.setMipLevels(mip_count)
 		.setUsage(flags)
 		.setInitialLayout(vk::ImageLayout::eUndefined)
 		.setTiling(vk::ImageTiling::eOptimal);
 
-	VK_VALIDATE(_device.createImage(&create_info, nullptr, &resource));
+	VK_VALIDATE(_device.createImage(&create_info, nullptr, &texture->_handle));
 
 	// Allocate memory for the image.
 	vk::MemoryRequirements memory_reqs;
-	_device.getImageMemoryRequirements(resource, &memory_reqs);
+	_device.getImageMemoryRequirements(texture->_handle, &memory_reqs);
 
 	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
 		.setAllocationSize(memory_reqs.size)
 		.setMemoryTypeIndex(_device_memory_index);
 
-	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &memory));
-	VK_VALIDATE(_device.bindImageMemory(resource, memory, 0));
+	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &texture->_memory));
+	VK_VALIDATE(_device.bindImageMemory(texture->_handle, texture->_memory, 0));
 
 	// Transition the image to its intended state.
-	vk::ImageLayout dst_layout = (data != nullptr) ? vk::ImageLayout::eTransferDstOptimal : vk::ImageLayout(initial_state);
+	vk::ImageLayout dst_layout = (data != nullptr) ? vk::ImageLayout::eTransferDstOptimal : convert_resource_state(initial_state);
 	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
 	if (format == st_format_d16_unorm ||
@@ -832,7 +789,7 @@ void st_vk_render_context::create_texture(
 	vk::ImageMemoryBarrier barriers[] =
 	{
 		vk::ImageMemoryBarrier()
-		.setImage(resource)
+		.setImage(texture->_handle)
 		.setOldLayout(vk::ImageLayout::eUndefined)
 		.setNewLayout(dst_layout)
 		.setSubresourceRange(range),
@@ -904,7 +861,7 @@ void st_vk_render_context::create_texture(
 
 		_command_buffers[st_command_buffer_loading].copyBufferToImage(
 			_upload_buffer,
-			resource,
+			texture->_handle,
 			vk::ImageLayout::eTransferDstOptimal,
 			regions.size(),
 			regions.data());
@@ -917,9 +874,9 @@ void st_vk_render_context::create_texture(
 			.setLevelCount(mip_count);
 
 		vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
-			.setImage(resource)
+			.setImage(texture->_handle)
 			.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-			.setNewLayout(vk::ImageLayout(initial_state))
+			.setNewLayout(convert_resource_state(initial_state))
 			.setSubresourceRange(range);
 		_command_buffers[st_command_buffer_loading].pipelineBarrier(
 			vk::PipelineStageFlagBits::eTransfer,
@@ -932,62 +889,155 @@ void st_vk_render_context::create_texture(
 			1,
 			&barrier);
 	}
+
+	// For depth/stencil targets, it's only legal to create a view for
+	// one of the depth or stencil components at a time.
+	if (format == st_format_d24_unorm_s8_uint)
+		range.setAspectMask(vk::ImageAspectFlagBits::eDepth);
+
+	vk::ImageViewCreateInfo view_create_info = vk::ImageViewCreateInfo()
+		.setFormat(convert_format(texture->_format))
+		.setImage(texture->_handle)
+		.setViewType(vk::ImageViewType::e2D)
+		.setSubresourceRange(range);
+
+	VK_VALIDATE(_device.createImageView(&view_create_info, nullptr, &texture->_view));
+
+	return std::move(texture);
 }
 
-void st_vk_render_context::destroy_texture(vk::Image& resource, vk::DeviceMemory& memory)
+void st_vk_render_context::set_texture_name(st_texture* texture_, std::string name)
 {
-	_device.freeMemory(memory, nullptr);
-	_device.destroyImage(resource, nullptr);
+	st_vk_texture* texture = static_cast<st_vk_texture*>(texture_);
+
+	vk::DebugUtilsObjectNameInfoEXT name_info = vk::DebugUtilsObjectNameInfoEXT()
+		.setObjectType(vk::ObjectType::eImage)
+		.setObjectHandle(VK_GET_HANDLE(texture->_handle, VkImage))
+		.setPObjectName(name.c_str());
+
+	_device.setDebugUtilsObjectNameEXT(&name_info);
 }
 
-void st_vk_render_context::create_texture_view(st_vk_texture* texture, vk::ImageView& resource)
+void st_vk_render_context::transition(
+	st_texture* texture_,
+	e_st_texture_state new_state)
 {
+	st_vk_texture* texture = static_cast<st_vk_texture*>(texture_);
+	e_st_texture_state old_state = texture->_state;
+
+	if (old_state == new_state)
+		return;
+
 	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
-	if (texture->get_format() == st_format_d16_unorm ||
-		texture->get_format() == st_format_d32_float)
+	if (texture->_format == st_format_d16_unorm ||
+		texture->_format == st_format_d32_float)
 	{
 		aspect = vk::ImageAspectFlagBits::eDepth;
 	}
-	else if (texture->get_format() == st_format_d24_unorm_s8_uint)
+	else if (texture->_format == st_format_d24_unorm_s8_uint)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth |
+			vk::ImageAspectFlagBits::eStencil;
+	}
+
+	// Transition the present target to the optimal layout for copy.
+	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
+		.setAspectMask(aspect)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setBaseMipLevel(0)
+		.setLevelCount(texture->_levels);
+
+	vk::ImageMemoryBarrier barriers[] =
+	{
+		vk::ImageMemoryBarrier()
+		.setImage(texture->_handle)
+		.setOldLayout(convert_resource_state(old_state))
+		.setNewLayout(convert_resource_state(new_state))
+		.setSubresourceRange(range),
+	};
+
+	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		barriers);
+}
+
+std::unique_ptr<st_texture_view> st_vk_render_context::create_texture_view(st_texture* texture_)
+{
+	st_vk_texture* texture = static_cast<st_vk_texture*>(texture_);
+
+	std::unique_ptr<st_vk_texture_view> view = std::make_unique<st_vk_texture_view>();
+
+	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+
+	if (texture->_format == st_format_d16_unorm ||
+		texture->_format == st_format_d32_float)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth;
+	}
+	else if (texture->_format == st_format_d24_unorm_s8_uint)
 	{
 		// TODO: Can only create one image view per aspect, per Vulkan spec.
 		aspect = vk::ImageAspectFlagBits::eDepth;
-			//| vk::ImageAspectFlagBits::eStencil;
+		//| vk::ImageAspectFlagBits::eStencil;
 	}
 
 	vk::ImageSubresourceRange subresource_range = vk::ImageSubresourceRange()
 		.setAspectMask(aspect)
 		.setBaseMipLevel(0)
-		.setLevelCount(texture->get_levels())
+		.setLevelCount(texture->_levels)
 		.setBaseArrayLayer(0)
 		.setLayerCount(1);
 
 	vk::ImageViewCreateInfo create_info = vk::ImageViewCreateInfo()
-		.setFormat(vk::Format(texture->get_format()))
-		.setImage(texture->get_resource())
+		.setFormat(convert_format(texture->_format))
+		.setImage(texture->_handle)
 		.setViewType(vk::ImageViewType::e2D)
 		.setSubresourceRange(subresource_range);
 
-	_device.createImageView(&create_info, nullptr, &resource);
+	VK_VALIDATE(_device.createImageView(&create_info, nullptr, &view->_view));
+
+	return std::move(view);
 }
 
-void st_vk_render_context::destroy_texture_view(vk::ImageView& resource)
-{
-	_device.destroyImageView(resource, nullptr);
-}
+//void st_vk_render_context::destroy_texture(vk::Image& resource, vk::DeviceMemory& memory)
+//{
+//	_device.freeMemory(memory, nullptr);
+//	_device.destroyImage(resource, nullptr);
+//}
 
-void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource, vk::DeviceMemory& memory)
+//void st_vk_render_context::destroy_texture_view(vk::ImageView& resource)
+//{
+//	_device.destroyImageView(resource, nullptr);
+//}
+
+std::unique_ptr<st_buffer> st_vk_render_context::create_buffer(
+	const uint32_t count,
+	const size_t element_size,
+	const e_st_buffer_usage_flags usage)
 {
+	std::unique_ptr<st_vk_buffer> buffer = std::make_unique<st_vk_buffer>();
+	buffer->_count = count;
+	buffer->_element_size = element_size;
+	buffer->_usage = usage;
+
 	vk::BufferUsageFlags flags;
 
 	if (usage & e_st_buffer_usage::index) flags |= vk::BufferUsageFlagBits::eIndexBuffer;
 	if (usage & e_st_buffer_usage::indirect) flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
-	if (usage & e_st_buffer_usage::storage) flags |= vk::BufferUsageFlagBits::eStorageBuffer;
+	if (usage & e_st_buffer_usage::storage) flags |= vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst;
 	if (usage & e_st_buffer_usage::storage_texel) flags |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
 	if (usage & e_st_buffer_usage::transfer_dest) flags |= vk::BufferUsageFlagBits::eTransferDst;
 	if (usage & e_st_buffer_usage::transfer_source) flags |= vk::BufferUsageFlagBits::eTransferSrc;
-	if (usage & e_st_buffer_usage::uniform) flags |= vk::BufferUsageFlagBits::eUniformBuffer;
+	if (usage & e_st_buffer_usage::uniform) flags |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst;
 	if (usage & e_st_buffer_usage::uniform_texel) flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
 	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
 
@@ -995,47 +1045,663 @@ void st_vk_render_context::create_buffer(size_t size, e_st_buffer_usage_flags us
 		.setUsage(flags)
 		.setQueueFamilyIndexCount(1)
 		.setPQueueFamilyIndices(&_queue_family_index)
-		.setSize(size);
+		.setSize(align_value(count * element_size, 4));
 
-	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &resource));
+	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &buffer->_buffer));
 
 	// Allocate memory for the buffer.
 	vk::MemoryRequirements memory_reqs;
-	_device.getBufferMemoryRequirements(resource, &memory_reqs);
+	_device.getBufferMemoryRequirements(buffer->_buffer, &memory_reqs);
 
 	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
 		.setAllocationSize(memory_reqs.size)
 		.setMemoryTypeIndex(_device_memory_index);
 
-	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &memory));
+	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &buffer->_memory));
 
-	VK_VALIDATE(_device.bindBufferMemory(resource, memory, 0));
+	VK_VALIDATE(_device.bindBufferMemory(buffer->_buffer, buffer->_memory, 0));
+
+	return std::move(buffer);
 }
 
-void st_vk_render_context::update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data)
+std::unique_ptr<st_buffer_view> st_vk_render_context::create_buffer_view(st_buffer* buffer_)
 {
-	_command_buffers[st_command_buffer_loading].updateBuffer(resource, offset, align_value(num_bytes, 4), data);
+	std::unique_ptr<st_vk_buffer_view> view = std::make_unique<st_vk_buffer_view>();
+
+	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
+
+	vk::BufferViewCreateInfo create_info = vk::BufferViewCreateInfo()
+		.setBuffer(buffer->_buffer)
+		.setOffset(0)
+		.setRange(buffer->_element_size * buffer->_count);
+
+	VK_VALIDATE(_device.createBufferView(&create_info, nullptr, &view->_view));
+
+	return std::move(view);
 }
 
-void st_vk_render_context::destroy_buffer(vk::Buffer& resource, vk::DeviceMemory& memory)
+void st_vk_render_context::map(st_buffer* buffer_, uint32_t subresource, const st_range& range, void** outData)
 {
-	_device.freeMemory(memory, nullptr);
-	_device.destroyBuffer(resource, nullptr);
+	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
+
+	VK_VALIDATE(_device.mapMemory(buffer->_memory, range.begin, (range.end - range.begin), vk::MemoryMapFlags(0), outData));
 }
 
-void st_vk_render_context::create_descriptor_set(e_st_descriptor_slot slot, vk::DescriptorSet* set)
+void st_vk_render_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range)
 {
-	vk::DescriptorSetAllocateInfo allocate_info = vk::DescriptorSetAllocateInfo()
-		.setDescriptorPool(_descriptor_pool)
-		.setDescriptorSetCount(1)
-		.setPSetLayouts(&_descriptor_layouts[slot]);
+	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
-	VK_VALIDATE(_device.allocateDescriptorSets(&allocate_info, set));
+	_device.unmapMemory(buffer->_memory);
 }
 
-void st_vk_render_context::destroy_descriptor_set(vk::DescriptorSet& set)
+void st_vk_render_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
 {
-	VK_VALIDATE(_device.freeDescriptorSets(_descriptor_pool, 1, &set));
+	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
+
+	_command_buffers[st_command_buffer_loading].updateBuffer(buffer->_buffer, 0, align_value(count * buffer->_element_size, 4), data);
+}
+
+//void st_vk_render_context::destroy_buffer(vk::Buffer& resource, vk::DeviceMemory& memory)
+//{
+//	_device.freeMemory(memory, nullptr);
+//	_device.destroyBuffer(resource, nullptr);
+//}
+
+std::unique_ptr<st_resource_table> st_vk_render_context::create_resource_table()
+{
+	std::unique_ptr<st_vk_resource_table> table = std::make_unique<st_vk_resource_table>();
+
+	auto create_set = [this](e_st_descriptor_slot slot, vk::DescriptorSet* set)
+	{
+		vk::DescriptorSetAllocateInfo allocate_info = vk::DescriptorSetAllocateInfo()
+			.setDescriptorPool(_descriptor_pool)
+			.setDescriptorSetCount(1)
+			.setPSetLayouts(&_descriptor_layouts[slot]);
+
+		VK_VALIDATE(_device.allocateDescriptorSets(&allocate_info, set));
+	};
+
+	create_set(st_descriptor_slot_textures, &table->_textures);
+	create_set(st_descriptor_slot_buffers, &table->_buffers);
+	create_set(st_descriptor_slot_constants, &table->_constants);
+	create_set(st_descriptor_slot_samplers, &table->_samplers);
+
+	return std::move(table);
+}
+
+//void st_vk_render_context::destroy_descriptor_set(vk::DescriptorSet& set)
+//{
+// 	for (auto& sampler : _sampler_resources)
+//	{
+//		context->destroy_sampler(sampler);
+//	}
+//	_sampler_resources.clear();
+//
+//	context->destroy_descriptor_set(_textures);
+//	context->destroy_descriptor_set(_buffers);
+//	context->destroy_descriptor_set(_constants);
+//	context->destroy_descriptor_set(_samplers);
+//	VK_VALIDATE(_device.freeDescriptorSets(_descriptor_pool, 1, &set));
+//}
+
+void st_vk_render_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
+{
+	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+
+	std::vector<vk::DescriptorBufferInfo> infos;
+	for (int i = 0; i < count; ++i)
+	{
+		st_vk_buffer* cb = static_cast<st_vk_buffer*>(cbs[i]);
+
+		infos.emplace_back() = vk::DescriptorBufferInfo()
+			.setBuffer(cb->_buffer)
+			.setOffset(0)
+			.setRange(vk::DeviceSize(VK_WHOLE_SIZE));
+	}
+
+	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
+		.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+		.setDescriptorCount(count)
+		.setDstSet(table->_constants)
+		.setDstBinding(0)
+		.setPBufferInfo(infos.data());
+
+	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
+}
+
+void st_vk_render_context::set_textures(st_resource_table* table_, uint32_t count, st_texture** textures)
+{
+	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+
+	std::vector<vk::DescriptorImageInfo> images;
+	for (int i = 0; i < count; ++i)
+	{
+		create_sampler(table->_sampler_resources.emplace_back());
+
+		st_vk_texture* texture = static_cast<st_vk_texture*>(textures[i]);
+
+		images.emplace_back() = vk::DescriptorImageInfo()
+			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setImageView(texture->_view)
+			.setSampler(table->_sampler_resources.back());
+	}
+
+	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
+		.setDescriptorType(vk::DescriptorType::eSampledImage)
+		.setDescriptorCount(count)
+		.setDstSet(table->_textures)
+		.setDstBinding(0)
+		.setPImageInfo(images.data());
+
+	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
+
+	write_set = vk::WriteDescriptorSet()
+		.setDescriptorType(vk::DescriptorType::eSampler)
+		.setDescriptorCount(count)
+		.setDstSet(table->_samplers)
+		.setDstBinding(0)
+		.setPImageInfo(images.data());
+
+	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
+}
+
+void st_vk_render_context::set_buffers(st_resource_table* table_, uint32_t count, st_buffer** buffers)
+{
+	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+
+	std::vector<vk::DescriptorBufferInfo> infos;
+	for (int i = 0; i < count; ++i)
+	{
+		st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffers[i]);
+
+		infos.emplace_back() = vk::DescriptorBufferInfo()
+			.setBuffer(buffer->_buffer)
+			.setOffset(0)
+			.setRange(vk::DeviceSize(VK_WHOLE_SIZE));
+	}
+
+	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
+		.setDescriptorType(vk::DescriptorType::eStorageBuffer)
+		.setDescriptorCount(count)
+		.setDstSet(table->_buffers)
+		.setDstBinding(0)
+		.setPBufferInfo(infos.data());
+
+	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
+}
+
+void st_vk_render_context::bind_resource_table(st_resource_table* table_)
+{
+	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+
+	auto bind_set = [this](e_st_descriptor_slot slot, const vk::DescriptorSet* set)
+	{
+		_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
+			vk::PipelineBindPoint::eGraphics,
+			_pipeline_layout,
+			slot,
+			1,
+			set,
+			0,
+			nullptr);
+	};
+
+	bind_set(st_descriptor_slot_textures, &table->_textures);
+	bind_set(st_descriptor_slot_samplers, &table->_samplers);
+	bind_set(st_descriptor_slot_buffers, &table->_buffers);
+	bind_set(st_descriptor_slot_constants, &table->_constants);
+}
+
+std::unique_ptr<st_shader> st_vk_render_context::create_shader(const char* filename, uint8_t type)
+{
+	std::unique_ptr<st_vk_shader> shader = std::make_unique<st_vk_shader>();
+	shader->_type = type;
+
+	auto load_shader = [this](std::string file_name, vk::ShaderModule& shader)
+	{
+		std::string full_path = std::string(g_root_path) + std::string(file_name);
+
+		std::ifstream shader_file(full_path, std::ios::binary);
+		std::vector<unsigned char> shader_blob(std::istreambuf_iterator<char>(shader_file), {});
+
+		vk::ShaderModuleCreateInfo create_info = vk::ShaderModuleCreateInfo()
+			.setCodeSize(shader_blob.size())
+			.setPCode(reinterpret_cast<uint32_t*>(shader_blob.data()));
+
+		VK_VALIDATE(_device.createShaderModule(&create_info, nullptr, &shader));
+	};
+
+	if (type & st_shader_type_vertex)
+	{
+		load_shader(
+			std::string(filename) + std::string("_vert.spirv"),
+			shader->_vs);
+	}
+
+	if (type & st_shader_type_pixel)
+	{
+		load_shader(
+			std::string(filename) + std::string("_frag.spirv"),
+			shader->_ps);
+	}
+
+	return std::move(shader);
+}
+
+//void st_vk_render_context::destroy_shader(st_shader* shader)
+//{
+//	if (_type & st_shader_type_vertex)
+//		device->destroyShaderModule(_vs, nullptr);
+//	if (_type & st_shader_type_pixel)
+//		device->destroyShaderModule(_ps, nullptr);
+//	if (_type & st_shader_type_domain)
+//		device->destroyShaderModule(_ds, nullptr);
+//	if (_type & st_shader_type_geometry)
+//		device->destroyShaderModule(_gs, nullptr);
+//	if (_type & st_shader_type_hull)
+//		device->destroyShaderModule(_hs, nullptr);
+//}
+
+std::unique_ptr<st_pipeline> st_vk_render_context::create_pipeline(
+	const st_pipeline_state_desc& desc,
+	const st_render_pass* render_pass_)
+{
+	std::unique_ptr<st_vk_pipeline> pipeline = std::make_unique<st_vk_pipeline>();
+
+	const st_vk_shader* shader = static_cast<const st_vk_shader*>(desc._shader);
+
+	std::vector<vk::PipelineShaderStageCreateInfo> stages;
+
+	if (shader->_type & st_shader_type_vertex)
+	{
+		stages.emplace_back()
+			.setStage(vk::ShaderStageFlagBits::eVertex)
+			.setModule(shader->_vs)
+			.setPName("vs_main");
+	}
+	if (shader->_type & st_shader_type_pixel)
+	{
+		stages.emplace_back()
+			.setStage(vk::ShaderStageFlagBits::eFragment)
+			.setModule(shader->_ps)
+			.setPName("ps_main");
+	}
+	if (shader->_type & st_shader_type_domain)
+	{
+		stages.emplace_back()
+			.setStage(vk::ShaderStageFlagBits::eTessellationEvaluation)
+			.setModule(shader->_ds)
+			.setPName("ds_main");
+	}
+	if (shader->_type & st_shader_type_hull)
+	{
+		stages.emplace_back()
+			.setStage(vk::ShaderStageFlagBits::eTessellationControl)
+			.setModule(shader->_hs)
+			.setPName("hs_main");
+	}
+	if (shader->_type & st_shader_type_geometry)
+	{
+		stages.emplace_back()
+			.setStage(vk::ShaderStageFlagBits::eGeometry)
+			.setModule(shader->_gs)
+			.setPName("gs_main");
+	}
+
+	vk::PipelineInputAssemblyStateCreateInfo input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
+		.setTopology(convert_topology_type(desc._primitive_topology_type));
+
+	const st_vk_render_pass* render_pass = static_cast<const st_vk_render_pass*>(render_pass_);
+
+	vk::Rect2D scissor = vk::Rect2D()
+		.setOffset(vk::Offset2D())
+		.setExtent(vk::Extent2D(render_pass->_viewport.width, render_pass->_viewport.height));
+
+	vk::PipelineViewportStateCreateInfo viewport = vk::PipelineViewportStateCreateInfo()
+		.setViewportCount(1)
+		.setPViewports(&render_pass->_viewport)
+		.setScissorCount(1)
+		.setPScissors(&scissor);
+
+	vk::PipelineRasterizationStateCreateInfo raster = vk::PipelineRasterizationStateCreateInfo()
+		.setCullMode(convert_cull_mode(desc._rasterizer_desc._cull_mode))
+		.setPolygonMode(convert_fill_mode(desc._rasterizer_desc._fill_mode))
+		.setFrontFace(vk::FrontFace(desc._rasterizer_desc._winding_order_clockwise))
+		.setDepthClampEnable(false)
+		.setRasterizerDiscardEnable(false)
+		.setDepthBiasEnable(false)
+		.setLineWidth(1.0f);
+
+	vk::PipelineMultisampleStateCreateInfo multisample = vk::PipelineMultisampleStateCreateInfo()
+		.setAlphaToCoverageEnable(desc._blend_desc._alpha_to_coverage)
+		.setAlphaToOneEnable(false)
+		.setRasterizationSamples(vk::SampleCountFlagBits::e1)
+		.setSampleShadingEnable(false);
+
+	vk::StencilOpState stencil_front = vk::StencilOpState()
+		.setFailOp(convert_stencil_op(desc._depth_stencil_desc._front_stencil._stencil_fail_op))
+		.setDepthFailOp(convert_stencil_op(desc._depth_stencil_desc._front_stencil._depth_fail_op))
+		.setPassOp(convert_stencil_op(desc._depth_stencil_desc._front_stencil._stencil_pass_op))
+		.setCompareOp(convert_compare_op(desc._depth_stencil_desc._front_stencil._stencil_func));
+
+	vk::StencilOpState stencil_back = vk::StencilOpState()
+		.setFailOp(convert_stencil_op(desc._depth_stencil_desc._back_stencil._stencil_fail_op))
+		.setDepthFailOp(convert_stencil_op(desc._depth_stencil_desc._back_stencil._depth_fail_op))
+		.setPassOp(convert_stencil_op(desc._depth_stencil_desc._back_stencil._stencil_pass_op))
+		.setCompareOp(convert_compare_op(desc._depth_stencil_desc._back_stencil._stencil_func));
+
+	vk::PipelineDepthStencilStateCreateInfo depth_stencil = vk::PipelineDepthStencilStateCreateInfo()
+		.setDepthTestEnable(desc._depth_stencil_desc._depth_enable)
+		.setDepthWriteEnable(desc._depth_stencil_desc._depth_mask)
+		.setDepthCompareOp(convert_compare_op(desc._depth_stencil_desc._depth_compare))
+		.setDepthBoundsTestEnable(false)
+		.setStencilTestEnable(desc._depth_stencil_desc._stencil_enable)
+		.setFront(stencil_front)
+		.setBack(stencil_back);
+
+	std::vector<vk::PipelineColorBlendAttachmentState> attachment_states;
+	for (int i = 0; i < desc._render_target_count; ++i)
+	{
+		vk::PipelineColorBlendAttachmentState state = vk::PipelineColorBlendAttachmentState()
+			.setBlendEnable(desc._blend_desc._target_blend[i]._blend)
+			.setColorBlendOp(convert_blend_op(desc._blend_desc._target_blend[i]._blend_op))
+			.setSrcColorBlendFactor(convert_blend(desc._blend_desc._target_blend[i]._src_blend))
+			.setDstColorBlendFactor(convert_blend(desc._blend_desc._target_blend[i]._dst_blend))
+			.setAlphaBlendOp(convert_blend_op(desc._blend_desc._target_blend[i]._blend_op_alpha))
+			.setSrcAlphaBlendFactor(convert_blend(desc._blend_desc._target_blend[i]._src_blend_alpha))
+			.setDstAlphaBlendFactor(convert_blend(desc._blend_desc._target_blend[i]._dst_blend_alpha))
+			.setColorWriteMask(vk::ColorComponentFlags(desc._blend_desc._target_blend[i]._write_mask));
+
+		attachment_states.push_back(state);
+	}
+
+	vk::PipelineColorBlendStateCreateInfo color_blend = vk::PipelineColorBlendStateCreateInfo()
+		.setAttachmentCount(desc._render_target_count)
+		.setPAttachments(attachment_states.data())
+		.setLogicOpEnable(false);
+
+	const st_vk_vertex_format* vertex_format = static_cast<const st_vk_vertex_format*>(desc._vertex_format);
+
+	vk::GraphicsPipelineCreateInfo create_info = vk::GraphicsPipelineCreateInfo()
+		.setStageCount(stages.size())
+		.setPStages(stages.data())
+		.setPVertexInputState(&vertex_format->_input_layout)
+		.setPInputAssemblyState(&input_assembly)
+		.setPViewportState(&viewport)
+		.setRenderPass(render_pass->_render_pass)
+		.setPRasterizationState(&raster)
+		.setPMultisampleState(&multisample)
+		.setPDepthStencilState(&depth_stencil)
+		.setPColorBlendState(&color_blend)
+		.setSubpass(0)
+		.setLayout(_pipeline_layout);
+
+	VK_VALIDATE(_device.createGraphicsPipelines(vk::PipelineCache(nullptr), 1, &create_info, nullptr, &pipeline->_pipeline));
+
+	return std::move(pipeline);
+}
+
+//	device->destroyPipeline(_pipeline, nullptr);
+
+std::unique_ptr<st_vertex_format> st_vk_render_context::create_vertex_format(
+	const struct st_vertex_attribute* attributes,
+	uint32_t attribute_count)
+{
+	std::unique_ptr<st_vk_vertex_format> vertex_format = std::make_unique<st_vk_vertex_format>();
+
+	// TODO: Group this into common code.
+	size_t vertex_size = 0;
+
+	for (uint32_t itr = 0; itr < attribute_count; ++itr)
+	{
+		const st_vertex_attribute* attr = &attributes[itr];
+
+		// TODO: Switch on the attribute data type.
+		size_t data_size = sizeof(float);
+
+		switch (attr->_type)
+		{
+		case st_vertex_attribute_position:
+		case st_vertex_attribute_normal:
+		case st_vertex_attribute_binormal:
+		case st_vertex_attribute_tangent:
+			vertex_size += data_size * 3;
+			break;
+		case st_vertex_attribute_color:
+		case st_vertex_attribute_joints:
+		case st_vertex_attribute_weights:
+			vertex_size += data_size * 4;
+			break;
+		case st_vertex_attribute_uv:
+			vertex_size += data_size * 2;
+			break;
+		default:
+			assert(false);
+			break;
+		}
+	}
+
+	vertex_format->_vertex_size = (uint32_t)vertex_size;
+	// Create the element descriptions.
+	size_t offset = 0;
+	for (uint32_t itr = 0; itr < attribute_count; ++itr)
+	{
+		const st_vertex_attribute* attr = &attributes[itr];
+		int32_t size = 0;
+		size_t data_size = sizeof(float);
+		e_st_format format = st_format_r32g32b32_float;
+
+		switch (attr->_type)
+		{
+		case st_vertex_attribute_position:
+			size = 3;
+			break;
+		case st_vertex_attribute_normal:
+			size = 3;
+			break;
+		case st_vertex_attribute_binormal:
+			size = 3;
+			break;
+		case st_vertex_attribute_tangent:
+			size = 3;
+			break;
+		case st_vertex_attribute_joints:
+			format = st_format_r32g32b32a32_uint;
+			data_size = sizeof(uint32_t);
+			size = 4;
+			break;
+		case st_vertex_attribute_color:
+			format = st_format_r32g32b32a32_float;
+			size = 4;
+			break;
+		case st_vertex_attribute_weights:
+			format = st_format_r32g32b32a32_float;
+			size = 4;
+			break;
+		case st_vertex_attribute_uv:
+			format = st_format_r32g32_float;
+			size = 2;
+			break;
+		default:
+			assert(false);
+			break;
+		}
+
+		vk::VertexInputAttributeDescription attribute = vk::VertexInputAttributeDescription()
+			.setBinding(0)
+			.setFormat(convert_format(format))
+			.setLocation(attr->_unit)
+			.setOffset(offset);
+		vertex_format->_attribute_descs.push_back(attribute);
+
+		offset += size * data_size;
+	}
+
+	vk::VertexInputBindingDescription binding = vk::VertexInputBindingDescription()
+		.setBinding(0)
+		.setInputRate(vk::VertexInputRate::eVertex)
+		.setStride(offset);
+
+	vertex_format->_binding_descs.push_back(binding);
+
+	vertex_format->_input_layout
+		.setVertexBindingDescriptionCount(vertex_format->_binding_descs.size())
+		.setVertexAttributeDescriptionCount(vertex_format->_attribute_descs.size())
+		.setPVertexBindingDescriptions(vertex_format->_binding_descs.data())
+		.setPVertexAttributeDescriptions(vertex_format->_attribute_descs.data());
+
+	return std::move(vertex_format);
+}
+
+std::unique_ptr<st_geometry> st_vk_render_context::create_geometry(
+	const st_vertex_format* format,
+	void* vertex_data,
+	uint32_t vertex_size,
+	uint32_t vertex_count,
+	uint16_t* index_data,
+	uint32_t index_count)
+{
+	std::unique_ptr<st_vk_geometry> geometry = std::make_unique<st_vk_geometry>();
+
+	// Create the vertex buffer resource.
+	const uint32_t vertex_buffer_size = vertex_count * vertex_size;
+
+	geometry->_vertex_buffer = create_buffer(
+		vertex_count,
+		vertex_size,
+		e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
+
+	update_buffer(geometry->_vertex_buffer.get(), vertex_data, vertex_count);
+
+	// Create the index buffer resource.
+	geometry->_index_count = index_count;
+	const uint32_t index_buffer_size = index_count * sizeof(uint16_t);
+
+	geometry->_index_buffer = create_buffer(
+		index_count,
+		sizeof(uint16_t),
+		e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
+
+	update_buffer(geometry->_index_buffer.get(), index_data, index_count);
+
+	return std::move(geometry);
+}
+
+std::unique_ptr<st_render_pass> st_vk_render_context::create_render_pass(
+	uint32_t count,
+	st_render_texture** targets,
+	st_render_texture* depth_stencil)
+{
+	std::unique_ptr<st_vk_render_pass> render_pass = std::make_unique<st_vk_render_pass>();
+
+	// Naively, create the viewport from the first target.
+	if (count > 0)
+	{
+		render_pass->_viewport = vk::Viewport()
+			.setX(0)
+			.setY(0)
+			.setWidth(targets[0]->get_width())
+			.setHeight(targets[0]->get_height())
+			.setMinDepth(0.0f)
+			.setMaxDepth(1.0f);
+	}
+
+	std::vector<vk::AttachmentDescription> attachment_descs;
+	std::vector<vk::AttachmentReference> attachment_refs;
+	for (int i = 0; i < count; ++i)
+	{
+		vk::AttachmentDescription desc = vk::AttachmentDescription()
+			.setFormat(convert_format(targets[i]->get_format()))
+			.setSamples(vk::SampleCountFlagBits::e1)
+			.setLoadOp(vk::AttachmentLoadOp::eClear)
+			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
+			.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
+		attachment_descs.push_back(desc);
+
+		vk::AttachmentReference ref = vk::AttachmentReference()
+			.setAttachment(i)
+			.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
+		attachment_refs.push_back(ref);
+	}
+
+	vk::SubpassDescription subpass_desc = vk::SubpassDescription()
+		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
+		.setInputAttachmentCount(0)
+		.setColorAttachmentCount(count)
+		.setPColorAttachments(attachment_refs.data());
+
+	vk::AttachmentReference ds_ref;
+	if (depth_stencil)
+	{
+		vk::AttachmentDescription ds_desc = vk::AttachmentDescription()
+			.setFormat(convert_format(depth_stencil->get_format()))
+			.setSamples(vk::SampleCountFlagBits::e1)
+			.setLoadOp(vk::AttachmentLoadOp::eClear)
+			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+		attachment_descs.push_back(ds_desc);
+
+		ds_ref = vk::AttachmentReference()
+			.setAttachment(attachment_descs.size() - 1)
+			.setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+		subpass_desc.setPDepthStencilAttachment(&ds_ref);
+	}
+
+	vk::RenderPassCreateInfo pass_info = vk::RenderPassCreateInfo()
+		.setAttachmentCount(attachment_descs.size())
+		.setPAttachments(attachment_descs.data())
+		.setSubpassCount(1)
+		.setPSubpasses(&subpass_desc)
+		.setDependencyCount(0);
+
+	VK_VALIDATE(_device.createRenderPass(&pass_info, nullptr, &render_pass->_render_pass));
+
+	render_pass->_framebuffer = std::make_unique<st_vk_framebuffer>(
+		&_device,
+		render_pass->_render_pass,
+		count,
+		targets,
+		depth_stencil);
+
+	return std::move(render_pass);
+}
+
+void st_vk_render_context::begin_render_pass(
+	st_render_pass* pass_,
+	st_vec4f* clear_values,
+	const uint8_t clear_count)
+{
+	st_vk_render_pass* pass = static_cast<st_vk_render_pass*>(pass_);
+
+	std::vector<st_vec4f> inputs(clear_values, clear_values + clear_count);
+	std::vector<vk::ClearValue> clears;
+	clears.resize(inputs.size());
+	std::transform(inputs.begin(), inputs.end(), clears.begin(),
+		[](st_vec4f& value) {
+		std::array<float, 4> a;
+		std::copy(value.axes, value.axes + 4, a.begin());
+		return vk::ClearValue().setColor(vk::ClearColorValue().setFloat32(a));
+	}
+	);
+
+	vk::RenderPassBeginInfo begin_info = vk::RenderPassBeginInfo()
+		.setPClearValues(clears.data())
+		.setClearValueCount(clears.size())
+		.setFramebuffer(pass->_framebuffer->get())
+		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(pass->_framebuffer->get_width(), pass->_framebuffer->get_height())))
+		.setRenderPass(pass->_render_pass);
+
+	pass->_framebuffer->transition(this);
+
+	_command_buffers[st_command_buffer_graphics].beginRenderPass(&begin_info, vk::SubpassContents::eInline);
+}
+
+void st_vk_render_context::end_render_pass(st_render_pass* pass)
+{
+	_command_buffers[st_command_buffer_graphics].endRenderPass();
 }
 
 void st_vk_render_context::create_sampler(vk::Sampler& sampler)

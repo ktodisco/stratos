@@ -12,6 +12,7 @@
 #include <graphics/material/st_gbuffer_material.h>
 #include <graphics/material/st_parallax_occlusion_material.h>
 #include <graphics/st_drawcall.h>
+#include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
@@ -52,7 +53,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	gbuffer_state_desc._render_target_formats[2] = third_buffer->get_format();
 	gbuffer_state_desc._depth_stencil_format = depth_buffer->get_format();
 
-	_gbuffer_state = context->create_pipeline(gbuffer_state_desc);
+	_gbuffer_state = context->create_pipeline(gbuffer_state_desc, _pass.get());
 
 	// TODO: See comment in header regarding multiple materials in a single render pass.
 	_default_parallax_occlusion = std::make_unique<st_parallax_occlusion_material>(
@@ -69,7 +70,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	parallax_occlusion_state_desc._render_target_formats[2] = third_buffer->get_format();
 	parallax_occlusion_state_desc._depth_stencil_format = depth_buffer->get_format();
 
-	_parallax_occlusion_state = context->create_pipeline(parallax_occlusion_state_desc);
+	_parallax_occlusion_state = context->create_pipeline(parallax_occlusion_state_desc, _pass.get());
 }
 
 st_gbuffer_render_pass::~st_gbuffer_render_pass()

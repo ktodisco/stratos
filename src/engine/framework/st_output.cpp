@@ -15,7 +15,7 @@
 #include <graphics/pass/st_passthrough_render_pass.h>
 #include <graphics/pass/st_tonemap_render_pass.h>
 #include <graphics/pass/st_ui_render_pass.h>
-#include <graphics/st_graphics.h>
+#include <graphics/st_render_context.h>
 #include <graphics/st_render_texture.h>
 
 #include <math/st_mat4f.h>

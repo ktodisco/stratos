@@ -12,6 +12,7 @@
 #include <graphics/material/st_deferred_light_material.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
@@ -58,7 +59,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	deferred_light_state_desc._render_target_formats[0] = output_buffer->get_format();
 	deferred_light_state_desc._depth_stencil_format = output_depth->get_format();
 
-	_pipeline = context->create_pipeline(deferred_light_state_desc);
+	_pipeline = context->create_pipeline(deferred_light_state_desc, _pass.get());
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()

@@ -411,25 +411,25 @@ void st_dx12_render_context::set_clear_color(float r, float g, float b, float a)
 void st_dx12_render_context::set_shader_resource_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap->get_handle_gpu(offset);
-	_command_list->SetGraphicsRootDescriptorTable(0, srv_handle);
+	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_textures, srv_handle);
 }
 
 void st_dx12_render_context::set_sampler_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->get_handle_gpu(offset);
-	_command_list->SetGraphicsRootDescriptorTable(1, sampler_handle);
+	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_samplers, sampler_handle);
 }
 
 void st_dx12_render_context::set_constant_buffer_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->get_handle_gpu(offset);
-	_command_list->SetGraphicsRootDescriptorTable(2, cbv_handle);
+	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_constants, cbv_handle);
 }
 
 void st_dx12_render_context::set_buffer_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE buffer_handle = _cbv_srv_heap->get_handle_gpu(offset);
-	_command_list->SetGraphicsRootDescriptorTable(3, buffer_handle);
+	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_buffers, buffer_handle);
 }
 
 void st_dx12_render_context::set_render_targets(
@@ -813,6 +813,7 @@ void st_dx12_render_context::transition(
 	_command_list->ResourceBarrier(1, &barrier);
 }
 
+// TODO: Rewrite this to replace create_shader_resource_view.
 std::unique_ptr<st_texture_view> st_dx12_render_context::create_texture_view(st_texture* texture_)
 {
 	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
@@ -1100,7 +1101,9 @@ std::unique_ptr<st_shader> st_dx12_render_context::create_shader(const char* fil
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(const st_pipeline_state_desc& desc)
+std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(
+	const st_pipeline_state_desc& desc,
+	const st_render_pass* render_pass)
 {
 	std::unique_ptr<st_dx12_pipeline> pipeline = std::make_unique<st_dx12_pipeline>();
 
@@ -1108,7 +1111,7 @@ std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(const st_pi
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_desc = {};
 
 	// Set the root signature from the graphics context.
-	pipeline_desc.pRootSignature = get_root_signature();
+	pipeline_desc.pRootSignature = _root_signature.Get();
 
 	// Get the input layout from the vertex format.
 	const st_dx12_vertex_format* vertex_format = static_cast<const st_dx12_vertex_format*>(desc._vertex_format);

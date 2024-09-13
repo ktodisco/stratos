@@ -11,6 +11,7 @@
 #include <graphics/material/st_bloom_material.h>
 #include <graphics/pass/st_gaussian_blur_render_pass.h>
 #include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_render_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
@@ -55,7 +56,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 	bloom_state_desc._render_target_count = 1;
 	bloom_state_desc._render_target_formats[0] = target_buffer->get_format();
 
-	_pipeline = context->create_pipeline(bloom_state_desc);
+	_pipeline = context->create_pipeline(bloom_state_desc, _pass.get());
 
 	// Set up the separable blur pass.
 	_blur_pass = std::make_unique<st_gaussian_blur_render_pass>(

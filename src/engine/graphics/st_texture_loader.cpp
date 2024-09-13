@@ -8,6 +8,8 @@
 
 #include <core/st_core.h>
 
+#include <graphics/st_render_context.h>
+
 #include <stb_image.h>
 
 #include <cassert>

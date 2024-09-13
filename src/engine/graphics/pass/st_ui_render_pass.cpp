@@ -48,7 +48,7 @@ st_ui_render_pass::st_ui_render_pass()
 	default_state_desc._depth_stencil_format = st_format_d24_unorm_s8_uint;
 	default_state_desc._primitive_topology_type = st_primitive_topology_type_line;
 
-	_default_state = context->create_pipeline(default_state_desc);
+	_default_state = context->create_pipeline(default_state_desc, _pass.get());
 
 	// Set up the font material.
 	_font_material = std::make_unique<st_font_material>(nullptr);
@@ -61,7 +61,7 @@ st_ui_render_pass::st_ui_render_pass()
 	font_state_desc._render_target_formats[0] = st_format_r8g8b8a8_unorm;
 	font_state_desc._depth_stencil_format = st_format_d24_unorm_s8_uint;
 
-	_font_state = context->create_pipeline(font_state_desc);
+	_font_state = context->create_pipeline(font_state_desc, _pass.get());
 }
 
 st_ui_render_pass::~st_ui_render_pass()

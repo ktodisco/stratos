@@ -22,7 +22,7 @@ class st_output
 {
 public:
 
-	st_output(const st_window* window, st_render_context* render_context);
+	st_output(const st_window* window, class st_render_context* render_context);
 	~st_output();
 
 	void update(struct st_frame_params* params);

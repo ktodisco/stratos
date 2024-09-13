@@ -8,6 +8,7 @@
 
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
+#include <graphics/st_render_context.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

@@ -23,7 +23,7 @@
 #include <graphics/geometry/st_model_component.h>
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/st_light_component.h>
-#include <graphics/st_graphics.h>
+#include <graphics/st_render_context.h>
 #include <graphics/st_shader_manager.h>
 
 #include <gui/st_button.h>

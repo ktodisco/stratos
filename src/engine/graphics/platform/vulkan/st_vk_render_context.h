@@ -6,10 +6,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_graphics.h>
+#include <graphics/platform/vulkan/st_vk_graphics.h>
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
+#include <graphics/st_render_context.h>
 #include <graphics/st_render_texture.h>
 
 #include <math/st_vec4f.h>
@@ -23,87 +24,130 @@
 #define k_max_shader_resources 1024
 #define k_max_samplers 1024
 
-template<typename T>
-static T align_value(T value, uint32_t alignment)
-{
-	return (value + ((T)alignment - 1)) & ~((T)alignment - 1);
-}
-
-class st_vk_render_context
+class st_vk_render_context : public st_render_context
 {
 public:
 
 	st_vk_render_context(const class st_window* window);
 	~st_vk_render_context();
 
-	void acquire() {}
-	void release() {}
+	void acquire() override {}
+	void release() override {}
 
-	void set_pipeline_state(const class st_vk_pipeline_state* state);
-	void set_scissor(int left, int top, int right, int bottom) {}
-	void set_clear_color(float r, float g, float b, float a) {}
-
-	void set_shader_resource_table(const vk::DescriptorSet& set);
-	void set_sampler_table(const vk::DescriptorSet& set);
-	void set_constant_buffer_table(const vk::DescriptorSet& set);
-	void set_buffer_table(const vk::DescriptorSet& set);
+	void set_pipeline(const st_pipeline* state) override;
+	void set_viewport(const st_viewport& viewport) override;
+	void set_scissor(int left, int top, int right, int bottom) override;
+	void set_clear_color(float r, float g, float b, float a) override {}
 
 	void set_render_targets(
 		uint32_t count,
-		class st_render_texture** targets,
-		class st_render_texture* depth_stencil) {}
+		const st_texture_view** targets,
+		const st_texture_view* depth_stencil) override {}
 
-	void clear(unsigned int clear_flags) {}
-	void draw(const struct st_static_drawcall& drawcall);
-	void draw(const struct st_dynamic_drawcall& drawcall) {}
+	void clear(unsigned int clear_flags) override {}
+	void draw(const struct st_static_drawcall& drawcall) override;
+	void draw(const struct st_dynamic_drawcall& drawcall) override {}
 
+	// Backbuffer.
+	st_render_texture* get_present_target() const override;
 	// TODO: These are temporary and a generic solution is needed.
-	void transition_backbuffer_to_target();
-	void transition_backbuffer_to_present();
+	void transition_backbuffer_to_target() override;
+	void transition_backbuffer_to_present() override;
 
-	void transition(
-		st_vk_texture* texture,
-		e_st_texture_state old_state,
-		e_st_texture_state new_state);
+	void begin_loading() override {}
+	void end_loading() override {}
+	void begin_frame() override;
+	void end_frame() override;
+	void swap() override;
 
-	void begin_frame();
-	void end_frame();
-	void swap();
+	void begin_marker(const std::string& marker) override;
+	void end_marker() override;
 
-	void begin_marker(const std::string& marker);
-	void end_marker();
-
-	void create_texture(
+	// Textures.
+	std::unique_ptr<st_texture> create_texture(
 		uint32_t width,
 		uint32_t height,
-		uint32_t mip_count,
+		uint32_t levels,
 		e_st_format format,
 		e_st_texture_usage_flags usage,
 		e_st_texture_state initial_state,
-		void* data,
-		vk::Image& resource,
-		vk::DeviceMemory& memory);
-	void destroy_texture(vk::Image& resource, vk::DeviceMemory& memory);
-	void create_texture_view(class st_vk_texture* texture, vk::ImageView& resource);
-	void destroy_texture_view(vk::ImageView& resource);
+		const st_vec4f& clear,
+		void* data) override;
+	void set_texture_meta(st_texture* texture, const char* name) override {}
+	void set_texture_name(st_texture* texture, std::string name) override;
+	void transition(
+		st_texture* texture,
+		e_st_texture_state new_state) override;
+	std::unique_ptr<st_texture_view> create_texture_view(st_texture* texture) override;
+
+	// Buffers.
+	std::unique_ptr<st_buffer> create_buffer(
+		const uint32_t count,
+		const size_t element_size,
+		const e_st_buffer_usage_flags usage) override;
+	std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) override;
+	void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) override;
+	void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) override;
+	void update_buffer(st_buffer* buffer, void* data, const uint32_t count) override;
+	void set_buffer_meta(st_buffer* buffer, std::string name) override {}
+
 	// TODO: In the unified architexture, create_buffer would take a base Buffer* and
 	// the Vulkan implementation would contain both a vkBuffer and vkDeviceMemory.
-	void create_buffer(size_t size, e_st_buffer_usage_flags usage, vk::Buffer& resource, vk::DeviceMemory& memory);
-	void update_buffer(vk::Buffer& resource, size_t offset, size_t num_bytes, const void* data);
-	void destroy_buffer(vk::Buffer& resource, vk::DeviceMemory& memory);
-	void create_descriptor_set(e_st_descriptor_slot slot, vk::DescriptorSet* set);
-	void destroy_descriptor_set(vk::DescriptorSet& set);
-	void create_sampler(vk::Sampler& sampler);
-	void destroy_sampler(vk::Sampler& sampler);
 
+	// Constant buffers.
+	void add_constant(
+		st_buffer* buffer,
+		const std::string& name,
+		const e_st_shader_constant_type constant_type) override {}
+
+	// Resource tables.
+	std::unique_ptr<st_resource_table> create_resource_table() override;
+	void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) override;
+	void set_textures(st_resource_table* table, uint32_t count, st_texture** textures) override;
+	void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) override;
+	void bind_resource_table(st_resource_table* table) override;
+
+	// Shaders.
+	std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) override;
+
+	// Pipelines.
+	std::unique_ptr<st_pipeline> create_pipeline(
+		const struct st_pipeline_state_desc& desc,
+		const struct st_render_pass* render_pass) override;
+
+	// Geometry.
+	std::unique_ptr<st_vertex_format> create_vertex_format(
+		const struct st_vertex_attribute* attributes,
+		uint32_t attribute_count) override;
+	std::unique_ptr<st_geometry> create_geometry(
+		const st_vertex_format* format,
+		void* vertex_data,
+		uint32_t vertex_size,
+		uint32_t vertex_count,
+		uint16_t* index_data,
+		uint32_t index_count) override;
+
+	// Render passes.
+	std::unique_ptr<st_render_pass> create_render_pass(
+		uint32_t count,
+		class st_render_texture** targets,
+		class st_render_texture* depth_stencil) override;
+	void begin_render_pass(
+		st_render_pass* pass,
+		st_vec4f* clear_values,
+		const uint8_t clear_count) override;
+	void end_render_pass(st_render_pass* pass) override;
+
+	// Informational.
+	e_st_graphics_api get_api() { return e_st_graphics_api::vulkan; }
+
+	// API-specific.
 	vk::Device* get_device() { return std::addressof(_device); }
-	vk::CommandBuffer* get_command_buffer() { return std::addressof(_command_buffers[st_command_buffer_graphics]); }
-	vk::PipelineLayout* get_layout() { return std::addressof(_pipeline_layout); }
-	st_render_texture* get_present_target() { return _present_target.get(); }
-
-	static st_vk_render_context* get() { return _this; }
 
 private:
+
+	void create_sampler(vk::Sampler& sampler);
+	void destroy_sampler(vk::Sampler& sampler);
 
 	static const uint32_t k_backbuffer_count = 2;
 

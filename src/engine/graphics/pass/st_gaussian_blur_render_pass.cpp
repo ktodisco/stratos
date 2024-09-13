@@ -48,7 +48,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 	vertical_blur_state_desc._render_target_count = 1;
 	vertical_blur_state_desc._render_target_formats[0] = target_buffer->get_format();
 
-	_vertical_blur_state = context->create_pipeline(vertical_blur_state_desc);
+	_vertical_blur_state = context->create_pipeline(vertical_blur_state_desc, _vertical_blur_pass.get());
 
 	st_render_texture* horizontal_blur_targets[] = { target_buffer };
 	_horizontal_blur_pass = context->create_render_pass(
@@ -64,7 +64,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 	horizontal_blur_state_desc._render_target_count = 1;
 	horizontal_blur_state_desc._render_target_formats[0] = target_buffer->get_format();
 
-	_horizontal_blur_state = context->create_pipeline(horizontal_blur_state_desc);
+	_horizontal_blur_state = context->create_pipeline(horizontal_blur_state_desc, _horizontal_blur_pass.get());
 }
 
 st_gaussian_blur_render_pass::~st_gaussian_blur_render_pass()

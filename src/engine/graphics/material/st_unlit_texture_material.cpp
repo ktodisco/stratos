@@ -7,6 +7,7 @@
 #include <graphics/material/st_unlit_texture_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_render_context.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
 

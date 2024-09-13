@@ -6,9 +6,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_graphics.h>
+#include <graphics/platform/opengl/st_gl_graphics.h>
 
 #if defined(ST_GRAPHICS_API_OPENGL)
+
+#include <graphics/st_render_context.h>
 
 #include <memory>
 
@@ -26,11 +28,6 @@ public:
 	void set_viewport(const st_viewport& viewport) override;
 	void set_scissor(int left, int top, int right, int bottom) override;
 	void set_clear_color(float r, float g, float b, float a) override;
-
-	void set_shader_resource_table(uint32_t offset) override;
-	void set_sampler_table(uint32_t offset) override;
-	void set_constant_buffer_table(uint32_t offset) override;
-	void set_buffer_table(uint32_t offset) override;
 
 	void set_render_targets(
 		uint32_t count,
@@ -101,7 +98,9 @@ public:
 	std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) override;
 
 	// Pipelines.
-	std::unique_ptr<st_pipeline> create_pipeline(const struct st_pipeline_state_desc& desc) override;
+	std::unique_ptr<st_pipeline> create_pipeline(
+		const struct st_pipeline_state_desc& desc,
+		const struct st_render_pass* render_pass) override;
 
 	// Geometry.
 	std::unique_ptr<st_vertex_format> create_vertex_format(

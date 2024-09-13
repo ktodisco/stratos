@@ -6,11 +6,12 @@
 
 #include <graphics/pass/st_fullscreen_render_pass.h>
 
-#include <graphics/st_graphics.h>
+#include <graphics/st_render_context.h>
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_material.h>
 
 #include <cstdint>
+#include <vector>
 
 st_fullscreen_render_pass::st_fullscreen_render_pass()
 {
@@ -18,19 +19,19 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, 0));
 	_vertex_format = st_render_context::get()->create_vertex_format(attributes.data(), attributes.size());
 
-	const float verts[] =
+	float verts[] =
 	{
-		// TODO: Vulkan dynamic switch.
-#if 0 // defined(ST_GRAPHICS_API_VULKAN)
-		-1.0f, 1.0f, 0.0f,
-		3.0f, 1.0f, 0.0f,
-		-1.0f, -3.0f, 0.0f,
-#else
 		-1.0f, -1.0f, 0.0f,
 		3.0f, -1.0f, 0.0f,
 		-1.0f, 3.0f, 0.0f,
-#endif
 	};
+
+	if (st_render_context::get()->get_api() == e_st_graphics_api::vulkan)
+	{
+		verts[1] *= -1.0f;
+		verts[4] *= -1.0f;
+		verts[7] *= -1.0f;
+	}
 
 	const uint16_t indices[] =
 	{

@@ -34,7 +34,7 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 	tonemap_state_desc._render_target_count = 1;
 	tonemap_state_desc._render_target_formats[0] = target_buffer->get_format();
 
-	_pipeline = context->create_pipeline(tonemap_state_desc);
+	_pipeline = context->create_pipeline(tonemap_state_desc, _pass.get());
 }
 
 st_tonemap_render_pass::~st_tonemap_render_pass()

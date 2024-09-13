@@ -37,7 +37,7 @@ st_passthrough_render_pass::st_passthrough_render_pass(
 	fullscreen_state_desc._render_target_count = 1;
 	fullscreen_state_desc._render_target_formats[0] = source_buffer->get_format();
 
-	_pipeline = context->create_pipeline(fullscreen_state_desc);
+	_pipeline = context->create_pipeline(fullscreen_state_desc, _pass.get());
 }
 
 st_passthrough_render_pass::~st_passthrough_render_pass()

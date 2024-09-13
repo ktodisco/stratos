@@ -6,9 +6,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_graphics.h>
+#include <graphics/platform/dx12/st_dx12_graphics.h>
 
 #if defined(ST_GRAPHICS_API_DX12)
+
+#include <graphics/st_render_context.h>
 
 #include <graphics/platform/dx12/st_dx12_descriptor_heap.h>
 
@@ -20,12 +22,6 @@
 // TODO: Find an ideal way to represent these.
 #define k_max_shader_resources 1024
 #define k_max_samplers 1024
-
-template<typename T>
-static T align_value(T value, uint32_t alignment)
-{
-	return (value + ((T)alignment - 1)) & ~((T)alignment - 1);
-}
 
 class st_dx12_render_context : public st_render_context
 {
@@ -41,12 +37,6 @@ public:
 	void set_viewport(const st_viewport& viewport) override;
 	void set_scissor(int left, int top, int right, int bottom) override;
 	void set_clear_color(float r, float g, float b, float a) override;
-
-	// TODO: These actually need to be private and maybe specific to dx12.
-	void set_shader_resource_table(uint32_t offset) override;
-	void set_sampler_table(uint32_t offset) override;
-	void set_constant_buffer_table(uint32_t offset) override;
-	void set_buffer_table(uint32_t offset) override;
 
 	void set_render_targets(
 		uint32_t count,
@@ -118,7 +108,9 @@ public:
 	std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) override;
 
 	// Pipelines.
-	std::unique_ptr<st_pipeline> create_pipeline(const struct st_pipeline_state_desc& desc) override;
+	std::unique_ptr<st_pipeline> create_pipeline(
+		const struct st_pipeline_state_desc& desc,
+		const struct st_render_pass* render_pass) override;
 
 	// Geometry.
 	std::unique_ptr<st_vertex_format> create_vertex_format(
@@ -146,15 +138,22 @@ public:
 	// Informational.
 	e_st_graphics_api get_api() { return e_st_graphics_api::dx12; }
 
+	// API-specific.
 	ID3D12Device* get_device() const { return _device.Get(); }
-	ID3D12RootSignature* get_root_signature() const { return _root_signature.Get(); }
 	ID3D12GraphicsCommandList* get_command_list() const { return _command_list.Get(); }
 	st_dx12_descriptor_heap* get_gui_heap() const { return _gui_srv_heap.get(); }
+
+	// TODO: Collapse these into bind_resource_table as a lambda.
+	void set_shader_resource_table(uint32_t offset);
+	void set_sampler_table(uint32_t offset);
+	void set_constant_buffer_table(uint32_t offset);
+	void set_buffer_table(uint32_t offset);
 
 private:
 
 	void create_buffer_internal(size_t size, ID3D12Resource** resource);
 
+	// TODO: Get rid of these in favor of the public create_*_view functions.
 	st_dx12_descriptor create_constant_buffer_view(
 		D3D12_GPU_VIRTUAL_ADDRESS gpu_address,
 		size_t size);

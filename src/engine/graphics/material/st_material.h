@@ -6,8 +6,6 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_graphics.h>
-
 #include <math/st_mat4f.h>
 #include <math/st_vec3f.h>
 

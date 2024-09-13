@@ -6,7 +6,7 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_graphics.h>
+#include <graphics/st_render_context.h>
 
 #include <string>
 
