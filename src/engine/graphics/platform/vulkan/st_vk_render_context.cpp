@@ -890,6 +890,8 @@ std::unique_ptr<st_texture> st_vk_render_context::create_texture(
 			&barrier);
 	}
 
+	texture->_state = initial_state;
+
 	// For depth/stencil targets, it's only legal to create a view for
 	// one of the depth or stencil components at a time.
 	if (format == st_format_d24_unorm_s8_uint)
@@ -915,7 +917,7 @@ void st_vk_render_context::set_texture_name(st_texture* texture_, std::string na
 		.setObjectHandle(VK_GET_HANDLE(texture->_handle, VkImage))
 		.setPObjectName(name.c_str());
 
-	_device.setDebugUtilsObjectNameEXT(&name_info);
+	VK_VALIDATE(_device.setDebugUtilsObjectNameEXT(&name_info));
 }
 
 void st_vk_render_context::transition(
@@ -958,6 +960,8 @@ void st_vk_render_context::transition(
 		.setSubresourceRange(range),
 	};
 
+	texture->_state = new_state;
+
 	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::PipelineStageFlagBits::eTransfer,
@@ -987,7 +991,7 @@ std::unique_ptr<st_texture_view> st_vk_render_context::create_texture_view(st_te
 	{
 		// TODO: Can only create one image view per aspect, per Vulkan spec.
 		aspect = vk::ImageAspectFlagBits::eDepth;
-		//| vk::ImageAspectFlagBits::eStencil;
+			//| vk::ImageAspectFlagBits::eStencil;
 	}
 
 	vk::ImageSubresourceRange subresource_range = vk::ImageSubresourceRange()
