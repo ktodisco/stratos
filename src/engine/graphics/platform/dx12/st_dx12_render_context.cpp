@@ -196,45 +196,6 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		_device->CreateRenderTargetView(_backbuffers[rtv_itr].Get(), nullptr, rtv_handle._handle);
 	}
 
-	// Create the depth/stencil buffer.
-	D3D12_DEPTH_STENCIL_VIEW_DESC depth_stencil_desc{};
-	depth_stencil_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depth_stencil_desc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-	depth_stencil_desc.Flags = D3D12_DSV_FLAG_NONE;
-
-	D3D12_CLEAR_VALUE depth_opt_clear_value{};
-	depth_opt_clear_value.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depth_opt_clear_value.DepthStencil.Depth = 1.0f;
-	depth_opt_clear_value.DepthStencil.Stencil = 0;
-
-	// TODO: Replace this with a more robust create_buffer.
-	result = _device->CreateCommittedResource(
-		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-		D3D12_HEAP_FLAG_NONE,
-		&CD3DX12_RESOURCE_DESC::Tex2D(
-			DXGI_FORMAT_D24_UNORM_S8_UINT,
-			window->get_width(),
-			window->get_height(),
-			1,
-			0,
-			1,
-			0,
-			D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
-		D3D12_RESOURCE_STATE_DEPTH_WRITE,
-		&depth_opt_clear_value,
-		__uuidof(ID3D12Resource),
-		(void**)&_depth_stencil);
-
-	if (result != S_OK)
-	{
-		assert(false);
-	}
-
-	ST_NAME_DX12_OBJECT(_depth_stencil, str_to_wstr("Depth-Stencil").c_str());
-
-	st_dx12_cpu_descriptor_handle dsv_handle = _dsv_heap->allocate_handle();
-	_device->CreateDepthStencilView(_depth_stencil.Get(), &depth_stencil_desc, dsv_handle._handle);
-
 	for (uint32_t ca_itr = 0; ca_itr < k_backbuffer_count; ++ca_itr)
 	{
 		// Create the command allocator.

@@ -184,7 +184,6 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain3> _swap_chain;
 	Microsoft::WRL::ComPtr<ID3D12Device> _device;
 	Microsoft::WRL::ComPtr<ID3D12Resource> _backbuffers[k_backbuffer_count];
-	Microsoft::WRL::ComPtr<ID3D12Resource> _depth_stencil;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> _command_allocators[k_backbuffer_count];
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _command_queue;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> _root_signature;
