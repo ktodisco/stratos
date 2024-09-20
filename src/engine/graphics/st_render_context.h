@@ -11,6 +11,8 @@
 class st_render_context
 {
 public:
+	virtual ~st_render_context() {}
+
 	virtual void acquire() = 0;
 	virtual void release() = 0;
 

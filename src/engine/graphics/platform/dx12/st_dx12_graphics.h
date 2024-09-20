@@ -31,6 +31,8 @@ typedef uint32_t st_dx12_descriptor;
 
 struct st_dx12_buffer : public st_buffer
 {
+	~st_dx12_buffer() { _buffer = nullptr; }
+
 	uint32_t _count;
 	e_st_buffer_usage_flags _usage;
 	size_t _element_size;
@@ -59,6 +61,8 @@ struct st_dx12_geometry : public st_geometry
 
 struct st_dx12_pipeline : public st_pipeline
 {
+	~st_dx12_pipeline() { _pipeline = nullptr; }
+
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipeline;
 };
 
@@ -78,6 +82,15 @@ struct st_dx12_resource_table : public st_resource_table
 
 struct st_dx12_shader : public st_shader
 {
+	~st_dx12_shader()
+	{
+		_vs = nullptr;
+		_ps = nullptr;
+		_ds = nullptr;
+		_hs = nullptr;
+		_gs = nullptr;
+	}
+
 	Microsoft::WRL::ComPtr<ID3DBlob> _vs;
 	Microsoft::WRL::ComPtr<ID3DBlob> _ps;
 	Microsoft::WRL::ComPtr<ID3DBlob> _ds;
@@ -89,6 +102,8 @@ struct st_dx12_shader : public st_shader
 
 struct st_dx12_texture : public st_texture
 {
+	~st_dx12_texture() { _handle = nullptr; }
+
 	Microsoft::WRL::ComPtr<ID3D12Resource> _handle;
 
 	uint32_t _width;

@@ -322,6 +322,54 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 st_dx12_render_context::~st_dx12_render_context()
 {
 	_present_target = nullptr;
+
+	_dynamic_index_buffer = nullptr;
+	_dynamic_vertex_buffer = nullptr;
+
+	_fence = nullptr;
+	_root_signature = nullptr;
+	_command_list = nullptr;
+
+	for (uint32_t ca_itr = 0; ca_itr < k_backbuffer_count; ++ca_itr)
+	{
+		_command_allocators[ca_itr] = nullptr;
+	}
+
+	_upload_buffer = nullptr;
+
+	_gui_srv_heap = nullptr;
+	_sampler_heap = nullptr;
+	_cbv_srv_heap = nullptr;
+	_dsv_heap = nullptr;
+	_rtv_heap = nullptr;
+
+	for (uint32_t bb_itr = 0; bb_itr < k_backbuffer_count; ++bb_itr)
+	{
+		_backbuffers[bb_itr] = nullptr;
+	}
+
+	_swap_chain = nullptr;
+	_command_queue = nullptr;
+	_device = nullptr;
+
+#if defined(_DEBUG)
+	// Enable the D3D12 debug layer.
+	{
+		HMODULE debug_module = GetModuleHandle("Dxgidebug.dll");
+		if (debug_module)
+		{
+			typedef HRESULT (WINAPI* LPDXGIGETDEBUGINTERFACE)(REFIID, void**);
+			auto dxgiGetDebugInterface =
+				reinterpret_cast<LPDXGIGETDEBUGINTERFACE>(GetProcAddress(debug_module, "DXGIGetDebugInterface"));
+
+			Microsoft::WRL::ComPtr<IDXGIDebug> dxgi_debug;
+			if (SUCCEEDED(dxgiGetDebugInterface(__uuidof(IDXGIDebug), (void**)&dxgi_debug)))
+			{
+				dxgi_debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+			}
+		}
+	}
+#endif
 }
 
 void st_dx12_render_context::acquire()

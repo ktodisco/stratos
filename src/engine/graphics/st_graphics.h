@@ -339,16 +339,23 @@ struct st_viewport
 	float _max_depth;
 };
 
-struct st_buffer {};
-struct st_buffer_view {};
-struct st_geometry {};
-struct st_pipeline {};
-struct st_render_pass {};
-struct st_resource_table {};
-struct st_shader {};
-struct st_texture {};
-struct st_texture_view {};
-struct st_vertex_format
+// The virtual destructor is leveraged to release API resources when they
+// go out of scope. Implementation is API-specific.
+struct st_resource
+{
+	virtual ~st_resource() {}
+};
+
+struct st_buffer : public st_resource {};
+struct st_buffer_view : public st_resource {};
+struct st_geometry : public st_resource {};
+struct st_pipeline : public st_resource {};
+struct st_render_pass : public st_resource {};
+struct st_resource_table : public st_resource {};
+struct st_shader : public st_resource {};
+struct st_texture : public st_resource {};
+struct st_texture_view : public st_resource {};
+struct st_vertex_format : public st_resource
 {
 	uint32_t _vertex_size;
 };

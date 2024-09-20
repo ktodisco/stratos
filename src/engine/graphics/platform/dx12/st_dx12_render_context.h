@@ -187,7 +187,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> _command_allocators[k_backbuffer_count];
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _command_queue;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> _root_signature;
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> _default_pso;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _command_list;
 
 	std::unique_ptr<st_dx12_descriptor_heap> _rtv_heap;
