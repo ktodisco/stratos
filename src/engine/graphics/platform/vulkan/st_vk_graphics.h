@@ -15,6 +15,8 @@
 #include <windows.h>
 #include <vulkan/vulkan.hpp>
 
+#include <graphics/platform/vulkan/st_vk_framebuffer.h>
+
 // Ugh. Windows.
 #undef min
 #undef max
@@ -29,8 +31,21 @@
 
 bool vk_validate(vk::Result result);
 
-struct st_vk_buffer : public st_buffer
+struct st_vk_resource
 {
+	~st_vk_resource() { _device = nullptr; }
+
+	vk::Device* _device = nullptr;
+};
+
+struct st_vk_buffer : public st_buffer, public st_vk_resource
+{
+	~st_vk_buffer()
+	{
+		_device->freeMemory(_memory, nullptr);
+		_device->destroyBuffer(_buffer, nullptr);
+	}
+
 	uint32_t _count;
 	e_st_buffer_usage_flags _usage;
 	size_t _element_size;
@@ -39,12 +54,14 @@ struct st_vk_buffer : public st_buffer
 	vk::DeviceMemory _memory;
 };
 
-struct st_vk_buffer_view : public st_buffer_view
+struct st_vk_buffer_view : public st_buffer_view, public st_vk_resource
 {
+	~st_vk_buffer_view() { _device->destroyBufferView(_view, nullptr); }
+
 	vk::BufferView _view;
 };
 
-struct st_vk_geometry : public st_geometry
+struct st_vk_geometry : public st_geometry, public st_vk_resource
 {
 	std::unique_ptr<st_buffer> _vertex_buffer;
 	std::unique_ptr<st_buffer> _index_buffer;
@@ -55,30 +72,64 @@ struct st_vk_geometry : public st_geometry
 	uint32_t _index_count = 0;
 };
 
-struct st_vk_pipeline : public st_pipeline
+struct st_vk_pipeline : public st_pipeline, public st_vk_resource
 {
+	~st_vk_pipeline() { _device->destroyPipeline(_pipeline, nullptr); }
+
 	vk::Pipeline _pipeline;
 };
 
-struct st_vk_render_pass : public st_render_pass
+struct st_vk_render_pass : public st_render_pass, public st_vk_resource
 {
+	~st_vk_render_pass() { _device->destroyRenderPass(_render_pass, nullptr); }
+
 	vk::RenderPass _render_pass;
 	std::unique_ptr<class st_vk_framebuffer> _framebuffer;
 	vk::Viewport _viewport;
 };
 
-struct st_vk_resource_table : public st_resource_table
+struct st_vk_resource_table : public st_resource_table, public st_vk_resource
 {
+	~st_vk_resource_table()
+	{
+		for (auto& sampler : _sampler_resources)
+		{
+			_device->destroySampler(sampler, nullptr);
+		}
+		_sampler_resources.clear();
+
+		vk::DescriptorSet sets[] =
+		{
+			_textures,
+			_buffers,
+			_constants,
+			_samplers,
+		};
+
+		VK_VALIDATE(_device->freeDescriptorSets(*_pool, 4, sets));
+	}
+
 	vk::DescriptorSet _textures;
 	vk::DescriptorSet _constants;
 	vk::DescriptorSet _buffers;
 	vk::DescriptorSet _samplers;
 
 	std::vector<vk::Sampler> _sampler_resources;
+
+	vk::DescriptorPool* _pool;
 };
 
-struct st_vk_shader : public st_shader
+struct st_vk_shader : public st_shader, public st_vk_resource
 {
+	~st_vk_shader()
+	{
+		_device->destroyShaderModule(_vs, nullptr);
+		_device->destroyShaderModule(_ps, nullptr);
+		_device->destroyShaderModule(_ds, nullptr);
+		_device->destroyShaderModule(_hs, nullptr);
+		_device->destroyShaderModule(_gs, nullptr);
+	}
+
 	vk::ShaderModule _vs;
 	vk::ShaderModule _ps;
 	vk::ShaderModule _ds;
@@ -88,8 +139,15 @@ struct st_vk_shader : public st_shader
 	uint8_t _type = 0;
 };
 
-struct st_vk_texture : public st_texture
+struct st_vk_texture : public st_texture, public st_vk_resource
 {
+	~st_vk_texture()
+	{
+		_device->destroyImageView(_view, nullptr);
+		_device->freeMemory(_memory, nullptr);
+		_device->destroyImage(_handle, nullptr);
+	}
+
 	vk::Image _handle;
 	vk::ImageView _view;
 	vk::DeviceMemory _memory;
@@ -102,12 +160,14 @@ struct st_vk_texture : public st_texture
 	e_st_texture_state _state = st_texture_state_common;
 };
 
-struct st_vk_texture_view : public st_texture_view
+struct st_vk_texture_view : public st_texture_view, public st_vk_resource
 {
+	~st_vk_texture_view() { _device->destroyImageView(_view, nullptr); }
+
 	vk::ImageView _view;
 };
 
-struct st_vk_vertex_format : public st_vertex_format
+struct st_vk_vertex_format : public st_vertex_format, public st_vk_resource
 {
 	std::vector<vk::VertexInputBindingDescription> _binding_descs;
 	std::vector<vk::VertexInputAttributeDescription> _attribute_descs;

@@ -160,6 +160,7 @@ int main(int argc, const char** argv)
 	}
 
 	scene = nullptr;
+	output = nullptr;
 
 	st_imgui::shutdown();
 	st_job::shutdown();

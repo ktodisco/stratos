@@ -9,7 +9,6 @@
 #if defined(ST_GRAPHICS_API_VULKAN)
 
 #include <graphics/platform/vulkan/st_vk_conversion.h>
-#include <graphics/platform/vulkan/st_vk_framebuffer.h>
 
 #include <graphics/geometry/st_vertex_attribute.h>
 
@@ -721,6 +720,7 @@ std::unique_ptr<st_texture> st_vk_render_context::create_texture(
 	void* data)
 {
 	std::unique_ptr<st_vk_texture> texture = std::make_unique<st_vk_texture>();
+	texture->_device = &_device;
 	texture->_width = width;
 	texture->_height = height;
 	texture->_levels = mip_count;
@@ -979,6 +979,7 @@ std::unique_ptr<st_texture_view> st_vk_render_context::create_texture_view(st_te
 	st_vk_texture* texture = static_cast<st_vk_texture*>(texture_);
 
 	std::unique_ptr<st_vk_texture_view> view = std::make_unique<st_vk_texture_view>();
+	view->_device = &_device;
 
 	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
@@ -1029,6 +1030,7 @@ std::unique_ptr<st_buffer> st_vk_render_context::create_buffer(
 	const e_st_buffer_usage_flags usage)
 {
 	std::unique_ptr<st_vk_buffer> buffer = std::make_unique<st_vk_buffer>();
+	buffer->_device = &_device;
 	buffer->_count = count;
 	buffer->_element_size = element_size;
 	buffer->_usage = usage;
@@ -1071,6 +1073,7 @@ std::unique_ptr<st_buffer> st_vk_render_context::create_buffer(
 std::unique_ptr<st_buffer_view> st_vk_render_context::create_buffer_view(st_buffer* buffer_)
 {
 	std::unique_ptr<st_vk_buffer_view> view = std::make_unique<st_vk_buffer_view>();
+	view->_device = &_device;
 
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
@@ -1114,6 +1117,8 @@ void st_vk_render_context::update_buffer(st_buffer* buffer_, void* data, const u
 std::unique_ptr<st_resource_table> st_vk_render_context::create_resource_table()
 {
 	std::unique_ptr<st_vk_resource_table> table = std::make_unique<st_vk_resource_table>();
+	table->_device = &_device;
+	table->_pool = &_descriptor_pool;
 
 	auto create_set = [this](e_st_descriptor_slot slot, vk::DescriptorSet* set)
 	{
@@ -1259,6 +1264,7 @@ void st_vk_render_context::bind_resource_table(st_resource_table* table_)
 std::unique_ptr<st_shader> st_vk_render_context::create_shader(const char* filename, uint8_t type)
 {
 	std::unique_ptr<st_vk_shader> shader = std::make_unique<st_vk_shader>();
+	shader->_device = &_device;
 	shader->_type = type;
 
 	auto load_shader = [this](std::string file_name, vk::ShaderModule& shader)
@@ -1311,6 +1317,7 @@ std::unique_ptr<st_pipeline> st_vk_render_context::create_pipeline(
 	const st_render_pass* render_pass_)
 {
 	std::unique_ptr<st_vk_pipeline> pipeline = std::make_unique<st_vk_pipeline>();
+	pipeline->_device = &_device;
 
 	const st_vk_shader* shader = static_cast<const st_vk_shader*>(desc._shader);
 
@@ -1452,6 +1459,7 @@ std::unique_ptr<st_vertex_format> st_vk_render_context::create_vertex_format(
 	uint32_t attribute_count)
 {
 	std::unique_ptr<st_vk_vertex_format> vertex_format = std::make_unique<st_vk_vertex_format>();
+	vertex_format->_device = &_device;
 
 	// TODO: Group this into common code.
 	size_t vertex_size = 0;
@@ -1597,6 +1605,7 @@ std::unique_ptr<st_render_pass> st_vk_render_context::create_render_pass(
 	st_render_texture* depth_stencil)
 {
 	std::unique_ptr<st_vk_render_pass> render_pass = std::make_unique<st_vk_render_pass>();
+	render_pass->_device = &_device;
 
 	// Naively, create the viewport from the first target.
 	if (count > 0)
