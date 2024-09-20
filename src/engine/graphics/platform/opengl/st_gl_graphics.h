@@ -53,6 +53,8 @@ struct st_gl_constant
 
 struct st_gl_buffer : public st_buffer
 {
+	~st_gl_buffer() { glDeleteBuffers(1, &_buffer); }
+
 	GLuint _buffer;
 	uint32_t _count;
 	size_t _element_size;
@@ -78,6 +80,12 @@ struct st_gl_buffer_view : public st_buffer_view
 
 struct st_gl_geometry : public st_geometry
 {
+	~st_gl_geometry()
+	{
+		glDeleteBuffers(2, _vbos);
+		glDeleteVertexArrays(1, &_vao);
+	}
+
 	uint32_t _vao;
 	uint32_t _vbos[4];
 	uint32_t _index_count;
@@ -96,12 +104,20 @@ struct st_gl_render_pass : public st_render_pass
 
 struct st_gl_resource_table : public st_resource_table
 {
+	~st_gl_resource_table()
+	{
+		glDeleteSamplers(_samplers.size(), _samplers.data());
+		_samplers.clear();
+	}
+
 	std::vector<struct st_texture*> _srvs;
 	std::vector<GLuint> _samplers;
 };
 
 struct st_gl_texture : public st_texture
 {
+	~st_gl_texture() { glDeleteTextures(1, &_handle); }
+
 	uint32_t _handle;
 	uint32_t _width;
 	uint32_t _height;
