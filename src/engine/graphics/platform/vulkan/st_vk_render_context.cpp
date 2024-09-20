@@ -1013,17 +1013,6 @@ std::unique_ptr<st_texture_view> st_vk_render_context::create_texture_view(st_te
 	return std::move(view);
 }
 
-//void st_vk_render_context::destroy_texture(vk::Image& resource, vk::DeviceMemory& memory)
-//{
-//	_device.freeMemory(memory, nullptr);
-//	_device.destroyImage(resource, nullptr);
-//}
-
-//void st_vk_render_context::destroy_texture_view(vk::ImageView& resource)
-//{
-//	_device.destroyImageView(resource, nullptr);
-//}
-
 std::unique_ptr<st_buffer> st_vk_render_context::create_buffer(
 	const uint32_t count,
 	const size_t element_size,
@@ -1108,12 +1097,6 @@ void st_vk_render_context::update_buffer(st_buffer* buffer_, void* data, const u
 	_command_buffers[st_command_buffer_loading].updateBuffer(buffer->_buffer, 0, align_value(count * buffer->_element_size, 4), data);
 }
 
-//void st_vk_render_context::destroy_buffer(vk::Buffer& resource, vk::DeviceMemory& memory)
-//{
-//	_device.freeMemory(memory, nullptr);
-//	_device.destroyBuffer(resource, nullptr);
-//}
-
 std::unique_ptr<st_resource_table> st_vk_render_context::create_resource_table()
 {
 	std::unique_ptr<st_vk_resource_table> table = std::make_unique<st_vk_resource_table>();
@@ -1137,21 +1120,6 @@ std::unique_ptr<st_resource_table> st_vk_render_context::create_resource_table()
 
 	return std::move(table);
 }
-
-//void st_vk_render_context::destroy_descriptor_set(vk::DescriptorSet& set)
-//{
-// 	for (auto& sampler : _sampler_resources)
-//	{
-//		context->destroy_sampler(sampler);
-//	}
-//	_sampler_resources.clear();
-//
-//	context->destroy_descriptor_set(_textures);
-//	context->destroy_descriptor_set(_buffers);
-//	context->destroy_descriptor_set(_constants);
-//	context->destroy_descriptor_set(_samplers);
-//	VK_VALIDATE(_device.freeDescriptorSets(_descriptor_pool, 1, &set));
-//}
 
 void st_vk_render_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
 {
@@ -1298,20 +1266,6 @@ std::unique_ptr<st_shader> st_vk_render_context::create_shader(const char* filen
 	return std::move(shader);
 }
 
-//void st_vk_render_context::destroy_shader(st_shader* shader)
-//{
-//	if (_type & st_shader_type_vertex)
-//		device->destroyShaderModule(_vs, nullptr);
-//	if (_type & st_shader_type_pixel)
-//		device->destroyShaderModule(_ps, nullptr);
-//	if (_type & st_shader_type_domain)
-//		device->destroyShaderModule(_ds, nullptr);
-//	if (_type & st_shader_type_geometry)
-//		device->destroyShaderModule(_gs, nullptr);
-//	if (_type & st_shader_type_hull)
-//		device->destroyShaderModule(_hs, nullptr);
-//}
-
 std::unique_ptr<st_pipeline> st_vk_render_context::create_pipeline(
 	const st_pipeline_state_desc& desc,
 	const st_render_pass* render_pass_)
@@ -1451,8 +1405,6 @@ std::unique_ptr<st_pipeline> st_vk_render_context::create_pipeline(
 
 	return std::move(pipeline);
 }
-
-//	device->destroyPipeline(_pipeline, nullptr);
 
 std::unique_ptr<st_vertex_format> st_vk_render_context::create_vertex_format(
 	const struct st_vertex_attribute* attributes,
