@@ -8,31 +8,38 @@
 
 #include <graphics/st_graphics.h>
 
-#if defined(ST_GRAPHICS_API_OPENGL)
-#include <graphics/platform/opengl/st_gl_render_texture.h>
+#include <math/st_vec4f.h>
 
-typedef st_gl_render_texture st_platform_render_texture;
-#elif defined(ST_GRAPHICS_API_DX12)
-#include <graphics/platform/dx12/st_dx12_render_texture.h>
+#include <cstdint>
+#include <memory>
 
-typedef st_dx12_render_texture st_platform_render_texture;
-#elif defined(ST_GRAPHICS_API_VULKAN)
-#include <graphics/platform/vulkan/st_vk_render_texture.h>
-
-typedef st_vk_render_texture st_platform_render_texture;
-#else
-#error Graphics API not defined.
-#endif
-
-class st_render_texture : public st_platform_render_texture
+class st_render_texture
 {
 public:
+
 	st_render_texture(
+		class st_graphics_context* context,
 		uint32_t width,
 		uint32_t height,
 		e_st_format format,
 		e_st_texture_usage_flags usage,
 		e_st_texture_state initial_state,
-		st_vec4f clear) :
-		st_platform_render_texture(width, height, format, usage, initial_state, clear) {}
+		st_vec4f clear,
+		const char* name);
+	~st_render_texture();
+
+	st_texture* get_texture() { return _texture.get(); }
+	const st_texture_view* get_view() const { return _view.get(); }
+	uint32_t get_width() const { return _width; }
+	uint32_t get_height() const { return _height; }
+	e_st_format get_format() const { return _format; }
+
+private:
+	// TODO: Better to store a desc, or pull from the underlying texture.
+	uint32_t _width;
+	uint32_t _height;
+	e_st_format _format;
+
+	std::unique_ptr<struct st_texture> _texture;
+	std::unique_ptr<struct st_texture_view> _view;
 };

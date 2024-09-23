@@ -8,14 +8,12 @@
 
 #include <framework/st_frame_params.h>
 
-#include <graphics/geometry/st_vertex_format.h>
+#include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_gbuffer_material.h>
 #include <graphics/material/st_parallax_occlusion_material.h>
 #include <graphics/st_drawcall.h>
-#include <graphics/st_pipeline_state.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_render_marker.h>
-#include <graphics/st_render_pass.h>
 #include <graphics/st_render_texture.h>
 
 st_gbuffer_render_pass::st_gbuffer_render_pass(
@@ -24,19 +22,21 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	st_render_texture* third_buffer,
 	st_render_texture* depth_buffer)
 {
+	st_graphics_context* context = st_graphics_context::get();
+
 	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
-	_pass = std::make_unique<st_render_pass>(
+	_pass = context->create_render_pass(
 		3,
 		targets,
 		depth_buffer);
 
-	_vertex_format = std::make_unique<st_vertex_format>();
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_normal, 1));
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_tangent, 2));
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_color, 3));
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_uv, 4));
-	_vertex_format->finalize();
+	std::vector<st_vertex_attribute> attributes;
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, 0));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_normal, 1));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, 2));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, 3));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, 4));
+	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
 
 	// Set up the gbuffer material and state.
 	_default_gbuffer = std::make_unique<st_gbuffer_material>(
@@ -53,7 +53,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	gbuffer_state_desc._render_target_formats[2] = third_buffer->get_format();
 	gbuffer_state_desc._depth_stencil_format = depth_buffer->get_format();
 
-	_gbuffer_state = std::make_unique<st_pipeline_state>(gbuffer_state_desc, _pass.get());
+	_gbuffer_state = context->create_pipeline(gbuffer_state_desc, _pass.get());
 
 	// TODO: See comment in header regarding multiple materials in a single render pass.
 	_default_parallax_occlusion = std::make_unique<st_parallax_occlusion_material>(
@@ -70,19 +70,19 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	parallax_occlusion_state_desc._render_target_formats[2] = third_buffer->get_format();
 	parallax_occlusion_state_desc._depth_stencil_format = depth_buffer->get_format();
 
-	_parallax_occlusion_state = std::make_unique<st_pipeline_state>(parallax_occlusion_state_desc, _pass.get());
+	_parallax_occlusion_state = context->create_pipeline(parallax_occlusion_state_desc, _pass.get());
 }
 
 st_gbuffer_render_pass::~st_gbuffer_render_pass()
 {
 }
 
-void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_params* params)
+void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame_params* params)
 {
-	st_render_marker marker("st_gbuffer_render_pass::render");
+	st_render_marker marker(context, "st_gbuffer_render_pass::render");
 
 	context->set_scissor(0, 0, params->_width, params->_height);
-	context->set_pipeline_state(_gbuffer_state.get());
+	context->set_pipeline(_gbuffer_state.get());
 
 	st_vec4f clears[] =
 	{
@@ -92,7 +92,7 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 		{ 1.0f, 0.0f, 0.0f, 0.0f }
 	};
 
-	_pass->begin(context, clears, std::size(clears));
+	context->begin_render_pass(_pass.get(), clears, std::size(clears));
 
 	// Clear viewport.
 	context->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -101,11 +101,11 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 	// Draw all static geometry.
 	for (auto& d : params->_static_drawcalls)
 	{
-		st_render_marker draw_marker(d._name.c_str());
+		st_render_marker draw_marker(context, d._name.c_str());
 
 		if (!d._material)
 		{
-			context->set_pipeline_state(_gbuffer_state.get());
+			context->set_pipeline(_gbuffer_state.get());
 			_default_gbuffer->bind(context, params, params->_projection, params->_view, d._transform);
 		}
 		else
@@ -113,11 +113,11 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 			switch (d._material->get_material_type())
 			{
 			case st_material_type_parallax_occlusion:
-				context->set_pipeline_state(_parallax_occlusion_state.get());
+				context->set_pipeline(_parallax_occlusion_state.get());
 				break;
 			case st_material_type_gbuffer:
 			default:
-				context->set_pipeline_state(_gbuffer_state.get());
+				context->set_pipeline(_gbuffer_state.get());
 				break;
 			}
 
@@ -127,5 +127,5 @@ void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_p
 		context->draw(d);
 	}
 
-	_pass->end(context);
+	context->end_render_pass(_pass.get());
 }

@@ -19,7 +19,7 @@ public:
 		class st_render_texture* target_buffer);
 	~st_gaussian_blur_render_pass();
 
-	void render(class st_render_context* context, const struct st_frame_params* params);
+	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
 private:
 	std::unique_ptr<class st_render_pass> _vertical_blur_pass = nullptr;
@@ -33,6 +33,6 @@ private:
 	std::unique_ptr<class st_material> _vertical_blur_material = nullptr;
 	std::unique_ptr<class st_material> _horizontal_blur_material = nullptr;
 
-	std::unique_ptr<class st_pipeline_state> _vertical_blur_state = nullptr;
-	std::unique_ptr<class st_pipeline_state> _horizontal_blur_state = nullptr;
+	std::unique_ptr<class st_pipeline> _vertical_blur_state = nullptr;
+	std::unique_ptr<class st_pipeline> _horizontal_blur_state = nullptr;
 };

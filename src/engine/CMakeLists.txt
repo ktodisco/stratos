@@ -50,11 +50,18 @@ link_directories ("C:/VulkanSDK/1.3.204.1/Lib")
 # ST framework:
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}")
 file (GLOB_RECURSE ST_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file (GLOB_RECURSE ST_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 foreach (SOURCE IN LISTS ST_SOURCE_FILES)
 	file(RELATIVE_PATH SOURCE_RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${SOURCE}")
 	get_filename_component(SOURCE_PATH "${SOURCE_RELATIVE}" PATH)
 	source_group("${SOURCE_PATH}" FILES "${SOURCE_RELATIVE}")
+endforeach()
+
+foreach (HEADER IN LISTS ST_HEADER_FILES)
+	file(RELATIVE_PATH HEADER_RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${HEADER}")
+	get_filename_component(HEADER_PATH "${HEADER_RELATIVE}" PATH)
+	source_group("${HEADER_PATH}" FILES "${HEADER_RELATIVE}")
 endforeach()
 
 # On Windows, we're not going to worry about CRT secure warnings.
@@ -68,7 +75,8 @@ if (MINGW)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -D_POSIX_C_SOURCE")
 endif()
 
-add_executable (stratos ${ST_SOURCE_FILES} always_copy_data.h)
+add_executable (stratos ${ST_SOURCE_FILES} ${ST_HEADER_FILES})
+#target_include_directories (stratos PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries (stratos glew32s opengl32 glu32 lua53 imgui166 d3d12 dxgi dxguid D3DCompiler WinPixEventRuntime assimp-vc140-mt vulkan-1.lib)
 if (MSVC)
 	set_target_properties (stratos PROPERTIES LINK_FLAGS "/ignore:4098 /ignore:4099")

@@ -23,7 +23,7 @@
 #include <graphics/geometry/st_model_component.h>
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/st_light_component.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 
 #include <gui/st_button.h>
@@ -58,9 +58,29 @@ st_font* g_font = nullptr;
 
 static void set_root_path(const char* exepath);
 
+e_st_graphics_api get_api(int argc, const char** argv)
+{
+	for (int i = 0; i < argc; ++i)
+	{
+		if (strcmp(argv[i], "-api") == 0 && i < (argc + 1))
+		{
+			i++;
+			if (strcmp(argv[i], "dx12") == 0)
+				return e_st_graphics_api::dx12;
+			else if (strcmp(argv[i], "opengl") == 0)
+				return e_st_graphics_api::opengl;
+			else if (strcmp(argv[i], "vulkan") == 0)
+				return e_st_graphics_api::vulkan;
+		}
+	}
+
+	return e_st_graphics_api::dx12;
+}
+
 int main(int argc, const char** argv)
 {
 	set_root_path(argv[0]);
+	e_st_graphics_api api = get_api(argc, argv);
 
 	st_job::startup(0xffff, 256, 256);
 
@@ -70,11 +90,11 @@ int main(int argc, const char** argv)
 	std::unique_ptr<st_window> window = std::make_unique<st_window>("Stratos Renderer", 1280, 720, input.get());
 
 	// Create the rendering context for the window.
-	std::unique_ptr<st_render_context> render = std::make_unique<st_render_context>(window.get());
+	std::unique_ptr<st_graphics_context> render = st_graphics_context::create(api, window.get());
 
 	// Create the shader manager, loading all the shaders.
 	std::unique_ptr<st_shader_manager> shader_manager =
-		std::make_unique<st_shader_manager>();
+		std::make_unique<st_shader_manager>(render.get());
 
 	// Create objects for phases of the frame: sim, physics, and output.
 	std::unique_ptr<st_sim> sim = std::make_unique<st_sim>();
@@ -129,8 +149,8 @@ int main(int argc, const char** argv)
 		// Perform the late update.
 		sim->late_update(&params);
 
-#if !defined(ST_GRAPHICS_API_OPENGL) && !defined(ST_GRAPHICS_API_VULKAN)
-		// TODO: ImGui is broken on OpenGL and Vulkan right now.
+#if 0
+		// TODO: ImGui is broken on all backends right now.
 		st_imgui::new_frame();
 		ImGui::ShowDemoWindow();
 #endif
@@ -140,6 +160,7 @@ int main(int argc, const char** argv)
 	}
 
 	scene = nullptr;
+	output = nullptr;
 
 	st_imgui::shutdown();
 	st_job::shutdown();

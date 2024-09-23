@@ -6,17 +6,18 @@
 
 #include <graphics/material/st_gaussian_blur_material.h>
 
-#include <graphics/st_pipeline_state.h>
-#include <graphics/st_render_context.h>
-#include <graphics/st_resource_table.h>
+#include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_graphics_context.h>
+#include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
-#include <graphics/st_texture.h>
 
-st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(st_texture* texture) :
+st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(st_render_texture* texture) :
 	_texture(texture)
 {
-	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->set_textures(1, &_texture);
+	st_graphics_context* context = st_graphics_context::get();
+	_resource_table = context->create_resource_table();
+	st_texture* t = _texture->get_texture();
+	context->set_textures(_resource_table.get(), 1, &t);
 }
 
 st_gaussian_blur_vertical_material::~st_gaussian_blur_vertical_material()
@@ -33,22 +34,24 @@ void st_gaussian_blur_vertical_material::get_pipeline_state(
 }
 
 void st_gaussian_blur_vertical_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	_texture->set_meta("SPIRV_Cross_Combinedtextex_sampler");
-	_texture->transition(context, st_texture_state_pixel_shader_read);
-	_resource_table->bind(context);
+	context->set_texture_meta(_texture->get_texture(), "SPIRV_Cross_Combinedtextex_sampler");
+	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
+	context->bind_resource_table(_resource_table.get());
 }
 
-st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(st_texture* texture) :
+st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(st_render_texture* texture) :
 	_texture(texture)
 {
-	_resource_table = std::make_unique<st_resource_table>();
-	_resource_table->set_textures(1, &_texture);
+	st_graphics_context* context = st_graphics_context::get();
+	_resource_table = context->create_resource_table();
+	st_texture* t = _texture->get_texture();
+	context->set_textures(_resource_table.get(), 1, &t);
 }
 
 st_gaussian_blur_horizontal_material::~st_gaussian_blur_horizontal_material()
@@ -65,13 +68,13 @@ void st_gaussian_blur_horizontal_material::get_pipeline_state(
 }
 
 void st_gaussian_blur_horizontal_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	_texture->set_meta("SPIRV_Cross_Combinedtextex_sampler");
-	_texture->transition(context, st_texture_state_pixel_shader_read);
-	_resource_table->bind(context);
+	context->set_texture_meta(_texture->get_texture(), "SPIRV_Cross_Combinedtextex_sampler");
+	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
+	context->bind_resource_table(_resource_table.get());
 }

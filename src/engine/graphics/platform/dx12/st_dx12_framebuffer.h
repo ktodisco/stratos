@@ -6,7 +6,7 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_graphics.h>
+#include <graphics/platform/dx12/st_dx12_graphics.h>
 
 #if defined(ST_GRAPHICS_API_DX12)
 
@@ -22,8 +22,8 @@ public:
 		class st_render_texture* depth_stencil);
 	~st_dx12_framebuffer();
 
-	void bind(class st_render_context* context);
-	void unbind(class st_render_context* context);
+	void bind(class st_graphics_context* context);
+	void unbind(class st_graphics_context* context);
 
 private:
 	uint32_t _target_count;

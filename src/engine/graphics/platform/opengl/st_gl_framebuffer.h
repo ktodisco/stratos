@@ -6,7 +6,7 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_graphics.h>
+#include <graphics/platform/opengl/st_gl_graphics.h>
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
@@ -21,8 +21,8 @@ public:
 		class st_render_texture* depth_stencil);
 	~st_gl_framebuffer();
 
-	void bind(class st_render_context* context);
-	void unbind(class st_render_context* context);
+	void bind(class st_graphics_context* context);
+	void unbind(class st_graphics_context* context);
 
 	GLuint get_handle() { return _framebuffer; };
 

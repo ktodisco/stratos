@@ -24,5 +24,5 @@ public:
 
 private:
 	std::unique_ptr<class st_material> _material = nullptr;
-	std::unique_ptr<class st_geometry> _geometry = nullptr;
+	std::unique_ptr<struct st_geometry> _geometry = nullptr;
 };

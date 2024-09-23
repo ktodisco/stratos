@@ -15,7 +15,7 @@
 #include <cstdint>
 #include <dxgi1_6.h>
 #include <graphics/dds.h>
-#include <graphics/st_texture.h>
+#include <graphics/st_graphics.h>
 
 #include <memory>
 

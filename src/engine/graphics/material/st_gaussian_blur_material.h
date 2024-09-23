@@ -11,11 +11,11 @@
 class st_gaussian_blur_vertical_material : public st_material
 {
 public:
-	st_gaussian_blur_vertical_material(class st_texture* texture);
+	st_gaussian_blur_vertical_material(class st_render_texture* texture);
 	~st_gaussian_blur_vertical_material();
 
 	virtual void bind(
-		class st_render_context* context,
+		class st_graphics_context* context,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,
 		const st_mat4f& view,
@@ -27,18 +27,18 @@ public:
 	st_material_type get_material_type() override { return st_material_type_gaussian_blur_vertical; }
 
 private:
-	class st_texture* _texture;
+	class st_render_texture* _texture;
 	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 };
 
 class st_gaussian_blur_horizontal_material : public st_material
 {
 public:
-	st_gaussian_blur_horizontal_material(class st_texture* texture);
+	st_gaussian_blur_horizontal_material(class st_render_texture* texture);
 	~st_gaussian_blur_horizontal_material();
 
 	virtual void bind(
-		class st_render_context* context,
+		class st_graphics_context* context,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,
 		const st_mat4f& view,
@@ -50,6 +50,6 @@ public:
 	st_material_type get_material_type() override { return st_material_type_gaussian_blur_horizontal; }
 
 private:
-	class st_texture* _texture;
+	class st_render_texture* _texture;
 	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 };

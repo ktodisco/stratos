@@ -6,10 +6,6 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/st_graphics.h>
-
-#include <graphics/st_texture.h>
-
 #include <math/st_mat4f.h>
 #include <math/st_vec3f.h>
 
@@ -44,7 +40,7 @@ class st_material
 public:
 	virtual ~st_material() {}
 	virtual void bind(
-		class st_render_context* context,
+		class st_graphics_context* context,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,
 		const st_mat4f& view,

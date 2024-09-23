@@ -14,11 +14,11 @@
 class st_fullscreen_material : public st_material
 {
 public:
-	st_fullscreen_material(class st_texture* texture);
+	st_fullscreen_material(class st_render_texture* texture);
 	~st_fullscreen_material();
 
 	virtual void bind(
-		class st_render_context* context,
+		class st_graphics_context* context,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,
 		const st_mat4f& view,
@@ -30,6 +30,6 @@ public:
 	st_material_type get_material_type() override { return st_material_type_fullscreen; }
 
 private:
-	class st_texture* _texture;
+	class st_render_texture* _texture;
 	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
 };

@@ -6,58 +6,58 @@
 
 #include <graphics/st_shader_manager.h>
 
-#include <graphics/st_shader.h>
+#include <graphics/st_graphics_context.h>
 
 st_shader_manager* st_shader_manager::_this = nullptr;
 
-st_shader_manager::st_shader_manager()
+st_shader_manager::st_shader_manager(st_graphics_context* context)
 {
 	_shaders[st_shader_phong] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_phong",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_unlit_texture] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_unlit_texture",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_constant_color] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_constant_color",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_font] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_font_simple",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_gbuffer] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_gbuffer",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_fullscreen] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_fullscreen",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_deferred_light] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_deferred_light",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_tonemap] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_tonemap",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_bloom] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_bloom",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_gaussian_blur_vertical] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_gaussian_blur_vertical",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_gaussian_blur_horizontal] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_gaussian_blur_horizontal",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_parallax_occlusion] =
-		std::make_unique<st_shader>(
+		context->create_shader(
 			"data/shaders/st_parallax_occlusion",
 			st_shader_type_vertex | st_shader_type_pixel);
 

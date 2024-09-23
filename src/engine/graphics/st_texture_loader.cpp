@@ -8,6 +8,8 @@
 
 #include <core/st_core.h>
 
+#include <graphics/st_graphics_context.h>
+
 #include <stb_image.h>
 
 #include <cassert>
@@ -58,13 +60,14 @@ std::unique_ptr<st_texture> load_stb_texture(const char* fullpath)
 		return nullptr;
 	}
 
-	std::unique_ptr<st_texture> ret = std::make_unique<st_texture>(
+	std::unique_ptr<st_texture> ret = st_graphics_context::get()->create_texture(
 		width,
 		height,
 		1,
 		st_format_r8g8b8a8_unorm,
 		e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
+		st_vec4f::zero_vector(),
 		data);
 
 	stbi_image_free(data);
@@ -169,13 +172,14 @@ std::unique_ptr<st_texture> load_dds_texture(const char* fullpath)
 	CloseHandle(hFile);
 
 	// CreateTextureFromDDS.
-	auto texture = std::make_unique<st_texture>(
+	auto texture = st_graphics_context::get()->create_texture(
 		header->width,
 		header->height,
 		header->mipMapCount,
 		get_st_format(header->ddspf),
 		e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
+		st_vec4f::zero_vector(),
 		bit_data);
 
 	return std::move(texture);

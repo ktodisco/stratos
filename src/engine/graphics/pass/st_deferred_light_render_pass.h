@@ -8,6 +8,9 @@
 
 #include <graphics/pass/st_fullscreen_render_pass.h>
 
+#include <math/st_mat4f.h>
+#include <math/st_vec4f.h>
+
 #include <memory>
 
 class st_deferred_light_render_pass : public st_fullscreen_render_pass
@@ -22,12 +25,12 @@ public:
 		class st_render_texture* output_depth);
 	~st_deferred_light_render_pass();
 
-	void render(class st_render_context* context, const struct st_frame_params* params);
+	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
 private:
-	std::unique_ptr<class st_render_pass> _pass = nullptr;
-	std::unique_ptr<class st_constant_buffer> _constant_buffer = nullptr;
-	std::unique_ptr<class st_buffer> _light_buffer = nullptr;
+	std::unique_ptr<struct st_render_pass> _pass = nullptr;
+	std::unique_ptr<struct st_buffer> _constant_buffer = nullptr;
+	std::unique_ptr<struct st_buffer> _light_buffer = nullptr;
 };
 
 struct st_deferred_light_cb

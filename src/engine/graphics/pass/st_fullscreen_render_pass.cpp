@@ -6,36 +6,39 @@
 
 #include <graphics/pass/st_fullscreen_render_pass.h>
 
-#include <graphics/geometry/st_geometry.h>
-#include <graphics/geometry/st_vertex_format.h>
+#include <graphics/st_graphics_context.h>
+#include <graphics/geometry/st_vertex_attribute.h>
+#include <graphics/material/st_material.h>
 
 #include <cstdint>
+#include <vector>
 
 st_fullscreen_render_pass::st_fullscreen_render_pass()
 {
-	_vertex_format = std::make_unique<st_vertex_format>();
-	_vertex_format->add_attribute(st_vertex_attribute(st_vertex_attribute_position, 0));
-	_vertex_format->finalize();
+	std::vector<st_vertex_attribute> attributes;
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, 0));
+	_vertex_format = st_graphics_context::get()->create_vertex_format(attributes.data(), attributes.size());
 
-	const float verts[] =
+	float verts[] =
 	{
-#if defined(ST_GRAPHICS_API_VULKAN)
-		-1.0f, 1.0f, 0.0f,
-		3.0f, 1.0f, 0.0f,
-		-1.0f, -3.0f, 0.0f,
-#else
 		-1.0f, -1.0f, 0.0f,
 		3.0f, -1.0f, 0.0f,
 		-1.0f, 3.0f, 0.0f,
-#endif
 	};
+
+	if (st_graphics_context::get()->get_api() == e_st_graphics_api::vulkan)
+	{
+		verts[1] *= -1.0f;
+		verts[4] *= -1.0f;
+		verts[7] *= -1.0f;
+	}
 
 	const uint16_t indices[] =
 	{
 		0, 1, 2
 	};
 
-	_fullscreen_quad = std::make_unique<st_geometry>(
+	_fullscreen_quad = st_graphics_context::get()->create_geometry(
 		_vertex_format.get(),
 		(void*)verts,
 		static_cast<uint32_t>(sizeof(float) * 3),

@@ -6,20 +6,19 @@
 
 #include <graphics/material/st_phong_material.h>
 
-#include <graphics/st_constant_buffer.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
-#include <graphics/st_resource_table.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 
 st_phong_material::st_phong_material()
 {
-	_phong_buffer = std::make_unique<st_constant_buffer>(sizeof(st_view_cb));
-	_phong_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	st_graphics_context* context = st_graphics_context::get();
+	_phong_buffer = context->create_buffer(1, sizeof(st_view_cb), e_st_buffer_usage::uniform);
+	context->add_constant(_phong_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
-	_resource_table = std::make_unique<st_resource_table>();
-	st_constant_buffer* cbs[] = { _phong_buffer.get() };
-	_resource_table->set_constant_buffers(1, cbs);
+	_resource_table = context->create_resource_table();
+	st_buffer* cbs[] = { _phong_buffer.get() };
+	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_phong_material::~st_phong_material()
@@ -27,7 +26,7 @@ st_phong_material::~st_phong_material()
 }
 
 void st_phong_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
@@ -38,9 +37,9 @@ void st_phong_material::bind(
 
 	st_view_cb cb_data{};
 	cb_data._mvp = mvp;
-	_phong_buffer->update(context, &cb_data);
+	context->update_buffer(_phong_buffer.get(), &cb_data, 1);
 
-	_resource_table->bind(context);
+	context->bind_resource_table(_resource_table.get());
 }
 
 void st_phong_material::get_pipeline_state(

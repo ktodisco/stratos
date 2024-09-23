@@ -12,15 +12,17 @@
 
 #include <cassert>
 
+#include <debugapi.h>
+
 vk::DispatchLoaderDynamic vk::defaultDispatchLoaderDynamic = vk::DispatchLoaderDynamic();
 
 bool vk_validate(vk::Result result)
 {
 	bool ret = true;
 
-	if (result != vk::Result::eSuccess)
+	if (IsDebuggerPresent() && result != vk::Result::eSuccess)
 	{
-		assert(false);
+		__debugbreak();
 		ret = false;
 	}
 

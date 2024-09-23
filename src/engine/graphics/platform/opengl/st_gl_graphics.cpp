@@ -28,3 +28,34 @@ void gl_message_callback(
 		assert(false);
 	}
 }
+
+void get_pixel_format_and_type(
+	e_st_format format,
+	GLenum& pixel_format,
+	GLenum& type)
+{
+	switch (format)
+	{
+	case st_format_r8_unorm:
+		pixel_format = GL_RED;
+		type = GL_UNSIGNED_BYTE;
+		break;
+	case st_format_r8g8b8a8_snorm:
+	case st_format_r8g8b8a8_unorm:
+		pixel_format = GL_RGBA;
+		type = GL_UNSIGNED_BYTE;
+		break;
+	case st_format_r16g16b16a16_float:
+	case st_format_r32g32b32a32_float:
+		pixel_format = GL_RGBA;
+		type = GL_FLOAT;
+		break;
+	case st_format_d24_unorm_s8_uint:
+		pixel_format = GL_DEPTH_STENCIL;
+		type = GL_UNSIGNED_INT_24_8;
+		break;
+	default:
+		assert(false);
+		break;
+	}
+}

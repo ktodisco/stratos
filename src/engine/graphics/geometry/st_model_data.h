@@ -6,10 +6,11 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/geometry/st_vertex_format.h>
+#include <graphics/st_graphics.h>
 
 #include <climits>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include "math/st_mat4f.h"
@@ -39,7 +40,7 @@ struct st_model_data
 	st_model_data();
 	~st_model_data();
 
-	st_vertex_format _vertex_format;
+	std::unique_ptr<struct st_vertex_format> _vertex_format;
 
 	std::vector<st_vertex> _vertices;
 	std::vector<uint16_t> _indices;

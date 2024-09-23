@@ -6,10 +6,8 @@
 
 #include <graphics/material/st_gbuffer_material.h>
 
-#include <graphics/st_constant_buffer.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
-#include <graphics/st_resource_table.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
 
@@ -20,24 +18,25 @@ st_gbuffer_material::st_gbuffer_material(
 	const char* albedo_texture,
 	const char* mre_texture)
 {
-	_gbuffer_buffer = std::make_unique<st_constant_buffer>(sizeof(st_gbuffer_cb));
-	_gbuffer_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	st_graphics_context* context = st_graphics_context::get();
+	_gbuffer_buffer = context->create_buffer(1, sizeof(st_gbuffer_cb), e_st_buffer_usage::uniform);
+	context->add_constant(_gbuffer_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
-	_albedo_texture->set_meta("SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
+	context->set_texture_meta(_albedo_texture.get(), "SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
 
 	_mre_texture = st_texture_loader::load(mre_texture);
-	_mre_texture->set_meta("SPIRV_Cross_Combinedmre_texturemre_sampler");
+	context->set_texture_meta(_mre_texture.get(), "SPIRV_Cross_Combinedmre_texturemre_sampler");
 
-	_resource_table = std::make_unique<st_resource_table>();
-	st_constant_buffer* cbs[] = { _gbuffer_buffer.get() };
-	_resource_table->set_constant_buffers(1, cbs);
+	_resource_table = context->create_resource_table();
+	st_buffer* cbs[] = { _gbuffer_buffer.get() };
+	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 
 	st_texture* textures[] = {
 		_albedo_texture.get(),
 		_mre_texture.get()
 	};
-	_resource_table->set_textures(std::size(textures), textures);
+	context->set_textures(_resource_table.get(), std::size(textures), textures);
 }
 
 st_gbuffer_material::~st_gbuffer_material()
@@ -56,7 +55,7 @@ void st_gbuffer_material::get_pipeline_state(
 }
 
 void st_gbuffer_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
@@ -69,7 +68,7 @@ void st_gbuffer_material::bind(
 	gbuffer_cb._model = transform;
 	gbuffer_cb._mvp = mvp;
 	gbuffer_cb._emissive = _emissive;
-	_gbuffer_buffer->update(context, &gbuffer_cb);
+	context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 1);
 
-	_resource_table->bind(context);
+	context->bind_resource_table(_resource_table.get());
 }

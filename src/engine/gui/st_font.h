@@ -53,7 +53,7 @@ public:
 	~st_font_material();
 
 	virtual void bind(
-		class st_render_context* context,
+		class st_graphics_context* context,
 		const struct st_frame_params* params,
 		const struct st_mat4f& proj,
 		const struct st_mat4f& view,
@@ -73,8 +73,8 @@ public:
 	};
 
 private:
-	std::unique_ptr<class st_constant_buffer> _constant_buffer = nullptr;
+	std::unique_ptr<struct st_buffer> _constant_buffer = nullptr;
 	class st_texture* _texture;
 	st_vec3f _color;
-	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
+	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

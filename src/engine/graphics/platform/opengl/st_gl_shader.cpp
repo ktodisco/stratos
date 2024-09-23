@@ -8,8 +8,6 @@
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
-#include <graphics/platform/opengl/st_gl_texture.h>
-
 #include <math/st_mat4f.h>
 #include <math/st_vec2f.h>
 #include <math/st_vec3f.h>
@@ -50,7 +48,12 @@ void st_gl_uniform::set(const st_vec3f& vec)
 	glUniform3fv(_location, 1, vec.axes);
 }
 
-void st_gl_uniform::set(const struct st_vec4f& vec)
+void st_gl_uniform::set(st_vec3f& vec)
+{
+	glUniform3fv(_location, 1, vec.axes);
+}
+
+void st_gl_uniform::set(const st_vec4f& vec)
 {
 	glUniform4fv(_location, 1, vec.axes);
 }
@@ -68,7 +71,7 @@ void st_gl_uniform::set(const st_mat4f* mats, uint32_t count)
 void st_gl_uniform::set(const st_gl_texture& tex, uint32_t unit)
 {
 	glActiveTexture(GL_TEXTURE0 + unit);
-	glBindTexture(GL_TEXTURE_2D, (GLuint)tex.get_handle());
+	glBindTexture(GL_TEXTURE_2D, (GLuint)tex._handle);
 	glUniform1i(_location, unit);
 }
 

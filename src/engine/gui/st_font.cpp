@@ -10,10 +10,8 @@
 #include <framework/st_frame_params.h>
 
 #include <graphics/material/st_material.h>
-#include <graphics/st_constant_buffer.h>
-#include <graphics/st_pipeline_state.h>
-#include <graphics/st_render_context.h>
-#include <graphics/st_resource_table.h>
+#include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 
 #include <math/st_vec2f.h>
@@ -75,13 +73,14 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 		return;
 	}
 
-	_texture = std::make_unique<st_texture>(
+	_texture = st_graphics_context::get()->create_texture(
 		image_width,
 		image_height,
 		1,
 		st_format_r8_unorm,
 		e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
+		st_vec4f::zero_vector(),
 		image_data);
 	delete[] image_data;
 
@@ -163,17 +162,19 @@ void st_font::print(
 
 st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 {
-	_constant_buffer = std::make_unique<st_constant_buffer>(sizeof(st_font_cb));
-	_constant_buffer->add_constant("type_cb0", st_shader_constant_type_block);
+	st_graphics_context* context = st_graphics_context::get();
 
-	_resource_table = std::make_unique<st_resource_table>();
-	st_constant_buffer* cbs[] = { _constant_buffer.get() };
-	_resource_table->set_constant_buffers(1, cbs);
+	_constant_buffer = context->create_buffer(1, sizeof(st_font_cb), e_st_buffer_usage::uniform);
+	context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
+
+	_resource_table = context->create_resource_table();
+	st_buffer* cbs[] = { _constant_buffer.get() };
+	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 
 	if (_texture)
 	{
-		_texture->set_meta("SPIRV_Cross_Combinedfont_texturefont_sampler");
-		_resource_table->set_textures(1, &_texture);
+		context->set_texture_meta(_texture, "SPIRV_Cross_Combinedfont_texturefont_sampler");
+		context->set_textures(_resource_table.get(), 1, &_texture);
 	}
 }
 
@@ -195,7 +196,7 @@ void st_font_material::get_pipeline_state(
 }
 
 void st_font_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
@@ -207,7 +208,7 @@ void st_font_material::bind(
 	st_font_cb cb_data{};
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
-	_constant_buffer->update(context, &cb_data);
+	context->update_buffer(_constant_buffer.get(), &cb_data, 1);
 
-	_resource_table->bind(context);
+	context->bind_resource_table(_resource_table.get());
 }
