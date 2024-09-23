@@ -10,7 +10,7 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 #include <graphics/platform/dx12/st_dx12_descriptor_heap.h>
 
@@ -23,12 +23,12 @@
 #define k_max_shader_resources 1024
 #define k_max_samplers 1024
 
-class st_dx12_render_context : public st_render_context
+class st_dx12_graphics_context : public st_graphics_context
 {
 public:
 
-	st_dx12_render_context(const class st_window* window);
-	~st_dx12_render_context();
+	st_dx12_graphics_context(const class st_window* window);
+	~st_dx12_graphics_context();
 
 	void acquire() override;
 	void release() override;

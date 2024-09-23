@@ -24,7 +24,7 @@ public:
 		class st_render_texture* depth_stencil);
 	~st_vk_framebuffer();
 
-	void transition(class st_render_context* context);
+	void transition(class st_graphics_context* context);
 
 	const vk::Framebuffer& get() const { return _framebuffer; }
 	uint32_t get_width() const { return _width; }

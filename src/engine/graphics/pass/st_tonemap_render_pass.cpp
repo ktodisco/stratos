@@ -17,7 +17,7 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 
 	st_render_texture* targets[] = { target_buffer };
 	_pass = context->create_render_pass(
@@ -42,7 +42,7 @@ st_tonemap_render_pass::~st_tonemap_render_pass()
 }
 
 void st_tonemap_render_pass::render(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params)
 {
 	st_render_marker marker(context, "st_tonemap_render_pass::render");

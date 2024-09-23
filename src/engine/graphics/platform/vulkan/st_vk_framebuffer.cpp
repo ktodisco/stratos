@@ -8,7 +8,7 @@
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
-#include <graphics/platform/vulkan/st_vk_render_context.h>
+#include <graphics/platform/vulkan/st_vk_graphics_context.h>
 
 #include <graphics/st_render_texture.h>
 
@@ -63,7 +63,7 @@ st_vk_framebuffer::~st_vk_framebuffer()
 	_device->destroyFramebuffer(_framebuffer, nullptr);
 }
 
-void st_vk_framebuffer::transition(st_render_context* context)
+void st_vk_framebuffer::transition(st_graphics_context* context)
 {
 	for (uint32_t i = 0; i < _targets.size(); ++i)
 	{

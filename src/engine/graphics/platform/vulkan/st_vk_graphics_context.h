@@ -10,7 +10,7 @@
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
 
 #include <math/st_vec4f.h>
@@ -24,12 +24,12 @@
 #define k_max_shader_resources 1024
 #define k_max_samplers 1024
 
-class st_vk_render_context : public st_render_context
+class st_vk_graphics_context : public st_graphics_context
 {
 public:
 
-	st_vk_render_context(const class st_window* window);
-	~st_vk_render_context();
+	st_vk_graphics_context(const class st_window* window);
+	~st_vk_graphics_context();
 
 	void acquire() override {}
 	void release() override {}
@@ -162,7 +162,7 @@ private:
 	std::unique_ptr<class st_render_texture> _present_target;
 
 	// Maintain a global instance.
-	static st_vk_render_context* _this;
+	static st_vk_graphics_context* _this;
 
 	vk::Instance _instance;
 	vk::PhysicalDevice _gpu;

@@ -20,11 +20,11 @@
 
 st_ui_render_pass::st_ui_render_pass()
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 
 	st_render_texture* targets[] =
 	{
-		st_render_context::get()->get_present_target()
+		st_graphics_context::get()->get_present_target()
 	};
 	_pass = context->create_render_pass(
 		1,
@@ -68,7 +68,7 @@ st_ui_render_pass::~st_ui_render_pass()
 {
 }
 
-void st_ui_render_pass::render(st_render_context* context, const st_frame_params* params)
+void st_ui_render_pass::render(st_graphics_context* context, const st_frame_params* params)
 {
 	st_render_marker marker(context, "st_ui_render_pass::render");
 
@@ -86,7 +86,7 @@ void st_ui_render_pass::render(st_render_context* context, const st_frame_params
 }
 
 void st_ui_render_pass::draw_dynamic(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const class st_mat4f& proj,
 	const class st_mat4f& view)

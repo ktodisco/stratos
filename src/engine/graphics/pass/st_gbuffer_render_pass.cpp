@@ -12,7 +12,7 @@
 #include <graphics/material/st_gbuffer_material.h>
 #include <graphics/material/st_parallax_occlusion_material.h>
 #include <graphics/st_drawcall.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
@@ -22,7 +22,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	st_render_texture* third_buffer,
 	st_render_texture* depth_buffer)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 
 	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
 	_pass = context->create_render_pass(
@@ -77,7 +77,7 @@ st_gbuffer_render_pass::~st_gbuffer_render_pass()
 {
 }
 
-void st_gbuffer_render_pass::render(st_render_context* context, const st_frame_params* params)
+void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame_params* params)
 {
 	st_render_marker marker(context, "st_gbuffer_render_pass::render");
 

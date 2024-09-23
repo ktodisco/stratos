@@ -18,11 +18,11 @@ public:
 	st_ui_render_pass();
 	~st_ui_render_pass();
 
-	void render(class st_render_context* context, const struct st_frame_params* params);
+	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
 private:
 	void draw_dynamic(
-		class st_render_context* context,
+		class st_graphics_context* context,
 		const struct st_frame_params* params,
 		const class st_mat4f& proj,
 		const class st_mat4f& view);

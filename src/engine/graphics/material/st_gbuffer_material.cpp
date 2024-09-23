@@ -7,7 +7,7 @@
 #include <graphics/material/st_gbuffer_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
 
@@ -18,7 +18,7 @@ st_gbuffer_material::st_gbuffer_material(
 	const char* albedo_texture,
 	const char* mre_texture)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 	_gbuffer_buffer = context->create_buffer(1, sizeof(st_gbuffer_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_gbuffer_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
@@ -55,7 +55,7 @@ void st_gbuffer_material::get_pipeline_state(
 }
 
 void st_gbuffer_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

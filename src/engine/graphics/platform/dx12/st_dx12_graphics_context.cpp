@@ -4,7 +4,7 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/platform/dx12/st_dx12_render_context.h>
+#include <graphics/platform/dx12/st_dx12_graphics_context.h>
 
 #if defined(ST_GRAPHICS_API_DX12)
 
@@ -30,7 +30,7 @@
 
 extern char g_root_path[256];
 
-st_dx12_render_context::st_dx12_render_context(const st_window* window)
+st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 {
 	UINT dxgi_factory_flags = 0;
 #if defined(_DEBUG)
@@ -319,7 +319,7 @@ st_dx12_render_context::st_dx12_render_context(const st_window* window)
 		"Present Target");
 }
 
-st_dx12_render_context::~st_dx12_render_context()
+st_dx12_graphics_context::~st_dx12_graphics_context()
 {
 	_present_target = nullptr;
 
@@ -372,21 +372,21 @@ st_dx12_render_context::~st_dx12_render_context()
 #endif
 }
 
-void st_dx12_render_context::acquire()
+void st_dx12_graphics_context::acquire()
 {
 }
 
-void st_dx12_render_context::release()
+void st_dx12_graphics_context::release()
 {
 }
 
-void st_dx12_render_context::set_pipeline(const st_pipeline* _state)
+void st_dx12_graphics_context::set_pipeline(const st_pipeline* _state)
 {
 	const st_dx12_pipeline* state = static_cast<const st_dx12_pipeline*>(_state);
 	_command_list->SetPipelineState(state->_pipeline.Get());
 }
 
-void st_dx12_render_context::set_viewport(const st_viewport& viewport)
+void st_dx12_graphics_context::set_viewport(const st_viewport& viewport)
 {
 	D3D12_VIEWPORT v;
 	v.TopLeftX = viewport._x;
@@ -398,7 +398,7 @@ void st_dx12_render_context::set_viewport(const st_viewport& viewport)
 	_command_list->RSSetViewports(1, &v);
 }
 
-void st_dx12_render_context::set_scissor(int left, int top, int right, int bottom)
+void st_dx12_graphics_context::set_scissor(int left, int top, int right, int bottom)
 {
 	D3D12_RECT rect;
 	rect.left = left;
@@ -409,7 +409,7 @@ void st_dx12_render_context::set_scissor(int left, int top, int right, int botto
 	_command_list->RSSetScissorRects(1, &rect);
 }
 
-void st_dx12_render_context::set_clear_color(float r, float g, float b, float a)
+void st_dx12_graphics_context::set_clear_color(float r, float g, float b, float a)
 {
 	_clear_color[0] = r;
 	_clear_color[1] = g;
@@ -417,31 +417,31 @@ void st_dx12_render_context::set_clear_color(float r, float g, float b, float a)
 	_clear_color[3] = a;
 }
 
-void st_dx12_render_context::set_shader_resource_table(uint32_t offset)
+void st_dx12_graphics_context::set_shader_resource_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_textures, srv_handle);
 }
 
-void st_dx12_render_context::set_sampler_table(uint32_t offset)
+void st_dx12_graphics_context::set_sampler_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_samplers, sampler_handle);
 }
 
-void st_dx12_render_context::set_constant_buffer_table(uint32_t offset)
+void st_dx12_graphics_context::set_constant_buffer_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_constants, cbv_handle);
 }
 
-void st_dx12_render_context::set_buffer_table(uint32_t offset)
+void st_dx12_graphics_context::set_buffer_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE buffer_handle = _cbv_srv_heap->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_buffers, buffer_handle);
 }
 
-void st_dx12_render_context::set_render_targets(
+void st_dx12_graphics_context::set_render_targets(
 	uint32_t count,
 	const st_texture_view** targets,
 	const st_texture_view* depth_stencil)
@@ -473,7 +473,7 @@ void st_dx12_render_context::set_render_targets(
 		depth_stencil ? &_bound_depth_stencil : nullptr);
 }
 
-void st_dx12_render_context::clear(unsigned int clear_flags)
+void st_dx12_graphics_context::clear(unsigned int clear_flags)
 {
 	if (clear_flags & st_clear_flag_color)
 	{
@@ -513,7 +513,7 @@ void st_dx12_render_context::clear(unsigned int clear_flags)
 	}
 }
 
-void st_dx12_render_context::draw(const st_static_drawcall& drawcall)
+void st_dx12_graphics_context::draw(const st_static_drawcall& drawcall)
 {
 	st_dx12_geometry* geometry = static_cast<st_dx12_geometry*>(drawcall._geometry);
 
@@ -526,7 +526,7 @@ void st_dx12_render_context::draw(const st_static_drawcall& drawcall)
 	_command_list->DrawIndexedInstanced(geometry->_index_count, 1, 0, 0, 0);
 }
 
-void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
+void st_dx12_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 {
 	// TODO: Dynamic buffer limit checking.
 
@@ -591,22 +591,22 @@ void st_dx12_render_context::draw(const st_dynamic_drawcall& drawcall)
 	_command_list->DrawIndexedInstanced(drawcall._indices.size(), 1, 0, 0, 0);
 }
 
-st_render_texture* st_dx12_render_context::get_present_target() const
+st_render_texture* st_dx12_graphics_context::get_present_target() const
 {
 	return _present_target.get();
 }
 
-void st_dx12_render_context::transition_backbuffer_to_target()
+void st_dx12_graphics_context::transition_backbuffer_to_target()
 {
 	transition(_present_target->get_texture(), st_texture_state_render_target);
 }
 
-void st_dx12_render_context::transition_backbuffer_to_present()
+void st_dx12_graphics_context::transition_backbuffer_to_present()
 {
 	transition(_present_target->get_texture(), st_texture_state_copy_source);
 }
 
-std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
+std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(
 	uint32_t width,
 	uint32_t height,
 	uint32_t levels,
@@ -790,17 +790,17 @@ std::unique_ptr<st_texture> st_dx12_render_context::create_texture(
 	return std::move(texture);
 }
 
-void st_dx12_render_context::set_texture_meta(st_texture* texture, const char* name)
+void st_dx12_graphics_context::set_texture_meta(st_texture* texture, const char* name)
 {
 }
 
-void st_dx12_render_context::set_texture_name(st_texture* texture_, std::string name)
+void st_dx12_graphics_context::set_texture_name(st_texture* texture_, std::string name)
 {
 	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
 	ST_NAME_DX12_OBJECT(texture->_handle.Get(), str_to_wstr(name).c_str());
 }
 
-void st_dx12_render_context::transition(
+void st_dx12_graphics_context::transition(
 	st_texture* texture_,
 	e_st_texture_state new_state)
 {
@@ -823,7 +823,7 @@ void st_dx12_render_context::transition(
 }
 
 // TODO: Rewrite this to replace create_shader_resource_view.
-std::unique_ptr<st_texture_view> st_dx12_render_context::create_texture_view(st_texture* texture_)
+std::unique_ptr<st_texture_view> st_dx12_graphics_context::create_texture_view(st_texture* texture_)
 {
 	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
 
@@ -853,7 +853,7 @@ std::unique_ptr<st_texture_view> st_dx12_render_context::create_texture_view(st_
 	return std::move(texture_view);
 }
 
-std::unique_ptr<st_buffer> st_dx12_render_context::create_buffer(
+std::unique_ptr<st_buffer> st_dx12_graphics_context::create_buffer(
 	const uint32_t count,
 	const size_t element_size,
 	const e_st_buffer_usage_flags usage)
@@ -881,7 +881,7 @@ std::unique_ptr<st_buffer> st_dx12_render_context::create_buffer(
 	return std::move(buffer);
 }
 
-void st_dx12_render_context::create_buffer_internal(size_t size, ID3D12Resource** resource)
+void st_dx12_graphics_context::create_buffer_internal(size_t size, ID3D12Resource** resource)
 {
 	D3D12_HEAP_PROPERTIES heap_properties{
 		D3D12_HEAP_TYPE_UPLOAD,
@@ -918,7 +918,7 @@ void st_dx12_render_context::create_buffer_internal(size_t size, ID3D12Resource*
 	}
 }
 
-std::unique_ptr<st_buffer_view> st_dx12_render_context::create_buffer_view(st_buffer* buffer_)
+std::unique_ptr<st_buffer_view> st_dx12_graphics_context::create_buffer_view(st_buffer* buffer_)
 {
 	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
 
@@ -943,7 +943,7 @@ std::unique_ptr<st_buffer_view> st_dx12_render_context::create_buffer_view(st_bu
 	return std::move(buffer_view);
 }
 
-void st_dx12_render_context::map(
+void st_dx12_graphics_context::map(
 	st_buffer* buffer_,
 	uint32_t subresource,
 	const st_range& range_,
@@ -960,7 +960,7 @@ void st_dx12_render_context::map(
 	}
 }
 
-void st_dx12_render_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range_)
+void st_dx12_graphics_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range_)
 {
 	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
 
@@ -968,7 +968,7 @@ void st_dx12_render_context::unmap(st_buffer* buffer_, uint32_t subresource, con
 	buffer->_buffer->Unmap(subresource, &range);
 }
 
-void st_dx12_render_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
+void st_dx12_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
 {
 	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
 
@@ -978,24 +978,24 @@ void st_dx12_render_context::update_buffer(st_buffer* buffer_, void* data, const
 	unmap(buffer_, 0, { 0, 0 });
 }
 
-void st_dx12_render_context::set_buffer_meta(st_buffer* buffer, std::string name)
+void st_dx12_graphics_context::set_buffer_meta(st_buffer* buffer, std::string name)
 {
 }
 
-void st_dx12_render_context::add_constant(
+void st_dx12_graphics_context::add_constant(
 	st_buffer* buffer,
 	const std::string& name,
 	const e_st_shader_constant_type constant_type)
 {
 }
 
-std::unique_ptr<st_resource_table> st_dx12_render_context::create_resource_table()
+std::unique_ptr<st_resource_table> st_dx12_graphics_context::create_resource_table()
 {
 	std::unique_ptr<st_dx12_resource_table> table = std::make_unique<st_dx12_resource_table>();
 	return std::move(table);
 }
 
-void st_dx12_render_context::set_constant_buffers(
+void st_dx12_graphics_context::set_constant_buffers(
 	st_resource_table* _table,
 	uint32_t count,
 	st_buffer** cbs)
@@ -1013,7 +1013,7 @@ void st_dx12_render_context::set_constant_buffers(
 	}
 }
 
-void st_dx12_render_context::set_textures(
+void st_dx12_graphics_context::set_textures(
 	st_resource_table* _table,
 	uint32_t count,
 	st_texture** textures)
@@ -1042,7 +1042,7 @@ void st_dx12_render_context::set_textures(
 	}
 }
 
-void st_dx12_render_context::set_buffers(
+void st_dx12_graphics_context::set_buffers(
 	st_resource_table* _table,
 	uint32_t count,
 	st_buffer** buffers)
@@ -1061,7 +1061,7 @@ void st_dx12_render_context::set_buffers(
 	}
 }
 
-void st_dx12_render_context::bind_resource_table(st_resource_table* _table)
+void st_dx12_graphics_context::bind_resource_table(st_resource_table* _table)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
 
@@ -1079,7 +1079,7 @@ void st_dx12_render_context::bind_resource_table(st_resource_table* _table)
 	if (table->_buffers.size() > 0) { set_buffer_table(table->_buffers[0]); }
 }
 
-std::unique_ptr<st_shader> st_dx12_render_context::create_shader(const char* filename, uint8_t type)
+std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* filename, uint8_t type)
 {
 	std::unique_ptr<st_dx12_shader> shader = std::make_unique<st_dx12_shader>();
 
@@ -1110,7 +1110,7 @@ std::unique_ptr<st_shader> st_dx12_render_context::create_shader(const char* fil
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(
+std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_pipeline(
 	const st_pipeline_state_desc& desc,
 	const st_render_pass* render_pass)
 {
@@ -1222,7 +1222,7 @@ std::unique_ptr<st_pipeline> st_dx12_render_context::create_pipeline(
 	return std::move(pipeline);
 }
 
-std::unique_ptr<st_vertex_format> st_dx12_render_context::create_vertex_format(
+std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format(
 	const st_vertex_attribute* attributes,
 	uint32_t attribute_count)
 {
@@ -1339,7 +1339,7 @@ std::unique_ptr<st_vertex_format> st_dx12_render_context::create_vertex_format(
 	return std::move(vertex_format);
 }
 
-std::unique_ptr<st_geometry> st_dx12_render_context::create_geometry(
+std::unique_ptr<st_geometry> st_dx12_graphics_context::create_geometry(
 	const st_vertex_format* format,
 	void* vertex_data,
 	uint32_t vertex_size,
@@ -1387,7 +1387,7 @@ std::unique_ptr<st_geometry> st_dx12_render_context::create_geometry(
 	return std::move(geometry);
 }
 
-std::unique_ptr<st_render_pass> st_dx12_render_context::create_render_pass(
+std::unique_ptr<st_render_pass> st_dx12_graphics_context::create_render_pass(
 	uint32_t count,
 	st_render_texture** targets,
 	st_render_texture* depth_stencil)
@@ -1417,7 +1417,7 @@ std::unique_ptr<st_render_pass> st_dx12_render_context::create_render_pass(
 	return std::move(pass);
 }
 
-void st_dx12_render_context::begin_render_pass(
+void st_dx12_graphics_context::begin_render_pass(
 	st_render_pass* _pass,
 	st_vec4f* clear_values,
 	const uint8_t clear_count)
@@ -1428,16 +1428,16 @@ void st_dx12_render_context::begin_render_pass(
 	pass->_framebuffer->bind(this);
 }
 
-void st_dx12_render_context::end_render_pass(st_render_pass* pass)
+void st_dx12_graphics_context::end_render_pass(st_render_pass* pass)
 {
 }
 
-void st_dx12_render_context::begin_loading()
+void st_dx12_graphics_context::begin_loading()
 {
 	_command_list->Reset(_command_allocators[_frame_index].Get(), nullptr);
 }
 
-void st_dx12_render_context::end_loading()
+void st_dx12_graphics_context::end_loading()
 {
 	// Close the command list and execute it to begin intial GPU setup.
 	_command_list->Close();
@@ -1453,7 +1453,7 @@ void st_dx12_render_context::end_loading()
 	WaitForSingleObject(_fence_event, INFINITE);
 }
 
-void st_dx12_render_context::begin_frame()
+void st_dx12_graphics_context::begin_frame()
 {
 	_command_allocators[_frame_index]->Reset();
 	_command_list->Reset(_command_allocators[_frame_index].Get(), nullptr);
@@ -1468,7 +1468,7 @@ void st_dx12_render_context::begin_frame()
 	_upload_buffer_offset = 0;
 }
 
-void st_dx12_render_context::end_frame()
+void st_dx12_graphics_context::end_frame()
 {
 	_command_list->ResourceBarrier(
 		1,
@@ -1492,7 +1492,7 @@ void st_dx12_render_context::end_frame()
 	}
 }
 
-void st_dx12_render_context::swap()
+void st_dx12_graphics_context::swap()
 {
 	ID3D12CommandList* command_lists[] = { _command_list.Get() };
 	_command_queue->ExecuteCommandLists(_countof(command_lists), command_lists);
@@ -1513,22 +1513,22 @@ void st_dx12_render_context::swap()
 	_frame_index = _swap_chain->GetCurrentBackBufferIndex();
 }
 
-void st_dx12_render_context::begin_marker(const std::string& marker)
+void st_dx12_graphics_context::begin_marker(const std::string& marker)
 {
 	PIXBeginEvent(_command_list.Get(), 0, marker.c_str());
 }
 
-void st_dx12_render_context::end_marker()
+void st_dx12_graphics_context::end_marker()
 {
 	PIXEndEvent(_command_list.Get());
 }
 
-void st_dx12_render_context::destroy_target(st_dx12_descriptor target)
+void st_dx12_graphics_context::destroy_target(st_dx12_descriptor target)
 {
 	_rtv_heap->deallocate_handle(target);
 }
 
-st_dx12_descriptor st_dx12_render_context::create_constant_buffer_view(
+st_dx12_descriptor st_dx12_graphics_context::create_constant_buffer_view(
 	D3D12_GPU_VIRTUAL_ADDRESS gpu_address,
 	size_t size)
 {
@@ -1542,12 +1542,12 @@ st_dx12_descriptor st_dx12_render_context::create_constant_buffer_view(
 	return cbv_handle._offset;
 }
 
-void st_dx12_render_context::destroy_constant_buffer_view(st_dx12_descriptor offset)
+void st_dx12_graphics_context::destroy_constant_buffer_view(st_dx12_descriptor offset)
 {
 	_cbv_srv_heap->deallocate_handle(offset);
 }
 
-st_dx12_descriptor st_dx12_render_context::create_shader_resource_view(
+st_dx12_descriptor st_dx12_graphics_context::create_shader_resource_view(
 	ID3D12Resource* resource,
 	e_st_format format,
 	uint32_t levels)
@@ -1565,12 +1565,12 @@ st_dx12_descriptor st_dx12_render_context::create_shader_resource_view(
 	return srv_handle._offset;
 }
 
-void st_dx12_render_context::destroy_shader_resource_view(st_dx12_descriptor offset)
+void st_dx12_graphics_context::destroy_shader_resource_view(st_dx12_descriptor offset)
 {
 	_cbv_srv_heap->deallocate_handle(offset);
 }
 
-st_dx12_descriptor st_dx12_render_context::create_shader_sampler()
+st_dx12_descriptor st_dx12_graphics_context::create_shader_sampler()
 {
 	// Create the sampler.
 	D3D12_SAMPLER_DESC sampler_desc = {};
@@ -1590,12 +1590,12 @@ st_dx12_descriptor st_dx12_render_context::create_shader_sampler()
 	return sampler_handle._offset;
 }
 
-void st_dx12_render_context::destroy_shader_sampler(st_dx12_descriptor offset)
+void st_dx12_graphics_context::destroy_shader_sampler(st_dx12_descriptor offset)
 {
 	_sampler_heap->deallocate_handle(offset);
 }
 
-st_dx12_descriptor st_dx12_render_context::create_buffer_view(
+st_dx12_descriptor st_dx12_graphics_context::create_buffer_view(
 	ID3D12Resource* resource,
 	uint32_t count,
 	size_t element_size)
@@ -1616,7 +1616,7 @@ st_dx12_descriptor st_dx12_render_context::create_buffer_view(
 	return srv_handle._offset;
 }
 
-void st_dx12_render_context::destroy_buffer_view(st_dx12_descriptor offset)
+void st_dx12_graphics_context::destroy_buffer_view(st_dx12_descriptor offset)
 {
 	_cbv_srv_heap->deallocate_handle(offset);
 }

@@ -8,10 +8,10 @@
 
 #include <graphics/st_graphics.h>
 
-class st_render_context
+class st_graphics_context
 {
 public:
-	virtual ~st_render_context() {}
+	virtual ~st_graphics_context() {}
 
 	virtual void acquire() = 0;
 	virtual void release() = 0;
@@ -120,9 +120,9 @@ public:
 	// Informational.
 	virtual e_st_graphics_api get_api() = 0;
 
-	static std::unique_ptr<st_render_context> create(e_st_graphics_api api, const class st_window* window);
-	static st_render_context* get();
+	static std::unique_ptr<st_graphics_context> create(e_st_graphics_api api, const class st_window* window);
+	static st_graphics_context* get();
 
 protected:
-	static st_render_context* _this;
+	static st_graphics_context* _this;
 };

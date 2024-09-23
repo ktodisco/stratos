@@ -17,7 +17,7 @@ public:
 		class st_render_texture* source_buffer);
 	~st_passthrough_render_pass();
 
-	void render(class st_render_context* context, const struct st_frame_params* params);
+	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
 private:
 	std::unique_ptr<struct st_render_pass> _pass = nullptr;

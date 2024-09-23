@@ -9,7 +9,7 @@
 #include <framework/st_frame_params.h>
 #include <framework/st_input.h>
 
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 #include <math/st_math.h>
 
@@ -81,7 +81,7 @@ void st_camera::update(st_frame_params* params)
 	st_mat4f projection;
 	projection.make_perspective_rh(st_degrees_to_radians(45.0f), (float)_width / (float)_height, 0.1f, 10000.0f);
 
-	if (st_render_context::get()->get_api() == e_st_graphics_api::vulkan)
+	if (st_graphics_context::get()->get_api() == e_st_graphics_api::vulkan)
 	{
 		// Vulkan requires a correction to the projection matrix to account for both framebuffer coordinate
 		// and depth range changes.

@@ -9,7 +9,7 @@
 #include <graphics/animation/st_animation.h>
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 #include <math/st_mat4f.h>
 
@@ -124,7 +124,7 @@ void egg_to_model(const char* filename, st_model_data* model)
 	if (state._vertex_format & egg_vertex_attribute_weights)
 		attributes.push_back(st_vertex_attribute(st_vertex_attribute_weights, 5));
 
-	model->_vertex_format = st_render_context::get()->create_vertex_format(attributes.data(), attributes.size());
+	model->_vertex_format = st_graphics_context::get()->create_vertex_format(attributes.data(), attributes.size());
 }
 
 void parse_coordinate_system(std::ifstream &file, st_egg_parser_state* state)

@@ -10,7 +10,7 @@
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_material.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 #include <entity/st_entity.h>
 
@@ -22,7 +22,7 @@ st_model_component::st_model_component(st_entity* entity, st_model_data* model, 
 {
 	//assert(model->_vertex_format.is_finalized());
 
-	_geometry = st_render_context::get()->create_geometry(
+	_geometry = st_graphics_context::get()->create_geometry(
 		model->_vertex_format.get(),
 		&model->_vertices[0],
 		(uint32_t)sizeof(model->_vertices[0]),

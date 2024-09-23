@@ -7,13 +7,13 @@
 #include <graphics/material/st_bloom_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 
 st_bloom_material::st_bloom_material(st_texture* texture) :
 	_texture(texture)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 	_resource_table = context->create_resource_table();
 	context->set_textures(_resource_table.get(), 1, &_texture);
 }
@@ -32,7 +32,7 @@ void st_bloom_material::get_pipeline_state(
 }
 
 void st_bloom_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

@@ -12,7 +12,7 @@
 #include <graphics/material/st_deferred_light_material.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
@@ -26,7 +26,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	st_render_texture* output_buffer,
 	st_render_texture* output_depth)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 
 	_constant_buffer = context->create_buffer(1, sizeof(st_deferred_light_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
@@ -67,7 +67,7 @@ st_deferred_light_render_pass::~st_deferred_light_render_pass()
 }
 
 void st_deferred_light_render_pass::render(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params)
 {
 	st_render_marker marker(context, "st_deferred_light_render_pass::render");
@@ -93,7 +93,7 @@ void st_deferred_light_render_pass::render(
 	constant_data._inverse_vp = (params->_view * params->_projection).inverse();
 	constant_data._inverse_vp.transpose();
 	constant_data._eye = st_vec4f(params->_eye, 0.0f);
-	if (st_render_context::get()->get_api() == e_st_graphics_api::opengl)
+	if (st_graphics_context::get()->get_api() == e_st_graphics_api::opengl)
 		constant_data._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.0f, 0.0f);
 	else
 		constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);

@@ -11,7 +11,7 @@
 
 #include <graphics/material/st_material.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 
 #include <math/st_vec2f.h>
@@ -73,7 +73,7 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 		return;
 	}
 
-	_texture = st_render_context::get()->create_texture(
+	_texture = st_graphics_context::get()->create_texture(
 		image_width,
 		image_height,
 		1,
@@ -162,7 +162,7 @@ void st_font::print(
 
 st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 
 	_constant_buffer = context->create_buffer(1, sizeof(st_font_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
@@ -196,7 +196,7 @@ void st_font_material::get_pipeline_state(
 }
 
 void st_font_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

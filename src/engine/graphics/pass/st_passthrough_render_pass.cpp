@@ -16,11 +16,11 @@
 st_passthrough_render_pass::st_passthrough_render_pass(
 	st_render_texture* source_buffer)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 
 	st_render_texture* targets[] =
 	{
-		st_render_context::get()->get_present_target()
+		st_graphics_context::get()->get_present_target()
 	};
 	_pass = context->create_render_pass(
 		1,
@@ -45,7 +45,7 @@ st_passthrough_render_pass::~st_passthrough_render_pass()
 }
 
 void st_passthrough_render_pass::render(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params)
 {
 	st_render_marker marker(context, "st_passthrough_render_pass::render");

@@ -8,7 +8,7 @@
 
 #include <core/st_core.h>
 
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 #include <stb_image.h>
 
@@ -60,7 +60,7 @@ std::unique_ptr<st_texture> load_stb_texture(const char* fullpath)
 		return nullptr;
 	}
 
-	std::unique_ptr<st_texture> ret = st_render_context::get()->create_texture(
+	std::unique_ptr<st_texture> ret = st_graphics_context::get()->create_texture(
 		width,
 		height,
 		1,
@@ -172,7 +172,7 @@ std::unique_ptr<st_texture> load_dds_texture(const char* fullpath)
 	CloseHandle(hFile);
 
 	// CreateTextureFromDDS.
-	auto texture = st_render_context::get()->create_texture(
+	auto texture = st_graphics_context::get()->create_texture(
 		header->width,
 		header->height,
 		header->mipMapCount,

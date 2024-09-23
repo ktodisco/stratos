@@ -53,7 +53,7 @@ public:
 	~st_font_material();
 
 	virtual void bind(
-		class st_render_context* context,
+		class st_graphics_context* context,
 		const struct st_frame_params* params,
 		const struct st_mat4f& proj,
 		const struct st_mat4f& view,

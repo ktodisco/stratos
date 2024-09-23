@@ -6,10 +6,10 @@
 
 #include <graphics/st_render_texture.h>
 
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 st_render_texture::st_render_texture(
-	st_render_context* context,
+	st_graphics_context* context,
 	uint32_t width,
 	uint32_t height,
 	e_st_format format,

@@ -10,16 +10,16 @@
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 #include <memory>
 
-class st_gl_render_context : public st_render_context
+class st_gl_graphics_context : public st_graphics_context
 {
 public:
 
-	st_gl_render_context(const class st_window* window);
-	~st_gl_render_context();
+	st_gl_graphics_context(const class st_window* window);
+	~st_gl_graphics_context();
 
 	void acquire() override;
 	void release() override;

@@ -11,7 +11,7 @@
 #include <graphics/material/st_bloom_material.h>
 #include <graphics/pass/st_gaussian_blur_render_pass.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
@@ -19,7 +19,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 
 	std::unique_ptr<st_render_texture> half_target = std::make_unique<st_render_texture>(
 		context,
@@ -72,7 +72,7 @@ st_bloom_render_pass::~st_bloom_render_pass()
 }
 
 void st_bloom_render_pass::render(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params)
 {
 	st_render_marker marker(context, "st_bloom_render_pass::render");

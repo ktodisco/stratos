@@ -8,7 +8,7 @@
 
 #if defined(ST_GRAPHICS_API_DX12)
 
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
 
 st_dx12_framebuffer::st_dx12_framebuffer(
@@ -30,7 +30,7 @@ st_dx12_framebuffer::~st_dx12_framebuffer()
 	_targets.clear();
 }
 
-void st_dx12_framebuffer::bind(st_render_context* context)
+void st_dx12_framebuffer::bind(st_graphics_context* context)
 {
 	std::vector<const st_texture_view*> views;
 	for (auto& t : _targets)
@@ -50,7 +50,7 @@ void st_dx12_framebuffer::bind(st_render_context* context)
 	context->set_render_targets(_target_count, views.data(), ds_view);
 }
 
-void st_dx12_framebuffer::unbind(st_render_context* context)
+void st_dx12_framebuffer::unbind(st_graphics_context* context)
 {
 	for (auto& t : _targets)
 	{

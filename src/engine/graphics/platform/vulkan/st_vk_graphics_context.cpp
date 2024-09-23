@@ -4,7 +4,7 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/platform/vulkan/st_vk_render_context.h>
+#include <graphics/platform/vulkan/st_vk_graphics_context.h>
 
 #if defined(ST_GRAPHICS_API_VULKAN)
 
@@ -25,9 +25,9 @@
 extern char g_root_path[256];
 
 extern vk::DispatchLoaderDynamic vk::defaultDispatchLoaderDynamic;
-st_vk_render_context* st_vk_render_context::_this = nullptr;
+st_vk_graphics_context* st_vk_graphics_context::_this = nullptr;
 
-st_vk_render_context::st_vk_render_context(const st_window* window)
+st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 {
 	_vk_library = LoadLibrary("vulkan-1.dll");
 	PFN_vkGetInstanceProcAddr fp = (PFN_vkGetInstanceProcAddr)GetProcAddress((HMODULE)_vk_library, "vkGetInstanceProcAddr");
@@ -463,7 +463,7 @@ st_vk_render_context::st_vk_render_context(const st_window* window)
 	}
 }
 
-st_vk_render_context::~st_vk_render_context()
+st_vk_graphics_context::~st_vk_graphics_context()
 {
 	VK_VALIDATE(_queue.waitIdle());
 	VK_VALIDATE(_device.waitIdle());
@@ -500,13 +500,13 @@ st_vk_render_context::~st_vk_render_context()
 	FreeLibrary((HMODULE)_vk_library);
 }
 
-void st_vk_render_context::set_pipeline(const st_pipeline* pipeline_)
+void st_vk_graphics_context::set_pipeline(const st_pipeline* pipeline_)
 {
 	const st_vk_pipeline* pipeline = static_cast<const st_vk_pipeline*>(pipeline_);
 	_command_buffers[st_command_buffer_graphics].bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->_pipeline);
 }
 
-void st_vk_render_context::set_viewport(const st_viewport& viewport)
+void st_vk_graphics_context::set_viewport(const st_viewport& viewport)
 {
 	vk::Viewport view = vk::Viewport()
 		.setWidth(viewport._width)
@@ -519,7 +519,7 @@ void st_vk_render_context::set_viewport(const st_viewport& viewport)
 
 }
 
-void st_vk_render_context::set_scissor(int left, int top, int right, int bottom)
+void st_vk_graphics_context::set_scissor(int left, int top, int right, int bottom)
 {
 	vk::Rect2D scissor = vk::Rect2D()
 		.setOffset({ left, top })
@@ -527,7 +527,7 @@ void st_vk_render_context::set_scissor(int left, int top, int right, int bottom)
 	_command_buffers[st_command_buffer_graphics].setScissor(0, 1, &scissor);
 }
 
-void st_vk_render_context::draw(const st_static_drawcall& drawcall)
+void st_vk_graphics_context::draw(const st_static_drawcall& drawcall)
 {
 	st_vk_geometry* geometry = static_cast<st_vk_geometry*>(drawcall._geometry);
 	st_vk_buffer* vertex_buffer = static_cast<st_vk_buffer*>(geometry->_vertex_buffer.get());
@@ -545,24 +545,24 @@ void st_vk_render_context::draw(const st_static_drawcall& drawcall)
 		0);
 }
 
-st_render_texture* st_vk_render_context::get_present_target() const
+st_render_texture* st_vk_graphics_context::get_present_target() const
 {
 	return _present_target.get();
 }
 
-void st_vk_render_context::transition_backbuffer_to_target()
+void st_vk_graphics_context::transition_backbuffer_to_target()
 {
 	// Transition the present target to the optimal layout for rendering.
 	transition(_present_target->get_texture(), st_texture_state_render_target);
 }
 
-void st_vk_render_context::transition_backbuffer_to_present()
+void st_vk_graphics_context::transition_backbuffer_to_present()
 {
 	// Transition the present target to the optimal layout for copy.
 	transition(_present_target->get_texture(), st_texture_state_copy_source);
 }
 
-void st_vk_render_context::begin_frame()
+void st_vk_graphics_context::begin_frame()
 {
 	vk::CommandBufferBeginInfo begin_info = vk::CommandBufferBeginInfo()
 		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -574,7 +574,7 @@ void st_vk_render_context::begin_frame()
 	_upload_buffer_offset = 0;
 }
 
-void st_vk_render_context::end_frame()
+void st_vk_graphics_context::end_frame()
 {
 	if (_upload_buffer_offset > 0)
 	{
@@ -589,7 +589,7 @@ void st_vk_render_context::end_frame()
 	}
 }
 
-void st_vk_render_context::swap()
+void st_vk_graphics_context::swap()
 {
 	// Copy the present target to the backbuffer.
 	uint32_t backbuffer_index;
@@ -690,7 +690,7 @@ void st_vk_render_context::swap()
 	VK_VALIDATE(_device.resetFences(1, &_fence));
 }
 
-void st_vk_render_context::begin_marker(const std::string& marker)
+void st_vk_graphics_context::begin_marker(const std::string& marker)
 {
 	if (_has_markers)
 	{
@@ -701,7 +701,7 @@ void st_vk_render_context::begin_marker(const std::string& marker)
 	}
 }
 
-void st_vk_render_context::end_marker()
+void st_vk_graphics_context::end_marker()
 {
 	if (_has_markers)
 	{
@@ -709,7 +709,7 @@ void st_vk_render_context::end_marker()
 	}
 }
 
-std::unique_ptr<st_texture> st_vk_render_context::create_texture(
+std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
 	uint32_t width,
 	uint32_t height,
 	uint32_t mip_count,
@@ -908,7 +908,7 @@ std::unique_ptr<st_texture> st_vk_render_context::create_texture(
 	return std::move(texture);
 }
 
-void st_vk_render_context::set_texture_name(st_texture* texture_, std::string name)
+void st_vk_graphics_context::set_texture_name(st_texture* texture_, std::string name)
 {
 	st_vk_texture* texture = static_cast<st_vk_texture*>(texture_);
 
@@ -920,7 +920,7 @@ void st_vk_render_context::set_texture_name(st_texture* texture_, std::string na
 	VK_VALIDATE(_device.setDebugUtilsObjectNameEXT(&name_info));
 }
 
-void st_vk_render_context::transition(
+void st_vk_graphics_context::transition(
 	st_texture* texture_,
 	e_st_texture_state new_state)
 {
@@ -974,7 +974,7 @@ void st_vk_render_context::transition(
 		barriers);
 }
 
-std::unique_ptr<st_texture_view> st_vk_render_context::create_texture_view(st_texture* texture_)
+std::unique_ptr<st_texture_view> st_vk_graphics_context::create_texture_view(st_texture* texture_)
 {
 	st_vk_texture* texture = static_cast<st_vk_texture*>(texture_);
 
@@ -1013,7 +1013,7 @@ std::unique_ptr<st_texture_view> st_vk_render_context::create_texture_view(st_te
 	return std::move(view);
 }
 
-std::unique_ptr<st_buffer> st_vk_render_context::create_buffer(
+std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(
 	const uint32_t count,
 	const size_t element_size,
 	const e_st_buffer_usage_flags usage)
@@ -1059,7 +1059,7 @@ std::unique_ptr<st_buffer> st_vk_render_context::create_buffer(
 	return std::move(buffer);
 }
 
-std::unique_ptr<st_buffer_view> st_vk_render_context::create_buffer_view(st_buffer* buffer_)
+std::unique_ptr<st_buffer_view> st_vk_graphics_context::create_buffer_view(st_buffer* buffer_)
 {
 	std::unique_ptr<st_vk_buffer_view> view = std::make_unique<st_vk_buffer_view>();
 	view->_device = &_device;
@@ -1076,28 +1076,28 @@ std::unique_ptr<st_buffer_view> st_vk_render_context::create_buffer_view(st_buff
 	return std::move(view);
 }
 
-void st_vk_render_context::map(st_buffer* buffer_, uint32_t subresource, const st_range& range, void** outData)
+void st_vk_graphics_context::map(st_buffer* buffer_, uint32_t subresource, const st_range& range, void** outData)
 {
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
 	VK_VALIDATE(_device.mapMemory(buffer->_memory, range.begin, (range.end - range.begin), vk::MemoryMapFlags(0), outData));
 }
 
-void st_vk_render_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range)
+void st_vk_graphics_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range)
 {
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
 	_device.unmapMemory(buffer->_memory);
 }
 
-void st_vk_render_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
+void st_vk_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
 {
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
 	_command_buffers[st_command_buffer_loading].updateBuffer(buffer->_buffer, 0, align_value(count * buffer->_element_size, 4), data);
 }
 
-std::unique_ptr<st_resource_table> st_vk_render_context::create_resource_table()
+std::unique_ptr<st_resource_table> st_vk_graphics_context::create_resource_table()
 {
 	std::unique_ptr<st_vk_resource_table> table = std::make_unique<st_vk_resource_table>();
 	table->_device = &_device;
@@ -1121,7 +1121,7 @@ std::unique_ptr<st_resource_table> st_vk_render_context::create_resource_table()
 	return std::move(table);
 }
 
-void st_vk_render_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
+void st_vk_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 
@@ -1146,7 +1146,7 @@ void st_vk_render_context::set_constant_buffers(st_resource_table* table_, uint3
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
-void st_vk_render_context::set_textures(st_resource_table* table_, uint32_t count, st_texture** textures)
+void st_vk_graphics_context::set_textures(st_resource_table* table_, uint32_t count, st_texture** textures)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 
@@ -1182,7 +1182,7 @@ void st_vk_render_context::set_textures(st_resource_table* table_, uint32_t coun
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
-void st_vk_render_context::set_buffers(st_resource_table* table_, uint32_t count, st_buffer** buffers)
+void st_vk_graphics_context::set_buffers(st_resource_table* table_, uint32_t count, st_buffer** buffers)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 
@@ -1207,7 +1207,7 @@ void st_vk_render_context::set_buffers(st_resource_table* table_, uint32_t count
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
-void st_vk_render_context::bind_resource_table(st_resource_table* table_)
+void st_vk_graphics_context::bind_resource_table(st_resource_table* table_)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 
@@ -1229,7 +1229,7 @@ void st_vk_render_context::bind_resource_table(st_resource_table* table_)
 	bind_set(st_descriptor_slot_constants, &table->_constants);
 }
 
-std::unique_ptr<st_shader> st_vk_render_context::create_shader(const char* filename, uint8_t type)
+std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* filename, uint8_t type)
 {
 	std::unique_ptr<st_vk_shader> shader = std::make_unique<st_vk_shader>();
 	shader->_device = &_device;
@@ -1266,7 +1266,7 @@ std::unique_ptr<st_shader> st_vk_render_context::create_shader(const char* filen
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_vk_render_context::create_pipeline(
+std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(
 	const st_pipeline_state_desc& desc,
 	const st_render_pass* render_pass_)
 {
@@ -1406,7 +1406,7 @@ std::unique_ptr<st_pipeline> st_vk_render_context::create_pipeline(
 	return std::move(pipeline);
 }
 
-std::unique_ptr<st_vertex_format> st_vk_render_context::create_vertex_format(
+std::unique_ptr<st_vertex_format> st_vk_graphics_context::create_vertex_format(
 	const struct st_vertex_attribute* attributes,
 	uint32_t attribute_count)
 {
@@ -1517,7 +1517,7 @@ std::unique_ptr<st_vertex_format> st_vk_render_context::create_vertex_format(
 	return std::move(vertex_format);
 }
 
-std::unique_ptr<st_geometry> st_vk_render_context::create_geometry(
+std::unique_ptr<st_geometry> st_vk_graphics_context::create_geometry(
 	const st_vertex_format* format,
 	void* vertex_data,
 	uint32_t vertex_size,
@@ -1551,7 +1551,7 @@ std::unique_ptr<st_geometry> st_vk_render_context::create_geometry(
 	return std::move(geometry);
 }
 
-std::unique_ptr<st_render_pass> st_vk_render_context::create_render_pass(
+std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 	uint32_t count,
 	st_render_texture** targets,
 	st_render_texture* depth_stencil)
@@ -1634,7 +1634,7 @@ std::unique_ptr<st_render_pass> st_vk_render_context::create_render_pass(
 	return std::move(render_pass);
 }
 
-void st_vk_render_context::begin_render_pass(
+void st_vk_graphics_context::begin_render_pass(
 	st_render_pass* pass_,
 	st_vec4f* clear_values,
 	const uint8_t clear_count)
@@ -1664,12 +1664,12 @@ void st_vk_render_context::begin_render_pass(
 	_command_buffers[st_command_buffer_graphics].beginRenderPass(&begin_info, vk::SubpassContents::eInline);
 }
 
-void st_vk_render_context::end_render_pass(st_render_pass* pass)
+void st_vk_graphics_context::end_render_pass(st_render_pass* pass)
 {
 	_command_buffers[st_command_buffer_graphics].endRenderPass();
 }
 
-void st_vk_render_context::create_sampler(vk::Sampler& sampler)
+void st_vk_graphics_context::create_sampler(vk::Sampler& sampler)
 {
 	vk::SamplerCreateInfo create_info = vk::SamplerCreateInfo()
 		.setMagFilter(vk::Filter::eLinear)
@@ -1688,7 +1688,7 @@ void st_vk_render_context::create_sampler(vk::Sampler& sampler)
 	VK_VALIDATE(_device.createSampler(&create_info, nullptr, &sampler));
 }
 
-void st_vk_render_context::destroy_sampler(vk::Sampler& sampler)
+void st_vk_graphics_context::destroy_sampler(vk::Sampler& sampler)
 {
 	_device.destroySampler(sampler, nullptr);
 }

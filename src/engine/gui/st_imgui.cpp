@@ -14,7 +14,7 @@
 
 void st_imgui::initialize(
 	const st_window* window,
-	const st_render_context* context)
+	const st_graphics_context* context)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

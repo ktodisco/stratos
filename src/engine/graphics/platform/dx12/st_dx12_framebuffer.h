@@ -22,8 +22,8 @@ public:
 		class st_render_texture* depth_stencil);
 	~st_dx12_framebuffer();
 
-	void bind(class st_render_context* context);
-	void unbind(class st_render_context* context);
+	void bind(class st_graphics_context* context);
+	void unbind(class st_graphics_context* context);
 
 private:
 	uint32_t _target_count;

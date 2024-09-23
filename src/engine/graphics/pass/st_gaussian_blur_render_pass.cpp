@@ -17,7 +17,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 
 	// Set up the intermediate render target between the two blur passes.
 	_intermediate_target = std::make_unique<st_render_texture>(
@@ -72,7 +72,7 @@ st_gaussian_blur_render_pass::~st_gaussian_blur_render_pass()
 }
 
 void st_gaussian_blur_render_pass::render(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params)
 {
 	st_render_marker marker(context, "st_gaussian_blur_render_pass::render");

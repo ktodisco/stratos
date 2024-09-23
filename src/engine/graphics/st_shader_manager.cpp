@@ -6,11 +6,11 @@
 
 #include <graphics/st_shader_manager.h>
 
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 st_shader_manager* st_shader_manager::_this = nullptr;
 
-st_shader_manager::st_shader_manager(st_render_context* context)
+st_shader_manager::st_shader_manager(st_graphics_context* context)
 {
 	_shaders[st_shader_phong] =
 		context->create_shader(

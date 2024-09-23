@@ -7,14 +7,14 @@
 #include <graphics/material/st_fullscreen_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 
 st_fullscreen_material::st_fullscreen_material(st_render_texture* texture) :
 	_texture(texture)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 	_resource_table = context->create_resource_table();
 	st_texture* t = _texture->get_texture();
 	context->set_textures(_resource_table.get(), 1, &t);
@@ -34,7 +34,7 @@ void st_fullscreen_material::get_pipeline_state(
 }
 
 void st_fullscreen_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

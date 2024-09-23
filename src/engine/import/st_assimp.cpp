@@ -8,7 +8,7 @@
 
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -83,5 +83,5 @@ void assimp_import_model(const char* filename, st_model_data* model)
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, 3));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, 4));
 
-	model->_vertex_format = st_render_context::get()->create_vertex_format(attributes.data(), attributes.size());
+	model->_vertex_format = st_graphics_context::get()->create_vertex_format(attributes.data(), attributes.size());
 }

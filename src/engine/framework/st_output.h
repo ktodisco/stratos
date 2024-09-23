@@ -22,7 +22,7 @@ class st_output
 {
 public:
 
-	st_output(const st_window* window, class st_render_context* render_context);
+	st_output(const st_window* window, class st_graphics_context* render_context);
 	~st_output();
 
 	void update(struct st_frame_params* params);
@@ -30,7 +30,7 @@ public:
 private:
 
 	const st_window* _window;
-	class st_render_context* _render_context;
+	class st_graphics_context* _graphics_context;
 
 	std::unique_ptr<class st_gbuffer_render_pass> _gbuffer_pass;
 	std::unique_ptr<class st_deferred_light_render_pass> _deferred_pass;

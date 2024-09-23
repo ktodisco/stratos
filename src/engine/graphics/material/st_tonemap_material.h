@@ -15,7 +15,7 @@ public:
 	~st_tonemap_material();
 
 	virtual void bind(
-		class st_render_context* context,
+		class st_graphics_context* context,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,
 		const st_mat4f& view,

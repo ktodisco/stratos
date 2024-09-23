@@ -65,7 +65,7 @@ st_gl_framebuffer::~st_gl_framebuffer()
 	glDeleteFramebuffers(1, &_framebuffer);
 }
 
-void st_gl_framebuffer::bind(class st_render_context* context)
+void st_gl_framebuffer::bind(class st_graphics_context* context)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
 
@@ -84,7 +84,7 @@ void st_gl_framebuffer::bind(class st_render_context* context)
 	glDrawBuffers(_target_count, targets);
 }
 
-void st_gl_framebuffer::unbind(class st_render_context* context)
+void st_gl_framebuffer::unbind(class st_graphics_context* context)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

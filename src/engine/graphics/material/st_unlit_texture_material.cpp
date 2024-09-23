@@ -7,7 +7,7 @@
 #include <graphics/material/st_unlit_texture_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
 
@@ -17,7 +17,7 @@
 st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	_texture_file(texture_file)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 	_view_buffer = context->create_buffer(1, sizeof(st_view_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_view_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
@@ -46,7 +46,7 @@ void st_unlit_texture_material::get_pipeline_state(
 }
 
 void st_unlit_texture_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

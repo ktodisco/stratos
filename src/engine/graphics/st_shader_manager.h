@@ -38,7 +38,7 @@ enum e_st_shader
 class st_shader_manager
 {
 public:
-	st_shader_manager(class st_render_context* context);
+	st_shader_manager(class st_graphics_context* context);
 	~st_shader_manager();
 
 	const struct st_shader* get_shader(e_st_shader shader);

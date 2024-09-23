@@ -7,7 +7,7 @@
 #include <graphics/material/st_deferred_light_material.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_render_context.h>
+#include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 
@@ -23,7 +23,7 @@ st_deferred_light_material::st_deferred_light_material(
 	_third(third_texture),
 	_depth(depth_texture)
 {
-	st_render_context* context = st_render_context::get();
+	st_graphics_context* context = st_graphics_context::get();
 	_resource_table = context->create_resource_table();
 	context->set_constant_buffers(_resource_table.get(), 1, &constants);
 	context->set_buffers(_resource_table.get(), 1, &light_buffer);
@@ -51,7 +51,7 @@ void st_deferred_light_material::get_pipeline_state(
 }
 
 void st_deferred_light_material::bind(
-	st_render_context* context,
+	st_graphics_context* context,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

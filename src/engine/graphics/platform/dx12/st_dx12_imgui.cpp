@@ -7,7 +7,7 @@
 #include <graphics/platform/dx12/st_dx12_imgui.h>
 
 #include <graphics/platform/dx12/st_dx12_descriptor_heap.h>
-#include <graphics/platform/dx12/st_dx12_render_context.h>
+#include <graphics/platform/dx12/st_dx12_graphics_context.h>
 
 #include <system/st_window.h>
 
@@ -18,9 +18,9 @@
 
 void st_dx12_imgui::initialize(
 	const class st_window* window,
-	const class st_render_context* context)
+	const class st_graphics_context* context)
 {
-	const st_dx12_render_context* dx12_context = reinterpret_cast<const st_dx12_render_context*>(context);
+	const st_dx12_graphics_context* dx12_context = reinterpret_cast<const st_dx12_graphics_context*>(context);
 	ImGui_ImplDX12_Init(
 		dx12_context->get_device(),
 		2,
@@ -42,13 +42,13 @@ void st_dx12_imgui::new_frame()
 void st_dx12_imgui::draw()
 {
 	// Total hack.
-	ID3D12DescriptorHeap* heaps[] = { st_dx12_render_context::get()->get_gui_heap()->get() };
-	st_dx12_render_context::get()->get_command_list()->SetDescriptorHeaps(1, heaps);
+	ID3D12DescriptorHeap* heaps[] = { st_dx12_graphics_context::get()->get_gui_heap()->get() };
+	st_dx12_graphics_context::get()->get_command_list()->SetDescriptorHeaps(1, heaps);
 
 	ImGui::Render();
 	ImGui_ImplDX12_RenderDrawData(
 		ImGui::GetDrawData(),
-		st_dx12_render_context::get()->get_command_list());
+		st_dx12_graphics_context::get()->get_command_list());
 }
 
 #endif

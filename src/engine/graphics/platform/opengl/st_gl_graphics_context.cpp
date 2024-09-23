@@ -4,7 +4,7 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
-#include <graphics/platform/opengl/st_gl_render_context.h>
+#include <graphics/platform/opengl/st_gl_graphics_context.h>
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
@@ -21,7 +21,7 @@
 #include <cassert>
 #include <cstdio>
 
-st_gl_render_context::st_gl_render_context(const st_window* window)
+st_gl_graphics_context::st_gl_graphics_context(const st_window* window)
 {
 	_device_context = GetDC(window->get_window_handle());
 
@@ -114,7 +114,7 @@ st_gl_render_context::st_gl_render_context(const st_window* window)
 	_this = this;
 }
 
-st_gl_render_context::~st_gl_render_context()
+st_gl_graphics_context::~st_gl_graphics_context()
 {
 	_present_framebuffer = nullptr;
 	_present_target = nullptr;
@@ -123,19 +123,19 @@ st_gl_render_context::~st_gl_render_context()
 	wglDeleteContext(_gl_context);
 }
 
-void st_gl_render_context::acquire()
+void st_gl_graphics_context::acquire()
 {
 	// Acquire for current thread.
 	wglMakeCurrent(_device_context, _gl_context);
 }
 
-void st_gl_render_context::release()
+void st_gl_graphics_context::release()
 {
 	// Release from current thread.
 	wglMakeCurrent(_device_context, 0);
 }
 
-void st_gl_render_context::set_pipeline(const st_pipeline* state_)
+void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 {
 	const st_gl_pipeline* state = static_cast<const st_gl_pipeline*>(state_);
 
@@ -161,17 +161,17 @@ void st_gl_render_context::set_pipeline(const st_pipeline* state_)
 		convert_cull_mode(state_desc._rasterizer_desc._cull_mode));
 }
 
-void st_gl_render_context::set_viewport(const st_viewport& viewport)
+void st_gl_graphics_context::set_viewport(const st_viewport& viewport)
 {
 	glViewport(viewport._x, viewport._y, viewport._width, viewport._height);
 }
 
-void st_gl_render_context::set_scissor(int left, int top, int right, int bottom)
+void st_gl_graphics_context::set_scissor(int left, int top, int right, int bottom)
 {
 	glScissor(left, top, right - left, bottom - top);
 }
 
-void st_gl_render_context::set_clear_color(float r, float g, float b, float a)
+void st_gl_graphics_context::set_clear_color(float r, float g, float b, float a)
 {
 	_clear_color[0] = r;
 	_clear_color[1] = g;
@@ -181,7 +181,7 @@ void st_gl_render_context::set_clear_color(float r, float g, float b, float a)
 	glClearColor(r, g, b, a);
 }
 
-void st_gl_render_context::set_render_targets(
+void st_gl_graphics_context::set_render_targets(
 	uint32_t count,
 	const st_texture_view** targets,
 	const st_texture_view* depth_stencil)
@@ -189,7 +189,7 @@ void st_gl_render_context::set_render_targets(
 
 }
 
-void st_gl_render_context::clear(unsigned int clear_flags)
+void st_gl_graphics_context::clear(unsigned int clear_flags)
 {
 	GLbitfield flags = 0;
 	flags |= (clear_flags & st_clear_flag_color) ? GL_COLOR_BUFFER_BIT : 0;
@@ -199,7 +199,7 @@ void st_gl_render_context::clear(unsigned int clear_flags)
 	glClear(flags);
 }
 
-void st_gl_render_context::draw(const st_static_drawcall& drawcall)
+void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 {
 	st_gl_geometry* geometry = static_cast<st_gl_geometry*>(drawcall._geometry);
 
@@ -207,7 +207,7 @@ void st_gl_render_context::draw(const st_static_drawcall& drawcall)
 	glDrawElements(convert_topology(drawcall._draw_mode), geometry->_index_count, GL_UNSIGNED_SHORT, 0);
 }
 
-void st_gl_render_context::draw(const st_dynamic_drawcall& drawcall)
+void st_gl_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 {
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
@@ -249,7 +249,7 @@ void st_gl_render_context::draw(const st_dynamic_drawcall& drawcall)
 	glBindVertexArray(0);
 }
 
-void st_gl_render_context::swap()
+void st_gl_graphics_context::swap()
 {
 	// Copy the present target to the backbuffer.
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, _present_framebuffer->get_handle());
@@ -271,17 +271,17 @@ void st_gl_render_context::swap()
 	SwapBuffers(_device_context);
 }
 
-void st_gl_render_context::begin_marker(const std::string& marker)
+void st_gl_graphics_context::begin_marker(const std::string& marker)
 {
 	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, marker.length(), marker.c_str());
 }
 
-void st_gl_render_context::end_marker()
+void st_gl_graphics_context::end_marker()
 {
 	glPopDebugGroup();
 }
 
-std::unique_ptr<st_texture> st_gl_render_context::create_texture(
+std::unique_ptr<st_texture> st_gl_graphics_context::create_texture(
 	uint32_t width,
 	uint32_t height,
 	uint32_t levels,
@@ -347,19 +347,19 @@ std::unique_ptr<st_texture> st_gl_render_context::create_texture(
 	return std::move(texture);
 }
 
-void st_gl_render_context::set_texture_meta(st_texture* texture_, const char* name)
+void st_gl_graphics_context::set_texture_meta(st_texture* texture_, const char* name)
 {
 	st_gl_texture* texture = static_cast<st_gl_texture*>(texture_);
 	texture->_name = name;
 }
 
-void st_gl_render_context::set_texture_name(st_texture* texture_, std::string name)
+void st_gl_graphics_context::set_texture_name(st_texture* texture_, std::string name)
 {
 	st_gl_texture* texture = static_cast<st_gl_texture*>(texture_);
 	glObjectLabel(GL_TEXTURE, texture->_handle, name.length(), name.c_str());
 }
 
-std::unique_ptr<st_texture_view> st_gl_render_context::create_texture_view(st_texture* texture)
+std::unique_ptr<st_texture_view> st_gl_graphics_context::create_texture_view(st_texture* texture)
 {
 	std::unique_ptr<st_gl_texture_view> view = std::make_unique<st_gl_texture_view>();
 	view->_texture = static_cast<const st_gl_texture*>(texture);
@@ -367,7 +367,7 @@ std::unique_ptr<st_texture_view> st_gl_render_context::create_texture_view(st_te
 	return std::move(view);
 }
 
-std::unique_ptr<st_buffer> st_gl_render_context::create_buffer(
+std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(
 	const uint32_t count,
 	const size_t element_size,
 	const e_st_buffer_usage_flags usage)
@@ -385,7 +385,7 @@ std::unique_ptr<st_buffer> st_gl_render_context::create_buffer(
 	return std::move(buffer);
 }
 
-std::unique_ptr<st_buffer_view> st_gl_render_context::create_buffer_view(st_buffer* buffer)
+std::unique_ptr<st_buffer_view> st_gl_graphics_context::create_buffer_view(st_buffer* buffer)
 {
 	std::unique_ptr<st_gl_buffer_view> view = std::make_unique<st_gl_buffer_view>();
 	view->_buffer = static_cast<st_gl_buffer*>(buffer);
@@ -393,20 +393,20 @@ std::unique_ptr<st_buffer_view> st_gl_render_context::create_buffer_view(st_buff
 	return std::move(view);
 }
 
-void st_gl_render_context::map(st_buffer* buffer_, uint32_t subresource, const st_range& range, void** outData)
+void st_gl_graphics_context::map(st_buffer* buffer_, uint32_t subresource, const st_range& range, void** outData)
 {
 	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer->_buffer);
 	*outData = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, range.begin, (range.end - range.begin), GL_MAP_WRITE_BIT);
 }
 
-void st_gl_render_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range)
+void st_gl_graphics_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range)
 {
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void st_gl_render_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
+void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
 {
 	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
 
@@ -495,13 +495,13 @@ void st_gl_render_context::update_buffer(st_buffer* buffer_, void* data, const u
 	}
 }
 
-void st_gl_render_context::set_buffer_meta(st_buffer* buffer_, std::string name)
+void st_gl_graphics_context::set_buffer_meta(st_buffer* buffer_, std::string name)
 {
 	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
 	buffer->_name = name;
 }
 
-void st_gl_render_context::add_constant(
+void st_gl_graphics_context::add_constant(
 	st_buffer* buffer_,
 	const std::string& name,
 	const e_st_shader_constant_type constant_type)
@@ -517,17 +517,17 @@ void st_gl_render_context::add_constant(
 	buffer->_constants.push_back(constant);
 }
 
-std::unique_ptr<st_resource_table> st_gl_render_context::create_resource_table()
+std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table()
 {
 	std::unique_ptr<st_gl_resource_table> table = std::make_unique<st_gl_resource_table>();
 	return std::move(table);
 }
 
-void st_gl_render_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
+void st_gl_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
 {
 }
 
-void st_gl_render_context::set_textures(st_resource_table* table_, uint32_t count, st_texture** textures)
+void st_gl_graphics_context::set_textures(st_resource_table* table_, uint32_t count, st_texture** textures)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
@@ -549,11 +549,11 @@ void st_gl_render_context::set_textures(st_resource_table* table_, uint32_t coun
 	}
 }
 
-void st_gl_render_context::set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers)
+void st_gl_graphics_context::set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers)
 {
 }
 
-void st_gl_render_context::bind_resource_table(st_resource_table* table_)
+void st_gl_graphics_context::bind_resource_table(st_resource_table* table_)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
@@ -570,13 +570,13 @@ void st_gl_render_context::bind_resource_table(st_resource_table* table_)
 	}
 }
 
-std::unique_ptr<st_shader> st_gl_render_context::create_shader(const char* filename, uint8_t type)
+std::unique_ptr<st_shader> st_gl_graphics_context::create_shader(const char* filename, uint8_t type)
 {
 	std::unique_ptr<st_gl_shader> shader = std::make_unique<st_gl_shader>(filename, type);
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_gl_render_context::create_pipeline(
+std::unique_ptr<st_pipeline> st_gl_graphics_context::create_pipeline(
 	const st_pipeline_state_desc& desc,
 	const st_render_pass* render_pass)
 {
@@ -585,7 +585,7 @@ std::unique_ptr<st_pipeline> st_gl_render_context::create_pipeline(
 	return std::move(pipeline);
 }
 
-std::unique_ptr<st_vertex_format> st_gl_render_context::create_vertex_format(
+std::unique_ptr<st_vertex_format> st_gl_graphics_context::create_vertex_format(
 	const st_vertex_attribute* attributes,
 	uint32_t attribute_count)
 {
@@ -631,7 +631,7 @@ std::unique_ptr<st_vertex_format> st_gl_render_context::create_vertex_format(
 	return std::move(format);
 }
 
-std::unique_ptr<st_geometry> st_gl_render_context::create_geometry(
+std::unique_ptr<st_geometry> st_gl_graphics_context::create_geometry(
 	const st_vertex_format* format_,
 	void* vertex_data,
 	uint32_t vertex_size,
@@ -720,7 +720,7 @@ std::unique_ptr<st_geometry> st_gl_render_context::create_geometry(
 	return std::move(geometry);
 }
 
-std::unique_ptr<st_render_pass> st_gl_render_context::create_render_pass(
+std::unique_ptr<st_render_pass> st_gl_graphics_context::create_render_pass(
 	uint32_t count,
 	class st_render_texture** targets,
 	class st_render_texture* depth_stencil)
@@ -748,7 +748,7 @@ std::unique_ptr<st_render_pass> st_gl_render_context::create_render_pass(
 	return std::move(render_pass);
 }
 
-void st_gl_render_context::begin_render_pass(
+void st_gl_graphics_context::begin_render_pass(
 	st_render_pass* pass_,
 	st_vec4f* clear_values,
 	const uint8_t clear_count)
@@ -759,14 +759,14 @@ void st_gl_render_context::begin_render_pass(
 	pass->_framebuffer->bind(this);
 }
 
-void st_gl_render_context::end_render_pass(st_render_pass* pass_)
+void st_gl_graphics_context::end_render_pass(st_render_pass* pass_)
 {
 	st_gl_render_pass* pass = static_cast<st_gl_render_pass*>(pass_);
 
 	pass->_framebuffer->unbind(this);
 }
 
-void st_gl_render_context::set_depth_state(bool enable, GLenum func)
+void st_gl_graphics_context::set_depth_state(bool enable, GLenum func)
 {
 	if (enable) glEnable(GL_DEPTH_TEST);
 	else glDisable(GL_DEPTH_TEST);
@@ -774,7 +774,7 @@ void st_gl_render_context::set_depth_state(bool enable, GLenum func)
 	glDepthFunc(func);
 }
 
-void st_gl_render_context::set_cull_state(bool enable, GLenum mode)
+void st_gl_graphics_context::set_cull_state(bool enable, GLenum mode)
 {
 	if (enable) glEnable(GL_CULL_FACE);
 	else glDisable(GL_CULL_FACE);
@@ -782,7 +782,7 @@ void st_gl_render_context::set_cull_state(bool enable, GLenum mode)
 	glCullFace(mode);
 }
 
-void st_gl_render_context::set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor)
+void st_gl_graphics_context::set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor)
 {
 	if (enable) glEnable(GL_BLEND);
 	else glDisable(GL_BLEND);
@@ -790,7 +790,7 @@ void st_gl_render_context::set_blend_state(bool enable, GLenum src_factor, GLenu
 	glBlendFunc(src_factor, dst_factor);
 }
 
-void st_gl_render_context::set_depth_mask(bool enable)
+void st_gl_graphics_context::set_depth_mask(bool enable)
 {
 	glDepthMask(enable ? GL_TRUE : GL_FALSE);
 }

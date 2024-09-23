@@ -21,8 +21,8 @@ public:
 		class st_render_texture* depth_stencil);
 	~st_gl_framebuffer();
 
-	void bind(class st_render_context* context);
-	void unbind(class st_render_context* context);
+	void bind(class st_graphics_context* context);
+	void unbind(class st_graphics_context* context);
 
 	GLuint get_handle() { return _framebuffer; };
 
