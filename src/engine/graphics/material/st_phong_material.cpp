@@ -37,7 +37,7 @@ void st_phong_material::bind(
 
 	st_view_cb cb_data{};
 	cb_data._mvp = mvp;
-	context->update_buffer(_phong_buffer.get(), &cb_data, 1);
+	context->update_buffer(_phong_buffer.get(), &cb_data, 0, 1);
 
 	context->bind_resource_table(_resource_table.get());
 }

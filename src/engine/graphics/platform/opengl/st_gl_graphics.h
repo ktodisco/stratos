@@ -71,24 +71,7 @@ struct st_gl_buffer : public st_buffer
 
 struct st_gl_buffer_view : public st_buffer_view
 {
-	union
-	{
-		st_gl_buffer* _buffer;
-		uint32_t _vao;
-	};
-};
-
-struct st_gl_geometry : public st_geometry
-{
-	~st_gl_geometry()
-	{
-		glDeleteBuffers(2, _vbos);
-		glDeleteVertexArrays(1, &_vao);
-	}
-
-	uint32_t _vao;
-	uint32_t _vbos[4];
-	uint32_t _index_count;
+	st_gl_buffer* _buffer;
 };
 
 struct st_gl_pipeline : public st_pipeline

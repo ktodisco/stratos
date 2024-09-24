@@ -86,7 +86,7 @@ struct st_pipeline_state_desc
 	st_pipeline_rasterizer_desc _rasterizer_desc = {};
 	st_pipeline_depth_stencil_desc _depth_stencil_desc = {};
 
-	class st_vertex_format* _vertex_format = nullptr;
+	struct st_vertex_format* _vertex_format = nullptr;
 
 	e_st_primitive_topology_type _primitive_topology_type = st_primitive_topology_type_triangle;
 

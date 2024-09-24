@@ -98,13 +98,6 @@ public:
 	virtual std::unique_ptr<st_vertex_format> create_vertex_format(
 		const struct st_vertex_attribute* attributes,
 		uint32_t attribute_count) = 0;
-	virtual std::unique_ptr<st_geometry> create_geometry(
-		const st_vertex_format* format,
-		void* vertex_data,
-		uint32_t vertex_size,
-		uint32_t vertex_count,
-		uint16_t* index_data,
-		uint32_t index_count) = 0;
 
 	// Render passes.
 	virtual std::unique_ptr<st_render_pass> create_render_pass(

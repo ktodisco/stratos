@@ -33,6 +33,8 @@ enum e_st_shader
 	st_shader_gaussian_blur_vertical,
 	st_shader_gaussian_blur_horizontal,
 	st_shader_parallax_occlusion,
+
+	st_shader_imgui,
 };
 
 class st_shader_manager

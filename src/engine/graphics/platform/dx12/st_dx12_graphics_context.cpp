@@ -515,15 +515,23 @@ void st_dx12_graphics_context::clear(unsigned int clear_flags)
 
 void st_dx12_graphics_context::draw(const st_static_drawcall& drawcall)
 {
-	st_dx12_geometry* geometry = static_cast<st_dx12_geometry*>(drawcall._geometry);
+	const st_dx12_buffer* vertex = static_cast<const st_dx12_buffer*>(drawcall._vertex_buffer);
+	const st_dx12_buffer* index = static_cast<const st_dx12_buffer*>(drawcall._index_buffer);
 
-	const st_dx12_buffer_view* vertex_view = static_cast<const st_dx12_buffer_view*>(geometry->_vertex_buffer_view.get());
-	const st_dx12_buffer_view* index_view = static_cast<const st_dx12_buffer_view*>(geometry->_index_buffer_view.get());
+	D3D12_VERTEX_BUFFER_VIEW vertex_view;
+	vertex_view.BufferLocation = vertex->_buffer->GetGPUVirtualAddress() + drawcall._vertex_offset;
+	vertex_view.SizeInBytes = vertex->_element_size * vertex->_count;
+	vertex_view.StrideInBytes = vertex->_element_size;
+
+	D3D12_INDEX_BUFFER_VIEW index_view;
+	index_view.BufferLocation = index->_buffer->GetGPUVirtualAddress() + drawcall._index_offset;
+	index_view.SizeInBytes = index->_element_size * index->_count;
+	index_view.Format = DXGI_FORMAT_R16_UINT;
 
 	_command_list->IASetPrimitiveTopology(convert_topology(drawcall._draw_mode));
-	_command_list->IASetVertexBuffers(0, 1, &vertex_view->vertex);
-	_command_list->IASetIndexBuffer(&index_view->index);
-	_command_list->DrawIndexedInstanced(geometry->_index_count, 1, 0, 0, 0);
+	_command_list->IASetVertexBuffers(0, 1, &vertex_view);
+	_command_list->IASetIndexBuffer(&index_view);
+	_command_list->DrawIndexedInstanced(drawcall._index_count, 1, 0, 0, 0);
 }
 
 void st_dx12_graphics_context::draw(const st_procedural_drawcall& drawcall)
@@ -969,7 +977,7 @@ void st_dx12_graphics_context::unmap(st_buffer* buffer_, uint32_t subresource, c
 	buffer->_buffer->Unmap(subresource, &range);
 }
 
-void st_dx12_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
+void st_dx12_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t offset, const uint32_t count)
 {
 	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
 
@@ -1023,22 +1031,30 @@ void st_dx12_graphics_context::set_textures(
 
 	for (uint32_t i = 0; i < count; ++i)
 	{
-		st_dx12_texture* sr = static_cast<st_dx12_texture*>(textures[i]);
-
-		// TODO: Depending on whether we want depth or stencil, this needs to be flexible.
-		e_st_format format = sr->_format;
-		if (format == st_format_d24_unorm_s8_uint)
+		if (textures)
 		{
-			format = st_format_r24_unorm_x8_typeless;
+			st_dx12_texture* sr = static_cast<st_dx12_texture*>(textures[i]);
+
+			// TODO: Depending on whether we want depth or stencil, this needs to be flexible.
+			e_st_format format = sr->_format;
+			if (format == st_format_d24_unorm_s8_uint)
+			{
+				format = st_format_r24_unorm_x8_typeless;
+			}
+
+			st_dx12_descriptor srv = create_shader_resource_view(
+				sr->_handle.Get(),
+				format,
+				sr->_levels);
+
+			table->_srvs.push_back(srv);
+		}
+		else
+		{
+			table->_srvs.push_back(0);
 		}
 
-		st_dx12_descriptor srv = create_shader_resource_view(
-			sr->_handle.Get(),
-			format,
-			sr->_levels);
 		st_dx12_descriptor sampler = create_shader_sampler();
-
-		table->_srvs.push_back(srv);
 		table->_samplers.push_back(sampler);
 	}
 }
@@ -1338,54 +1354,6 @@ std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format
 	vertex_format->_input_layout.pInputElementDescs = &vertex_format->_elements[0];
 
 	return std::move(vertex_format);
-}
-
-std::unique_ptr<st_geometry> st_dx12_graphics_context::create_geometry(
-	const st_vertex_format* format,
-	void* vertex_data,
-	uint32_t vertex_size,
-	uint32_t vertex_count,
-	uint16_t* index_data,
-	uint32_t index_count)
-{
-	std::unique_ptr<st_dx12_geometry> geometry = std::make_unique<st_dx12_geometry>();
-
-	// Create the vertex buffer resource.
-	const uint32_t vertex_buffer_size = vertex_count * vertex_size;
-
-	geometry->_vertex_buffer = create_buffer(
-		vertex_count,
-		vertex_size,
-		e_st_buffer_usage::vertex);
-
-	// Map the buffer to a CPU write address and copy the data.
-	uint8_t* buffer_begin;
-	st_range range = { 0, 0 };
-	map(geometry->_vertex_buffer.get(), 0, range, reinterpret_cast<void**>(&buffer_begin));
-
-	memcpy(buffer_begin, vertex_data, vertex_buffer_size);
-	unmap(geometry->_vertex_buffer.get(), 0, range);
-
-	geometry->_vertex_buffer_view = create_buffer_view(geometry->_vertex_buffer.get());
-
-	// Create the index buffer resource.
-	geometry->_index_count = index_count;
-	const uint32_t index_buffer_size = index_count * sizeof(uint16_t);
-
-	geometry->_index_buffer = create_buffer(
-		index_count,
-		sizeof(uint16_t),
-		e_st_buffer_usage::index);
-
-	// Map the buffer to a CPU write address and copy the data.
-	map(geometry->_index_buffer.get(), 0, range, reinterpret_cast<void**>(&buffer_begin));
-
-	memcpy(buffer_begin, index_data, index_buffer_size);
-	unmap(geometry->_index_buffer.get(), 0, range);
-
-	geometry->_index_buffer_view = create_buffer_view(geometry->_index_buffer.get());
-
-	return std::move(geometry);
 }
 
 std::unique_ptr<st_render_pass> st_dx12_graphics_context::create_render_pass(

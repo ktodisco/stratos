@@ -68,7 +68,7 @@ void st_gbuffer_material::bind(
 	gbuffer_cb._model = transform;
 	gbuffer_cb._mvp = mvp;
 	gbuffer_cb._emissive = _emissive;
-	context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 1);
+	context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
 
 	context->bind_resource_table(_resource_table.get());
 }

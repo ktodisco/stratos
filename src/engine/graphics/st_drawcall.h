@@ -35,11 +35,18 @@ struct st_drawcall
 */
 struct st_static_drawcall : st_drawcall
 {
-	st_geometry* _geometry;
+	const st_buffer* _vertex_buffer = nullptr;
+	const st_buffer* _index_buffer = nullptr;
+
+	// Offsets are specified in bytes.
+	size_t _vertex_offset = 0;
+	size_t _index_offset = 0;
+
+	uint32_t _index_count = 0;
 };
 
 /*
-** Draw call with dynamic geometry.
+** Draw call with procedural geometry.
 ** Geometry referenced by this draw call should only last a single frame.
 */
 struct st_procedural_drawcall : st_drawcall

@@ -208,7 +208,7 @@ void st_font_material::bind(
 	st_font_cb cb_data{};
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
-	context->update_buffer(_constant_buffer.get(), &cb_data, 1);
+	context->update_buffer(_constant_buffer.get(), &cb_data, 0, 1);
 
 	context->bind_resource_table(_resource_table.get());
 }

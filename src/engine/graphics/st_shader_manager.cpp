@@ -60,6 +60,10 @@ st_shader_manager::st_shader_manager(st_graphics_context* context)
 		context->create_shader(
 			"data/shaders/st_parallax_occlusion",
 			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_imgui] =
+		context->create_shader(
+			"data/shaders/imgui",
+			st_shader_type_vertex | st_shader_type_pixel);
 
 	_this = this;
 }

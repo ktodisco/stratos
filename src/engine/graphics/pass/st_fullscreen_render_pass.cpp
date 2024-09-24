@@ -38,7 +38,7 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 		0, 1, 2
 	};
 
-	_fullscreen_quad = st_graphics_context::get()->create_geometry(
+	_fullscreen_quad = std::make_unique<st_geometry>(
 		_vertex_format.get(),
 		(void*)verts,
 		static_cast<uint32_t>(sizeof(float) * 3),
@@ -49,4 +49,8 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 
 st_fullscreen_render_pass::~st_fullscreen_render_pass()
 {
+	_vertex_format = nullptr;
+	_fullscreen_quad = nullptr;
+	_material = nullptr;
+	_pipeline = nullptr;
 }

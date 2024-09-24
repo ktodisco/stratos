@@ -8,6 +8,7 @@
 
 #include <framework/st_frame_params.h>
 
+#include <graphics/geometry/st_geometry.h>
 #include <graphics/material/st_fullscreen_material.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_marker.h>
@@ -67,7 +68,7 @@ void st_passthrough_render_pass::render(
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
 	draw_call._transform = identity;
-	draw_call._geometry = _fullscreen_quad.get();
+	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
 	context->draw(draw_call);

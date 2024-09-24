@@ -61,17 +61,6 @@ struct st_vk_buffer_view : public st_buffer_view, public st_vk_resource
 	vk::BufferView _view;
 };
 
-struct st_vk_geometry : public st_geometry, public st_vk_resource
-{
-	std::unique_ptr<st_buffer> _vertex_buffer;
-	std::unique_ptr<st_buffer> _index_buffer;
-
-	std::unique_ptr<st_buffer_view> _vertex_buffer_view;
-	std::unique_ptr<st_buffer_view> _index_buffer_view;
-
-	uint32_t _index_count = 0;
-};
-
 struct st_vk_pipeline : public st_pipeline, public st_vk_resource
 {
 	~st_vk_pipeline() { _device->destroyPipeline(_pipeline, nullptr); }

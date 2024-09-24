@@ -88,7 +88,7 @@ public:
 	std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) override;
 	void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) override;
 	void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) override;
-	void update_buffer(st_buffer* buffer, void* data, const uint32_t count) override;
+	void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) override;
 	void set_buffer_meta(st_buffer* buffer, std::string name) override;
 
 	// Constant buffers.
@@ -116,13 +116,6 @@ public:
 	std::unique_ptr<st_vertex_format> create_vertex_format(
 		const st_vertex_attribute* attributes,
 		uint32_t attribute_count) override;
-	std::unique_ptr<st_geometry> create_geometry(
-		const st_vertex_format* format,
-		void* vertex_data,
-		uint32_t vertex_size,
-		uint32_t vertex_count,
-		uint16_t* index_data,
-		uint32_t index_count) override;
 
 	// Render passes.
 	std::unique_ptr<st_render_pass> create_render_pass(

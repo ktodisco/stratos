@@ -348,7 +348,6 @@ struct st_resource
 
 struct st_buffer : public st_resource {};
 struct st_buffer_view : public st_resource {};
-struct st_geometry : public st_resource {};
 struct st_pipeline : public st_resource {};
 struct st_render_pass : public st_resource {};
 struct st_resource_table : public st_resource {};

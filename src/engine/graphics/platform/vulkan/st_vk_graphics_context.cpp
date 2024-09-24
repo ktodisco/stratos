@@ -529,16 +529,15 @@ void st_vk_graphics_context::set_scissor(int left, int top, int right, int botto
 
 void st_vk_graphics_context::draw(const st_static_drawcall& drawcall)
 {
-	st_vk_geometry* geometry = static_cast<st_vk_geometry*>(drawcall._geometry);
-	st_vk_buffer* vertex_buffer = static_cast<st_vk_buffer*>(geometry->_vertex_buffer.get());
-	st_vk_buffer* index_buffer = static_cast<st_vk_buffer*>(geometry->_index_buffer.get());
+	const st_vk_buffer* vertex_buffer = static_cast<const st_vk_buffer*>(drawcall._vertex_buffer);
+	const st_vk_buffer* index_buffer = static_cast<const st_vk_buffer*>(drawcall._index_buffer);
 
 	vk::DeviceSize offset = vk::DeviceSize(0);
 	_command_buffers[st_command_buffer_graphics].bindVertexBuffers(0, 1, &vertex_buffer->_buffer, &offset);
 	_command_buffers[st_command_buffer_graphics].bindIndexBuffer(index_buffer->_buffer, 0, vk::IndexType::eUint16);
 
 	_command_buffers[st_command_buffer_graphics].drawIndexed(
-		geometry->_index_count,
+		drawcall._index_count,
 		1,
 		0,
 		0,
@@ -1090,7 +1089,7 @@ void st_vk_graphics_context::unmap(st_buffer* buffer_, uint32_t subresource, con
 	_device.unmapMemory(buffer->_memory);
 }
 
-void st_vk_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
+void st_vk_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t offset, const uint32_t count)
 {
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
@@ -1155,11 +1154,17 @@ void st_vk_graphics_context::set_textures(st_resource_table* table_, uint32_t co
 	{
 		create_sampler(table->_sampler_resources.emplace_back());
 
-		st_vk_texture* texture = static_cast<st_vk_texture*>(textures[i]);
+		vk::ImageView view = vk::ImageView();
+
+		if (textures)
+		{
+			st_vk_texture* texture = static_cast<st_vk_texture*>(textures[i]);
+			view = texture->_view;
+		}
 
 		images.emplace_back() = vk::DescriptorImageInfo()
 			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-			.setImageView(texture->_view)
+			.setImageView(view)
 			.setSampler(table->_sampler_resources.back());
 	}
 
@@ -1515,40 +1520,6 @@ std::unique_ptr<st_vertex_format> st_vk_graphics_context::create_vertex_format(
 		.setPVertexAttributeDescriptions(vertex_format->_attribute_descs.data());
 
 	return std::move(vertex_format);
-}
-
-std::unique_ptr<st_geometry> st_vk_graphics_context::create_geometry(
-	const st_vertex_format* format,
-	void* vertex_data,
-	uint32_t vertex_size,
-	uint32_t vertex_count,
-	uint16_t* index_data,
-	uint32_t index_count)
-{
-	std::unique_ptr<st_vk_geometry> geometry = std::make_unique<st_vk_geometry>();
-
-	// Create the vertex buffer resource.
-	const uint32_t vertex_buffer_size = vertex_count * vertex_size;
-
-	geometry->_vertex_buffer = create_buffer(
-		vertex_count,
-		vertex_size,
-		e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
-
-	update_buffer(geometry->_vertex_buffer.get(), vertex_data, vertex_count);
-
-	// Create the index buffer resource.
-	geometry->_index_count = index_count;
-	const uint32_t index_buffer_size = index_count * sizeof(uint16_t);
-
-	geometry->_index_buffer = create_buffer(
-		index_count,
-		sizeof(uint16_t),
-		e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
-
-	update_buffer(geometry->_index_buffer.get(), index_data, index_count);
-
-	return std::move(geometry);
 }
 
 std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(

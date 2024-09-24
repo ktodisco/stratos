@@ -8,6 +8,7 @@
 
 #include <framework/st_frame_params.h>
 
+#include <graphics/geometry/st_geometry.h>
 #include <graphics/light/st_sphere_light.h>
 #include <graphics/material/st_deferred_light_material.h>
 #include <graphics/st_drawcall.h>
@@ -98,18 +99,18 @@ void st_deferred_light_render_pass::render(
 	else
 		constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);
 
-	context->update_buffer(_constant_buffer.get(), &constant_data, 1);
+	context->update_buffer(_constant_buffer.get(), &constant_data, 0, 1);
 
 	// New light buffer.
 	st_sphere_light_data light_data;
 	light_data._position_power = st_vec4f(params->_light->_position, params->_light->_power);
 	light_data._color_radius = st_vec4f(params->_light->_color, params->_light->_radius);
-	context->update_buffer(_light_buffer.get(), &light_data, 1);
+	context->update_buffer(_light_buffer.get(), &light_data, 0, 1);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
 	draw_call._transform = identity;
-	draw_call._geometry = _fullscreen_quad.get();
+	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
 	context->draw(draw_call);

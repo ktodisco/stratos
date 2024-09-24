@@ -48,7 +48,7 @@ void st_constant_color_material::bind(
 	st_constant_color_cb cb_data{};
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
-	context->update_buffer(_color_buffer.get(), &cb_data, 1);
+	context->update_buffer(_color_buffer.get(), &cb_data, 0, 1);
 
 	context->bind_resource_table(_resource_table.get());
 }

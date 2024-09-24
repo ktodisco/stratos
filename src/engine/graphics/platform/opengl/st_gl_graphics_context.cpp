@@ -139,6 +139,8 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 {
 	const st_gl_pipeline* state = static_cast<const st_gl_pipeline*>(state_);
 
+	_bound_pipeline = state;
+
 	const st_pipeline_state_desc& state_desc = state->_state_desc;
 	_bound_shader = static_cast<const st_gl_shader*>(state_desc._shader);
 	glUseProgram(_bound_shader->_handle);
@@ -201,10 +203,80 @@ void st_gl_graphics_context::clear(unsigned int clear_flags)
 
 void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 {
-	st_gl_geometry* geometry = static_cast<st_gl_geometry*>(drawcall._geometry);
+	const st_gl_buffer* vertex = static_cast<const st_gl_buffer*>(drawcall._vertex_buffer);
+	const st_gl_buffer* index = static_cast<const st_gl_buffer*>(drawcall._index_buffer);
 
-	glBindVertexArray(geometry->_vao);
-	glDrawElements(convert_topology(drawcall._draw_mode), geometry->_index_count, GL_UNSIGNED_SHORT, 0);
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertex->_buffer);
+
+	// TODO: Instead of accumulated offset, we need offset into data of st_vertex.
+	const st_gl_vertex_format* format = static_cast<const st_gl_vertex_format*>(_bound_pipeline->_state_desc._vertex_format);
+
+	size_t offset = 0;
+	for (uint32_t itr = 0; itr < format->_attributes.size(); ++itr)
+	{
+		const st_vertex_attribute* attr = &format->_attributes[itr];
+		GLint size = 0;
+		size_t data_size = sizeof(float);
+		GLenum type = GL_FLOAT;
+		GLboolean normalized = GL_FALSE;
+
+		switch (attr->_type)
+		{
+		case st_vertex_attribute_position:
+		case st_vertex_attribute_normal:
+		case st_vertex_attribute_binormal:
+		case st_vertex_attribute_tangent:
+			size = 3;
+			break;
+		case st_vertex_attribute_joints:
+			type = GL_UNSIGNED_INT;
+			data_size = sizeof(uint32_t);
+		case st_vertex_attribute_color:
+		case st_vertex_attribute_weights:
+			size = 4;
+			break;
+		case st_vertex_attribute_uv:
+			size = 2;
+			break;
+		default:
+			assert(false);
+			break;
+		}
+
+		// HACK: We need the special case for joint indices.
+		if (attr->_type == st_vertex_attribute_joints)
+		{
+			glVertexAttribIPointer(
+				attr->_unit,
+				size,
+				type,
+				format->_vertex_size,
+				(GLvoid*)offset);
+		}
+		else
+		{
+			glVertexAttribPointer(
+				attr->_unit,
+				size,
+				type,
+				normalized,
+				format->_vertex_size,
+				(GLvoid*)offset);
+		}
+
+		glEnableVertexAttribArray(attr->_unit);
+
+		offset += size * data_size;
+	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index->_buffer);
+
+	glDrawElements(convert_topology(drawcall._draw_mode), drawcall._index_count, GL_UNSIGNED_SHORT, 0);
+	glBindVertexArray(0);
 }
 
 void st_gl_graphics_context::draw(const st_procedural_drawcall& drawcall)
@@ -377,10 +449,17 @@ std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(
 	buffer->_element_size = element_size;
 	buffer->_count = count;
 
+	GLenum target = GL_SHADER_STORAGE_BUFFER;
+
+	if (usage & e_st_buffer_usage::vertex)
+		target = GL_ARRAY_BUFFER;
+	else if (usage & e_st_buffer_usage::index)
+		target = GL_ELEMENT_ARRAY_BUFFER;
+
 	glGenBuffers(1, &buffer->_buffer);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer->_buffer);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, count * element_size, NULL, GL_STATIC_DRAW);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glBindBuffer(target, buffer->_buffer);
+	glBufferData(target, count * element_size, NULL, GL_STATIC_DRAW);
+	glBindBuffer(target, 0);
 
 	return std::move(buffer);
 }
@@ -406,7 +485,7 @@ void st_gl_graphics_context::unmap(st_buffer* buffer_, uint32_t subresource, con
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t count)
+void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const uint32_t offset, const uint32_t count)
 {
 	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
 
@@ -493,6 +572,18 @@ void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 			}
 		}
 	}
+	else if (buffer->_usage & e_st_buffer_usage::vertex)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, buffer->_buffer);
+		glBufferData(GL_ARRAY_BUFFER, count * buffer->_element_size, data, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+	else if (buffer->_usage & e_st_buffer_usage::index)
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->_buffer);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * buffer->_element_size, data, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
 }
 
 void st_gl_graphics_context::set_buffer_meta(st_buffer* buffer_, std::string name)
@@ -533,14 +624,15 @@ void st_gl_graphics_context::set_textures(st_resource_table* table_, uint32_t co
 
 	for (uint32_t i = 0; i < count; ++i)
 	{
-		table->_srvs.push_back(textures[i]);
-
-		st_gl_texture* texture = static_cast<st_gl_texture*>(textures[i]);
+		if (textures)
+			table->_srvs.push_back(textures[i]);
+		else
+			table->_srvs.push_back(0);
 
 		// Create a sampler for the texture.
 		GLuint sampler;
 		glGenSamplers(1, &sampler);
-		glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, texture->_levels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+		glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -629,95 +721,6 @@ std::unique_ptr<st_vertex_format> st_gl_graphics_context::create_vertex_format(
 	for (uint32_t itr = 0; itr < attribute_count; ++itr)
 		format->_attributes.push_back(attributes[itr]);
 	return std::move(format);
-}
-
-std::unique_ptr<st_geometry> st_gl_graphics_context::create_geometry(
-	const st_vertex_format* format_,
-	void* vertex_data,
-	uint32_t vertex_size,
-	uint32_t vertex_count,
-	uint16_t* index_data,
-	uint32_t index_count)
-{
-	std::unique_ptr<st_gl_geometry> geometry = std::make_unique<st_gl_geometry>();
-
-	glGenVertexArrays(1, &geometry->_vao);
-	glBindVertexArray(geometry->_vao);
-
-	glGenBuffers(2, geometry->_vbos);
-
-	glBindBuffer(GL_ARRAY_BUFFER, geometry->_vbos[0]);
-	glBufferData(GL_ARRAY_BUFFER, vertex_count * vertex_size, vertex_data, GL_STATIC_DRAW);
-
-	// TODO: Instead of accumulated offset, we need offset into data of st_vertex.
-	const st_gl_vertex_format* format = static_cast<const st_gl_vertex_format*>(format_);
-
-	size_t offset = 0;
-	for (uint32_t itr = 0; itr < format->_attributes.size(); ++itr)
-	{
-		const st_vertex_attribute* attr = &format->_attributes[itr];
-		GLint size = 0;
-		size_t data_size = sizeof(float);
-		GLenum type = GL_FLOAT;
-		GLboolean normalized = GL_FALSE;
-
-		switch (attr->_type)
-		{
-		case st_vertex_attribute_position:
-		case st_vertex_attribute_normal:
-		case st_vertex_attribute_binormal:
-		case st_vertex_attribute_tangent:
-			size = 3;
-			break;
-		case st_vertex_attribute_joints:
-			type = GL_UNSIGNED_INT;
-			data_size = sizeof(uint32_t);
-		case st_vertex_attribute_color:
-		case st_vertex_attribute_weights:
-			size = 4;
-			break;
-		case st_vertex_attribute_uv:
-			size = 2;
-			break;
-		default:
-			assert(false);
-			break;
-		}
-
-		// HACK: We need the special case for joint indices.
-		if (attr->_type == st_vertex_attribute_joints)
-		{
-			glVertexAttribIPointer(
-				attr->_unit,
-				size,
-				type,
-				vertex_size,
-				(GLvoid*)offset);
-		}
-		else
-		{
-			glVertexAttribPointer(
-				attr->_unit,
-				size,
-				type,
-				normalized,
-				vertex_size,
-				(GLvoid*)offset);
-		}
-
-		glEnableVertexAttribArray(attr->_unit);
-
-		offset += size * data_size;
-	}
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometry->_vbos[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)(index_count * sizeof(uint32_t)), index_data, GL_STATIC_DRAW);
-
-	geometry->_index_count = index_count;
-
-	glBindVertexArray(0);
-
-	return std::move(geometry);
 }
 
 std::unique_ptr<st_render_pass> st_gl_graphics_context::create_render_pass(
