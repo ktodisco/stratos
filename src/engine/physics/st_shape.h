@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <vector>
 
-struct st_dynamic_drawcall;
+struct st_procedural_drawcall;
 
 enum st_shape_t
 {
@@ -47,7 +47,7 @@ struct st_shape
 	/*
 	** Fills out a debug draw call with the geometry of the collision shape.
 	*/
-	virtual void get_debug_draw(const st_mat4f& transform, struct st_dynamic_drawcall* drawcall) = 0;
+	virtual void get_debug_draw(const st_mat4f& transform, struct st_procedural_drawcall* drawcall) = 0;
 
 	/*
 	** Fills out the inertia tensor matrix for the shape, given the mass.
@@ -69,7 +69,7 @@ struct st_plane final : st_shape
 	st_vec3f _normal;
 
 	st_shape_t get_type() const override { return k_shape_plane; }
-	void get_debug_draw(const st_mat4f& transform, struct st_dynamic_drawcall* drawcall) override;
+	void get_debug_draw(const st_mat4f& transform, struct st_procedural_drawcall* drawcall) override;
 	void get_inertia_tensor(st_mat4f& tensor, float mass) override;
 	st_vec3f get_offset_to_point(const st_mat4f& transform, const st_vec3f& point) const override;
 };
@@ -83,7 +83,7 @@ struct st_sphere final : st_shape
 	float _radius;
 
 	st_shape_t get_type() const override { return k_shape_sphere; }
-	void get_debug_draw(const st_mat4f& transform, struct st_dynamic_drawcall* drawcall) override;
+	void get_debug_draw(const st_mat4f& transform, struct st_procedural_drawcall* drawcall) override;
 	void get_inertia_tensor(st_mat4f& tensor, float mass) override;
 	st_vec3f get_offset_to_point(const st_mat4f& transform, const st_vec3f& point) const override;
 };
@@ -97,7 +97,7 @@ struct st_aabb final : st_shape
 	st_vec3f _max;
 
 	st_shape_t get_type() const override { return k_shape_aabb; }
-	void get_debug_draw(const st_mat4f& transform, struct st_dynamic_drawcall* drawcall) override;
+	void get_debug_draw(const st_mat4f& transform, struct st_procedural_drawcall* drawcall) override;
 	void get_inertia_tensor(st_mat4f& tensor, float mass) override;
 	st_vec3f get_offset_to_point(const st_mat4f& transform, const st_vec3f& point) const override;
 };
@@ -112,7 +112,7 @@ struct st_oobb final : st_shape
 	st_vec3f _half_vectors[3];
 
 	st_shape_t get_type() const override { return k_shape_oobb; }
-	void get_debug_draw(const st_mat4f& transform, struct st_dynamic_drawcall* drawcall) override;
+	void get_debug_draw(const st_mat4f& transform, struct st_procedural_drawcall* drawcall) override;
 	void get_inertia_tensor(st_mat4f& tensor, float mass) override;
 	st_vec3f get_offset_to_point(const st_mat4f& transform, const st_vec3f& point) const override;
 
@@ -127,7 +127,7 @@ struct st_convex_hull final : st_shape
 	std::vector<st_vec3f> _positions;
 
 	st_shape_t get_type() const override { return k_shape_convex_hull; }
-	void get_debug_draw(const st_mat4f& transform, struct st_dynamic_drawcall* drawcall) override;
+	void get_debug_draw(const st_mat4f& transform, struct st_procedural_drawcall* drawcall) override;
 	void get_inertia_tensor(st_mat4f& tensor, float mass) override;
 	st_vec3f get_offset_to_point(const st_mat4f& transform, const st_vec3f& point) const override;
 };

@@ -105,7 +105,7 @@ void st_physics_world::test_intersections(st_frame_params* params)
 					std::chrono::system_clock::now());
 
 #if defined(st_PHYSICS_DEBUG_DRAW)
-				st_dynamic_drawcall collision_draw;
+				st_procedural_drawcall collision_draw;
 				collision_draw._positions.push_back(st_vec3f::zero_vector());
 				collision_draw._positions.push_back(info._normal);
 				collision_draw._indices.push_back(0);

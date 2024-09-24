@@ -207,7 +207,7 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 	glDrawElements(convert_topology(drawcall._draw_mode), geometry->_index_count, GL_UNSIGNED_SHORT, 0);
 }
 
-void st_gl_graphics_context::draw(const st_dynamic_drawcall& drawcall)
+void st_gl_graphics_context::draw(const st_procedural_drawcall& drawcall)
 {
 	GLuint vao;
 	glGenVertexArrays(1, &vao);

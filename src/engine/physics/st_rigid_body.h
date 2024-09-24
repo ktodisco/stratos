@@ -28,7 +28,7 @@ public:
 	st_rigid_body(struct st_shape* shape, float mass);
 	~st_rigid_body();
 
-	void get_debug_draw(struct st_dynamic_drawcall* drawcall);
+	void get_debug_draw(struct st_procedural_drawcall* drawcall);
 
 	void make_static();
 	void make_weightless();

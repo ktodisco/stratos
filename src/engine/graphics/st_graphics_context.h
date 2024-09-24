@@ -28,7 +28,7 @@ public:
 
 	virtual void clear(unsigned int clear_flags) = 0;
 	virtual void draw(const struct st_static_drawcall& drawcall) = 0;
-	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
+	virtual void draw(const struct st_procedural_drawcall& drawcall) = 0;
 
 	// Backbuffer.
 	virtual class st_render_texture* get_present_target() const = 0;
@@ -70,7 +70,7 @@ public:
 	virtual std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) = 0;
 	virtual void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) = 0;
 	virtual void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) = 0;
-	virtual void update_buffer(st_buffer* buffer, void* data, const uint32_t count) = 0;
+	virtual void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) = 0;
 	virtual void set_buffer_meta(st_buffer* buffer, std::string name) = 0;
 
 	// Constant buffers.

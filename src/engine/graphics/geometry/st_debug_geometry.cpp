@@ -15,7 +15,7 @@
 
 #include <vector>
 
-void draw_debug_sphere(float radius, const st_mat4f& transform, st_dynamic_drawcall* drawcall)
+void draw_debug_sphere(float radius, const st_mat4f& transform, st_procedural_drawcall* drawcall)
 {
 	// Represent the sphere with a circle around each axis.
 	std::vector<st_vec3f> axes;

@@ -19,7 +19,7 @@ st_rigid_body::~st_rigid_body()
 {
 }
 
-void st_rigid_body::get_debug_draw(st_dynamic_drawcall* drawcall)
+void st_rigid_body::get_debug_draw(st_procedural_drawcall* drawcall)
 {
 	_shape->get_debug_draw(_transform, drawcall);
 }

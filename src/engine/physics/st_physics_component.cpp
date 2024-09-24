@@ -28,7 +28,7 @@ void st_physics_component::update(st_frame_params* params)
 	_body->_transform = get_entity()->get_transform();
 
 #if st_PHYSICS_DEBUG_DRAW
-	st_dynamic_drawcall draw;
+	st_procedural_drawcall draw;
 	_body->get_debug_draw(&draw);
 
 	while (params->_dynamic_drawcall_lock.test_and_set(std::memory_order_acquire)) {}

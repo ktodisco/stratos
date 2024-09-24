@@ -40,9 +40,9 @@ struct st_static_drawcall : st_drawcall
 
 /*
 ** Draw call with dynamic geometry.
-** Geometry referenced by this draw call should only a single frame.
+** Geometry referenced by this draw call should only last a single frame.
 */
-struct st_dynamic_drawcall : st_drawcall
+struct st_procedural_drawcall : st_drawcall
 {
 	std::vector<st_vec3f> _positions;
 	std::vector<st_vec2f> _texcoords;
