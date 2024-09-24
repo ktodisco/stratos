@@ -16,7 +16,7 @@
 st_fullscreen_render_pass::st_fullscreen_render_pass()
 {
 	std::vector<st_vertex_attribute> attributes;
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, 0));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
 	_vertex_format = st_graphics_context::get()->create_vertex_format(attributes.data(), attributes.size());
 
 	float verts[] =

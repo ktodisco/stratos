@@ -22,11 +22,12 @@ enum e_st_vertex_attribute
 
 struct st_vertex_attribute
 {
-	st_vertex_attribute(e_st_vertex_attribute type, uint32_t unit) :
-		_type(type), _unit(unit) {}
+	st_vertex_attribute() = delete;
+	st_vertex_attribute(e_st_vertex_attribute type, e_st_format format, uint32_t unit) :
+		_type(type), _format(format), _unit(unit) {}
 	~st_vertex_attribute() {}
 
 	e_st_vertex_attribute _type;
-	// TODO: Data type.
+	e_st_format _format;
 	uint32_t _unit;
 };

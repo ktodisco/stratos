@@ -113,16 +113,16 @@ void egg_to_model(const char* filename, st_model_data* model)
 
 	// Sort out the model's vertex format.
 	std::vector<st_vertex_attribute> attributes;
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, 0));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_normal, 1));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, 2));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, 3));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, 4));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_normal, st_format_r32g32b32_float, 1));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, st_format_r32g32b32_float, 2));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32a32_float, 3));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 4));
 
 	if (state._vertex_format & egg_vertex_attribute_joints)
-		attributes.push_back(st_vertex_attribute(st_vertex_attribute_joints, 4));
+		attributes.push_back(st_vertex_attribute(st_vertex_attribute_joints, st_format_r32g32b32a32_float, 4));
 	if (state._vertex_format & egg_vertex_attribute_weights)
-		attributes.push_back(st_vertex_attribute(st_vertex_attribute_weights, 5));
+		attributes.push_back(st_vertex_attribute(st_vertex_attribute_weights, st_format_r32g32b32a32_uint, 5));
 
 	model->_vertex_format = st_graphics_context::get()->create_vertex_format(attributes.data(), attributes.size());
 }

@@ -690,29 +690,7 @@ std::unique_ptr<st_vertex_format> st_gl_graphics_context::create_vertex_format(
 	{
 		const st_vertex_attribute* attr = &attributes[itr];
 
-		// TODO: Switch on the attribute data type.
-		size_t data_size = sizeof(float);
-
-		switch (attr->_type)
-		{
-		case st_vertex_attribute_position:
-		case st_vertex_attribute_normal:
-		case st_vertex_attribute_binormal:
-		case st_vertex_attribute_tangent:
-			vertex_size += data_size * 3;
-			break;
-		case st_vertex_attribute_color:
-		case st_vertex_attribute_joints:
-		case st_vertex_attribute_weights:
-			vertex_size += data_size * 4;
-			break;
-		case st_vertex_attribute_uv:
-			vertex_size += data_size * 2;
-			break;
-		default:
-			assert(false);
-			break;
-		}
+		vertex_size += bits_per_pixel(attr->_format) / 8;
 	}
 
 	format->_vertex_size = (uint32_t)vertex_size;

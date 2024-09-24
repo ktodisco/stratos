@@ -1252,29 +1252,7 @@ std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format
 	{
 		const st_vertex_attribute* attr = &attributes[itr];
 
-		// TODO: Switch on the attribute data type.
-		size_t data_size = sizeof(float);
-
-		switch (attr->_type)
-		{
-		case st_vertex_attribute_position:
-		case st_vertex_attribute_normal:
-		case st_vertex_attribute_binormal:
-		case st_vertex_attribute_tangent:
-			vertex_size += data_size * 3;
-			break;
-		case st_vertex_attribute_color:
-		case st_vertex_attribute_joints:
-		case st_vertex_attribute_weights:
-			vertex_size += data_size * 4;
-			break;
-		case st_vertex_attribute_uv:
-			vertex_size += data_size * 2;
-			break;
-		default:
-			assert(false);
-			break;
-		}
+		vertex_size += bits_per_pixel(attr->_format) / 8;
 	}
 
 	vertex_format->_vertex_size = (uint32_t)vertex_size;
@@ -1284,11 +1262,10 @@ std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format
 	for (uint32_t itr = 0; itr < attribute_count; ++itr)
 	{
 		const st_vertex_attribute* attr = &attributes[itr];
-		int32_t size = 0;
-		size_t data_size = sizeof(float);
+
 		LPCSTR semantic_name;
 		UINT semantic_index = 0;
-		DXGI_FORMAT format = DXGI_FORMAT_R32G32B32_FLOAT;
+		DXGI_FORMAT format = convert_format(attr->_format);
 		UINT input_slot;
 		UINT aligned_byte_offset = 0;
 		D3D12_INPUT_CLASSIFICATION classification = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
@@ -1297,40 +1274,27 @@ std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format
 		{
 		case st_vertex_attribute_position:
 			semantic_name = "POSITION";
-			size = 3;
 			break;
 		case st_vertex_attribute_normal:
 			semantic_name = "NORMAL";
-			size = 3;
 			break;
 		case st_vertex_attribute_binormal:
 			semantic_name = "BINORMAL";
-			size = 3;
 			break;
 		case st_vertex_attribute_tangent:
 			semantic_name = "TANGENT";
-			size = 3;
 			break;
 		case st_vertex_attribute_joints:
 			semantic_name = "JOINTS";
-			format = DXGI_FORMAT_R32G32B32A32_UINT;
-			data_size = sizeof(uint32_t);
-			size = 4;
 			break;
 		case st_vertex_attribute_color:
 			semantic_name = "COLOR";
-			format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-			size = 4;
 			break;
 		case st_vertex_attribute_weights:
 			semantic_name = "WEIGHT";
-			format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-			size = 4;
 			break;
 		case st_vertex_attribute_uv:
 			semantic_name = "UV";
-			format = DXGI_FORMAT_R32G32_FLOAT;
-			size = 2;
 			break;
 		default:
 			assert(false);
@@ -1347,7 +1311,7 @@ std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format
 			0
 			});
 
-		offset += size * data_size;
+		offset += bytes_per_pixel(attr->_format);
 	}
 
 	vertex_format->_input_layout.NumElements = attribute_count;

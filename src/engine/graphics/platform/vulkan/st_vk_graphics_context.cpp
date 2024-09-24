@@ -1425,29 +1425,7 @@ std::unique_ptr<st_vertex_format> st_vk_graphics_context::create_vertex_format(
 	{
 		const st_vertex_attribute* attr = &attributes[itr];
 
-		// TODO: Switch on the attribute data type.
-		size_t data_size = sizeof(float);
-
-		switch (attr->_type)
-		{
-		case st_vertex_attribute_position:
-		case st_vertex_attribute_normal:
-		case st_vertex_attribute_binormal:
-		case st_vertex_attribute_tangent:
-			vertex_size += data_size * 3;
-			break;
-		case st_vertex_attribute_color:
-		case st_vertex_attribute_joints:
-		case st_vertex_attribute_weights:
-			vertex_size += data_size * 4;
-			break;
-		case st_vertex_attribute_uv:
-			vertex_size += data_size * 2;
-			break;
-		default:
-			assert(false);
-			break;
-		}
+		vertex_size += bytes_per_pixel(attr->_format);
 	}
 
 	vertex_format->_vertex_size = (uint32_t)vertex_size;
@@ -1456,54 +1434,15 @@ std::unique_ptr<st_vertex_format> st_vk_graphics_context::create_vertex_format(
 	for (uint32_t itr = 0; itr < attribute_count; ++itr)
 	{
 		const st_vertex_attribute* attr = &attributes[itr];
-		int32_t size = 0;
-		size_t data_size = sizeof(float);
-		e_st_format format = st_format_r32g32b32_float;
-
-		switch (attr->_type)
-		{
-		case st_vertex_attribute_position:
-			size = 3;
-			break;
-		case st_vertex_attribute_normal:
-			size = 3;
-			break;
-		case st_vertex_attribute_binormal:
-			size = 3;
-			break;
-		case st_vertex_attribute_tangent:
-			size = 3;
-			break;
-		case st_vertex_attribute_joints:
-			format = st_format_r32g32b32a32_uint;
-			data_size = sizeof(uint32_t);
-			size = 4;
-			break;
-		case st_vertex_attribute_color:
-			format = st_format_r32g32b32a32_float;
-			size = 4;
-			break;
-		case st_vertex_attribute_weights:
-			format = st_format_r32g32b32a32_float;
-			size = 4;
-			break;
-		case st_vertex_attribute_uv:
-			format = st_format_r32g32_float;
-			size = 2;
-			break;
-		default:
-			assert(false);
-			break;
-		}
 
 		vk::VertexInputAttributeDescription attribute = vk::VertexInputAttributeDescription()
 			.setBinding(0)
-			.setFormat(convert_format(format))
+			.setFormat(convert_format(attr->_format))
 			.setLocation(attr->_unit)
 			.setOffset(offset);
 		vertex_format->_attribute_descs.push_back(attribute);
 
-		offset += size * data_size;
+		offset += bytes_per_pixel(attr->_format);
 	}
 
 	vk::VertexInputBindingDescription binding = vk::VertexInputBindingDescription()

@@ -567,6 +567,11 @@ inline size_t bits_per_pixel(e_st_format fmt)
 	}
 }
 
+inline size_t bytes_per_pixel(e_st_format format)
+{
+	return (bits_per_pixel(format) / 8);
+}
+
 inline bool get_surface_info(
 	size_t width,
 	size_t height,

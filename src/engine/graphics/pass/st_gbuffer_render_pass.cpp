@@ -31,11 +31,11 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 		depth_buffer);
 
 	std::vector<st_vertex_attribute> attributes;
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, 0));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_normal, 1));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, 2));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, 3));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, 4));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_normal, st_format_r32g32b32_float, 1));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, st_format_r32g32b32_float, 2));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32a32_float, 3));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 4));
 	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
 
 	// Set up the gbuffer material and state.
