@@ -185,6 +185,11 @@ private:
 	vk::PipelineLayout _pipeline_layout;
 	vk::DescriptorPool _descriptor_pool;
 
+	std::vector<vk::DescriptorSet> _descriptor_set_pool[k_max_frames];
+	uint32_t _descriptor_set_index = 0;
+
+	uint32_t _frame_index = 0;
+
 	void* _vk_library = nullptr;
 	bool _has_markers = false;
 };

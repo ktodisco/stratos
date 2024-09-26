@@ -103,6 +103,11 @@ struct st_vk_resource_table : public st_resource_table, public st_vk_resource
 	vk::DescriptorSet _buffers;
 	vk::DescriptorSet _samplers;
 
+	uint32_t _texture_count = 0;
+	uint32_t _constant_count = 0;
+	uint32_t _buffer_count = 0;
+	uint32_t _sampler_count = 0;
+
 	std::vector<vk::Sampler> _sampler_resources;
 
 	vk::DescriptorPool* _pool;

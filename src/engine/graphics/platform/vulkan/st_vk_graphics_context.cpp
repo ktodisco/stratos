@@ -416,6 +416,12 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 
 	VK_VALIDATE(_device.createDescriptorPool(&pool_info, nullptr, &_descriptor_pool));
 
+	for (uint32_t ds_itr = 0; ds_itr < k_max_frames; ++ds_itr)
+	{
+		// TODO: Arbitrary number. What's the best way to size this?
+		_descriptor_set_pool[ds_itr].reserve(1024);
+	}
+
 	_this = this;
 
 	begin_frame();
@@ -563,6 +569,8 @@ void st_vk_graphics_context::transition_backbuffer_to_present()
 
 void st_vk_graphics_context::begin_frame()
 {
+	_frame_index = (_frame_index + 1) % k_max_frames;
+
 	vk::CommandBufferBeginInfo begin_info = vk::CommandBufferBeginInfo()
 		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -571,6 +579,16 @@ void st_vk_graphics_context::begin_frame()
 
 	// Begin writing to the head of the upload buffer again.
 	_upload_buffer_offset = 0;
+
+	// Reset the descriptor set pool.
+	if (_descriptor_set_pool[_frame_index].size() > 0)
+	{
+		VK_VALIDATE(_device.freeDescriptorSets(
+			_descriptor_pool,
+			_descriptor_set_pool[_frame_index].size(),
+			_descriptor_set_pool[_frame_index].data()));
+		_descriptor_set_pool[_frame_index].clear();
+	}
 }
 
 void st_vk_graphics_context::end_frame()
@@ -1123,6 +1141,7 @@ std::unique_ptr<st_resource_table> st_vk_graphics_context::create_resource_table
 void st_vk_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+	table->_constant_count = count;
 
 	std::vector<vk::DescriptorBufferInfo> infos;
 	for (int i = 0; i < count; ++i)
@@ -1148,6 +1167,8 @@ void st_vk_graphics_context::set_constant_buffers(st_resource_table* table_, uin
 void st_vk_graphics_context::set_textures(st_resource_table* table_, uint32_t count, st_texture** textures)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+	table->_texture_count = count;
+	table->_sampler_count = count;
 
 	std::vector<vk::DescriptorImageInfo> images;
 	for (int i = 0; i < count; ++i)
@@ -1190,6 +1211,7 @@ void st_vk_graphics_context::set_textures(st_resource_table* table_, uint32_t co
 void st_vk_graphics_context::set_buffers(st_resource_table* table_, uint32_t count, st_buffer** buffers)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+	table->_buffer_count = count;
 
 	std::vector<vk::DescriptorBufferInfo> infos;
 	for (int i = 0; i < count; ++i)
@@ -1216,22 +1238,41 @@ void st_vk_graphics_context::bind_resource_table(st_resource_table* table_)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 
-	auto bind_set = [this](e_st_descriptor_slot slot, const vk::DescriptorSet* set)
+	auto bind_set = [this](e_st_descriptor_slot slot, const vk::DescriptorSet* set, uint32_t count)
 	{
+		// First, copy the descriptor set to a unique one for this frame.
+		vk::DescriptorSet& new_set = _descriptor_set_pool[_frame_index].emplace_back();
+
+		vk::DescriptorSetAllocateInfo allocate_info = vk::DescriptorSetAllocateInfo()
+			.setDescriptorPool(_descriptor_pool)
+			.setDescriptorSetCount(1)
+			.setPSetLayouts(&_descriptor_layouts[slot]);
+
+		VK_VALIDATE(_device.allocateDescriptorSets(&allocate_info, &new_set));
+
+		vk::CopyDescriptorSet copy_set = vk::CopyDescriptorSet()
+			.setDescriptorCount(count)
+			.setSrcSet(*set)
+			.setSrcBinding(0)
+			.setDstSet(new_set)
+			.setDstBinding(0);
+
+		_device.updateDescriptorSets(0, nullptr, 1, &copy_set);
+
 		_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,
 			_pipeline_layout,
 			slot,
 			1,
-			set,
+			&new_set,
 			0,
 			nullptr);
 	};
 
-	bind_set(st_descriptor_slot_textures, &table->_textures);
-	bind_set(st_descriptor_slot_samplers, &table->_samplers);
-	bind_set(st_descriptor_slot_buffers, &table->_buffers);
-	bind_set(st_descriptor_slot_constants, &table->_constants);
+	bind_set(st_descriptor_slot_textures, &table->_textures, table->_texture_count);
+	bind_set(st_descriptor_slot_samplers, &table->_samplers, table->_sampler_count);
+	bind_set(st_descriptor_slot_buffers, &table->_buffers, table->_buffer_count);
+	bind_set(st_descriptor_slot_constants, &table->_constants, table->_constant_count);
 }
 
 std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* filename, uint8_t type)
