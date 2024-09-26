@@ -14,7 +14,7 @@ st_dx12_descriptor_heap::st_dx12_descriptor_heap(
 	ID3D12Device* device,
 	uint32_t size,
 	D3D12_DESCRIPTOR_HEAP_TYPE type,
-	D3D12_DESCRIPTOR_HEAP_FLAGS flags)
+	D3D12_DESCRIPTOR_HEAP_FLAGS flags) : _size(size)
 {
 	D3D12_DESCRIPTOR_HEAP_DESC cbv_srv_heap_desc{};
 	cbv_srv_heap_desc.NumDescriptors = size;
@@ -33,9 +33,7 @@ st_dx12_descriptor_heap::st_dx12_descriptor_heap(
 	}
 
 	// Set up the initial free block.
-	_free_blocks.push_front(std::make_unique<st_descriptor_free_block>());
-	_free_blocks.front()->_index = 0;
-	_free_blocks.front()->_size = size;
+	empty();
 }
 
 st_dx12_descriptor_heap::~st_dx12_descriptor_heap()
@@ -117,6 +115,16 @@ void st_dx12_descriptor_heap::deallocate_handle(uint32_t offset)
 		_free_blocks.front()->_index = offset;
 		_free_blocks.front()->_size = 1;
 	}
+}
+
+void st_dx12_descriptor_heap::empty()
+{
+	_free_blocks.clear();
+
+	// Set up the initial free block.
+	_free_blocks.push_front(std::make_unique<st_descriptor_free_block>());
+	_free_blocks.front()->_index = 0;
+	_free_blocks.front()->_size = _size;
 }
 
 ID3D12DescriptorHeap* st_dx12_descriptor_heap::get() const

@@ -20,10 +20,6 @@
 #include <string>
 #include <vector>
 
-// TODO: Find an ideal way to represent these.
-#define k_max_shader_resources 1024
-#define k_max_samplers 1024
-
 class st_vk_graphics_context : public st_graphics_context
 {
 public:
@@ -142,10 +138,8 @@ private:
 	void create_sampler(vk::Sampler& sampler);
 	void destroy_sampler(vk::Sampler& sampler);
 
-	static const uint32_t k_backbuffer_count = 2;
-
 	vk::SurfaceKHR _window_surface;
-	vk::Image _backbuffers[k_backbuffer_count];
+	vk::Image _backbuffers[k_max_frames];
 	vk::SwapchainKHR _swap_chain;
 
 	// This texture is used by the application as a proxy for the double-buffered backbuffer.

@@ -106,7 +106,7 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 
 	// Create the swap chain.
 	DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
-	swap_chain_desc.BufferCount = k_backbuffer_count;
+	swap_chain_desc.BufferCount = k_max_frames;
 	swap_chain_desc.Width = window->get_width();
 	swap_chain_desc.Height = window->get_height();
 	swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -138,10 +138,16 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 	}
 
 	// Create descriptor heaps.
+	_resource_heap = std::make_unique<st_dx12_descriptor_heap>(
+		_device.Get(),
+		k_max_loaded_resources,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+
 	// TODO: The render target count could either be more dynamic, or defined better.
 	_rtv_heap = std::make_unique<st_dx12_descriptor_heap>(
 		_device.Get(),
-		k_backbuffer_count + 16,
+		k_max_frames + 16,
 		D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
 		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
@@ -151,17 +157,20 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 		D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
 		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
-	_cbv_srv_heap = std::make_unique<st_dx12_descriptor_heap>(
-		_device.Get(),
-		k_max_shader_resources,
-		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
 	_sampler_heap = std::make_unique<st_dx12_descriptor_heap>(
 		_device.Get(),
 		k_max_samplers,
 		D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
 		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+	for (uint32_t h_itr = 0; h_itr < k_max_frames; ++h_itr)
+	{
+		_cbv_srv_heap[h_itr] = std::make_unique<st_dx12_descriptor_heap>(
+			_device.Get(),
+			k_max_shader_resources,
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	}
 
 	// Create the descriptor heap for imgui.
 	_gui_srv_heap = std::make_unique<st_dx12_descriptor_heap>(
@@ -178,7 +187,7 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 	_upload_buffer->Map(0, &map_range, reinterpret_cast<void**>(&_upload_buffer_head));
 
 	// Create frame resources.
-	for (uint32_t rtv_itr = 0; rtv_itr < k_backbuffer_count; ++rtv_itr)
+	for (uint32_t rtv_itr = 0; rtv_itr < k_max_frames; ++rtv_itr)
 	{
 		result = _swap_chain->GetBuffer(
 			rtv_itr,
@@ -196,7 +205,7 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 		_device->CreateRenderTargetView(_backbuffers[rtv_itr].Get(), nullptr, rtv_handle._handle);
 	}
 
-	for (uint32_t ca_itr = 0; ca_itr < k_backbuffer_count; ++ca_itr)
+	for (uint32_t ca_itr = 0; ca_itr < k_max_frames; ++ca_itr)
 	{
 		// Create the command allocator.
 		result = _device->CreateCommandAllocator(
@@ -330,7 +339,7 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 	_root_signature = nullptr;
 	_command_list = nullptr;
 
-	for (uint32_t ca_itr = 0; ca_itr < k_backbuffer_count; ++ca_itr)
+	for (uint32_t ca_itr = 0; ca_itr < k_max_frames; ++ca_itr)
 	{
 		_command_allocators[ca_itr] = nullptr;
 	}
@@ -339,11 +348,15 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 
 	_gui_srv_heap = nullptr;
 	_sampler_heap = nullptr;
-	_cbv_srv_heap = nullptr;
 	_dsv_heap = nullptr;
 	_rtv_heap = nullptr;
+	_resource_heap = nullptr;
+	for (uint32_t h_itr = 0; h_itr < k_max_frames; ++h_itr)
+	{
+		_cbv_srv_heap[h_itr] = nullptr;
+	}
 
-	for (uint32_t bb_itr = 0; bb_itr < k_backbuffer_count; ++bb_itr)
+	for (uint32_t bb_itr = 0; bb_itr < k_max_frames; ++bb_itr)
 	{
 		_backbuffers[bb_itr] = nullptr;
 	}
@@ -419,7 +432,7 @@ void st_dx12_graphics_context::set_clear_color(float r, float g, float b, float 
 
 void st_dx12_graphics_context::set_shader_resource_table(uint32_t offset)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap->get_handle_gpu(offset);
+	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_textures, srv_handle);
 }
 
@@ -431,13 +444,13 @@ void st_dx12_graphics_context::set_sampler_table(uint32_t offset)
 
 void st_dx12_graphics_context::set_constant_buffer_table(uint32_t offset)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap->get_handle_gpu(offset);
+	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_constants, cbv_handle);
 }
 
 void st_dx12_graphics_context::set_buffer_table(uint32_t offset)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE buffer_handle = _cbv_srv_heap->get_handle_gpu(offset);
+	D3D12_GPU_DESCRIPTOR_HANDLE buffer_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_buffers, buffer_handle);
 }
 
@@ -1082,18 +1095,59 @@ void st_dx12_graphics_context::bind_resource_table(st_resource_table* _table)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
 
-	// TODO: I'm thinking it may be better, below, to replace set_constant_buffer_table,
-	// set_shader_resource_table, and set_sampler_table with a more generic
-	// set_graphics_resource_table which takes an enum describing which resource table
-	// to set.  We could define the targets as more generic entries like constant buffers,
-	// textures, buffers, and samplers. ... Which is pretty much what we have anyway,
-	// I realize...  I think this means that the root signature just needs to be tweaked
-	// to accommodate more flexibility.
-	// TODO: Find a way to eliminate the conditionals here.
-	if (table->_cbvs.size() > 0) { set_constant_buffer_table(table->_cbvs[0]); }
-	if (table->_srvs.size() > 0) { set_shader_resource_table(table->_srvs[0]); }
+	static uint32_t k_invalid_offset = 0xffffffff;
+
+	uint32_t offset = k_invalid_offset;
+	for (uint32_t cbv_itr = 0; cbv_itr < table->_cbvs.size(); ++cbv_itr)
+	{
+		st_dx12_cpu_descriptor_handle handle = _cbv_srv_heap[_frame_index]->allocate_handle();
+		if (offset == k_invalid_offset)
+			offset = handle._offset;
+
+		_device->CopyDescriptorsSimple(
+			1,
+			handle._handle,
+			_resource_heap->get_handle_cpu(table->_cbvs[cbv_itr]),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+	if (table->_cbvs.size() > 0)
+		set_constant_buffer_table(offset);
+
+	offset = k_invalid_offset;
+	for (uint32_t srv_itr = 0; srv_itr < table->_srvs.size(); ++srv_itr)
+	{
+		st_dx12_cpu_descriptor_handle handle = _cbv_srv_heap[_frame_index]->allocate_handle();
+		if (offset == k_invalid_offset)
+			offset = handle._offset;
+
+		_device->CopyDescriptorsSimple(
+			1,
+			handle._handle,
+			_resource_heap->get_handle_cpu(table->_srvs[srv_itr]),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+	if (table->_srvs.size() > 0)
+		set_shader_resource_table(offset);
+
+	offset = k_invalid_offset;
+	for (uint32_t b_itr = 0; b_itr < table->_buffers.size(); ++b_itr)
+	{
+		st_dx12_cpu_descriptor_handle handle = _cbv_srv_heap[_frame_index]->allocate_handle();
+		if (offset == k_invalid_offset)
+			offset = handle._offset;
+
+		_device->CopyDescriptorsSimple(
+			1,
+			handle._handle,
+			_resource_heap->get_handle_cpu(table->_buffers[b_itr]),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+	if (table->_buffers.size() > 0)
+		set_buffer_table(offset);
+
+	// TODO: Samplers are still left as plain entries into the samplers table because
+	// sampler usage is not very complex. This will likely need to change in the future.
 	if (table->_samplers.size() > 0) { set_sampler_table(table->_samplers[0]); }
-	if (table->_buffers.size() > 0) { set_buffer_table(table->_buffers[0]); }
 }
 
 std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* filename, uint8_t type)
@@ -1392,7 +1446,9 @@ void st_dx12_graphics_context::begin_frame()
 	_command_list->Reset(_command_allocators[_frame_index].Get(), nullptr);
 	_command_list->SetGraphicsRootSignature(_root_signature.Get());
 
-	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap->get(), _sampler_heap->get() };
+	// Empty all allocations from this heap. Commands using them have finished executing.
+	_cbv_srv_heap[_frame_index]->empty();
+	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap[_frame_index]->get(), _sampler_heap->get() };
 	_command_list->SetDescriptorHeaps(_countof(heaps), heaps);
 
 	_dynamic_vertex_bytes_written = 0;
@@ -1469,7 +1525,7 @@ st_dx12_descriptor st_dx12_graphics_context::create_constant_buffer_view(
 	cbv_desc.BufferLocation = gpu_address;
 	cbv_desc.SizeInBytes = align_value(size, 256);
 
-	st_dx12_cpu_descriptor_handle cbv_handle = _cbv_srv_heap->allocate_handle();
+	st_dx12_cpu_descriptor_handle cbv_handle = _resource_heap->allocate_handle();
 	_device->CreateConstantBufferView(&cbv_desc, cbv_handle._handle);
 
 	return cbv_handle._offset;
@@ -1477,7 +1533,7 @@ st_dx12_descriptor st_dx12_graphics_context::create_constant_buffer_view(
 
 void st_dx12_graphics_context::destroy_constant_buffer_view(st_dx12_descriptor offset)
 {
-	_cbv_srv_heap->deallocate_handle(offset);
+	_resource_heap->deallocate_handle(offset);
 }
 
 st_dx12_descriptor st_dx12_graphics_context::create_shader_resource_view(
@@ -1492,7 +1548,7 @@ st_dx12_descriptor st_dx12_graphics_context::create_shader_resource_view(
 	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srv_desc.Texture2D.MipLevels = levels;
 
-	st_dx12_cpu_descriptor_handle srv_handle = _cbv_srv_heap->allocate_handle();
+	st_dx12_cpu_descriptor_handle srv_handle = _resource_heap->allocate_handle();
 	_device->CreateShaderResourceView(resource, &srv_desc, srv_handle._handle);
 
 	return srv_handle._offset;
@@ -1500,7 +1556,7 @@ st_dx12_descriptor st_dx12_graphics_context::create_shader_resource_view(
 
 void st_dx12_graphics_context::destroy_shader_resource_view(st_dx12_descriptor offset)
 {
-	_cbv_srv_heap->deallocate_handle(offset);
+	_resource_heap->deallocate_handle(offset);
 }
 
 st_dx12_descriptor st_dx12_graphics_context::create_shader_sampler()
@@ -1543,7 +1599,7 @@ st_dx12_descriptor st_dx12_graphics_context::create_buffer_view(
 	srv_desc.Buffer.StructureByteStride = element_size;
 	srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	st_dx12_cpu_descriptor_handle srv_handle = _cbv_srv_heap->allocate_handle();
+	st_dx12_cpu_descriptor_handle srv_handle = _resource_heap->allocate_handle();
 	_device->CreateShaderResourceView(resource, &srv_desc, srv_handle._handle);
 
 	return srv_handle._offset;
@@ -1551,7 +1607,7 @@ st_dx12_descriptor st_dx12_graphics_context::create_buffer_view(
 
 void st_dx12_graphics_context::destroy_buffer_view(st_dx12_descriptor offset)
 {
-	_cbv_srv_heap->deallocate_handle(offset);
+	_resource_heap->deallocate_handle(offset);
 }
 
 #endif

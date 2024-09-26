@@ -9,6 +9,8 @@
 #include "graphics/st_graphics_context.h"
 #include "graphics/st_pipeline_state_desc.h"
 
+#if 0
+
 // DirectX data
 static st_graphics_context* g_graphics_context = nullptr;
 static st_shader* g_vertex_shader = nullptr;
@@ -565,3 +567,4 @@ void ImGui_ImplDX12_NewFrame()
     if (!g_pPipelineState)
         ImGui_ImplDX12_CreateDeviceObjects();
 }
+#endif

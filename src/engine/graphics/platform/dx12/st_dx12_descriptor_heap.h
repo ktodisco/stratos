@@ -17,7 +17,7 @@
 struct st_dx12_cpu_descriptor_handle
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE _handle;
-	uint32_t _offset;
+	uint32_t _offset = 0xffffffff;
 };
 
 struct st_dx12_gpu_descriptor_handle
@@ -52,6 +52,8 @@ public:
 	st_dx12_cpu_descriptor_handle allocate_handle();
 	void deallocate_handle(uint32_t offset);
 
+	void empty();
+
 	ID3D12DescriptorHeap* get() const;
 	D3D12_CPU_DESCRIPTOR_HANDLE get_handle_cpu(st_dx12_descriptor offset) const;
 	D3D12_GPU_DESCRIPTOR_HANDLE get_handle_gpu(st_dx12_descriptor offset) const;
@@ -60,6 +62,7 @@ public:
 private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _heap;
 	uint32_t _descriptor_size;
+	uint32_t _size;
 
 	std::list<std::unique_ptr<st_descriptor_free_block>> _free_blocks;
 };

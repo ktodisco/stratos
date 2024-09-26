@@ -285,7 +285,7 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 
 	vk::SwapchainCreateInfoKHR swap_chain_info = vk::SwapchainCreateInfoKHR()
 		.setSurface(_window_surface)
-		.setMinImageCount(k_backbuffer_count)
+		.setMinImageCount(k_max_frames)
 		.setImageFormat(vk::Format::eB8G8R8A8Srgb)
 		.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear)
 		.setImageExtent(vk::Extent2D(window->get_width(), window->get_height()))
@@ -303,7 +303,7 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 
 	uint32_t backbuffer_count;
 	VK_VALIDATE(_device.getSwapchainImagesKHR(_swap_chain, &backbuffer_count, nullptr));
-	assert(backbuffer_count = k_backbuffer_count);
+	assert(backbuffer_count = k_max_frames);
 	VK_VALIDATE(_device.getSwapchainImagesKHR(_swap_chain, &backbuffer_count, &_backbuffers[0]));
 
 	// Create the generic upload buffer.

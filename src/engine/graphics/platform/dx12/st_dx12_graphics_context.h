@@ -19,10 +19,6 @@
 #include <cstdint>
 #include <string>
 
-// TODO: Find an ideal way to represent these.
-#define k_max_shader_resources 1024
-#define k_max_samplers 1024
-
 class st_dx12_graphics_context : public st_graphics_context
 {
 public:
@@ -167,8 +163,6 @@ private:
 
 	void destroy_target(st_dx12_descriptor target);
 
-	static const uint32_t k_backbuffer_count = 2;
-
 	D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissor_rect;
 
@@ -176,15 +170,19 @@ private:
 
 	Microsoft::WRL::ComPtr<IDXGISwapChain3> _swap_chain;
 	Microsoft::WRL::ComPtr<ID3D12Device> _device;
-	Microsoft::WRL::ComPtr<ID3D12Resource> _backbuffers[k_backbuffer_count];
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> _command_allocators[k_backbuffer_count];
+	Microsoft::WRL::ComPtr<ID3D12Resource> _backbuffers[k_max_frames];
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> _command_allocators[k_max_frames];
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _command_queue;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> _root_signature;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _command_list;
 
+	// Heap used for loaded resources.
+	std::unique_ptr<st_dx12_descriptor_heap> _resource_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _rtv_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _dsv_heap;
-	std::unique_ptr<st_dx12_descriptor_heap> _cbv_srv_heap;
+
+	// Heap used for drawing. Descriptors are copied to blocks in this heap with each draw.
+	std::unique_ptr<st_dx12_descriptor_heap> _cbv_srv_heap[k_max_frames];
 	std::unique_ptr<st_dx12_descriptor_heap> _sampler_heap;
 
 	std::unique_ptr<st_dx12_descriptor_heap> _gui_srv_heap;

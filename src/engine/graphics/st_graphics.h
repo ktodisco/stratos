@@ -17,7 +17,11 @@
 #define ST_GRAPHICS_API_DX12
 #define ST_GRAPHICS_API_VULKAN
 
-typedef void* st_graphics_resource;
+// TODO: Find an ideal way to represent these.
+#define k_max_frames 2
+#define k_max_loaded_resources 4096
+#define k_max_shader_resources 4096
+#define k_max_samplers 128
 
 enum e_st_primitive_topology_type
 {
