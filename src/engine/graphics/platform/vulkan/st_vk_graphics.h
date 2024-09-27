@@ -17,6 +17,8 @@
 
 #include <graphics/platform/vulkan/st_vk_framebuffer.h>
 
+#include <vector>
+
 // Ugh. Windows.
 #undef min
 #undef max
