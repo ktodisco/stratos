@@ -159,7 +159,7 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 		convert_blend(state_desc._blend_desc._target_blend[0]._dst_blend));
 
 	set_cull_state(
-		state_desc._rasterizer_desc._cull_mode != GL_NONE,
+		state_desc._rasterizer_desc._cull_mode != st_cull_mode_none,
 		convert_cull_mode(state_desc._rasterizer_desc._cull_mode));
 }
 
@@ -219,28 +219,33 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 	for (uint32_t itr = 0; itr < format->_attributes.size(); ++itr)
 	{
 		const st_vertex_attribute* attr = &format->_attributes[itr];
-		GLint size = 0;
-		size_t data_size = sizeof(float);
+		GLint components = 0;
 		GLenum type = GL_FLOAT;
 		GLboolean normalized = GL_FALSE;
 
-		switch (attr->_type)
+		switch (attr->_format)
 		{
-		case st_vertex_attribute_position:
-		case st_vertex_attribute_normal:
-		case st_vertex_attribute_binormal:
-		case st_vertex_attribute_tangent:
-			size = 3;
+		case st_format_r8g8b8a8_unorm:
+			type = GL_UNSIGNED_BYTE;
+			normalized = GL_TRUE;
 			break;
-		case st_vertex_attribute_joints:
-			type = GL_UNSIGNED_INT;
-			data_size = sizeof(uint32_t);
-		case st_vertex_attribute_color:
-		case st_vertex_attribute_weights:
-			size = 4;
+		default:
+			type = GL_FLOAT;
 			break;
-		case st_vertex_attribute_uv:
-			size = 2;
+		}
+
+		switch (attr->_format)
+		{
+		case st_format_r32g32b32a32_float:
+		case st_format_r32g32b32a32_uint:
+		case st_format_r8g8b8a8_unorm:
+			components = 4;
+			break;
+		case st_format_r32g32b32_float:
+			components = 3;
+			break;
+		case st_format_r32g32_float:
+			components = 2;
 			break;
 		default:
 			assert(false);
@@ -252,7 +257,7 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 		{
 			glVertexAttribIPointer(
 				attr->_unit,
-				size,
+				components,
 				type,
 				format->_vertex_size,
 				(GLvoid*)offset);
@@ -261,7 +266,7 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 		{
 			glVertexAttribPointer(
 				attr->_unit,
-				size,
+				components,
 				type,
 				normalized,
 				format->_vertex_size,
@@ -270,13 +275,17 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 
 		glEnableVertexAttribArray(attr->_unit);
 
-		offset += size * data_size;
+		offset += bytes_per_pixel(attr->_format);
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index->_buffer);
 
-	glDrawElements(convert_topology(drawcall._draw_mode), drawcall._index_count, GL_UNSIGNED_SHORT, 0);
+	size_t index_offset = static_cast<GLint>(drawcall._index_offset) * sizeof(GLushort);
+	GLint base_vertex = static_cast<GLint>(drawcall._vertex_offset);
+	glDrawElementsBaseVertex(convert_topology(drawcall._draw_mode), drawcall._index_count, GL_UNSIGNED_SHORT, (void*)index_offset, base_vertex);
 	glBindVertexArray(0);
+
+	glDeleteVertexArrays(1, &vao);
 }
 
 void st_gl_graphics_context::draw(const st_procedural_drawcall& drawcall)
@@ -493,7 +502,7 @@ void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 	{
 		uint8_t* head;
 		map(buffer_, 0, { 0, buffer->_element_size * buffer->_count }, (void**)&head);
-		memcpy(head, data, count * buffer->_element_size);
+		memcpy(head + offset, data, count * buffer->_element_size);
 		unmap(buffer_, 0, { 0, 0 });
 
 		const st_gl_shader* shader = get_bound_shader();
@@ -575,13 +584,13 @@ void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 	else if (buffer->_usage & e_st_buffer_usage::vertex)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, buffer->_buffer);
-		glBufferData(GL_ARRAY_BUFFER, count * buffer->_element_size, data, GL_STATIC_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, offset, count * buffer->_element_size, data);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 	else if (buffer->_usage & e_st_buffer_usage::index)
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->_buffer);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * buffer->_element_size, data, GL_STATIC_DRAW);
+		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, count * buffer->_element_size, data);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 }
@@ -645,13 +654,24 @@ void st_gl_graphics_context::set_buffers(st_resource_table* table, uint32_t coun
 {
 }
 
+void st_gl_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
+{
+	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
+
+	for (uint32_t itr = 0; itr < count; ++itr)
+	{
+		st_gl_texture_view* view = static_cast<st_gl_texture_view*>(views[itr]);
+		table->_srvs[itr] = view->_texture;
+	}
+}
+
 void st_gl_graphics_context::bind_resource_table(st_resource_table* table_)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
 	for (uint32_t i = 0; i < table->_srvs.size(); ++i)
 	{
-		st_gl_texture* texture = static_cast<st_gl_texture*>(table->_srvs[i]);
+		const st_gl_texture* texture = static_cast<const st_gl_texture*>(table->_srvs[i]);
 
 		const st_gl_shader* shader = get_bound_shader();
 
@@ -749,18 +769,24 @@ void st_gl_graphics_context::end_render_pass(st_render_pass* pass_)
 
 void st_gl_graphics_context::set_depth_state(bool enable, GLenum func)
 {
-	if (enable) glEnable(GL_DEPTH_TEST);
-	else glDisable(GL_DEPTH_TEST);
-
-	glDepthFunc(func);
+	if (enable)
+	{
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(func);
+	}
+	else
+		glDisable(GL_DEPTH_TEST);
 }
 
 void st_gl_graphics_context::set_cull_state(bool enable, GLenum mode)
 {
-	if (enable) glEnable(GL_CULL_FACE);
-	else glDisable(GL_CULL_FACE);
-
-	glCullFace(mode);
+	if (enable)
+	{
+		glEnable(GL_CULL_FACE);
+		glCullFace(mode);
+	}
+	else
+		glDisable(GL_CULL_FACE);
 }
 
 void st_gl_graphics_context::set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor)

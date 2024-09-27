@@ -27,7 +27,7 @@ st_geometry::st_geometry(
 	_vertex_buffer = context->create_buffer(
 		vertex_count,
 		vertex_size,
-		e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
+		e_st_buffer_usage::vertex);
 
 	context->update_buffer(_vertex_buffer.get(), vertex_data, 0, vertex_count);
 
@@ -38,7 +38,7 @@ st_geometry::st_geometry(
 	_index_buffer = context->create_buffer(
 		index_count,
 		sizeof(uint16_t),
-		e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
+		e_st_buffer_usage::index);
 
 	context->update_buffer(_index_buffer.get(), index_data, 0, index_count);
 }

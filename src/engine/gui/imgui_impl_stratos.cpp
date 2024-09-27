@@ -4,28 +4,34 @@
 #include "imgui.h"
 #include "imgui_impl_stratos.h"
 
-#include "graphics/st_drawcall.h"
-#include "graphics/st_graphics.h"
-#include "graphics/st_graphics_context.h"
-#include "graphics/st_pipeline_state_desc.h"
+#include <graphics/st_drawcall.h>
+#include <graphics/st_graphics.h>
+#include <graphics/st_graphics_context.h>
+#include <graphics/st_pipeline_state_desc.h>
+#include <graphics/st_shader_manager.h>
+#include <graphics/geometry/st_vertex_attribute.h>
 
-#if 0
+#include <math/st_mat4f.h>
 
-// DirectX data
-static st_graphics_context* g_graphics_context = nullptr;
-static st_shader* g_vertex_shader = nullptr;
-static st_shader* g_pixel_shader = nullptr;
+struct imgui_cb
+{
+    st_mat4f projection;
+};
+
+static st_render_pass* g_render_pass = nullptr;
 //static ID3D12RootSignature* g_pRootSignature = nullptr;
-static st_pipeline* g_pipeline = nullptr;
+static std::unique_ptr<st_buffer> g_constant_buffer = nullptr;
+static std::unique_ptr<st_resource_table> g_resource_table = nullptr;
+static std::unique_ptr<st_vertex_format> g_vertex_format = nullptr;
+static std::unique_ptr<st_pipeline> g_pipeline = nullptr;
 static e_st_format g_rtv_format = st_format_unknown;
-static st_texture* g_font_texture = nullptr;
-//static D3D12_CPU_DESCRIPTOR_HANDLE  g_hFontSrvCpuDescHandle = {};
-//static D3D12_GPU_DESCRIPTOR_HANDLE  g_hFontSrvGpuDescHandle = {};
+static std::unique_ptr<st_texture> g_font_texture = nullptr;
+static std::unique_ptr<st_texture_view> g_font_texture_view = nullptr;
 
 struct FrameResources
 {
-    st_buffer* IB;
-    st_buffer* VB;
+    std::unique_ptr<st_buffer> IB;
+    std::unique_ptr<st_buffer> VB;
     int VertexBufferSize;
     int IndexBufferSize;
 };
@@ -40,43 +46,43 @@ struct VERTEX_CONSTANT_BUFFER
 
 // Render function
 // (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
-void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandList* ctx)
+void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context* ctx)
 {
     // FIXME: I'm assuming that this only gets called once per frame!
     // If not, we can't just re-allocate the IB or VB, we'll have to do a proper allocator.
     g_frameIndex = g_frameIndex + 1;
     FrameResources* frameResources = &g_pFrameResources[g_frameIndex % g_numFramesInFlight];
-    st_buffer* g_pVB = frameResources->VB;
-    st_buffer* g_pIB = frameResources->IB;
+    st_buffer* g_pVB = frameResources->VB.get();
+    st_buffer* g_pIB = frameResources->IB.get();
     int g_VertexBufferSize = frameResources->VertexBufferSize;
     int g_IndexBufferSize = frameResources->IndexBufferSize;
 
     // Create and grow vertex/index buffers if needed
     if (!g_pVB || g_VertexBufferSize < draw_data->TotalVtxCount)
     {
-        if (g_pVB) { delete g_pVB; g_pVB = nullptr; }
+        if (g_pVB) { g_pVB = nullptr; }
         g_VertexBufferSize = draw_data->TotalVtxCount + 5000;
 
-        g_pVB = g_graphics_context->create_buffer(
+        frameResources->VB = ctx->create_buffer(
             g_VertexBufferSize,
             sizeof(ImDrawVert),
             e_st_buffer_usage::vertex);
 
-        frameResources->VB = g_pVB;
+        g_pVB = frameResources->VB.get();
         frameResources->VertexBufferSize = g_VertexBufferSize;
     }
 
     if (!g_pIB || g_IndexBufferSize < draw_data->TotalIdxCount)
     {
-        if (g_pIB) { delete g_pIB; g_pIB = nullptr; }
+        if (g_pIB) { g_pIB = nullptr; }
         g_IndexBufferSize = draw_data->TotalIdxCount + 10000;
 
-        g_pIB = g_graphics_context->create_buffer(
+        frameResources->IB = ctx->create_buffer(
             g_IndexBufferSize,
             sizeof(ImDrawIdx),
             e_st_buffer_usage::index);
 
-        frameResources->IB = g_pIB;
+        g_pIB = frameResources->IB.get();
         frameResources->IndexBufferSize = g_IndexBufferSize;
     }
 
@@ -86,29 +92,10 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsComma
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
-        g_graphics_context->update_buffer(g_pVB, cmd_list->VtxBuffer.Data, vtx_offset, cmd_list->VtxBuffer.Size);
-        g_graphics_context->update_buffer(g_pIB, cmd_list->IdxBuffer.Data, idx_offset, cmd_list->IdxBuffer.Size);
+        ctx->update_buffer(g_pVB, cmd_list->VtxBuffer.Data, vtx_offset, cmd_list->VtxBuffer.Size);
+        ctx->update_buffer(g_pIB, cmd_list->IdxBuffer.Data, idx_offset, cmd_list->IdxBuffer.Size);
         vtx_offset += cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
         idx_offset += cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
-    }
-
-    // Setup orthographic projection matrix into our constant buffer
-    // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). 
-    VERTEX_CONSTANT_BUFFER vertex_constant_buffer;
-    {
-        VERTEX_CONSTANT_BUFFER* constant_buffer = &vertex_constant_buffer;
-        float L = draw_data->DisplayPos.x;
-        float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
-        float T = draw_data->DisplayPos.y;
-        float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
-        float mvp[4][4] =
-        {
-            { 2.0f / (R - L), 0.0f, 0.0f, 0.0f },
-            { 0.0f, 2.0f / (T - B), 0.0f, 0.0f },
-            { 0.0f, 0.0f, 0.5f, 0.0f },
-            { (R + L) / (L - R), (T + B) / (B - T), 0.5f, 1.0f },
-        };
-        memcpy(&constant_buffer->mvp, mvp, sizeof(mvp));
     }
 
     // Setup viewport
@@ -119,25 +106,51 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsComma
     vp._min_depth = 0.0f;
     vp._max_depth = 1.0f;
     vp._x = vp._y = 0.0f;
-    g_graphics_context->set_viewport(vp);
+    ctx->set_viewport(vp);
+
+    // Some backends require the pipeline be set before updating constants.
+    ctx->set_pipeline(g_pipeline.get());
+
+    // Setup orthographic projection matrix into our constant buffer
+    // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right).
+    {
+        float L = draw_data->DisplayPos.x;
+        float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
+        float T = draw_data->DisplayPos.y;
+        float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
+        st_mat4f mvp =
+        {
+            2.0f / (R - L), 0.0f, 0.0f, 0.0f,
+            0.0f, 2.0f / (T - B), 0.0f, 0.0f,
+            0.0f, 0.0f, 0.5f, 0.0f,
+            (R + L) / (L - R), (T + B) / (B - T), 0.5f, 1.0f,
+        };
+
+        if (ctx->get_api() == e_st_graphics_api::vulkan)
+        {
+            st_mat4f vk_correction =
+            {
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+            };
+            mvp *= vk_correction;
+        }
+        ctx->update_buffer(g_constant_buffer.get(), mvp.data, 0, 1);
+    }
 
     st_static_drawcall dc;
     dc._draw_mode = st_primitive_topology_triangles;
     dc._vertex_buffer = g_pVB;
     dc._index_buffer = g_pIB;
 
-    g_graphics_context->set_pipeline(g_pipeline);
-
-    ctx->SetGraphicsRootSignature(g_pRootSignature);
-    ctx->SetGraphicsRoot32BitConstants(0, 16, &vertex_constant_buffer, 0);
-
     // Setup render state
-    const float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
-    ctx->OMSetBlendFactor(blend_factor);
+    ctx->set_blend_factor(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Render command lists
-    int vtx_offset = 0;
-    int idx_offset = 0;
+    vtx_offset = 0;
+    idx_offset = 0;
     ImVec2 pos = draw_data->DisplayPos;
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {
@@ -151,10 +164,22 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsComma
             }
             else
             {
-                const D3D12_RECT r = { (LONG)(pcmd->ClipRect.x - pos.x), (LONG)(pcmd->ClipRect.y - pos.y), (LONG)(pcmd->ClipRect.z - pos.x), (LONG)(pcmd->ClipRect.w - pos.y) };
-                ctx->SetGraphicsRootDescriptorTable(1, *(D3D12_GPU_DESCRIPTOR_HANDLE*)&pcmd->TextureId);
-                ctx->RSSetScissorRects(1, &r);
-                ctx->DrawIndexedInstanced(pcmd->ElemCount, 1, idx_offset, vtx_offset, 0);
+                st_texture_view* view = static_cast<st_texture_view*>(pcmd->TextureId);
+                ctx->update_textures(g_resource_table.get(), 1, &view);
+
+                ctx->bind_resource_table(g_resource_table.get());
+
+                ctx->set_scissor(
+                    pcmd->ClipRect.x - pos.x,
+                    pcmd->ClipRect.y - pos.y,
+                    pcmd->ClipRect.z - pos.x,
+                    pcmd->ClipRect.w - pos.y);
+
+                dc._index_offset = idx_offset;
+                dc._vertex_offset = vtx_offset;
+                dc._index_count = pcmd->ElemCount;
+
+                ctx->draw(dc);
             }
             idx_offset += pcmd->ElemCount;
         }
@@ -162,7 +187,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsComma
     }
 }
 
-static void ImGui_ImplDX12_CreateFontsTexture()
+static void ImGui_ImplStratos_CreateFontsTexture(st_graphics_context* ctx)
 {
     // Build texture atlas
     ImGuiIO& io = ImGui::GetIO();
@@ -172,368 +197,111 @@ static void ImGui_ImplDX12_CreateFontsTexture()
 
     // Upload texture to graphics system
     {
-        D3D12_HEAP_PROPERTIES props;
-        memset(&props, 0, sizeof(D3D12_HEAP_PROPERTIES));
-        props.Type = D3D12_HEAP_TYPE_DEFAULT;
-        props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-        props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+        ctx->begin_loading();
+        g_font_texture = ctx->create_texture(
+            width,
+            height,
+            1,
+            st_format_r8g8b8a8_unorm,
+            e_st_texture_usage::sampled,
+            st_texture_state_pixel_shader_read,
+            st_vec4f::zero_vector(),
+            pixels);
+        ctx->set_texture_meta(g_font_texture.get(), "SPIRV_Cross_Combinedtexture0sampler0");
+        ctx->set_texture_name(g_font_texture.get(), "ImGui Font");
+        ctx->end_loading();
 
-        D3D12_RESOURCE_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-        desc.Alignment = 0;
-        desc.Width = width;
-        desc.Height = height;
-        desc.DepthOrArraySize = 1;
-        desc.MipLevels = 1;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.SampleDesc.Quality = 0;
-        desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-        desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-        ID3D12Resource* pTexture = nullptr;
-        g_pd3dDevice->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc,
-            D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture));
-
-        UINT uploadPitch = (width * 4 + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u) & ~(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1u);
-        UINT uploadSize = height * uploadPitch;
-        desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-        desc.Alignment = 0;
-        desc.Width = uploadSize;
-        desc.Height = 1;
-        desc.DepthOrArraySize = 1;
-        desc.MipLevels = 1;
-        desc.Format = DXGI_FORMAT_UNKNOWN;
-        desc.SampleDesc.Count = 1;
-        desc.SampleDesc.Quality = 0;
-        desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-        desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-        props.Type = D3D12_HEAP_TYPE_UPLOAD;
-        props.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-        props.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-
-        ID3D12Resource* uploadBuffer = nullptr;
-        HRESULT hr = g_pd3dDevice->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc,
-            D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
-        IM_ASSERT(SUCCEEDED(hr));
-
-        void* mapped = nullptr;
-        D3D12_RANGE range = { 0, uploadSize };
-        hr = uploadBuffer->Map(0, &range, &mapped);
-        IM_ASSERT(SUCCEEDED(hr));
-        for (int y = 0; y < height; y++)
-            memcpy((void*)((uintptr_t)mapped + y * uploadPitch), pixels + y * width * 4, width * 4);
-        uploadBuffer->Unmap(0, &range);
-
-        D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-        srcLocation.pResource = uploadBuffer;
-        srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-        srcLocation.PlacedFootprint.Footprint.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        srcLocation.PlacedFootprint.Footprint.Width = width;
-        srcLocation.PlacedFootprint.Footprint.Height = height;
-        srcLocation.PlacedFootprint.Footprint.Depth = 1;
-        srcLocation.PlacedFootprint.Footprint.RowPitch = uploadPitch;
-
-        D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
-        dstLocation.pResource = pTexture;
-        dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-        dstLocation.SubresourceIndex = 0;
-
-        D3D12_RESOURCE_BARRIER barrier = {};
-        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-        barrier.Transition.pResource = pTexture;
-        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-
-        ID3D12Fence* fence = nullptr;
-        hr = g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
-        IM_ASSERT(SUCCEEDED(hr));
-
-        HANDLE event = CreateEvent(0, 0, 0, 0);
-        IM_ASSERT(event != nullptr);
-
-        D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-        queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-        queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-        queueDesc.NodeMask = 1;
-
-        ID3D12CommandQueue* cmdQueue = nullptr;
-        hr = g_pd3dDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&cmdQueue));
-        IM_ASSERT(SUCCEEDED(hr));
-
-        ID3D12CommandAllocator* cmdAlloc = nullptr;
-        hr = g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
-        IM_ASSERT(SUCCEEDED(hr));
-
-        ID3D12GraphicsCommandList* cmdList = nullptr;
-        hr = g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc, nullptr, IID_PPV_ARGS(&cmdList));
-        IM_ASSERT(SUCCEEDED(hr));
-
-        cmdList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
-        cmdList->ResourceBarrier(1, &barrier);
-
-        hr = cmdList->Close();
-        IM_ASSERT(SUCCEEDED(hr));
-
-        cmdQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&cmdList);
-        hr = cmdQueue->Signal(fence, 1);
-        IM_ASSERT(SUCCEEDED(hr));
-
-        fence->SetEventOnCompletion(1, event);
-        WaitForSingleObject(event, INFINITE);
-
-        cmdList->Release();
-        cmdAlloc->Release();
-        cmdQueue->Release();
-        CloseHandle(event);
-        fence->Release();
-        uploadBuffer->Release();
-
-        // Create texture view
-        D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
-        ZeroMemory(&srvDesc, sizeof(srvDesc));
-        srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        srvDesc.Texture2D.MipLevels = desc.MipLevels;
-        srvDesc.Texture2D.MostDetailedMip = 0;
-        srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        g_pd3dDevice->CreateShaderResourceView(pTexture, &srvDesc, g_hFontSrvCpuDescHandle);
-        if (g_pFontTextureResource != nullptr)
-            g_pFontTextureResource->Release();
-        g_pFontTextureResource = pTexture;
+        g_font_texture_view = ctx->create_texture_view(g_font_texture.get());
     }
 
     // Store our identifier
-    static_assert(sizeof(ImTextureID) >= sizeof(g_hFontSrvGpuDescHandle.ptr), "Can't pack descriptor handle into TexID, 32-bit not supported yet.");
-    io.Fonts->TexID = (ImTextureID)g_hFontSrvGpuDescHandle.ptr;
+    io.Fonts->TexID = (ImTextureID)g_font_texture_view.get();
 }
 
-bool    ImGui_ImplDX12_CreateDeviceObjects()
+bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 {
-    if (!g_pd3dDevice)
-        return false;
-    if (g_pPipelineState)
-        ImGui_ImplDX12_InvalidateDeviceObjects();
+    if (g_pipeline)
+        ImGui_ImplStratos_InvalidateDeviceObjects();
 
-    // Create the root signature
+    ImGui_ImplStratos_CreateFontsTexture(ctx);
+
+    // Create the constants and resource table
     {
-        D3D12_DESCRIPTOR_RANGE descRange = {};
-        descRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        descRange.NumDescriptors = 1;
-        descRange.BaseShaderRegister = 0;
-        descRange.RegisterSpace = 0;
-        descRange.OffsetInDescriptorsFromTableStart = 0;
+        g_constant_buffer = ctx->create_buffer(1, sizeof(imgui_cb), e_st_buffer_usage::uniform);
+        ctx->add_constant(g_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
-        D3D12_ROOT_PARAMETER param[2] = {};
-
-        param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        param[0].Constants.ShaderRegister = 0;
-        param[0].Constants.RegisterSpace = 0;
-        param[0].Constants.Num32BitValues = 16;
-        param[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-
-        param[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        param[1].DescriptorTable.NumDescriptorRanges = 1;
-        param[1].DescriptorTable.pDescriptorRanges = &descRange;
-        param[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-        D3D12_STATIC_SAMPLER_DESC staticSampler = {};
-        staticSampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-        staticSampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        staticSampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        staticSampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-        staticSampler.MipLODBias = 0.f;
-        staticSampler.MaxAnisotropy = 0;
-        staticSampler.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-        staticSampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
-        staticSampler.MinLOD = 0.f;
-        staticSampler.MaxLOD = 0.f;
-        staticSampler.ShaderRegister = 0;
-        staticSampler.RegisterSpace = 0;
-        staticSampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-        D3D12_ROOT_SIGNATURE_DESC desc = {};
-        desc.NumParameters = _countof(param);
-        desc.pParameters = param;
-        desc.NumStaticSamplers = 1;
-        desc.pStaticSamplers = &staticSampler;
-        desc.Flags =
-            D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-            D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-
-        ID3DBlob* blob = nullptr;
-        if (D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &blob, nullptr) != S_OK)
-            return false;
-
-        g_pd3dDevice->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&g_pRootSignature));
-        blob->Release();
+        g_resource_table = ctx->create_resource_table();
+        st_texture* textures[] = { g_font_texture.get() };
+        ctx->set_textures(g_resource_table.get(), 1, textures);
+        st_buffer* cbs[] = { g_constant_buffer.get() };
+        ctx->set_constant_buffers(g_resource_table.get(), 1, cbs);
     }
 
-    // By using D3DCompile() from <d3dcompiler.h> / d3dcompiler.lib, we introduce a dependency to a given version of d3dcompiler_XX.dll (see D3DCOMPILER_DLL_A)
-    // If you would like to use this DX12 sample code but remove this dependency you can: 
-    //  1) compile once, save the compiled shader blobs into a file or source code and pass them to CreateVertexShader()/CreatePixelShader() [preferred solution]
-    //  2) use code to detect any version of the DLL and grab a pointer to D3DCompile from the DLL. 
-    // See https://github.com/ocornut/imgui/pull/638 for sources and details.
+    std::vector<st_vertex_attribute> attributes;
+    attributes.reserve(3);
+    attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32_float, 0));
+    attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 1));
+    attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r8g8b8a8_unorm, 2));
 
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
-    memset(&psoDesc, 0, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
-    psoDesc.NodeMask = 1;
-    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-    psoDesc.pRootSignature = g_pRootSignature;
-    psoDesc.SampleMask = UINT_MAX;
-    psoDesc.NumRenderTargets = 1;
-    psoDesc.RTVFormats[0] = g_RTVFormat;
-    psoDesc.SampleDesc.Count = 1;
-    psoDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+    g_vertex_format = ctx->create_vertex_format(attributes.data(), 3);
 
-    // Create the vertex shader
-    {
-        static const char* vertexShader =
-            "cbuffer vertexBuffer : register(b0) \
-            {\
-              float4x4 ProjectionMatrix; \
-            };\
-            struct VS_INPUT\
-            {\
-              float2 pos : POSITION;\
-              float4 col : COLOR0;\
-              float2 uv  : TEXCOORD0;\
-            };\
-            \
-            struct PS_INPUT\
-            {\
-              float4 pos : SV_POSITION;\
-              float4 col : COLOR0;\
-              float2 uv  : TEXCOORD0;\
-            };\
-            \
-            PS_INPUT main(VS_INPUT input)\
-            {\
-              PS_INPUT output;\
-              output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));\
-              output.col = input.col;\
-              output.uv  = input.uv;\
-              return output;\
-            }";
+    st_pipeline_state_desc desc;
+    desc._primitive_topology_type = st_primitive_topology_type_triangle;
+    desc._sample_mask = UINT_MAX;
+    desc._render_target_count = 1;
+    desc._render_target_formats[0] = g_rtv_format;
+    desc._sample_desc._count = 1;
 
-        D3DCompile(vertexShader, strlen(vertexShader), nullptr, nullptr, nullptr, "main", "vs_5_0", 0, 0, &g_pVertexShaderBlob, nullptr);
-        if (g_pVertexShaderBlob == nullptr) // NB: Pass ID3D10Blob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
-            return false;
-        psoDesc.VS = { g_pVertexShaderBlob->GetBufferPointer(), g_pVertexShaderBlob->GetBufferSize() };
-
-        // Create the input layout
-        static D3D12_INPUT_ELEMENT_DESC local_layout[] = {
-            { "POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, (size_t)(&((ImDrawVert*)0)->pos), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, (size_t)(&((ImDrawVert*)0)->uv), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, (size_t)(&((ImDrawVert*)0)->col), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        };
-        psoDesc.InputLayout = { local_layout, 3 };
-    }
-
-    // Create the pixel shader
-    {
-        static const char* pixelShader =
-            "struct PS_INPUT\
-            {\
-              float4 pos : SV_POSITION;\
-              float4 col : COLOR0;\
-              float2 uv  : TEXCOORD0;\
-            };\
-            SamplerState sampler0 : register(s0);\
-            Texture2D texture0 : register(t0);\
-            \
-            float4 main(PS_INPUT input) : SV_Target\
-            {\
-              float4 out_col = input.col * texture0.Sample(sampler0, input.uv); \
-              return out_col; \
-            }";
-
-        D3DCompile(pixelShader, strlen(pixelShader), nullptr, nullptr, nullptr, "main", "ps_5_0", 0, 0, &g_pPixelShaderBlob, nullptr);
-        if (g_pPixelShaderBlob == nullptr)  // NB: Pass ID3D10Blob* pErrorBlob to D3DCompile() to get error showing in (const char*)pErrorBlob->GetBufferPointer(). Make sure to Release() the blob!
-            return false;
-        psoDesc.PS = { g_pPixelShaderBlob->GetBufferPointer(), g_pPixelShaderBlob->GetBufferSize() };
-    }
+    desc._shader = st_shader_manager::get()->get_shader(st_shader_imgui);
+    desc._vertex_format = g_vertex_format.get();
 
     // Create the blending setup
-    {
-        D3D12_BLEND_DESC& desc = psoDesc.BlendState;
-        desc.AlphaToCoverageEnable = false;
-        desc.RenderTarget[0].BlendEnable = true;
-        desc.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
-        desc.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-        desc.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
-        desc.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
-        desc.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
-        desc.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
-        desc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-    }
+    desc._blend_desc._target_blend[0]._blend = true;
+    desc._blend_desc._target_blend[0]._src_blend = st_blend_src_alpha;
+    desc._blend_desc._target_blend[0]._dst_blend = st_blend_inv_src_alpha;
+    desc._blend_desc._target_blend[0]._blend_op = st_blend_op_add;
+    desc._blend_desc._target_blend[0]._src_blend_alpha = st_blend_inv_src_alpha;
+    desc._blend_desc._target_blend[0]._dst_blend_alpha = st_blend_zero;
+    desc._blend_desc._target_blend[0]._blend_op_alpha = st_blend_op_add;
 
     // Create the rasterizer state
-    {
-        D3D12_RASTERIZER_DESC& desc = psoDesc.RasterizerState;
-        desc.FillMode = D3D12_FILL_MODE_SOLID;
-        desc.CullMode = D3D12_CULL_MODE_NONE;
-        desc.FrontCounterClockwise = FALSE;
-        desc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
-        desc.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
-        desc.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
-        desc.DepthClipEnable = true;
-        desc.MultisampleEnable = FALSE;
-        desc.AntialiasedLineEnable = FALSE;
-        desc.ForcedSampleCount = 0;
-        desc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
-    }
+    desc._rasterizer_desc._fill_mode = st_fill_mode_solid;
+    desc._rasterizer_desc._cull_mode = st_cull_mode_none;
+    desc._rasterizer_desc._winding_order_clockwise = true;
 
     // Create depth-stencil State
-    {
-        D3D12_DEPTH_STENCIL_DESC& desc = psoDesc.DepthStencilState;
-        desc.DepthEnable = false;
-        desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-        desc.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-        desc.StencilEnable = false;
-        desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
-        desc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-        desc.BackFace = desc.FrontFace;
-    }
+    desc._depth_stencil_desc._depth_enable = false;
+    desc._depth_stencil_desc._stencil_write_mask = 0xf;
+    desc._depth_stencil_desc._depth_compare = st_compare_func_always;
+    desc._depth_stencil_desc._stencil_enable = false;
 
-    if (g_pd3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&g_pPipelineState)) != S_OK)
-        return false;
+    desc._dynamic_scissor = true;
 
-    ImGui_ImplDX12_CreateFontsTexture();
+    g_pipeline = ctx->create_pipeline(desc, g_render_pass);
 
     return true;
 }
 
-void    ImGui_ImplDX12_InvalidateDeviceObjects()
+void ImGui_ImplStratos_InvalidateDeviceObjects()
 {
-    if (!g_pd3dDevice)
-        return;
+    g_pipeline = nullptr;
+    g_vertex_format = nullptr;
+    g_resource_table = nullptr;
+    g_constant_buffer = nullptr;
+    g_font_texture_view = nullptr;
+    g_font_texture = nullptr;
 
-    if (g_pVertexShaderBlob) { g_pVertexShaderBlob->Release(); g_pVertexShaderBlob = nullptr; }
-    if (g_pPixelShaderBlob) { g_pPixelShaderBlob->Release(); g_pPixelShaderBlob = nullptr; }
-    if (g_pRootSignature) { g_pRootSignature->Release(); g_pRootSignature = nullptr; }
-    if (g_pPipelineState) { g_pPipelineState->Release(); g_pPipelineState = nullptr; }
-    if (g_pFontTextureResource) { g_pFontTextureResource->Release(); g_pFontTextureResource = nullptr; ImGui::GetIO().Fonts->TexID = nullptr; } // We copied g_pFontTextureView to io.Fonts->TexID so let's clear that as well.
-    for (UINT i = 0; i < g_numFramesInFlight; i++)
+    for (uint32_t i = 0; i < g_numFramesInFlight; i++)
     {
-        if (g_pFrameResources[i].IB) { g_pFrameResources[i].IB->Release(); g_pFrameResources[i].IB = nullptr; }
-        if (g_pFrameResources[i].VB) { g_pFrameResources[i].VB->Release(); g_pFrameResources[i].VB = nullptr; }
+        g_pFrameResources[i].IB = nullptr;
+        g_pFrameResources[i].VB = nullptr;
     }
 }
 
-bool ImGui_ImplDX12_Init(ID3D12Device* device, int num_frames_in_flight, DXGI_FORMAT rtv_format,
-    D3D12_CPU_DESCRIPTOR_HANDLE font_srv_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE font_srv_gpu_desc_handle)
+bool ImGui_ImplStratos_Init(int num_frames_in_flight, e_st_format rtv_format, st_render_pass* pass)
 {
-    g_pd3dDevice = device;
-    g_RTVFormat = rtv_format;
-    g_hFontSrvCpuDescHandle = font_srv_cpu_desc_handle;
-    g_hFontSrvGpuDescHandle = font_srv_gpu_desc_handle;
+    g_rtv_format = rtv_format;
+    g_render_pass = pass;
     g_pFrameResources = new FrameResources[num_frames_in_flight];
     g_numFramesInFlight = num_frames_in_flight;
     g_frameIndex = UINT_MAX;
@@ -550,21 +318,18 @@ bool ImGui_ImplDX12_Init(ID3D12Device* device, int num_frames_in_flight, DXGI_FO
     return true;
 }
 
-void ImGui_ImplDX12_Shutdown()
+void ImGui_ImplStratos_Shutdown()
 {
-    ImGui_ImplDX12_InvalidateDeviceObjects();
+    ImGui_ImplStratos_InvalidateDeviceObjects();
     delete[] g_pFrameResources;
-    g_pd3dDevice = nullptr;
-    g_hFontSrvCpuDescHandle.ptr = 0;
-    g_hFontSrvGpuDescHandle.ptr = 0;
+    g_render_pass = nullptr;
     g_pFrameResources = nullptr;
     g_numFramesInFlight = 0;
     g_frameIndex = UINT_MAX;
 }
 
-void ImGui_ImplDX12_NewFrame()
+void ImGui_ImplStratos_NewFrame(st_graphics_context* ctx)
 {
-    if (!g_pPipelineState)
-        ImGui_ImplDX12_CreateDeviceObjects();
+    if (!g_pipeline)
+        ImGui_ImplStratos_CreateDeviceObjects(ctx);
 }
-#endif

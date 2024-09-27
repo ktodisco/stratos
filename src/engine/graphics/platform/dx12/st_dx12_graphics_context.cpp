@@ -430,6 +430,12 @@ void st_dx12_graphics_context::set_clear_color(float r, float g, float b, float 
 	_clear_color[3] = a;
 }
 
+void st_dx12_graphics_context::set_blend_factor(float r, float g, float b, float a)
+{
+	const float factor[] = { r, g, b, a };
+	_command_list->OMSetBlendFactor(factor);
+}
+
 void st_dx12_graphics_context::set_shader_resource_table(uint32_t offset)
 {
 	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
@@ -532,19 +538,19 @@ void st_dx12_graphics_context::draw(const st_static_drawcall& drawcall)
 	const st_dx12_buffer* index = static_cast<const st_dx12_buffer*>(drawcall._index_buffer);
 
 	D3D12_VERTEX_BUFFER_VIEW vertex_view;
-	vertex_view.BufferLocation = vertex->_buffer->GetGPUVirtualAddress() + drawcall._vertex_offset;
+	vertex_view.BufferLocation = vertex->_buffer->GetGPUVirtualAddress();
 	vertex_view.SizeInBytes = vertex->_element_size * vertex->_count;
 	vertex_view.StrideInBytes = vertex->_element_size;
 
 	D3D12_INDEX_BUFFER_VIEW index_view;
-	index_view.BufferLocation = index->_buffer->GetGPUVirtualAddress() + drawcall._index_offset;
+	index_view.BufferLocation = index->_buffer->GetGPUVirtualAddress();
 	index_view.SizeInBytes = index->_element_size * index->_count;
 	index_view.Format = DXGI_FORMAT_R16_UINT;
 
 	_command_list->IASetPrimitiveTopology(convert_topology(drawcall._draw_mode));
 	_command_list->IASetVertexBuffers(0, 1, &vertex_view);
 	_command_list->IASetIndexBuffer(&index_view);
-	_command_list->DrawIndexedInstanced(drawcall._index_count, 1, 0, 0, 0);
+	_command_list->DrawIndexedInstanced(drawcall._index_count, 1, drawcall._index_offset, drawcall._vertex_offset, 0);
 }
 
 void st_dx12_graphics_context::draw(const st_procedural_drawcall& drawcall)
@@ -851,25 +857,35 @@ std::unique_ptr<st_texture_view> st_dx12_graphics_context::create_texture_view(s
 
 	std::unique_ptr<st_dx12_texture_view> texture_view = std::make_unique<st_dx12_texture_view>();
 
-	if (texture->_format == st_format_d24_unorm_s8_uint)
+	if (texture->_usage & e_st_texture_usage::depth_target)
 	{
-		ST_NAME_DX12_OBJECT(*texture->_handle.GetAddressOf(), str_to_wstr("Depth-Stencil Target").c_str());
-
 		// Create the depth/stencil view.
 		st_dx12_cpu_descriptor_handle dsv_handle = _dsv_heap->allocate_handle();
 		_device->CreateDepthStencilView(*texture->_handle.GetAddressOf(), nullptr, dsv_handle._handle);
 
 		texture_view->_handle = dsv_handle._offset;
 	}
-	else
+	else if (texture->_usage & e_st_texture_usage::color_target)
 	{
-		ST_NAME_DX12_OBJECT(*texture->_handle.GetAddressOf(), str_to_wstr("Render Target").c_str());
-
 		// Create the render target view.
 		st_dx12_cpu_descriptor_handle rtv_handle = _rtv_heap->allocate_handle();
 		_device->CreateRenderTargetView(*texture->_handle.GetAddressOf(), nullptr, rtv_handle._handle);
 
 		texture_view->_handle = rtv_handle._offset;
+	}
+	else
+	{
+		// Create the shader resource view.
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv_desc.Format = convert_format(texture->_format);
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srv_desc.Texture2D.MipLevels = texture->_levels;
+
+		st_dx12_cpu_descriptor_handle srv_handle = _resource_heap->allocate_handle();
+		_device->CreateShaderResourceView(texture->_handle.Get(), &srv_desc, srv_handle._handle);
+
+		texture_view->_handle = srv_handle._offset;
 	}
 
 	return std::move(texture_view);
@@ -996,7 +1012,7 @@ void st_dx12_graphics_context::update_buffer(st_buffer* buffer_, void* data, con
 
 	uint8_t* head;
 	map(buffer_, 0, { 0, 0 }, (void**)&head);  
-	memcpy(head, data, count * buffer->_element_size);
+	memcpy(head + offset, data, count * buffer->_element_size);
 	unmap(buffer_, 0, { 0, 0 });
 }
 
@@ -1091,9 +1107,20 @@ void st_dx12_graphics_context::set_buffers(
 	}
 }
 
-void st_dx12_graphics_context::bind_resource_table(st_resource_table* _table)
+void st_dx12_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
 {
-	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
+	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
+
+	for (uint32_t itr = 0; itr < count; ++itr)
+	{
+		st_dx12_texture_view* view = static_cast<st_dx12_texture_view*>(views[itr]);
+		table->_srvs[itr] = view->_handle;
+	}
+}
+
+void st_dx12_graphics_context::bind_resource_table(st_resource_table* table_)
+{
+	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
 
 	static uint32_t k_invalid_offset = 0xffffffff;
 

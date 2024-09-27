@@ -93,7 +93,7 @@ struct st_gl_resource_table : public st_resource_table
 		_samplers.clear();
 	}
 
-	std::vector<struct st_texture*> _srvs;
+	std::vector<const struct st_texture*> _srvs;
 	std::vector<GLuint> _samplers;
 };
 

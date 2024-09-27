@@ -20,6 +20,7 @@ public:
 	virtual void set_viewport(const st_viewport& viewport) = 0;
 	virtual void set_scissor(int left, int top, int right, int bottom) = 0;
 	virtual void set_clear_color(float r, float g, float b, float a) = 0;
+	virtual void set_blend_factor(float r, float g, float b, float a) = 0;
 
 	virtual void set_render_targets(
 		uint32_t count,
@@ -84,6 +85,7 @@ public:
 	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) = 0;
 	virtual void set_textures(st_resource_table* table, uint32_t count, st_texture** textures) = 0;
 	virtual void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) = 0;
+	virtual void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) = 0;
 	virtual void bind_resource_table(st_resource_table* table) = 0;
 
 	// Shaders.

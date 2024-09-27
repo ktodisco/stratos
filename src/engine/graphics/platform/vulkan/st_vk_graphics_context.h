@@ -34,6 +34,7 @@ public:
 	void set_viewport(const st_viewport& viewport) override;
 	void set_scissor(int left, int top, int right, int bottom) override;
 	void set_clear_color(float r, float g, float b, float a) override {}
+	void set_blend_factor(float r, float g, float b, float a) override {}
 
 	void set_render_targets(
 		uint32_t count,
@@ -50,8 +51,8 @@ public:
 	void transition_backbuffer_to_target() override;
 	void transition_backbuffer_to_present() override;
 
-	void begin_loading() override {}
-	void end_loading() override {}
+	void begin_loading() override;
+	void end_loading() override;
 	void begin_frame() override;
 	void end_frame() override;
 	void swap() override;
@@ -101,6 +102,7 @@ public:
 	void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) override;
 	void set_textures(st_resource_table* table, uint32_t count, st_texture** textures) override;
 	void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) override;
+	void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) override;
 	void bind_resource_table(st_resource_table* table) override;
 
 	// Shaders.

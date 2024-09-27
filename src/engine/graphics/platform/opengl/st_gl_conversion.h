@@ -251,7 +251,7 @@ inline GLenum convert_fill_mode(e_st_fill_mode fill_mode)
 
 GLenum cull_mode_mappings[] =
 {
-	GL_NONE, // st_cull_mode_none
+	GL_NONE, // st_cull_mode_none - this is an invalid enum for glCullFace intentionally.
 	GL_FRONT, // st_cull_mode_front
 	GL_BACK, // st_cull_mode_back
 };

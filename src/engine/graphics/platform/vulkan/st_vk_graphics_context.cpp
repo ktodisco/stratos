@@ -397,16 +397,16 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 	std::vector<vk::DescriptorPoolSize> pool_sizes;
 	pool_sizes.push_back(vk::DescriptorPoolSize()
 		.setType(vk::DescriptorType::eUniformBuffer)
-		.setDescriptorCount(512));
+		.setDescriptorCount(k_max_shader_resources));
 	pool_sizes.push_back(vk::DescriptorPoolSize()
 		.setType(vk::DescriptorType::eSampledImage)
-		.setDescriptorCount(64));
+		.setDescriptorCount(k_max_shader_resources));
 	pool_sizes.push_back(vk::DescriptorPoolSize()
 		.setType(vk::DescriptorType::eSampler)
-		.setDescriptorCount(4));
+		.setDescriptorCount(k_max_samplers));
 	pool_sizes.push_back(vk::DescriptorPoolSize()
 		.setType(vk::DescriptorType::eStorageBuffer)
-		.setDescriptorCount(16));
+		.setDescriptorCount(k_max_shader_resources));
 
 	vk::DescriptorPoolCreateInfo pool_info = vk::DescriptorPoolCreateInfo()
 		.setMaxSets(1024)
@@ -545,8 +545,8 @@ void st_vk_graphics_context::draw(const st_static_drawcall& drawcall)
 	_command_buffers[st_command_buffer_graphics].drawIndexed(
 		drawcall._index_count,
 		1,
-		0,
-		0,
+		drawcall._index_offset,
+		drawcall._vertex_offset,
 		0);
 }
 
@@ -565,6 +565,29 @@ void st_vk_graphics_context::transition_backbuffer_to_present()
 {
 	// Transition the present target to the optimal layout for copy.
 	transition(_present_target->get_texture(), st_texture_state_copy_source);
+}
+
+void st_vk_graphics_context::begin_loading()
+{
+	vk::CommandBufferBeginInfo begin_info = vk::CommandBufferBeginInfo()
+		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+	VK_VALIDATE(_command_buffers[st_command_buffer_loading].begin(&begin_info));
+}
+
+void st_vk_graphics_context::end_loading()
+{
+	VK_VALIDATE(_command_buffers[st_command_buffer_loading].end());
+
+	vk::SubmitInfo submit_info = vk::SubmitInfo()
+		.setCommandBufferCount(1)
+		.setPCommandBuffers(_command_buffers);
+
+	vk::Result result = _device.getFenceStatus(_fence);
+	VK_VALIDATE(_queue.submit(1, &submit_info, _fence));
+
+	VK_VALIDATE(_device.waitForFences(1, &_fence, true, std::numeric_limits<uint64_t>::max()));
+	VK_VALIDATE(_device.resetFences(1, &_fence));
 }
 
 void st_vk_graphics_context::begin_frame()
@@ -1043,7 +1066,7 @@ std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(
 
 	vk::BufferUsageFlags flags;
 
-	if (usage & e_st_buffer_usage::index) flags |= vk::BufferUsageFlagBits::eIndexBuffer;
+	if (usage & e_st_buffer_usage::index) flags |= vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst;
 	if (usage & e_st_buffer_usage::indirect) flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
 	if (usage & e_st_buffer_usage::storage) flags |= vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst;
 	if (usage & e_st_buffer_usage::storage_texel) flags |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
@@ -1051,7 +1074,7 @@ std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(
 	if (usage & e_st_buffer_usage::transfer_source) flags |= vk::BufferUsageFlagBits::eTransferSrc;
 	if (usage & e_st_buffer_usage::uniform) flags |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst;
 	if (usage & e_st_buffer_usage::uniform_texel) flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
-	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
+	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst;
 
 	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
 		.setUsage(flags)
@@ -1111,7 +1134,7 @@ void st_vk_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 {
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
-	_command_buffers[st_command_buffer_loading].updateBuffer(buffer->_buffer, 0, align_value(count * buffer->_element_size, 4), data);
+	_command_buffers[st_command_buffer_loading].updateBuffer(buffer->_buffer, offset, align_value(count * buffer->_element_size, 4), data);
 }
 
 std::unique_ptr<st_resource_table> st_vk_graphics_context::create_resource_table()
@@ -1230,6 +1253,31 @@ void st_vk_graphics_context::set_buffers(st_resource_table* table_, uint32_t cou
 		.setDstSet(table->_buffers)
 		.setDstBinding(0)
 		.setPBufferInfo(infos.data());
+
+	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
+}
+
+void st_vk_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
+{
+	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+
+	std::vector<vk::DescriptorImageInfo> images;
+	for (uint32_t itr = 0; itr < count; ++itr)
+	{
+		st_vk_texture_view* view = static_cast<st_vk_texture_view*>(views[itr]);
+
+		images.emplace_back() = vk::DescriptorImageInfo()
+			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+			.setImageView(view->_view)
+			.setSampler(table->_sampler_resources.back());
+	}
+
+	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
+		.setDescriptorType(vk::DescriptorType::eSampledImage)
+		.setDescriptorCount(count)
+		.setDstSet(table->_textures)
+		.setDstBinding(0)
+		.setPImageInfo(images.data());
 
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
@@ -1431,6 +1479,14 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(
 		.setPAttachments(attachment_states.data())
 		.setLogicOpEnable(false);
 
+	std::vector<vk::DynamicState> dynamic_states;
+	if (desc._dynamic_scissor)
+		dynamic_states.push_back(vk::DynamicState::eScissor);
+
+	vk::PipelineDynamicStateCreateInfo dynamic_state = vk::PipelineDynamicStateCreateInfo()
+		.setDynamicStateCount(dynamic_states.size())
+		.setPDynamicStates(dynamic_states.data());
+
 	const st_vk_vertex_format* vertex_format = static_cast<const st_vk_vertex_format*>(desc._vertex_format);
 
 	vk::GraphicsPipelineCreateInfo create_info = vk::GraphicsPipelineCreateInfo()
@@ -1444,6 +1500,7 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(
 		.setPMultisampleState(&multisample)
 		.setPDepthStencilState(&depth_stencil)
 		.setPColorBlendState(&color_blend)
+		.setPDynamicState(&dynamic_state)
 		.setSubpass(0)
 		.setLayout(_pipeline_layout);
 

@@ -150,7 +150,7 @@ int main(int argc, const char** argv)
 		sim->late_update(&params);
 
 #if 0
-		// TODO: ImGui is broken on all backends right now.
+		// Leave imgui off until an application-specific interface is spun up.
 		st_imgui::new_frame();
 		ImGui::ShowDemoWindow();
 #endif
