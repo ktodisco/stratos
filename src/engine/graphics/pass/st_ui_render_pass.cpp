@@ -22,9 +22,9 @@ st_ui_render_pass::st_ui_render_pass()
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_render_texture* targets[] =
+	st_target_desc targets[] =
 	{
-		st_graphics_context::get()->get_present_target()
+		{ st_graphics_context::get()->get_present_target(), e_st_load_op::clear, e_st_store_op::store }
 	};
 	_pass = context->create_render_pass(
 		1,

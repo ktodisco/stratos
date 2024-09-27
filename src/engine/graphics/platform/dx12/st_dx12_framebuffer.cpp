@@ -13,16 +13,16 @@
 
 st_dx12_framebuffer::st_dx12_framebuffer(
 	uint32_t count,
-	st_render_texture** targets,
-	st_render_texture* depth_stencil) :
+	st_target_desc* targets,
+	st_target_desc* depth_stencil) :
 	_target_count(count)
 {
 	for (uint32_t target_itr = 0; target_itr < _target_count; target_itr++)
 	{
-		_targets.push_back(targets[target_itr]);
+		_targets.push_back(targets[target_itr]._target);
 	}
 
-	_depth_stencil = depth_stencil;
+	_depth_stencil = depth_stencil ? depth_stencil->_target : nullptr;
 }
 
 st_dx12_framebuffer::~st_dx12_framebuffer()

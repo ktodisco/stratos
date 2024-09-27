@@ -15,18 +15,17 @@
 
 st_gl_framebuffer::st_gl_framebuffer(
 	uint32_t count,
-	st_render_texture** targets,
-	st_render_texture* depth_stencil) :
+	st_target_desc* targets,
+	st_target_desc* depth_stencil) :
 	_target_count(count)
 {
 	glGenFramebuffers(1, &_framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
 
 	uint32_t color_attachment = GL_COLOR_ATTACHMENT0;
-	st_render_texture** target = targets;
 	for (uint32_t color_target = 0; color_target < count; ++color_target)
 	{
-		st_gl_texture* texture = static_cast<st_gl_texture*>((*target)->get_texture());
+		st_gl_texture* texture = static_cast<st_gl_texture*>(targets[color_target]._target->get_texture());
 		glFramebufferTexture2D(
 			GL_FRAMEBUFFER,
 			color_attachment,
@@ -34,13 +33,12 @@ st_gl_framebuffer::st_gl_framebuffer(
 			texture->_handle,
 			0);
 
-		target++;
 		color_attachment++;
 	}
 
 	if (depth_stencil)
 	{
-		st_gl_texture* ds = static_cast<st_gl_texture*>(depth_stencil->get_texture());
+		st_gl_texture* ds = static_cast<st_gl_texture*>(depth_stencil->_target->get_texture());
 		glFramebufferTexture2D(
 			GL_FRAMEBUFFER,
 			GL_DEPTH_STENCIL_ATTACHMENT,

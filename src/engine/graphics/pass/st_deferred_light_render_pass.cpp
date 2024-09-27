@@ -46,11 +46,15 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		_constant_buffer.get(),
 		_light_buffer.get());
 
-	st_render_texture* targets[] = { output_buffer };
+	st_target_desc targets[] =
+	{
+		{ output_buffer, e_st_load_op::clear, e_st_store_op::store }
+	};
+	st_target_desc ds_target = { output_depth, e_st_load_op::clear, e_st_store_op::store };
 	_pass = context->create_render_pass(
 		1,
 		targets,
-		output_depth);
+		&ds_target);
 
 	st_pipeline_state_desc deferred_light_state_desc;
 	_material->get_pipeline_state(&deferred_light_state_desc);

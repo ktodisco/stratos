@@ -101,9 +101,9 @@ st_gl_graphics_context::st_gl_graphics_context(const st_window* window)
 		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
 		"Backbuffer");
 
-	st_render_texture* targets[] =
+	st_target_desc targets[] =
 	{
-		_present_target.get(),
+		{ _present_target.get(), e_st_load_op::dont_care, e_st_store_op::dont_care }
 	};
 
 	_present_framebuffer = std::make_unique<st_gl_framebuffer>(
@@ -703,8 +703,8 @@ std::unique_ptr<st_vertex_format> st_gl_graphics_context::create_vertex_format(
 
 std::unique_ptr<st_render_pass> st_gl_graphics_context::create_render_pass(
 	uint32_t count,
-	class st_render_texture** targets,
-	class st_render_texture* depth_stencil)
+	st_target_desc* targets,
+	st_target_desc* depth_stencil)
 {
 	std::unique_ptr<st_gl_render_pass> render_pass = std::make_unique<st_gl_render_pass>();
 
@@ -715,8 +715,8 @@ std::unique_ptr<st_render_pass> st_gl_graphics_context::create_render_pass(
 		{
 			0,
 			0,
-			float(targets[0]->get_width()),
-			float(targets[0]->get_height()),
+			float(targets[0]._target->get_width()),
+			float(targets[0]._target->get_height()),
 			0.0f,
 			1.0f,
 		};

@@ -31,7 +31,10 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Gaussian Blur Intermediate");
 
-	st_render_texture* vertical_blur_targets[] = { _intermediate_target.get() };
+	st_target_desc vertical_blur_targets[] =
+	{
+		{ _intermediate_target.get(), e_st_load_op::clear, e_st_store_op::store }
+	};
 	_vertical_blur_pass = context->create_render_pass(
 		1,
 		vertical_blur_targets,
@@ -51,7 +54,10 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 
 	_vertical_blur_state = context->create_pipeline(vertical_blur_state_desc, _vertical_blur_pass.get());
 
-	st_render_texture* horizontal_blur_targets[] = { target_buffer };
+	st_target_desc horizontal_blur_targets[] =
+	{
+		{ target_buffer, e_st_load_op::clear, e_st_store_op::store }
+	};
 	_horizontal_blur_pass = context->create_render_pass(
 		1,
 		horizontal_blur_targets,

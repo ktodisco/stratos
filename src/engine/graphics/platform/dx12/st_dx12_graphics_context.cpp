@@ -1376,15 +1376,15 @@ std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format
 
 std::unique_ptr<st_render_pass> st_dx12_graphics_context::create_render_pass(
 	uint32_t count,
-	st_render_texture** targets,
-	st_render_texture* depth_stencil)
+	st_target_desc* targets,
+	st_target_desc* depth_stencil)
 {
 	std::unique_ptr<st_dx12_render_pass> pass = std::make_unique<st_dx12_render_pass>();
 
 	// Naively, create the viewport from the first target.
 	if (count > 0)
 	{
-		const st_dx12_texture* t = static_cast<const st_dx12_texture*>(targets[0]->get_texture());
+		const st_dx12_texture* t = static_cast<const st_dx12_texture*>(targets[0]._target->get_texture());
 
 		pass->_viewport =
 		{

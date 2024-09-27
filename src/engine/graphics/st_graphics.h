@@ -326,6 +326,19 @@ enum e_st_shader_constant_type
 	st_shader_constant_type_block,
 };
 
+enum class e_st_load_op : uint8_t
+{
+	load,
+	clear,
+	dont_care,
+};
+
+enum class e_st_store_op : uint8_t
+{
+	store,
+	dont_care,
+};
+
 enum class e_st_graphics_api : uint8_t
 {
 	dx12,
@@ -367,6 +380,13 @@ struct st_range
 {
 	size_t begin;
 	size_t end;
+};
+
+struct st_target_desc
+{
+	class st_render_texture* _target = nullptr;
+	e_st_load_op _load_op = e_st_load_op::clear;
+	e_st_store_op _store_op = e_st_store_op::store;
 };
 
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);

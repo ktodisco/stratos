@@ -102,8 +102,8 @@ public:
 	// Render passes.
 	virtual std::unique_ptr<st_render_pass> create_render_pass(
 		uint32_t count,
-		class st_render_texture** targets,
-		class st_render_texture* depth_stencil) = 0;
+		struct st_target_desc* targets,
+		struct st_target_desc* depth_stencil) = 0;
 	virtual void begin_render_pass(
 		st_render_pass* pass,
 		st_vec4f* clear_values,

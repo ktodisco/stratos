@@ -24,11 +24,17 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_render_texture* targets[] = { albedo_buffer, normal_buffer, third_buffer };
+	st_target_desc targets[] =
+	{
+		{ albedo_buffer, e_st_load_op::clear, e_st_store_op::store },
+		{ normal_buffer, e_st_load_op::clear, e_st_store_op::store },
+		{ third_buffer, e_st_load_op::clear, e_st_store_op::store },
+	};
+	st_target_desc ds_target = { depth_buffer, e_st_load_op::clear, e_st_store_op::store };
 	_pass = context->create_render_pass(
 		3,
 		targets,
-		depth_buffer);
+		&ds_target);
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));

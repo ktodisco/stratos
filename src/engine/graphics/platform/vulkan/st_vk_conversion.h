@@ -319,4 +319,27 @@ inline vk::ImageLayout convert_resource_state(e_st_texture_state state)
 	return resource_state_mappings[state];
 }
 
+static vk::AttachmentLoadOp load_op_mappings[] =
+{
+	vk::AttachmentLoadOp::eLoad, // e_st_load_op::load
+	vk::AttachmentLoadOp::eClear, // e_st_load_op::clear
+	vk::AttachmentLoadOp::eDontCare, // e_st_load_op::dont_care
+};
+
+inline vk::AttachmentLoadOp convert_load_op(e_st_load_op op)
+{
+	return load_op_mappings[uint32_t(op)];
+}
+
+static vk::AttachmentStoreOp store_op_mappings[] =
+{
+	vk::AttachmentStoreOp::eStore, // e_st_store_op::store
+	vk::AttachmentStoreOp::eDontCare, // e_st_store_op::dont_care
+};
+
+inline vk::AttachmentStoreOp convert_store_op(e_st_store_op op)
+{
+	return store_op_mappings[uint32_t(op)];
+};
+
 #endif

@@ -42,7 +42,10 @@ st_bloom_render_pass::st_bloom_render_pass(
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Bloom Blur Target");
 
-	st_render_texture* targets[] = { half_target.get() };
+	st_target_desc targets[] =
+	{ 
+		{ half_target.get(), e_st_load_op::clear, e_st_store_op::store }
+	};
 	_pass = context->create_render_pass(
 		1,
 		targets,

@@ -17,8 +17,8 @@ class st_gl_framebuffer
 public:
 	st_gl_framebuffer(
 		uint32_t count,
-		class st_render_texture** targets,
-		class st_render_texture* depth_stencil);
+		struct st_target_desc* targets,
+		struct st_target_desc* depth_stencil);
 	~st_gl_framebuffer();
 
 	void bind(class st_graphics_context* context);

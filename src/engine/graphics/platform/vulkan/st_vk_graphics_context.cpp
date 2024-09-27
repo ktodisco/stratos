@@ -286,7 +286,7 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 	vk::SwapchainCreateInfoKHR swap_chain_info = vk::SwapchainCreateInfoKHR()
 		.setSurface(_window_surface)
 		.setMinImageCount(k_max_frames)
-		.setImageFormat(vk::Format::eB8G8R8A8Srgb)
+		.setImageFormat(vk::Format::eR8G8B8A8Srgb)
 		.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear)
 		.setImageExtent(vk::Extent2D(window->get_width(), window->get_height()))
 		.setImageArrayLayers(1)
@@ -1504,8 +1504,8 @@ std::unique_ptr<st_vertex_format> st_vk_graphics_context::create_vertex_format(
 
 std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 	uint32_t count,
-	st_render_texture** targets,
-	st_render_texture* depth_stencil)
+	st_target_desc* targets,
+	st_target_desc* depth_stencil)
 {
 	std::unique_ptr<st_vk_render_pass> render_pass = std::make_unique<st_vk_render_pass>();
 	render_pass->_device = &_device;
@@ -1516,8 +1516,8 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 		render_pass->_viewport = vk::Viewport()
 			.setX(0)
 			.setY(0)
-			.setWidth(targets[0]->get_width())
-			.setHeight(targets[0]->get_height())
+			.setWidth(targets[0]._target->get_width())
+			.setHeight(targets[0]._target->get_height())
 			.setMinDepth(0.0f)
 			.setMaxDepth(1.0f);
 	}
@@ -1527,10 +1527,10 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 	for (int i = 0; i < count; ++i)
 	{
 		vk::AttachmentDescription desc = vk::AttachmentDescription()
-			.setFormat(convert_format(targets[i]->get_format()))
+			.setFormat(convert_format(targets[i]._target->get_format()))
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(vk::AttachmentLoadOp::eClear)
-			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setLoadOp(convert_load_op(targets[i]._load_op))
+			.setStoreOp(convert_store_op(targets[i]._store_op))
 			.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
 			.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
 		attachment_descs.push_back(desc);
@@ -1551,10 +1551,10 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 	if (depth_stencil)
 	{
 		vk::AttachmentDescription ds_desc = vk::AttachmentDescription()
-			.setFormat(convert_format(depth_stencil->get_format()))
+			.setFormat(convert_format(depth_stencil->_target->get_format()))
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(vk::AttachmentLoadOp::eClear)
-			.setStoreOp(vk::AttachmentStoreOp::eStore)
+			.setLoadOp(convert_load_op(depth_stencil->_load_op))
+			.setStoreOp(convert_store_op(depth_stencil->_store_op))
 			.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		attachment_descs.push_back(ds_desc);

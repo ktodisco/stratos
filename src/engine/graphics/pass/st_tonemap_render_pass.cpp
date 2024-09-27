@@ -20,7 +20,10 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_render_texture* targets[] = { target_buffer };
+	st_target_desc targets[] =
+	{
+		{ target_buffer, e_st_load_op::clear, e_st_store_op::store }
+	};
 	_pass = context->create_render_pass(
 		1,
 		targets,
