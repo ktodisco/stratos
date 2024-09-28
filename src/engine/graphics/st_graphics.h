@@ -389,6 +389,25 @@ struct st_target_desc
 	e_st_store_op _store_op = e_st_store_op::store;
 };
 
+struct st_depth_stencil_clear_value
+{
+	float _depth;
+	uint32_t _stencil;
+};
+
+struct st_clear_value
+{
+	st_clear_value() = delete;
+	st_clear_value(const st_vec4f& v) : _color(v) {}
+	st_clear_value(const st_depth_stencil_clear_value& v) : _depth_stencil(v) {}
+
+	union
+	{
+		st_vec4f _color;
+		st_depth_stencil_clear_value _depth_stencil;
+	};
+};
+
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
 
 #include <algorithm>

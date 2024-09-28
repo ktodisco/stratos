@@ -96,9 +96,9 @@ void st_gaussian_blur_render_pass::render(
 
 		_vertical_blur_material->bind(context, params, identity, identity, identity);
 
-		st_vec4f clears[] =
+		st_clear_value clears[] =
 		{
-			{ 0.0f, 0.0f, 0.0f, 1.0f },
+			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 		};
 		context->begin_render_pass(_vertical_blur_pass.get(), clears, std::size(clears));
 
@@ -120,9 +120,9 @@ void st_gaussian_blur_render_pass::render(
 
 		_horizontal_blur_material->bind(context, params, identity, identity, identity);
 
-		st_vec4f clears[] =
+		st_clear_value clears[] =
 		{
-			{ 0.0f, 0.0f, 0.0f, 1.0f },
+			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 		};
 		context->begin_render_pass(_horizontal_blur_pass.get(), clears, std::size(clears));
 

@@ -29,6 +29,7 @@ public:
 	const vk::Framebuffer& get() const { return _framebuffer; }
 	uint32_t get_width() const { return _width; }
 	uint32_t get_height() const { return _height; }
+	uint32_t get_target_count() const { return _targets.size(); }
 
 private:
 	vk::Framebuffer _framebuffer;

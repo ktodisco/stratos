@@ -1433,7 +1433,7 @@ std::unique_ptr<st_render_pass> st_dx12_graphics_context::create_render_pass(
 
 void st_dx12_graphics_context::begin_render_pass(
 	st_render_pass* _pass,
-	st_vec4f* clear_values,
+	const st_clear_value* clear_values,
 	const uint8_t clear_count)
 {
 	st_dx12_render_pass* pass = static_cast<st_dx12_render_pass*>(_pass);

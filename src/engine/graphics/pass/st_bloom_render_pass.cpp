@@ -89,9 +89,9 @@ void st_bloom_render_pass::render(
 
 	_material->bind(context, params, identity, identity, identity);
 
-	st_vec4f clears[] =
+	st_clear_value clears[] =
 	{
-		{ 0.0f, 0.0f, 0.0f, 1.0f },
+		st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 	};
 
 	context->begin_render_pass(_pass.get(), clears, std::size(clears));

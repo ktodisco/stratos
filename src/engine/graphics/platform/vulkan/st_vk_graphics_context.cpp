@@ -1644,21 +1644,29 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 
 void st_vk_graphics_context::begin_render_pass(
 	st_render_pass* pass_,
-	st_vec4f* clear_values,
+	const st_clear_value* clear_values,
 	const uint8_t clear_count)
 {
 	st_vk_render_pass* pass = static_cast<st_vk_render_pass*>(pass_);
 
-	std::vector<st_vec4f> inputs(clear_values, clear_values + clear_count);
 	std::vector<vk::ClearValue> clears;
-	clears.resize(inputs.size());
-	std::transform(inputs.begin(), inputs.end(), clears.begin(),
-		[](st_vec4f& value) {
-		std::array<float, 4> a;
-		std::copy(value.axes, value.axes + 4, a.begin());
-		return vk::ClearValue().setColor(vk::ClearColorValue().setFloat32(a));
+	clears.reserve(clear_count);
+	for (uint32_t c_itr = 0; c_itr < clear_count; ++c_itr)
+	{
+		if (c_itr < pass->_framebuffer->get_target_count())
+		{
+			std::array<float, 4> c;
+			std::copy(clear_values[c_itr]._color.axes, clear_values[c_itr]._color.axes + 4, c.begin());
+			clears.push_back(vk::ClearValue().setColor(vk::ClearColorValue().setFloat32(c)));
+		}
+		else
+		{
+			vk::ClearDepthStencilValue ds_clear = vk::ClearDepthStencilValue()
+				.setDepth(clear_values[c_itr]._depth_stencil._depth)
+				.setStencil(clear_values[c_itr]._depth_stencil._stencil);
+			clears.push_back(vk::ClearValue().setDepthStencil(ds_clear));
+		}
 	}
-	);
 
 	vk::RenderPassBeginInfo begin_info = vk::RenderPassBeginInfo()
 		.setPClearValues(clears.data())

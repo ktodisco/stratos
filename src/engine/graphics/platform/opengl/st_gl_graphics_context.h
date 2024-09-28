@@ -116,7 +116,7 @@ public:
 		struct st_target_desc* depth_stencil) override;
 	void begin_render_pass(
 		st_render_pass* pass,
-		st_vec4f* clear_values,
+		const st_clear_value* clear_values,
 		const uint8_t clear_count) override;
 	void end_render_pass(st_render_pass* pass) override;
 
