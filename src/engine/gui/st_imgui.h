@@ -18,10 +18,14 @@ public:
 		class st_graphics_context* context);
 	static void shutdown();
 
+	static void update();
+
 	static void new_frame();
 	static void draw();
 
 private:
 	static std::unique_ptr<st_render_pass> _render_pass;
 	static st_graphics_context* _context;
+
+	static bool _open;
 };

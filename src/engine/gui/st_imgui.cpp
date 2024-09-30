@@ -17,6 +17,7 @@
 
 std::unique_ptr<st_render_pass> st_imgui::_render_pass = nullptr;
 st_graphics_context* st_imgui::_context = nullptr;
+bool st_imgui::_open = true;
 
 void st_imgui::initialize(
 	const st_window* window,
@@ -46,6 +47,27 @@ void st_imgui::shutdown()
 
 	_render_pass = nullptr;
 	_context = nullptr;
+}
+
+void st_imgui::update()
+{
+	if (!ImGui::Begin("Stratos Engine", &_open))
+	{
+		ImGui::End();
+		return;
+	}
+
+	std::string api("Unknown");
+	switch (st_graphics_context::get()->get_api())
+	{
+	case e_st_graphics_api::dx12: api = "dx12"; break;
+	case e_st_graphics_api::opengl: api = "opengl"; break;
+	case e_st_graphics_api::vulkan: api = "vulkan"; break;
+	}
+
+	ImGui::Text("Graphics api: %s", api.c_str());
+
+	ImGui::End();
 }
 
 void st_imgui::new_frame()

@@ -125,6 +125,8 @@ int main(int argc, const char** argv)
 	// Main loop:
 	while (true)
 	{
+		st_imgui::new_frame();
+
 		// Pump messages.
 		if (!window->update())
 		{
@@ -149,7 +151,7 @@ int main(int argc, const char** argv)
 		// Perform the late update.
 		sim->late_update(&params);
 
-		st_imgui::new_frame();
+		st_imgui::update();
 #if 0
 		// Leave imgui off until an application-specific interface is spun up.
 		ImGui::ShowDemoWindow();
