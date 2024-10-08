@@ -31,5 +31,5 @@ public:
 
 private:
 	class st_render_texture* _texture;
-	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
+	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

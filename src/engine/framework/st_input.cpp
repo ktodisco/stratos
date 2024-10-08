@@ -45,8 +45,8 @@ void st_input::handle_mouse_move(uint32_t mouse_x, uint32_t mouse_y)
 {
 	_mouse_delta_x = mouse_x - _mouse_x;
 	_mouse_delta_y = mouse_y - _mouse_y;
-	_mouse_x = mouse_x;
-	_mouse_y = mouse_y;
+	_mouse_x = float(mouse_x);
+	_mouse_y = float(mouse_y);
 }
 
 void st_input::handle_key_press(int32_t key_code, int32_t info)

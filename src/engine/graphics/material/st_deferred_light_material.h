@@ -38,5 +38,5 @@ private:
 	class st_render_texture* _third;
 	class st_render_texture* _depth;
 
-	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
+	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

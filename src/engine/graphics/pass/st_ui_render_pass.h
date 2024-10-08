@@ -24,8 +24,8 @@ private:
 	void draw_dynamic(
 		class st_graphics_context* context,
 		const struct st_frame_params* params,
-		const class st_mat4f& proj,
-		const class st_mat4f& view);
+		const struct st_mat4f& proj,
+		const struct st_mat4f& view);
 
 	std::unique_ptr<class st_constant_color_material> _default_material = nullptr;
 	std::unique_ptr<struct st_pipeline> _default_state = nullptr;
