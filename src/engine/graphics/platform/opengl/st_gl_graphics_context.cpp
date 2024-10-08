@@ -165,7 +165,11 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 
 void st_gl_graphics_context::set_viewport(const st_viewport& viewport)
 {
-	glViewport(viewport._x, viewport._y, viewport._width, viewport._height);
+	glViewport(
+		GLint(viewport._x),
+		GLint(viewport._y),
+		GLsizei(viewport._width),
+		GLsizei(viewport._height));
 }
 
 void st_gl_graphics_context::set_scissor(int left, int top, int right, int bottom)

@@ -2,6 +2,7 @@ project "stratos"
 	language "C++"
 	cppdialect "C++17"
 	kind "ConsoleApp"
+	warnings "Off"
 	
 	defines {
 		"_CRT_SECURE_NO_WARNINGS",
@@ -50,4 +51,12 @@ project "stratos"
 		"{COPYFILE} %[../3rdparty/ttf-bitstream-vera-1.10/VeraMono.ttf] %[%{!cfg.targetdir}]",
 		"{COPYFILE} %[../3rdparty/WinPixEventRuntime.1.0.170918004/bin/WinPixEventRuntime.dll] %[%{!cfg.targetdir}]",
 		"{COPYFILE} %[../3rdparty/assimp-4.1.0/bin/Release/assimp-vc140-mt.dll] %[%{!cfg.targetdir}]",
+	}
+	
+	buildoptions {
+		"/W2 /WX",
+	}
+	
+	linkoptions {
+		"/IGNORE:4099",
 	}

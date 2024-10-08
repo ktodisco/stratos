@@ -170,10 +170,10 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
                 ctx->bind_resource_table(g_resource_table.get());
 
                 ctx->set_scissor(
-                    pcmd->ClipRect.x - pos.x,
-                    pcmd->ClipRect.y - pos.y,
-                    pcmd->ClipRect.z - pos.x,
-                    pcmd->ClipRect.w - pos.y);
+                    int(pcmd->ClipRect.x - pos.x),
+                    int(pcmd->ClipRect.y - pos.y),
+                    int(pcmd->ClipRect.z - pos.x),
+                    int(pcmd->ClipRect.w - pos.y));
 
                 dc._index_offset = idx_offset;
                 dc._vertex_offset = vtx_offset;

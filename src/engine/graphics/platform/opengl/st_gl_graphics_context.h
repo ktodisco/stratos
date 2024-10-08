@@ -129,18 +129,18 @@ private:
 	void set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor);
 	void set_depth_mask(bool enable);
 
-	const struct st_gl_shader* get_bound_shader() const { return _bound_shader; }
+	const class st_gl_shader* get_bound_shader() const { return _bound_shader; }
 
 private:
 	std::unique_ptr<class st_render_texture> _present_target;
-	std::unique_ptr<struct st_gl_framebuffer> _present_framebuffer;
+	std::unique_ptr<class st_gl_framebuffer> _present_framebuffer;
 
 	HDC _device_context;
 	HGLRC _gl_context;
 
 	// Active draw state.
 	float _clear_color[4] = { 0 };
-	const struct st_gl_shader* _bound_shader = nullptr;
+	const class st_gl_shader* _bound_shader = nullptr;
 	const struct st_gl_pipeline* _bound_pipeline = nullptr;
 };
 
