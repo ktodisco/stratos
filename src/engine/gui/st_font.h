@@ -33,7 +33,7 @@ public:
 		struct st_vec2f* extent_max = nullptr);
 
 private:
-	std::unique_ptr<class st_texture> _texture;
+	std::unique_ptr<struct st_texture> _texture;
 	std::unique_ptr<class st_font_material> _material;
 
 	int _image_width;
@@ -74,7 +74,7 @@ public:
 
 private:
 	std::unique_ptr<struct st_buffer> _constant_buffer = nullptr;
-	class st_texture* _texture;
+	struct st_texture* _texture;
 	st_vec3f _color;
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

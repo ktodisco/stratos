@@ -1414,7 +1414,7 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(
 
 	vk::Rect2D scissor = vk::Rect2D()
 		.setOffset(vk::Offset2D())
-		.setExtent(vk::Extent2D(render_pass->_viewport.width, render_pass->_viewport.height));
+		.setExtent(vk::Extent2D(uint32_t(render_pass->_viewport.width), uint32_t(render_pass->_viewport.height)));
 
 	vk::PipelineViewportStateCreateInfo viewport = vk::PipelineViewportStateCreateInfo()
 		.setViewportCount(1)
@@ -1573,8 +1573,8 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 		render_pass->_viewport = vk::Viewport()
 			.setX(0)
 			.setY(0)
-			.setWidth(targets[0]._target->get_width())
-			.setHeight(targets[0]._target->get_height())
+			.setWidth(float(targets[0]._target->get_width()))
+			.setHeight(float(targets[0]._target->get_height()))
 			.setMinDepth(0.0f)
 			.setMaxDepth(1.0f);
 	}

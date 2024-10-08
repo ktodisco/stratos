@@ -11,7 +11,7 @@
 class st_bloom_material : public st_material
 {
 public:
-	st_bloom_material(class st_texture* texture);
+	st_bloom_material(struct st_texture* texture);
 	~st_bloom_material();
 
 	virtual void bind(
@@ -28,5 +28,5 @@ public:
 
 private:
 	struct st_texture* _texture;
-	std::unique_ptr<class st_resource_table> _resource_table = nullptr;
+	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

@@ -78,7 +78,7 @@ struct st_sample_desc
 
 struct st_pipeline_state_desc
 {
-	const class st_shader* _shader = {};
+	const struct st_shader* _shader = {};
 
 	uint32_t _sample_mask = UINT_MAX;
 

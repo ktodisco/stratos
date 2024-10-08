@@ -21,5 +21,5 @@ public:
 	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
 private:
-	std::unique_ptr<class st_render_pass> _pass = nullptr;
+	std::unique_ptr<struct st_render_pass> _pass = nullptr;
 };

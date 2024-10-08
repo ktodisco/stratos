@@ -88,8 +88,8 @@ void st_ui_render_pass::render(st_graphics_context* context, const st_frame_para
 void st_ui_render_pass::draw_dynamic(
 	st_graphics_context* context,
 	const st_frame_params* params,
-	const class st_mat4f& proj,
-	const class st_mat4f& view)
+	const struct st_mat4f& proj,
+	const struct st_mat4f& view)
 {
 	for (auto& d : params->_gui_drawcalls)
 	{
