@@ -51,21 +51,42 @@ void st_imgui::shutdown()
 
 void st_imgui::update()
 {
+	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+
 	if (!ImGui::Begin("Stratos Engine", &_open))
 	{
 		ImGui::End();
 		return;
 	}
 
-	std::string api("Unknown");
-	switch (st_graphics_context::get()->get_api())
+	if (ImGui::CollapsingHeader("Application Info", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-	case e_st_graphics_api::dx12: api = "dx12"; break;
-	case e_st_graphics_api::opengl: api = "opengl"; break;
-	case e_st_graphics_api::vulkan: api = "vulkan"; break;
-	}
+		ImGui::Text("Configuration: "
+#if defined(_DEBUG)
+			"debug"
+#elif defined(_PROFILE)
+			"profile"
+#elif defined(_RELEASE)
+			"release"
+#else
+			"unknown"
+#endif
+#if defined(_DEVELOPMENT)
+			" (optimized)"
+#endif
+		);
 
-	ImGui::Text("Graphics api: %s", api.c_str());
+		std::string api("Unknown");
+		switch (st_graphics_context::get()->get_api())
+		{
+		case e_st_graphics_api::dx12: api = "dx12"; break;
+		case e_st_graphics_api::opengl: api = "opengl"; break;
+		case e_st_graphics_api::vulkan: api = "vulkan"; break;
+		}
+
+		ImGui::Text("Graphics API: %s", api.c_str());
+	}
 
 	ImGui::End();
 }

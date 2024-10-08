@@ -12,14 +12,17 @@ workspace "stratos"
 		symbols "On"
 		
 	filter { "configurations:Development" }
+		defines { "_DEVELOPMENT" }
 		optimize "Debug"
 		symbols "On"
 		
 	filter { "configurations:Profile" }
+		defines { "_PROFILE" }
 		optimize "Speed"
 		symbols "Off"
 		
 	filter { "configurations:Release" }
+		defines { "_RELEASE" }
 		optimize "Full"
 		symbols "Off"
 		
