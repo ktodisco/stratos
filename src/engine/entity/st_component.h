@@ -23,6 +23,8 @@ public:
 	virtual void update(struct st_frame_params* params);
 	virtual void late_update(struct st_frame_params* params);
 
+	virtual void debug();
+
 	const class st_entity* get_entity() const { return _entity; }
 	class st_entity* get_entity() { return _entity; }
 

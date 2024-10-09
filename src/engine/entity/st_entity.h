@@ -28,6 +28,8 @@ public:
 	void update(struct st_frame_params* params);
 	void late_update(struct st_frame_params* params);
 
+	void debug();
+
 	void translate(const struct st_vec3f& translation);
 	void rotate(const struct st_quatf& rotation);
 	void scale(float s);

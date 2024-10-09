@@ -12,6 +12,8 @@
 
 #include <jobs/st_job.h>
 
+#include <imgui.h>
+
 #if defined(ST_MINGW)
 #include <malloc.h>
 #endif
@@ -91,4 +93,15 @@ void st_sim::late_update(st_frame_params* params)
 	int32_t update_counter;
 	st_job::run(decls, int(_entities.size()), &update_counter);
 	st_job::wait(&update_counter);
+}
+
+void st_sim::debug()
+{
+	if (ImGui::CollapsingHeader("Entities"))
+	{
+		for (auto& e : _entities)
+		{
+			e->debug();
+		}
+	}
 }

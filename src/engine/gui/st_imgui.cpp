@@ -6,6 +6,8 @@
 
 #include <gui/st_imgui.h>
 
+#include <framework/st_sim.h>
+
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
 
@@ -49,7 +51,7 @@ void st_imgui::shutdown()
 	_context = nullptr;
 }
 
-void st_imgui::update()
+void st_imgui::update(st_sim* sim)
 {
 	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
@@ -87,6 +89,8 @@ void st_imgui::update()
 
 		ImGui::Text("Graphics API: %s", api.c_str());
 	}
+
+	sim->debug();
 
 	ImGui::End();
 }

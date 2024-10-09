@@ -23,6 +23,8 @@ public:
 	void update(struct st_frame_params* params);
 	void late_update(struct st_frame_params* params);
 
+	void debug();
+
 private:
 	std::vector<class st_entity*> _entities;
 };

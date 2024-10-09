@@ -18,7 +18,7 @@ public:
 		class st_graphics_context* context);
 	static void shutdown();
 
-	static void update();
+	static void update(class st_sim* sim);
 
 	static void new_frame();
 	static void draw();

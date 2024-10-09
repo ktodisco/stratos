@@ -28,6 +28,8 @@ public:
 
 	void update(struct st_frame_params* params) override;
 
+	void debug() override;
+
 	float get_azimuth() const { return _azimuth; }
 	float get_angle() const { return _angle; }
 	st_vec3f get_color() const { return _light->_color; }

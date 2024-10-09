@@ -23,3 +23,7 @@ void st_component::update(st_frame_params* params)
 void st_component::late_update(st_frame_params* params)
 {
 }
+
+void st_component::debug()
+{
+}

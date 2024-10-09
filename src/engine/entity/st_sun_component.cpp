@@ -6,6 +6,8 @@
 
 #include <entity/st_sun_component.h>
 
+#include <imgui.h>
+
 st_sun_component::st_sun_component(
 	st_entity* ent,
 	float azimuth,
@@ -28,4 +30,18 @@ st_sun_component::~st_sun_component()
 void st_sun_component::update(struct st_frame_params* params)
 {
 	params->_sun = _light.get();
+}
+
+void st_sun_component::debug()
+{
+	if (ImGui::TreeNode("st_sun_component"))
+	{
+		ImGui::DragFloat("Azimuth", &_azimuth, 1.0f, 0.0f, 360.0f, "%.1f");
+		ImGui::DragFloat("Angle", &_angle, 1.0f, 0.0f, 90.0f, "%.1f");
+
+		ImGui::ColorEdit3("Color", _light->_color.axes);
+		ImGui::DragFloat("Power", &_light->_power, 1.0f, 0.0f, 1e5f, "%.0f");
+
+		ImGui::TreePop();
+	}
 }

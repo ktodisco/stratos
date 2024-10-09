@@ -8,6 +8,8 @@
 
 #include <entity/st_component.h>
 
+#include <imgui.h>
+
 st_entity::st_entity()
 {
 	_transform.make_identity();
@@ -28,6 +30,23 @@ void st_entity::update(st_frame_params* params)
 	{
 		c->update(params);
 	}
+}
+
+void st_entity::debug()
+{
+	ImGui::PushID(this);
+
+	if (ImGui::TreeNode("entity"))
+	{
+		for (auto& c : _components)
+		{
+			c->debug();
+		}
+
+		ImGui::TreePop();
+	}
+
+	ImGui::PopID();
 }
 
 void st_entity::late_update(st_frame_params* params)
