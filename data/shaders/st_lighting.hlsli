@@ -47,7 +47,7 @@ float specular_shadowmask_smith_ggx(float n_dot_v, float n_dot_l, float linear_r
 	return ggx1 * ggx2;
 }
 
-float3 specular_ggx(float3 color, float dist, float radius, float n_dot_v, float n_dot_l, float n_dot_h, float metal, float linear_roughness)
+float3 specular_ggx(float3 color, float n_dot_v, float n_dot_l, float n_dot_h, float metal, float linear_roughness)
 {
 	float N = specular_ndf_ggx_tr(n_dot_h, linear_roughness);
 	float D = specular_shadowmask_smith_ggx(n_dot_v, n_dot_l, linear_roughness);

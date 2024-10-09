@@ -9,6 +9,7 @@
 #include <framework/st_frame_params.h>
 
 #include <graphics/geometry/st_geometry.h>
+#include <graphics/light/st_directional_light.h>
 #include <graphics/light/st_sphere_light.h>
 #include <graphics/material/st_deferred_light_material.h>
 #include <graphics/st_drawcall.h>
@@ -94,7 +95,7 @@ void st_deferred_light_render_pass::render(
 
 	context->begin_render_pass(_pass.get(), clears, std::size(clears));
 
-	st_deferred_light_cb constant_data;
+	st_deferred_light_cb constant_data {};
 	constant_data._inverse_vp = (params->_view * params->_projection).inverse();
 	constant_data._inverse_vp.transpose();
 	constant_data._eye = st_vec4f(params->_eye, 0.0f);
@@ -102,6 +103,12 @@ void st_deferred_light_render_pass::render(
 		constant_data._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.0f, 0.0f);
 	else
 		constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+
+	if (params->_sun)
+	{
+		constant_data._sun_direction_power = st_vec4f(params->_sun->_direction, params->_sun->_power);
+		constant_data._sun_color = st_vec4f(params->_sun->_color, 1.0f);
+	}
 
 	context->update_buffer(_constant_buffer.get(), &constant_data, 0, 1);
 

@@ -49,6 +49,9 @@ struct st_frame_params
 	uint32_t _width;
 	uint32_t _height;
 
+	// Sun.
+	struct st_directional_light* _sun = nullptr;
+
 	// TODO: This will eventually need to turn into a whole management system.
 	struct st_sphere_light* _light = nullptr;
 

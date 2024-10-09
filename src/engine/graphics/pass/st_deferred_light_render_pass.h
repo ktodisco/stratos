@@ -38,4 +38,7 @@ struct st_deferred_light_cb
 	st_mat4f _inverse_vp;
 	st_vec4f _eye;
 	st_vec4f _depth_reconstruction;
+
+	st_vec4f _sun_direction_power = st_vec4f::zero_vector();
+	st_vec4f _sun_color = st_vec4f::zero_vector();
 };

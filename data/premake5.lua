@@ -6,6 +6,7 @@ project "data"
 		"models/*.*",
 		"scripts/*.*",
 		"shaders/*.hlsl",
+		"shaders/*.hlsli",
 		"textures/*.*",
 		"xnormal_test/*.*",
 	}

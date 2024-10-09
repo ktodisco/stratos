@@ -21,6 +21,9 @@ struct ps_input
 	float4x4 inverse_vp;
 	float4 eye;
 	float4 depth_reconstruction;
+
+	float4 sun_direction_power;
+	float4 sun_color;
 }
 
 struct st_sphere_light
@@ -43,6 +46,95 @@ ps_input vs_main(vs_input input)
 	return result;
 };
 
+float3 evaluate_directional_light(
+	in float3 light_direction,
+	in float3 light_color,
+	in float irradiance,
+	in float3 albedo,
+	in float3 normal,
+	in float metalness,
+	in float linear_roughness,
+	in float3 to_eye,
+	in float3 world_position)
+{
+	float3 to_light = -light_direction;
+
+	float n_dot_l_raw = dot(normal, to_light);
+	float n_dot_l = saturate(n_dot_l_raw);
+	float n_dot_v = saturate(dot(normal, to_eye));
+	
+	float3 diffuse_color = albedo * (1.0f - metalness) * light_color.xyz;
+	float3 specular_color = metalness * light_color.xyz;
+
+	// TODO: Shadowing.
+	float visibility_term = 1.0f;
+
+	// Division by pi plays the part of the lambertian diffuse.
+	float3 diffuse_result = diffuse_color * irradiance * n_dot_l * visibility_term / k_pi;
+
+	float3 half_vector = normalize(to_eye + to_light);
+	float n_dot_h = saturate(dot(normal, half_vector));
+	float3 specular_result = specular_color *
+		specular_ggx(
+			albedo,
+			n_dot_v,
+			n_dot_l,
+			n_dot_h,
+			metalness,
+			linear_roughness) * irradiance;
+	
+	return diffuse_result + specular_result;
+}
+
+float3 evaluate_sphere_light(
+	in st_sphere_light light,
+	in float3 albedo,
+	in float3 normal,
+	in float metalness,
+	in float linear_roughness,
+	in float3 to_eye,
+	in float3 world_position)
+{
+	// Unpack light properties.
+	float light_power = light.position_power.w;
+	float light_radius = light.color_radius.w;
+
+	float3 to_light = light.position_power.xyz - world_position.xyz;
+	float dist_to_light_center = length(to_light);
+	float dist_to_light = dist_to_light_center - light_radius;
+	to_light = normalize(to_light);
+
+	float n_dot_l_raw = dot(normal, to_light);
+	float n_dot_l = saturate(n_dot_l_raw);
+	float n_dot_v = saturate(dot(normal, to_eye));
+
+	float irradiance = light_falloff(light_power, dist_to_light);
+	
+	float3 diffuse_color = albedo * (1.0f - metalness) * light.color_radius.xyz;
+	float3 specular_color = metalness * light.color_radius.xyz;
+
+	float visibility_term = get_sphere_visibility(to_light, dist_to_light_center, n_dot_l_raw, light_radius);
+
+	// Division by pi plays the part of the lambertian diffuse.
+	float3 diffuse_result = diffuse_color * irradiance * visibility_term / k_pi;
+
+	float3 reflection = reflect(-to_eye, normal);
+	float3 center_to_ray = dot(to_light, reflection) * reflection - to_light;
+	float3 representative_point = to_light + center_to_ray * saturate(light_radius / length(center_to_ray));
+	float3 half_vector = normalize(to_eye + normalize(representative_point));
+	float n_dot_h = saturate(dot(normal, half_vector));
+	float3 specular_result = specular_color *
+		specular_ggx(
+			albedo,
+			n_dot_v,
+			n_dot_l,
+			n_dot_h,
+			metalness,
+			linear_roughness) * irradiance;
+	
+	return diffuse_result + specular_result;
+}
+
 float4 ps_main(ps_input input) : SV_TARGET
 {
 	float4 albedo_sample = albedo_texture.Load(int3(input.position.xy, 0));
@@ -60,48 +152,28 @@ float4 ps_main(ps_input input) : SV_TARGET
 	float4 clip_position = float4(input.uv * 2.0f - 1.0f, depth, 1.0f);
 	float4 world_position = mul(clip_position, inverse_vp);
 	world_position /= world_position.w;
-
-	// Unpack light properties.
-	float light_power = light_buffer[0].position_power.w;
-	float light_radius = light_buffer[0].color_radius.w;
 	
 	float3 to_eye = normalize(eye.xyz - world_position.xyz);
-	float3 to_light = light_buffer[0].position_power.xyz - world_position.xyz;
-	float dist_to_light_center = length(to_light);
-	float dist_to_light = dist_to_light_center - light_radius;
-	to_light = normalize(to_light);
 
-	float n_dot_l_raw = dot(normal, to_light);
-	float n_dot_l = saturate(n_dot_l_raw);
-	float n_dot_v = saturate(dot(normal, to_eye));
-
-	float irradiance = light_falloff(light_power, dist_to_light);
+	float3 lit_color = evaluate_directional_light(
+		sun_direction_power.xyz,
+		sun_color.xyz,
+		sun_direction_power.w,
+		albedo,
+		normal,
+		metalness,
+		linear_roughness,
+		to_eye,
+		world_position);
 	
-	float3 diffuse_color = albedo * (1.0f - metalness) * light_buffer[0].color_radius.xyz;
-	float3 specular_color = metalness * light_buffer[0].color_radius.xyz;
-
-	float visibility_term = get_sphere_visibility(to_light, dist_to_light_center, n_dot_l_raw, light_radius);
-
-	// Division by pi plays the part of the lambertian diffuse.
-	float3 diffuse_result = diffuse_color * irradiance * visibility_term / k_pi;
-
-	float3 reflection = reflect(-to_eye, normal);
-	float3 center_to_ray = dot(to_light, reflection) * reflection - to_light;
-	float3 representative_point = to_light + center_to_ray * saturate(light_radius / length(center_to_ray));
-	float3 half_vector = normalize(to_eye + normalize(representative_point));
-	float n_dot_h = saturate(dot(normal, half_vector));
-	float3 specular_result = specular_color *
-		specular_ggx(albedo,
-			dist_to_light_center,
-			light_radius,
-			n_dot_v,
-			n_dot_l,
-			n_dot_h,
-			metalness,
-			linear_roughness) * irradiance;
-	
-	float3 lit_color = diffuse_result;
-	lit_color += specular_result;
+	lit_color += evaluate_sphere_light(
+		light_buffer[0],
+		albedo,
+		normal,
+		metalness,
+		linear_roughness,
+		to_eye,
+		world_position);
 	
 	lit_color += emissive * albedo_sample;
 
