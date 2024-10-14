@@ -151,7 +151,7 @@ int main(int argc, const char** argv)
 		// Perform the late update.
 		sim->late_update(&params);
 
-		st_imgui::update();
+		st_imgui::update(sim.get());
 #if 0
 		// Leave imgui off until an application-specific interface is spun up.
 		ImGui::ShowDemoWindow();
