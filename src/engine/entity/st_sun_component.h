@@ -41,6 +41,8 @@ public:
 	void set_power(float power) { _light->_power; }
 
 private:
+	st_vec3f calculate_direction() const;
+
 	float _azimuth = 0.0f;
 	float _angle = 0.0f;
 
