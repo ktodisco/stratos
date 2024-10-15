@@ -6,12 +6,17 @@
 
 #include <gui/st_imgui.h>
 
+#include <framework/st_frame_params.h>
 #include <framework/st_sim.h>
 
+#include <graphics/st_drawcall.h>
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
 
 #include <gui/imgui_impl_stratos.h>
+
+#include <math/st_mat4f.h>
+#include <math/st_vec4f.h>
 
 #include <system/st_window.h>
 
@@ -20,6 +25,7 @@
 std::unique_ptr<st_render_pass> st_imgui::_render_pass = nullptr;
 st_graphics_context* st_imgui::_context = nullptr;
 bool st_imgui::_open = true;
+bool st_imgui::_axes_widget = false;
 
 void st_imgui::initialize(
 	const st_window* window,
@@ -51,7 +57,7 @@ void st_imgui::shutdown()
 	_context = nullptr;
 }
 
-void st_imgui::update(st_sim* sim)
+void st_imgui::update(st_frame_params* params, st_sim* sim)
 {
 	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
@@ -92,6 +98,16 @@ void st_imgui::update(st_sim* sim)
 
 	sim->debug();
 
+	if (ImGui::CollapsingHeader("Utilities"))
+	{
+		ImGui::Checkbox("Show World Axes", &_axes_widget);
+	}
+
+	if (_axes_widget)
+	{
+		draw_axes_widget(params);
+	}
+
 	ImGui::End();
 }
 
@@ -109,4 +125,55 @@ void st_imgui::draw()
 	_context->begin_render_pass(_render_pass.get(), nullptr, 0);
 	ImGui_ImplStratos_RenderDrawData(ImGui::GetDrawData(), _context);
 	_context->end_render_pass(_render_pass.get());
+}
+
+void st_imgui::draw_axes_widget(st_frame_params* params)
+{
+	st_mat4f vp = params->_view * params->_projection;
+	st_vec4f aspect_correction =
+	{
+		float(params->_width) / float(params->_height),
+		1.0f,
+		1.0f,
+		1.0f,
+	};
+
+	st_vec4f x_view = vp.transform(st_vec4f::x_vector()) * aspect_correction;
+	st_vec4f y_view = vp.transform(st_vec4f::y_vector()) * aspect_correction;
+	st_vec4f z_view = vp.transform(st_vec4f::z_vector()) * aspect_correction;
+
+	const float k_line_length = 15.0f;
+	const st_vec2f k_origin = { 40, 50 };
+
+	st_dynamic_drawcall drawcall;
+
+	// x-axis
+	drawcall._positions.push_back({ k_origin.x, k_origin.y, 0 });
+	drawcall._positions.push_back({ k_origin.x + (x_view.x * k_line_length), k_origin.y + (-x_view.y * k_line_length), 0 });
+	drawcall._colors.push_back({ 1.0f, 0.0f, 0.0f });
+	drawcall._colors.push_back({ 1.0f, 0.0f, 0.0f });
+	drawcall._indices.push_back(0);
+	drawcall._indices.push_back(1);
+
+	// y-axis
+	drawcall._positions.push_back({ k_origin.x, k_origin.y, 0 });
+	drawcall._positions.push_back({ k_origin.x + (y_view.x * k_line_length), k_origin.y + (-y_view.y * k_line_length), 0 });
+	drawcall._colors.push_back({ 0.0f, 1.0f, 0.0f });
+	drawcall._colors.push_back({ 0.0f, 1.0f, 0.0f });
+	drawcall._indices.push_back(2);
+	drawcall._indices.push_back(3);
+
+	// z-axis
+	drawcall._positions.push_back({ k_origin.x, k_origin.y, 0 });
+	drawcall._positions.push_back({ k_origin.x + (z_view.x * k_line_length), k_origin.y + (-z_view.y * k_line_length), 0 });
+	drawcall._colors.push_back({ 0.0f, 0.0f, 1.0f });
+	drawcall._colors.push_back({ 0.0f, 0.0f, 1.0f });
+	drawcall._indices.push_back(4);
+	drawcall._indices.push_back(5);
+
+	drawcall._color = { 1.0f, 1.0f, 1.0f };
+	drawcall._draw_mode = st_primitive_topology_lines;
+	drawcall._transform.make_identity();
+
+	params->_gui_drawcalls.push_back(drawcall);
 }

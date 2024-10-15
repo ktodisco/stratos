@@ -109,7 +109,7 @@ void st_font::print(
 		*extent_max = { x, y };
 	}
 
-	st_procedural_drawcall drawcall;
+	st_dynamic_drawcall drawcall;
 	drawcall._color = color;
 	drawcall._draw_mode = st_primitive_topology_triangles;
 	drawcall._material = _material.get();

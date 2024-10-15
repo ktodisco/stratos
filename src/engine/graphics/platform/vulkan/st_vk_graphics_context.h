@@ -43,7 +43,7 @@ public:
 
 	void clear(unsigned int clear_flags) override {}
 	void draw(const struct st_static_drawcall& drawcall) override;
-	void draw(const struct st_procedural_drawcall& drawcall) override {}
+	void draw(const struct st_dynamic_drawcall& drawcall) override {}
 
 	// Backbuffer.
 	st_render_texture* get_present_target() const override;

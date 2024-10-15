@@ -553,8 +553,14 @@ void st_dx12_graphics_context::draw(const st_static_drawcall& drawcall)
 	_command_list->DrawIndexedInstanced(drawcall._index_count, 1, drawcall._index_offset, drawcall._vertex_offset, 0);
 }
 
-void st_dx12_graphics_context::draw(const st_procedural_drawcall& drawcall)
+void st_dx12_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 {
+	struct st_procedural_vertex
+	{
+		st_vec3f _pos;
+		st_vec3f _color;
+	};
+
 	// TODO: Dynamic buffer limit checking.
 
 	uint8_t* buffer_begin;
@@ -564,31 +570,20 @@ void st_dx12_graphics_context::draw(const st_procedural_drawcall& drawcall)
 
 	st_dx12_buffer_view dynamic_vertex_buffer_view;
 	dynamic_vertex_buffer_view.vertex.BufferLocation = _dynamic_vertex_buffer->GetGPUVirtualAddress() + _dynamic_vertex_bytes_written;
-	dynamic_vertex_buffer_view.vertex.StrideInBytes = 20;
-	dynamic_vertex_buffer_view.vertex.SizeInBytes = drawcall._positions.size() * 20;
+	dynamic_vertex_buffer_view.vertex.StrideInBytes = sizeof(st_procedural_vertex);
+	dynamic_vertex_buffer_view.vertex.SizeInBytes = drawcall._positions.size() * sizeof(st_procedural_vertex);
 
 	if (result != S_OK)
 	{
 		assert(false);
 	}
 
-	struct st_procedural_vertex
-	{
-		st_vec3f _pos;
-		st_vec2f _uv;
-	};
-
 	std::vector<st_procedural_vertex> verts;
 	verts.reserve(drawcall._positions.size());
 
 	for (uint32_t vert_itr = 0; vert_itr < drawcall._positions.size(); ++vert_itr)
 	{
-		verts.push_back({ drawcall._positions[vert_itr], st_vec2f() });
-	}
-
-	for (uint32_t vert_itr = 0; vert_itr < drawcall._texcoords.size(); ++vert_itr)
-	{
-		verts[vert_itr]._uv = drawcall._texcoords[vert_itr];
+		verts.push_back({ drawcall._positions[vert_itr], drawcall._colors[vert_itr] });
 	}
 
 	memcpy(buffer_begin, &verts[0], sizeof(st_procedural_vertex) * verts.size());

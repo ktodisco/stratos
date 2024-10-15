@@ -12,7 +12,7 @@
 
 #include <vector>
 
-void st_plane::get_debug_draw(const st_mat4f& transform, st_procedural_drawcall* drawcall)
+void st_plane::get_debug_draw(const st_mat4f& transform, st_dynamic_drawcall* drawcall)
 {
 	st_vec3f position = transform.get_translation() + _point;
 
@@ -33,6 +33,11 @@ void st_plane::get_debug_draw(const st_mat4f& transform, st_procedural_drawcall*
 	drawcall->_positions.push_back(-vec1 + vec2);
 	drawcall->_positions.push_back(vec1 + vec2);
 	drawcall->_positions.push_back(vec1 - vec2);
+
+	drawcall->_colors.push_back({ 1.0f, 1.0f, 1.0f });
+	drawcall->_colors.push_back({ 1.0f, 1.0f, 1.0f });
+	drawcall->_colors.push_back({ 1.0f, 1.0f, 1.0f });
+	drawcall->_colors.push_back({ 1.0f, 1.0f, 1.0f });
 
 	uint32_t indices[] =
 	{
@@ -62,7 +67,7 @@ st_vec3f st_plane::get_offset_to_point(const st_mat4f& transform, const st_vec3f
 	return st_vec3f::zero_vector();
 }
 
-void st_sphere::get_debug_draw(const st_mat4f& transform, st_procedural_drawcall* drawcall)
+void st_sphere::get_debug_draw(const st_mat4f& transform, st_dynamic_drawcall* drawcall)
 {
 	draw_debug_sphere(_radius, transform, drawcall);
 }
@@ -78,7 +83,7 @@ st_vec3f st_sphere::get_offset_to_point(const st_mat4f& transform, const st_vec3
 	return point - center;
 }
 
-void st_aabb::get_debug_draw(const st_mat4f& transform, st_procedural_drawcall* drawcall)
+void st_aabb::get_debug_draw(const st_mat4f& transform, st_dynamic_drawcall* drawcall)
 {
 	drawcall->_positions.push_back({ _min.x, _min.y, _min.z });
 	drawcall->_positions.push_back({ _min.x, _min.y, _max.z });
@@ -88,6 +93,11 @@ void st_aabb::get_debug_draw(const st_mat4f& transform, st_procedural_drawcall* 
 	drawcall->_positions.push_back({ _max.x, _min.y, _max.z });
 	drawcall->_positions.push_back({ _max.x, _max.y, _min.z });
 	drawcall->_positions.push_back({ _max.x, _max.y, _max.z });
+
+	for (uint32_t i = 0; i < 8; ++i)
+	{
+		drawcall->_colors.push_back({ 1.0f, 1.0f, 1.0f });
+	}
 
 	uint32_t indices[] =
 	{
@@ -144,7 +154,7 @@ void st_oobb::get_corners(std::vector<st_vec3f>& corners) const
 	corners.push_back(_center + x_hvec + y_hvec + z_hvec);
 }
 
-void st_oobb::get_debug_draw(const st_mat4f& transform, st_procedural_drawcall* drawcall)
+void st_oobb::get_debug_draw(const st_mat4f& transform, st_dynamic_drawcall* drawcall)
 {
 	get_corners(drawcall->_positions);
 	drawcall->_positions.push_back(st_vec3f::zero_vector());
@@ -201,7 +211,7 @@ st_vec3f st_oobb::get_offset_to_point(const st_mat4f& transform, const st_vec3f&
 	return point - center;
 }
 
-void st_convex_hull::get_debug_draw(const st_mat4f& transform, st_procedural_drawcall* drawcall)
+void st_convex_hull::get_debug_draw(const st_mat4f& transform, st_dynamic_drawcall* drawcall)
 {
 	// TODO
 }

@@ -24,7 +24,7 @@ st_ui_render_pass::st_ui_render_pass()
 
 	st_target_desc targets[] =
 	{
-		{ st_graphics_context::get()->get_present_target(), e_st_load_op::clear, e_st_store_op::store }
+		{ st_graphics_context::get()->get_present_target(), e_st_load_op::load, e_st_store_op::store }
 	};
 	_pass = context->create_render_pass(
 		1,
@@ -33,7 +33,7 @@ st_ui_render_pass::st_ui_render_pass()
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 1));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32_float, 2));
 	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
 
 	// Set up the default UI material.
@@ -82,7 +82,9 @@ void st_ui_render_pass::render(st_graphics_context* context, const st_frame_para
 
 	st_imgui::draw();
 
+	context->begin_render_pass(_pass.get(), nullptr, 0);
 	draw_dynamic(context, params, ortho, view);
+	context->end_render_pass(_pass.get());
 }
 
 void st_ui_render_pass::draw_dynamic(
@@ -91,6 +93,8 @@ void st_ui_render_pass::draw_dynamic(
 	const struct st_mat4f& proj,
 	const struct st_mat4f& view)
 {
+	context->set_scissor(0, 0, params->_width, params->_height);
+
 	for (auto& d : params->_gui_drawcalls)
 	{
 		st_render_marker draw_marker(context, d._name);

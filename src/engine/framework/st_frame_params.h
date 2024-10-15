@@ -37,10 +37,10 @@ struct st_frame_params
 	std::vector<st_static_drawcall> _static_drawcalls;
 	std::atomic_flag _static_drawcall_lock = ATOMIC_FLAG_INIT;
 
-	std::vector<st_procedural_drawcall> _dynamic_drawcalls;
+	std::vector<st_dynamic_drawcall> _dynamic_drawcalls;
 	std::atomic_flag _dynamic_drawcall_lock = ATOMIC_FLAG_INIT;
 
-	std::vector<st_procedural_drawcall> _gui_drawcalls;
+	std::vector<st_dynamic_drawcall> _gui_drawcalls;
 	std::atomic_flag _gui_drawcall_lock = ATOMIC_FLAG_INIT;
 
 	st_mat4f _view;

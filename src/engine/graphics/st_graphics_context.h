@@ -29,7 +29,7 @@ public:
 
 	virtual void clear(unsigned int clear_flags) = 0;
 	virtual void draw(const struct st_static_drawcall& drawcall) = 0;
-	virtual void draw(const struct st_procedural_drawcall& drawcall) = 0;
+	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
 
 	// Backbuffer.
 	virtual class st_render_texture* get_present_target() const = 0;

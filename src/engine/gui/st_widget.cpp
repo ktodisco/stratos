@@ -28,7 +28,7 @@ st_widget::~st_widget()
 
 void st_widget::draw_outline(st_frame_params* params, const st_vec2f& min, const st_vec2f& max, const st_vec3f& color, float offset)
 {
-	st_procedural_drawcall drawcall;
+	st_dynamic_drawcall drawcall;
 
 	drawcall._positions.push_back({ min.x - offset, min.y - offset, 0.0f });
 	drawcall._positions.push_back({ max.x + offset, min.y - offset, 0.0f });
@@ -59,7 +59,7 @@ void st_widget::draw_outline(st_frame_params* params, const st_vec2f& min, const
 
 void st_widget::draw_check(st_frame_params* params, const st_vec2f& min, const st_vec2f& max, const st_vec3f& color)
 {
-	st_procedural_drawcall drawcall;
+	st_dynamic_drawcall drawcall;
 
 	drawcall._positions.push_back({ min.x, min.y, 0.0f });
 	drawcall._positions.push_back({ max.x, min.y, 0.0f });
@@ -86,7 +86,7 @@ void st_widget::draw_check(st_frame_params* params, const st_vec2f& min, const s
 
 void st_widget::draw_fill(st_frame_params* params, const st_vec2f& min, const st_vec2f& max, const st_vec3f& color)
 {
-	st_procedural_drawcall drawcall;
+	st_dynamic_drawcall drawcall;
 
 	drawcall._positions.push_back({ min.x, min.y, 0.0f });
 	drawcall._positions.push_back({ max.x, min.y, 0.0f });

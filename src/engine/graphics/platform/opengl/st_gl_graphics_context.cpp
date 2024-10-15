@@ -292,7 +292,7 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 	glDeleteVertexArrays(1, &vao);
 }
 
-void st_gl_graphics_context::draw(const st_procedural_drawcall& drawcall)
+void st_gl_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 {
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
@@ -301,34 +301,28 @@ void st_gl_graphics_context::draw(const st_procedural_drawcall& drawcall)
 	GLuint pos;
 	glGenBuffers(1, &pos);
 	glBindBuffer(GL_ARRAY_BUFFER, pos);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(st_vec3f) * drawcall._positions.size(), &drawcall._positions[0], GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(st_vec3f) * drawcall._positions.size(), drawcall._positions.data(), GL_STREAM_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 
-	GLuint texcoord;
-	if (!drawcall._texcoords.empty())
-	{
-		glGenBuffers(1, &texcoord);
-		glBindBuffer(GL_ARRAY_BUFFER, texcoord);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(st_vec2f) * drawcall._texcoords.size(), &drawcall._texcoords[0], GL_STREAM_DRAW);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(1);
-	}
+	GLuint color;
+	glGenBuffers(1, &color);
+	glBindBuffer(GL_ARRAY_BUFFER, color);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(st_vec3f) * drawcall._colors.size(), drawcall._colors.data(), GL_STREAM_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(1);
 
 	GLuint indices;
 	glGenBuffers(1, &indices);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indices);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16_t) * drawcall._indices.size(), &drawcall._indices[0], GL_STREAM_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16_t) * drawcall._indices.size(), drawcall._indices.data(), GL_STREAM_DRAW);
 
 	glDrawElements(convert_topology(drawcall._draw_mode), (GLsizei)drawcall._indices.size(), GL_UNSIGNED_SHORT, 0);
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDeleteBuffers(1, &indices);
-	if (!drawcall._texcoords.empty())
-	{
-		glDeleteBuffers(1, &texcoord);
-	}
+	glDeleteBuffers(1, &color);
 	glDeleteBuffers(1, &pos);
 	glDeleteVertexArrays(1, &vao);
 	glBindVertexArray(0);

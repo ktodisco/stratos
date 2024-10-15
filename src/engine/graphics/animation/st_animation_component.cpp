@@ -62,7 +62,7 @@ void st_animation_component::update(st_frame_params* params)
 	{
 		st_joint* j = _skeleton->_joints[joint_index];
 
-		st_procedural_drawcall drawcall;
+		st_dynamic_drawcall drawcall;
 		draw_debug_sphere(0.4f, j->_world * get_entity()->get_transform(), &drawcall);
 
 		while (params->_dynamic_drawcall_lock.test_and_set(std::memory_order_acquire)) {}
