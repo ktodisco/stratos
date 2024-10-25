@@ -1237,7 +1237,7 @@ std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_pipeline(
 	raster_desc.CullMode = convert_cull_mode(desc._rasterizer_desc._cull_mode);
 	raster_desc.FillMode = convert_fill_mode(desc._rasterizer_desc._fill_mode);
 	raster_desc.FrontCounterClockwise = !desc._rasterizer_desc._winding_order_clockwise;
-	raster_desc.DepthClipEnable = false;
+	raster_desc.DepthClipEnable = true;
 
 	pipeline_desc.RasterizerState = raster_desc;
 

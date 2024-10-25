@@ -13,6 +13,7 @@
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
 
+#include <math/st_vec3f.h>
 #include <math/st_vec4f.h>
 
 #include <cstdint>
@@ -43,7 +44,7 @@ public:
 
 	void clear(unsigned int clear_flags) override {}
 	void draw(const struct st_static_drawcall& drawcall) override;
-	void draw(const struct st_dynamic_drawcall& drawcall) override {}
+	void draw(const struct st_dynamic_drawcall& drawcall) override;
 
 	// Backbuffer.
 	st_render_texture* get_present_target() const override;
@@ -150,9 +151,6 @@ private:
 	// class render passes, especially depending on which ones render to the backbuffer.
 	std::unique_ptr<class st_render_texture> _present_target;
 
-	// Maintain a global instance.
-	static st_vk_graphics_context* _this;
-
 	vk::Instance _instance;
 	vk::PhysicalDevice _gpu;
 	vk::PhysicalDeviceProperties _caps;
@@ -189,6 +187,17 @@ private:
 
 	std::vector<vk::DescriptorSet> _descriptor_set_pool[k_max_frames];
 	uint32_t _descriptor_set_index = 0;
+
+	// Dynamic geometry buffers.
+	struct st_vk_procedural_vertex
+	{
+		struct st_vec3f _pos;
+		struct st_vec3f _color;
+	};
+	std::unique_ptr<st_buffer> _dynamic_vertex_buffer = nullptr;
+	std::unique_ptr<st_buffer> _dynamic_index_buffer = nullptr;
+	uint32_t _dynamic_vertex_bytes_written = 0;
+	uint32_t _dynamic_index_bytes_written = 0;
 
 	uint32_t _frame_index = 0;
 

@@ -33,7 +33,7 @@ st_ui_render_pass::st_ui_render_pass()
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
-	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32_float, 2));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32_float, 1));
 	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
 
 	// Set up the default UI material.

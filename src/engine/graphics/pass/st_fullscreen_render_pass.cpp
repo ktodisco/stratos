@@ -26,13 +26,6 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 		-1.0f, 3.0f, 0.0f,
 	};
 
-	if (st_graphics_context::get()->get_api() == e_st_graphics_api::vulkan)
-	{
-		verts[1] *= -1.0f;
-		verts[4] *= -1.0f;
-		verts[7] *= -1.0f;
-	}
-
 	const uint16_t indices[] =
 	{
 		0, 1, 2

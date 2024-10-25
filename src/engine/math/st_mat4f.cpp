@@ -8,9 +8,6 @@
 
 #include "math/st_math.h"
 
-//#define st_CLIP_SPACE_DX 1
-#define st_CLIP_SPACE_GL 1
-
 void st_mat4f::make_identity()
 {
 	for (int i = 0; i < 4; ++i)
@@ -209,15 +206,9 @@ void st_mat4f::make_orthographic(float left, float right, float bottom, float to
 	float inv_depth = 1.0f / (z_near - z_far);
 	data[0][2] = 0.0f;
 	data[1][2] = 0.0f;
-#if defined(st_CLIP_SPACE_DX)
+	// Uses DirectX clip space, as it's narrower than OpenGL.
 	data[2][2] = 1.0f * inv_depth;
 	data[3][2] = z_near * inv_depth;
-#elif defined(st_CLIP_SPACE_GL)
-	data[2][2] = 2.0f * inv_depth;
-	data[3][2] = (z_far + z_near) * inv_depth;
-#else
-	#error "Unknown clip space."
-#endif
 
 	data[0][3] = 0.0f;
 	data[1][3] = 0.0f;
@@ -241,24 +232,13 @@ void st_mat4f::make_perspective_rh(float angle, float aspect, float z_near, floa
 
 	data[2][0] = 0.0f;
 	data[2][1] = 0.0f;
-#if defined(st_CLIP_SPACE_DX)
+	// Uses DirectX clip space, as it's narrower than OpenGL.
 	data[2][2] = -z_far / (z_far - z_near);
-#elif defined(st_CLIP_SPACE_GL)
-	data[2][2] = -(z_far + z_near) / (z_far - z_near);
-#else
-	#error "Unknown clip space."
-#endif
 	data[2][3] = -1.0f;
 
 	data[3][0] = 0.0f;
 	data[3][1] = 0.0f;
-#if defined(st_CLIP_SPACE_DX)
 	data[3][2] = -(1.0f * z_far * z_near) / (z_far - z_near);
-#elif defined(st_CLIP_SPACE_GL)
-	data[3][2] = -(2.0f * z_far * z_near) / (z_far - z_near);
-#else
-	#error "Unknown clip space."
-#endif
 	data[3][3] = 0.0f;
 }
 

@@ -25,7 +25,6 @@
 extern char g_root_path[256];
 
 extern vk::DispatchLoaderDynamic vk::defaultDispatchLoaderDynamic;
-st_vk_graphics_context* st_vk_graphics_context::_this = nullptr;
 
 st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 {
@@ -422,7 +421,16 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 		_descriptor_set_pool[ds_itr].reserve(1024);
 	}
 
-	_this = this;
+	// Create dynamic geometry buffers.
+	const uint32_t k_dynamic_buffer_count = 10000;
+	_dynamic_vertex_buffer = create_buffer(
+		k_dynamic_buffer_count,
+		sizeof(st_vk_procedural_vertex),
+		e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
+	_dynamic_index_buffer = create_buffer(
+		k_dynamic_buffer_count,
+		sizeof(uint16_t),
+		e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
 
 	begin_frame();
 
@@ -476,6 +484,9 @@ st_vk_graphics_context::~st_vk_graphics_context()
 
 	_present_target = nullptr;
 
+	_dynamic_index_buffer = nullptr;
+	_dynamic_vertex_buffer = nullptr;
+
 	_device.destroySwapchainKHR(_swap_chain, nullptr);
 	_instance.destroySurfaceKHR(_window_surface, nullptr);
 
@@ -514,15 +525,15 @@ void st_vk_graphics_context::set_pipeline(const st_pipeline* pipeline_)
 
 void st_vk_graphics_context::set_viewport(const st_viewport& viewport)
 {
+	// Flip the Vulkan viewport to match the coordinate systems of OpenGL and DirectX.
 	vk::Viewport view = vk::Viewport()
 		.setWidth(viewport._width)
-		.setHeight(viewport._height)
+		.setHeight(-viewport._height)
 		.setX(viewport._x)
-		.setY(viewport._y)
+		.setY(viewport._height - viewport._y)
 		.setMinDepth(viewport._min_depth)
 		.setMaxDepth(viewport._max_depth);
 	_command_buffers[st_command_buffer_graphics].setViewport(0, 1, &view);
-
 }
 
 void st_vk_graphics_context::set_scissor(int left, int top, int right, int bottom)
@@ -548,6 +559,49 @@ void st_vk_graphics_context::draw(const st_static_drawcall& drawcall)
 		drawcall._index_offset,
 		drawcall._vertex_offset,
 		0);
+}
+
+void st_vk_graphics_context::draw(const struct st_dynamic_drawcall& drawcall)
+{
+	// TODO: Dynamic buffer limit checking.
+
+	uint8_t* buffer_begin;
+	map(_dynamic_vertex_buffer.get(), 0, { 0, 0 }, reinterpret_cast<void**>(&buffer_begin));
+	buffer_begin += _dynamic_vertex_bytes_written;
+
+	std::vector<st_vk_procedural_vertex> verts;
+	verts.reserve(drawcall._positions.size());
+
+	for (uint32_t vert_itr = 0; vert_itr < drawcall._positions.size(); ++vert_itr)
+	{
+		verts.push_back({ drawcall._positions[vert_itr], drawcall._colors[vert_itr] });
+	}
+
+	memcpy(buffer_begin, &verts[0], sizeof(st_vk_procedural_vertex) * verts.size());
+	unmap(_dynamic_vertex_buffer.get(), 0, { 0, 0 });
+
+	map(_dynamic_index_buffer.get(), 0, { 0, 0 }, reinterpret_cast<void**>(&buffer_begin));
+	buffer_begin += _dynamic_index_bytes_written;
+
+	memcpy(buffer_begin, &drawcall._indices[0], sizeof(uint16_t) * drawcall._indices.size());
+	unmap(_dynamic_index_buffer.get(), 0, { 0, 0 });
+
+	st_vk_buffer* dynamic_vertex_buffer = static_cast<st_vk_buffer*>(_dynamic_vertex_buffer.get());
+	st_vk_buffer* dynamic_index_buffer = static_cast<st_vk_buffer*>(_dynamic_index_buffer.get());
+
+	vk::DeviceSize offset = vk::DeviceSize(0);
+	_command_buffers[st_command_buffer_graphics].bindVertexBuffers(0, 1, &dynamic_vertex_buffer->_buffer, &offset);
+	_command_buffers[st_command_buffer_graphics].bindIndexBuffer(dynamic_index_buffer->_buffer, 0, vk::IndexType::eUint16);
+
+	_command_buffers[st_command_buffer_graphics].drawIndexed(
+		drawcall._indices.size(),
+		1,
+		(_dynamic_index_bytes_written / sizeof(uint16_t)),
+		(_dynamic_vertex_bytes_written / sizeof(st_vk_procedural_vertex)),
+		0);
+
+	_dynamic_vertex_bytes_written += sizeof(st_vk_procedural_vertex) * verts.size();
+	_dynamic_index_bytes_written += sizeof(uint16_t) * drawcall._indices.size();
 }
 
 st_render_texture* st_vk_graphics_context::get_present_target() const
@@ -602,6 +656,9 @@ void st_vk_graphics_context::begin_frame()
 
 	// Begin writing to the head of the upload buffer again.
 	_upload_buffer_offset = 0;
+
+	_dynamic_vertex_bytes_written = 0;
+	_dynamic_index_bytes_written = 0;
 
 	// Reset the descriptor set pool.
 	if (_descriptor_set_pool[_frame_index].size() > 0)
@@ -1066,15 +1123,15 @@ std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(
 
 	vk::BufferUsageFlags flags;
 
-	if (usage & e_st_buffer_usage::index) flags |= vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst;
+	if (usage & e_st_buffer_usage::index) flags |= vk::BufferUsageFlagBits::eIndexBuffer;
 	if (usage & e_st_buffer_usage::indirect) flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
-	if (usage & e_st_buffer_usage::storage) flags |= vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst;
+	if (usage & e_st_buffer_usage::storage) flags |= vk::BufferUsageFlagBits::eStorageBuffer;
 	if (usage & e_st_buffer_usage::storage_texel) flags |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
 	if (usage & e_st_buffer_usage::transfer_dest) flags |= vk::BufferUsageFlagBits::eTransferDst;
 	if (usage & e_st_buffer_usage::transfer_source) flags |= vk::BufferUsageFlagBits::eTransferSrc;
 	if (usage & e_st_buffer_usage::uniform) flags |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst;
 	if (usage & e_st_buffer_usage::uniform_texel) flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
-	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst;
+	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
 		.setUsage(flags)
@@ -1088,9 +1145,12 @@ std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(
 	vk::MemoryRequirements memory_reqs;
 	_device.getBufferMemoryRequirements(buffer->_buffer, &memory_reqs);
 
+	uint32_t memory_index = _device_memory_index;
+	if (usage & e_st_buffer_usage::transfer_dest) memory_index = _mapped_memory_index;
+
 	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
 		.setAllocationSize(memory_reqs.size)
-		.setMemoryTypeIndex(_device_memory_index);
+		.setMemoryTypeIndex(memory_index);
 
 	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &buffer->_memory));
 
@@ -1120,7 +1180,11 @@ void st_vk_graphics_context::map(st_buffer* buffer_, uint32_t subresource, const
 {
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
-	VK_VALIDATE(_device.mapMemory(buffer->_memory, range.begin, (range.end - range.begin), vk::MemoryMapFlags(0), outData));
+	uint64_t size = (range.end - range.begin);
+	if (range.end == 0)
+		size = vk::WholeSize;
+
+	VK_VALIDATE(_device.mapMemory(buffer->_memory, range.begin, size, vk::MemoryMapFlags(0), outData));
 }
 
 void st_vk_graphics_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range)
@@ -1134,7 +1198,11 @@ void st_vk_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 {
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
-	_command_buffers[st_command_buffer_loading].updateBuffer(buffer->_buffer, offset, align_value(count * buffer->_element_size, 4), data);
+	_command_buffers[st_command_buffer_loading].updateBuffer(
+		buffer->_buffer,
+		offset,
+		align_value(count * buffer->_element_size, 4),
+		data);
 }
 
 std::unique_ptr<st_resource_table> st_vk_graphics_context::create_resource_table()
@@ -1414,7 +1482,7 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(
 
 	vk::Rect2D scissor = vk::Rect2D()
 		.setOffset(vk::Offset2D())
-		.setExtent(vk::Extent2D(uint32_t(render_pass->_viewport.width), uint32_t(render_pass->_viewport.height)));
+		.setExtent(vk::Extent2D(uint32_t(render_pass->_viewport.width), uint32_t(-render_pass->_viewport.height)));
 
 	vk::PipelineViewportStateCreateInfo viewport = vk::PipelineViewportStateCreateInfo()
 		.setViewportCount(1)
@@ -1570,11 +1638,12 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 	// Naively, create the viewport from the first target.
 	if (count > 0)
 	{
+		// Flip the Vulkan viewport to match the coordinate systems of OpenGL and DirectX.
 		render_pass->_viewport = vk::Viewport()
 			.setX(0)
-			.setY(0)
+			.setY(float(targets[0]._target->get_height()))
 			.setWidth(float(targets[0]._target->get_width()))
-			.setHeight(float(targets[0]._target->get_height()))
+			.setHeight(-float(targets[0]._target->get_height()))
 			.setMinDepth(0.0f)
 			.setMaxDepth(1.0f);
 	}

@@ -27,9 +27,12 @@ st_geometry::st_geometry(
 	_vertex_buffer = context->create_buffer(
 		vertex_count,
 		vertex_size,
-		e_st_buffer_usage::vertex);
+		e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
 
-	context->update_buffer(_vertex_buffer.get(), vertex_data, 0, vertex_count);
+	uint8_t* head;
+	context->map(_vertex_buffer.get(), 0, { 0, 0 }, (void**)&head);
+	memcpy(head, vertex_data, vertex_count * vertex_size);
+	context->unmap(_vertex_buffer.get(), 0, { 0, 0 });
 
 	// Create the index buffer resource.
 	_index_count = index_count;
@@ -38,9 +41,11 @@ st_geometry::st_geometry(
 	_index_buffer = context->create_buffer(
 		index_count,
 		sizeof(uint16_t),
-		e_st_buffer_usage::index);
+		e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
 
-	context->update_buffer(_index_buffer.get(), index_data, 0, index_count);
+	context->map(_index_buffer.get(), 0, { 0, 0 }, (void**)&head);
+	memcpy(head, index_data, index_count * sizeof(uint16_t));
+	context->unmap(_index_buffer.get(), 0, { 0, 0 });
 }
 
 st_geometry::~st_geometry()

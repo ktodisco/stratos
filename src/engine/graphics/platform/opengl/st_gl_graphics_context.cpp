@@ -483,7 +483,11 @@ void st_gl_graphics_context::map(st_buffer* buffer_, uint32_t subresource, const
 {
 	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer->_buffer);
-	*outData = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, range.begin, (range.end - range.begin), GL_MAP_WRITE_BIT);
+
+	GLsizeiptr size = (range.end - range.begin);
+	if (range.end == 0)
+		size = buffer->_element_size * buffer->_count;
+	*outData = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, range.begin, size, GL_MAP_WRITE_BIT);
 }
 
 void st_gl_graphics_context::unmap(st_buffer* buffer_, uint32_t subresource, const st_range& range)

@@ -66,7 +66,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
         frameResources->VB = ctx->create_buffer(
             g_VertexBufferSize,
             sizeof(ImDrawVert),
-            e_st_buffer_usage::vertex);
+            e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
 
         g_pVB = frameResources->VB.get();
         frameResources->VertexBufferSize = g_VertexBufferSize;
@@ -80,7 +80,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
         frameResources->IB = ctx->create_buffer(
             g_IndexBufferSize,
             sizeof(ImDrawIdx),
-            e_st_buffer_usage::index);
+            e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
 
         g_pIB = frameResources->IB.get();
         frameResources->IndexBufferSize = g_IndexBufferSize;
@@ -92,8 +92,16 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
-        ctx->update_buffer(g_pVB, cmd_list->VtxBuffer.Data, vtx_offset, cmd_list->VtxBuffer.Size);
-        ctx->update_buffer(g_pIB, cmd_list->IdxBuffer.Data, idx_offset, cmd_list->IdxBuffer.Size);
+
+        uint8_t* head = nullptr;
+        ctx->map(g_pVB, 0, { 0, 0 }, (void**)&head);
+        memcpy(head + vtx_offset, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+        ctx->unmap(g_pVB, 0, { 0, 0 });
+
+        ctx->map(g_pIB, 0, { 0, 0 }, (void**)&head);
+        memcpy(head + idx_offset, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+        ctx->unmap(g_pIB, 0, { 0, 0 });
+
         vtx_offset += cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
         idx_offset += cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
     }
@@ -126,17 +134,6 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
             (R + L) / (L - R), (T + B) / (B - T), 0.5f, 1.0f,
         };
 
-        if (ctx->get_api() == e_st_graphics_api::vulkan)
-        {
-            st_mat4f vk_correction =
-            {
-                1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, -1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-                0.0f, 0.0f, 0.0f, 1.0f,
-            };
-            mvp *= vk_correction;
-        }
         ctx->update_buffer(g_constant_buffer.get(), mvp.data, 0, 1);
     }
 
