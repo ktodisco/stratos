@@ -40,20 +40,6 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		vertical_blur_targets,
 		nullptr);
 
-	// TODO: Need to pass the inverse texture sizes to the shaders in these materials.
-	_vertical_blur_material = std::make_unique<st_gaussian_blur_vertical_material>(source_buffer);
-	_horizontal_blur_material = std::make_unique<st_gaussian_blur_horizontal_material>(_intermediate_target.get());
-
-	// Set up the vertical blur pipeline state.
-	st_pipeline_state_desc vertical_blur_state_desc;
-	_vertical_blur_material->get_pipeline_state(&vertical_blur_state_desc);
-
-	vertical_blur_state_desc._vertex_format = _vertex_format.get();
-	vertical_blur_state_desc._render_target_count = 1;
-	vertical_blur_state_desc._render_target_formats[0] = target_buffer->get_format();
-
-	_vertical_blur_state = context->create_pipeline(vertical_blur_state_desc, _vertical_blur_pass.get());
-
 	st_target_desc horizontal_blur_targets[] =
 	{
 		{ target_buffer, e_st_load_op::clear, e_st_store_op::store }
@@ -63,15 +49,17 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		horizontal_blur_targets,
 		nullptr);
 
-	// Set up the horizontal blur pipeline state.
-	st_pipeline_state_desc horizontal_blur_state_desc;
-	_horizontal_blur_material->get_pipeline_state(&horizontal_blur_state_desc);
-
-	horizontal_blur_state_desc._vertex_format = _vertex_format.get();
-	horizontal_blur_state_desc._render_target_count = 1;
-	horizontal_blur_state_desc._render_target_formats[0] = target_buffer->get_format();
-
-	_horizontal_blur_state = context->create_pipeline(horizontal_blur_state_desc, _horizontal_blur_pass.get());
+	// TODO: Need to pass the inverse texture sizes to the shaders in these materials.
+	_vertical_blur_material = std::make_unique<st_gaussian_blur_vertical_material>(
+		source_buffer,
+		_intermediate_target.get(),
+		_vertex_format.get(),
+		_vertical_blur_pass.get());
+	_horizontal_blur_material = std::make_unique<st_gaussian_blur_horizontal_material>(
+		_intermediate_target.get(),
+		target_buffer,
+		_vertex_format.get(),
+		_horizontal_blur_pass.get());
 }
 
 st_gaussian_blur_render_pass::~st_gaussian_blur_render_pass()
@@ -91,8 +79,6 @@ void st_gaussian_blur_render_pass::render(
 
 	{
 		st_render_marker marker(context, "Vertical Blur");
-
-		context->set_pipeline(_vertical_blur_state.get());
 
 		_vertical_blur_material->bind(context, params, identity, identity, identity);
 
@@ -115,8 +101,6 @@ void st_gaussian_blur_render_pass::render(
 
 	{
 		st_render_marker marker(context, "Horizontal Blur");
-
-		context->set_pipeline(_horizontal_blur_state.get());
 
 		_horizontal_blur_material->bind(context, params, identity, identity, identity);
 

@@ -6,6 +6,8 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <framework/st_output.h>
+
 #include <math/st_mat4f.h>
 #include <math/st_vec3f.h>
 
@@ -14,23 +16,6 @@
 
 #include <wrl.h>
 
-// For the record, I'm not fond of this direction.
-enum st_material_type
-{
-	st_material_type_unlit_texture,
-	st_material_type_constant_color,
-	st_material_type_phong,
-	st_material_type_font,
-	st_material_type_gbuffer,
-	st_material_type_fullscreen,
-	st_material_type_deferred_light,
-	st_material_type_tonemap,
-	st_material_type_bloom,
-	st_material_type_gaussian_blur_vertical,
-	st_material_type_gaussian_blur_horizontal,
-	st_material_type_parallax_occlusion,
-};
-
 /*
 ** Base class for all graphical materials.
 ** Includes the shaders and other state necessary to draw geometry.
@@ -38,6 +23,7 @@ enum st_material_type
 class st_material
 {
 public:
+	st_material(e_st_render_pass_type_flags passes) : _supported_passes(passes) {}
 	virtual ~st_material() {}
 	virtual void bind(
 		class st_graphics_context* context,
@@ -46,11 +32,15 @@ public:
 		const st_mat4f& view,
 		const st_mat4f& transform) = 0;
 
-	virtual void get_pipeline_state(
-		struct st_pipeline_state_desc* state_desc) = 0;
-
 	virtual void set_color(const st_vec3f& color) {}
-	virtual st_material_type get_material_type() = 0;
+
+	bool supports_pass(e_st_render_pass_type type) const
+	{
+		return bool(static_cast<e_st_render_pass_type_flags>(_supported_passes) & type);
+	}
+
+protected:
+	uint64_t _supported_passes = 0;
 };
 
 struct st_view_cb

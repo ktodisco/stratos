@@ -16,14 +16,32 @@ st_deferred_light_material::st_deferred_light_material(
 	st_render_texture* normal_texture,
 	st_render_texture* third_texture,
 	st_render_texture* depth_texture,
+	st_render_texture* output_texture,
+	st_render_texture* output_depth,
 	st_buffer* constants,
-	st_buffer* light_buffer) :
+	st_buffer* light_buffer,
+	st_vertex_format* vertex_format,
+	st_render_pass* pass) :
+	st_material(e_st_render_pass_type::deferred),
 	_albedo(albedo_texture),
 	_normal(normal_texture),
 	_third(third_texture),
 	_depth(depth_texture)
 {
 	st_graphics_context* context = st_graphics_context::get();
+
+	st_pipeline_state_desc desc;
+	desc._shader = st_shader_manager::get()->get_shader(st_shader_deferred_light);
+	desc._blend_desc._target_blend[0]._blend = false;
+	desc._depth_stencil_desc._depth_enable = false;
+	desc._vertex_format = vertex_format;
+	desc._pass = pass;
+	desc._render_target_count = 1;
+	desc._render_target_formats[0] = output_texture->get_format();
+	desc._depth_stencil_format = output_depth->get_format();
+
+	_pipeline = context->create_pipeline(desc);
+
 	_resource_table = context->create_resource_table();
 	context->set_constant_buffers(_resource_table.get(), 1, &constants);
 	context->set_buffers(_resource_table.get(), 1, &light_buffer);
@@ -39,15 +57,8 @@ st_deferred_light_material::st_deferred_light_material(
 
 st_deferred_light_material::~st_deferred_light_material()
 {
-}
-
-void st_deferred_light_material::get_pipeline_state(
-	st_pipeline_state_desc* state_desc)
-{
-	state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_deferred_light);
-
-	state_desc->_blend_desc._target_blend[0]._blend = false;
-	state_desc->_depth_stencil_desc._depth_enable = false;
+	_pipeline = nullptr;
+	_resource_table = nullptr;
 }
 
 void st_deferred_light_material::bind(
@@ -57,6 +68,8 @@ void st_deferred_light_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
+	context->set_pipeline(_pipeline.get());
+
 	context->set_texture_meta(_albedo->get_texture(), "SPIRV_Cross_Combinedalbedo_textureSPIRV_Cross_DummySampler");
 	context->set_texture_meta(_normal->get_texture(), "SPIRV_Cross_Combinednormal_textureSPIRV_Cross_DummySampler");
 	context->set_texture_meta(_third->get_texture(), "SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");

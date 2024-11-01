@@ -8,7 +8,9 @@
 
 #include <framework/st_compiler_defines.h>
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 
+#include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_material.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_graphics_context.h>
@@ -160,12 +162,37 @@ void st_font::print(
 	params->_gui_drawcall_lock.clear(std::memory_order_release);
 }
 
-st_font_material::st_font_material(st_texture* texture) : _texture(texture)
+st_font_material::st_font_material(st_texture* texture) :
+	st_material(e_st_render_pass_type::ui),
+	_texture(texture)
 {
 	st_graphics_context* context = st_graphics_context::get();
 
 	_constant_buffer = context->create_buffer(1, sizeof(st_font_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
+
+	std::vector<st_vertex_attribute> attributes;
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
+	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32_float, 1));
+	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
+
+	st_output* output = st_output::get();
+
+	st_pipeline_state_desc desc;
+	desc._shader = st_shader_manager::get()->get_shader(st_shader_font);
+	desc._depth_stencil_desc._depth_enable = false;
+	desc._blend_desc._target_blend[0]._blend = true;
+	desc._blend_desc._target_blend[0]._src_blend = st_blend_src_alpha;
+	desc._blend_desc._target_blend[0]._src_blend_alpha = st_blend_src_alpha;
+	desc._blend_desc._target_blend[0]._dst_blend = st_blend_inv_src_alpha;
+	desc._blend_desc._target_blend[0]._dst_blend_alpha = st_blend_inv_src_alpha;
+	desc._vertex_format = _vertex_format.get();
+	desc._render_target_count = 1;
+	desc._render_target_formats[0] = st_format_r8g8b8a8_unorm;
+	desc._depth_stencil_format = st_format_d24_unorm_s8_uint;
+	output->get_target_formats(e_st_render_pass_type::ui, desc);
+
+	_pipeline = context->create_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_buffer* cbs[] = { _constant_buffer.get() };
@@ -180,19 +207,9 @@ st_font_material::st_font_material(st_texture* texture) : _texture(texture)
 
 st_font_material::~st_font_material()
 {
-}
-
-void st_font_material::get_pipeline_state(
-	st_pipeline_state_desc* state_desc)
-{
-	state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_font);
-
-	state_desc->_depth_stencil_desc._depth_enable = false;
-	state_desc->_blend_desc._target_blend[0]._blend = true;
-	state_desc->_blend_desc._target_blend[0]._src_blend = st_blend_src_alpha;
-	state_desc->_blend_desc._target_blend[0]._src_blend_alpha = st_blend_src_alpha;
-	state_desc->_blend_desc._target_blend[0]._dst_blend = st_blend_inv_src_alpha;
-	state_desc->_blend_desc._target_blend[0]._dst_blend_alpha = st_blend_inv_src_alpha;
+	_pipeline = nullptr;
+	_vertex_format = nullptr;
+	_resource_table = nullptr;
 }
 
 void st_font_material::bind(
@@ -202,6 +219,8 @@ void st_font_material::bind(
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
+	context->set_pipeline(_pipeline.get());
+
 	st_mat4f mvp = transform * view * proj;
 	mvp.transpose();
 

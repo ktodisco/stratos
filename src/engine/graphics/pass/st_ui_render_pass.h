@@ -20,6 +20,8 @@ public:
 
 	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
+	void get_target_formats(struct st_pipeline_state_desc& desc);
+
 private:
 	void draw_dynamic(
 		class st_graphics_context* context,
@@ -29,9 +31,6 @@ private:
 
 	std::unique_ptr<class st_constant_color_material> _default_material = nullptr;
 	std::unique_ptr<struct st_pipeline> _default_state = nullptr;
-
-	std::unique_ptr<class st_font_material> _font_material = nullptr;
-	std::unique_ptr<struct st_pipeline> _font_state = nullptr;
 
 	std::unique_ptr<struct st_vertex_format> _vertex_format = nullptr;
 

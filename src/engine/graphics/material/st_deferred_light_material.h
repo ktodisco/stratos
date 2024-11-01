@@ -16,8 +16,12 @@ public:
 		class st_render_texture* normal_texture,
 		class st_render_texture* third_texture,
 		class st_render_texture* depth_texture,
+		class st_render_texture* output_texture,
+		class st_render_texture* output_depth,
 		struct st_buffer* constants,
-		struct st_buffer* light_buffer);
+		struct st_buffer* light_buffer,
+		struct st_vertex_format* vertex_format,
+		struct st_render_pass* pass);
 	~st_deferred_light_material();
 
 	virtual void bind(
@@ -27,16 +31,13 @@ public:
 		const st_mat4f& view,
 		const st_mat4f& transform) override;
 
-	void get_pipeline_state(
-		struct st_pipeline_state_desc* state_desc) override;
-
-	st_material_type get_material_type() override { return st_material_type_deferred_light; }
-
 private:
 	class st_render_texture* _albedo;
 	class st_render_texture* _normal;
 	class st_render_texture* _third;
 	class st_render_texture* _depth;
+
+	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
 
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

@@ -89,17 +89,17 @@ int main(int argc, const char** argv)
 	// Create a window.
 	std::unique_ptr<st_window> window = std::make_unique<st_window>("Stratos Renderer", 1280, 720, input.get());
 
-	// Create the rendering context for the window.
-	std::unique_ptr<st_graphics_context> render = st_graphics_context::create(api, window.get());
+	// Create the graphics context for the window.
+	std::unique_ptr<st_graphics_context> graphics = st_graphics_context::create(api, window.get());
 
 	// Create the shader manager, loading all the shaders.
 	std::unique_ptr<st_shader_manager> shader_manager =
-		std::make_unique<st_shader_manager>(render.get());
+		std::make_unique<st_shader_manager>(graphics.get());
 
 	// Create objects for phases of the frame: sim, physics, and output.
 	std::unique_ptr<st_sim> sim = std::make_unique<st_sim>();
 	std::unique_ptr<st_physics_world> world = std::make_unique<st_physics_world>();
-	std::unique_ptr<st_output> output = std::make_unique<st_output>(window.get(), render.get());
+	std::unique_ptr<st_output> output = std::make_unique<st_output>(window.get(), graphics.get());
 	std::unique_ptr<st_scene> scene = std::make_unique<st_scene>();
 
 	// Create camera.
@@ -112,15 +112,15 @@ int main(int argc, const char** argv)
 	g_font = new st_font("VeraMono.ttf", 16.0f, 512, 512);
 
 	// Create the imgui context.
-	st_imgui::initialize(window.get(), render.get());
+	st_imgui::initialize(window.get(), graphics.get());
 
 	scene->setup_lighting_test(sim.get());
 
 	window->show();
 
 	// TODO: HACK: Commit all loaded resources.
-	render->end_frame();
-	render->swap();
+	graphics->end_frame();
+	graphics->swap();
 
 	// Main loop:
 	while (true)

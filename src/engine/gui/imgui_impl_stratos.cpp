@@ -251,6 +251,7 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 
     desc._shader = st_shader_manager::get()->get_shader(st_shader_imgui);
     desc._vertex_format = g_vertex_format.get();
+    desc._pass = g_render_pass;
 
     // Create the blending setup
     desc._blend_desc._target_blend[0]._blend = true;
@@ -274,7 +275,7 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 
     desc._dynamic_scissor = true;
 
-    g_pipeline = ctx->create_pipeline(desc, g_render_pass);
+    g_pipeline = ctx->create_pipeline(desc);
 
     return true;
 }

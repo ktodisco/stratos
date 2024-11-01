@@ -45,5 +45,4 @@ st_fullscreen_render_pass::~st_fullscreen_render_pass()
 	_vertex_format = nullptr;
 	_fullscreen_quad = nullptr;
 	_material = nullptr;
-	_pipeline = nullptr;
 }

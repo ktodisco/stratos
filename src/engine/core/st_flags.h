@@ -56,7 +56,7 @@ public:
 
 	st_flags<Bits, T> operator&(st_flags<Bits, T> const& rhs) const
 	{
-		st_flags<Bits> result(*this);
+		st_flags<Bits, T> result(*this);
 		result &= rhs;
 		return result;
 	}

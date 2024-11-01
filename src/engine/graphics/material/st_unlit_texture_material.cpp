@@ -15,6 +15,7 @@
 #include <iostream>
 
 st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
+	st_material(e_st_render_pass_type::gbuffer),
 	_texture_file(texture_file)
 {
 	st_graphics_context* context = st_graphics_context::get();
@@ -23,6 +24,11 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 
 	_texture = st_texture_loader::load(_texture_file.c_str());
 	context->set_texture_meta(_texture.get(), "SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
+
+	//state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_unlit_texture);
+	//state_desc->_blend_desc._target_blend[0]._blend = false;
+	//state_desc->_depth_stencil_desc._depth_enable = true;
+	//state_desc->_depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 
 	_resource_table = context->create_resource_table();
 	st_buffer* cbs[] = { _view_buffer.get() };
@@ -33,16 +39,6 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 
 st_unlit_texture_material::~st_unlit_texture_material()
 {
-}
-
-void st_unlit_texture_material::get_pipeline_state(
-	struct st_pipeline_state_desc* state_desc)
-{
-	state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_unlit_texture);
-
-	state_desc->_blend_desc._target_blend[0]._blend = false;
-	state_desc->_depth_stencil_desc._depth_enable = true;
-	state_desc->_depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 }
 
 void st_unlit_texture_material::bind(

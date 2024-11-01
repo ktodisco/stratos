@@ -59,11 +59,6 @@ public:
 		const struct st_mat4f& view,
 		const struct st_mat4f& transform) override;
 
-	void get_pipeline_state(
-		struct st_pipeline_state_desc* state_desc) override;
-
-	st_material_type get_material_type() override { return st_material_type_font; }
-
 	void set_color(const struct st_vec3f& color) override { _color = color; }
 
 	struct st_font_cb
@@ -76,5 +71,8 @@ private:
 	std::unique_ptr<struct st_buffer> _constant_buffer = nullptr;
 	struct st_texture* _texture;
 	st_vec3f _color;
+
+	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
+	std::unique_ptr<struct st_vertex_format> _vertex_format = nullptr;
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

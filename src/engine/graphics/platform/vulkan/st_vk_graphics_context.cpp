@@ -1428,9 +1428,7 @@ std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* fil
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(
-	const st_pipeline_state_desc& desc,
-	const st_render_pass* render_pass_)
+std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(const st_pipeline_state_desc& desc)
 {
 	std::unique_ptr<st_vk_pipeline> pipeline = std::make_unique<st_vk_pipeline>();
 	pipeline->_device = &_device;
@@ -1478,7 +1476,7 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(
 	vk::PipelineInputAssemblyStateCreateInfo input_assembly = vk::PipelineInputAssemblyStateCreateInfo()
 		.setTopology(convert_topology_type(desc._primitive_topology_type));
 
-	const st_vk_render_pass* render_pass = static_cast<const st_vk_render_pass*>(render_pass_);
+	const st_vk_render_pass* render_pass = static_cast<const st_vk_render_pass*>(desc._pass);
 
 	vk::Rect2D scissor = vk::Rect2D()
 		.setOffset(vk::Offset2D())

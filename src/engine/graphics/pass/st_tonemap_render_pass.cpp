@@ -29,16 +29,11 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 		targets,
 		nullptr);
 
-	_material = std::make_unique<st_tonemap_material>(source_buffer);
-
-	st_pipeline_state_desc tonemap_state_desc;
-	_material->get_pipeline_state(&tonemap_state_desc);
-
-	tonemap_state_desc._vertex_format = _vertex_format.get();
-	tonemap_state_desc._render_target_count = 1;
-	tonemap_state_desc._render_target_formats[0] = target_buffer->get_format();
-
-	_pipeline = context->create_pipeline(tonemap_state_desc, _pass.get());
+	_material = std::make_unique<st_tonemap_material>(
+		source_buffer,
+		target_buffer,
+		_vertex_format.get(),
+		_pass.get());
 }
 
 st_tonemap_render_pass::~st_tonemap_render_pass()
@@ -55,7 +50,6 @@ void st_tonemap_render_pass::render(
 	identity.make_identity();
 
 	context->set_scissor(0, 0, params->_width, params->_height);
-	context->set_pipeline(_pipeline.get());
 
 	_material->bind(context, params, identity, identity, identity);
 

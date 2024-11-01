@@ -92,9 +92,7 @@ public:
 	virtual std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) = 0;
 
 	// Pipelines.
-	virtual std::unique_ptr<st_pipeline> create_pipeline(
-		const struct st_pipeline_state_desc& desc,
-		const struct st_render_pass* render_pass) = 0;
+	virtual std::unique_ptr<st_pipeline> create_pipeline(const struct st_pipeline_state_desc& desc) = 0;
 
 	// Geometry.
 	virtual std::unique_ptr<st_vertex_format> create_vertex_format(

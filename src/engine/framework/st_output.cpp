@@ -29,6 +29,8 @@
 
 #include <Windows.h>
 
+st_output* st_output::_this = nullptr;
+
 st_output::st_output(const st_window* window, st_graphics_context* context) :
 	_window(window), _graphics_context(context)
 {
@@ -129,10 +131,13 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 	_passthrough_pass = std::make_unique<st_passthrough_render_pass>(
 		_tonemap_target.get());
 	_ui_pass = std::make_unique<st_ui_render_pass>();
+
+	_this = this;
 }
 
 st_output::~st_output()
 {
+	_this = nullptr;
 }
 
 void st_output::update(st_frame_params* params)
@@ -158,4 +163,16 @@ void st_output::update(st_frame_params* params)
 	_graphics_context->swap();
 
 	_graphics_context->release();
+}
+
+void st_output::get_target_formats(e_st_render_pass_type type, st_pipeline_state_desc& desc)
+{
+	// TODO: Assert only one bit set in the type argument.
+	switch (type)
+	{
+	case e_st_render_pass_type::gbuffer: _gbuffer_pass->get_target_formats(desc); break;
+	case e_st_render_pass_type::ui: _ui_pass->get_target_formats(desc); break;
+	default:
+		assert(false);
+	};
 }

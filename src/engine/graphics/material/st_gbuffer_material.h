@@ -35,17 +35,15 @@ public:
 		const st_mat4f& view,
 		const st_mat4f& transform) override;
 
-	void get_pipeline_state(
-		struct st_pipeline_state_desc* state_desc) override;
-
-	st_material_type get_material_type() override { return st_material_type_gbuffer; }
-
 	void set_emissive(float e) { _emissive = e; }
 
 private:
 	std::unique_ptr<struct st_buffer> _gbuffer_buffer = nullptr;
 	std::unique_ptr<struct st_texture> _albedo_texture;
 	std::unique_ptr<struct st_texture> _mre_texture;
+
+	std::unique_ptr<struct st_vertex_format> _vertex_format = nullptr;
+	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
 
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 

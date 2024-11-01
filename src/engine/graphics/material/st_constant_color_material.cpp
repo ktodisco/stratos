@@ -10,7 +10,8 @@
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
 
-st_constant_color_material::st_constant_color_material()
+st_constant_color_material::st_constant_color_material() :
+	st_material(e_st_render_pass_type::ui)
 {
 	st_graphics_context* context = st_graphics_context::get();
 	_color_buffer = context->create_buffer(1, sizeof(st_constant_color_cb), e_st_buffer_usage::uniform);
@@ -23,16 +24,6 @@ st_constant_color_material::st_constant_color_material()
 
 st_constant_color_material::~st_constant_color_material()
 {
-}
-
-void st_constant_color_material::get_pipeline_state(
-	struct st_pipeline_state_desc* state_desc)
-{
-	state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_constant_color);
-
-	state_desc->_blend_desc._target_blend[0]._blend = false;
-	state_desc->_depth_stencil_desc._depth_enable = true;
-	state_desc->_depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 }
 
 void st_constant_color_material::bind(

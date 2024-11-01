@@ -14,6 +14,19 @@
 
 class st_window;
 
+enum class e_st_render_pass_type : uint64_t
+{
+	gbuffer			= (1 << 0),
+	deferred		= (1 << 1),
+	bloom			= (1 << 2),
+	gaussian		= (1 << 3),
+	tonemap			= (1 << 4),
+	passthrough		= (1 << 5),
+	ui				= (1 << 6),
+};
+using e_st_render_pass_type_flags = st_flags<e_st_render_pass_type, uint64_t>;
+ST_ENUM_FLAG_OPS(e_st_render_pass_type, e_st_render_pass_type_flags);
+
 /*
 ** Represents the output stage of the frame.
 ** Owns whatever is drawn on the screen.
@@ -22,10 +35,14 @@ class st_output
 {
 public:
 
-	st_output(const st_window* window, class st_graphics_context* render_context);
+	st_output(const st_window* window, class st_graphics_context* graphics);
 	~st_output();
 
 	void update(struct st_frame_params* params);
+
+	void get_target_formats(e_st_render_pass_type type, struct st_pipeline_state_desc& desc);
+
+	static st_output* get() { return _this; }
 
 private:
 
@@ -50,4 +67,6 @@ private:
 	std::unique_ptr<class st_render_texture> _bloom_target;
 
 	std::unique_ptr<class st_render_texture> _tonemap_target;
+
+	static st_output* _this;
 };

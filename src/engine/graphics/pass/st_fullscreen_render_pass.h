@@ -21,5 +21,4 @@ protected:
 	std::unique_ptr<class st_geometry> _fullscreen_quad = nullptr;
 
 	std::unique_ptr<class st_material> _material = nullptr;
-	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
 };

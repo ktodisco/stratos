@@ -39,14 +39,6 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest);
 	context->set_buffer_meta(_light_buffer.get(), "type_StructuredBuffer_st_sphere_light");
 
-	_material = std::make_unique<st_deferred_light_material>(
-		albedo_buffer,
-		normal_buffer,
-		third_buffer,
-		depth_buffer,
-		_constant_buffer.get(),
-		_light_buffer.get());
-
 	st_target_desc targets[] =
 	{
 		{ output_buffer, e_st_load_op::clear, e_st_store_op::store }
@@ -57,15 +49,17 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		targets,
 		&ds_target);
 
-	st_pipeline_state_desc deferred_light_state_desc;
-	_material->get_pipeline_state(&deferred_light_state_desc);
-
-	deferred_light_state_desc._vertex_format = _vertex_format.get();
-	deferred_light_state_desc._render_target_count = 1;
-	deferred_light_state_desc._render_target_formats[0] = output_buffer->get_format();
-	deferred_light_state_desc._depth_stencil_format = output_depth->get_format();
-
-	_pipeline = context->create_pipeline(deferred_light_state_desc, _pass.get());
+	_material = std::make_unique<st_deferred_light_material>(
+		albedo_buffer,
+		normal_buffer,
+		third_buffer,
+		depth_buffer,
+		output_buffer,
+		output_depth,
+		_constant_buffer.get(),
+		_light_buffer.get(),
+		_vertex_format.get(),
+		_pass.get());
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()
@@ -82,7 +76,6 @@ void st_deferred_light_render_pass::render(
 	identity.make_identity();
 
 	context->set_scissor(0, 0, params->_width, params->_height);
-	context->set_pipeline(_pipeline.get());
 
 	// Set global pass resource tables.
 	_material->bind(context, params, identity, identity, identity);

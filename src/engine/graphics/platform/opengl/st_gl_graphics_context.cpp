@@ -690,9 +690,7 @@ std::unique_ptr<st_shader> st_gl_graphics_context::create_shader(const char* fil
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_gl_graphics_context::create_pipeline(
-	const st_pipeline_state_desc& desc,
-	const st_render_pass* render_pass)
+std::unique_ptr<st_pipeline> st_gl_graphics_context::create_pipeline(const st_pipeline_state_desc& desc)
 {
 	std::unique_ptr<st_gl_pipeline> pipeline = std::make_unique<st_gl_pipeline>();
 	pipeline->_state_desc = desc;
