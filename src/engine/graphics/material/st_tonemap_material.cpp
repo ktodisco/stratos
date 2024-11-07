@@ -45,6 +45,7 @@ st_tonemap_material::~st_tonemap_material()
 
 void st_tonemap_material::bind(
 	st_graphics_context* context,
+	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

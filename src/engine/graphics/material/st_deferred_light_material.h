@@ -16,8 +16,8 @@ public:
 		class st_render_texture* normal_texture,
 		class st_render_texture* third_texture,
 		class st_render_texture* depth_texture,
+		class st_render_texture* directional_shadow_map,
 		class st_render_texture* output_texture,
-		class st_render_texture* output_depth,
 		struct st_buffer* constants,
 		struct st_buffer* light_buffer,
 		struct st_vertex_format* vertex_format,
@@ -26,6 +26,7 @@ public:
 
 	virtual void bind(
 		class st_graphics_context* context,
+		enum e_st_render_pass_type pass_type,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,
 		const st_mat4f& view,
@@ -36,6 +37,7 @@ private:
 	class st_render_texture* _normal;
 	class st_render_texture* _third;
 	class st_render_texture* _depth;
+	class st_render_texture* _directional_shadow_map;
 
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
 

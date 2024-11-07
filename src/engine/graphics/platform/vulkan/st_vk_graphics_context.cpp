@@ -330,7 +330,7 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 
 	// Set up the descriptor set layout. This is akin to the root signature in D3D12.
 	std::vector<vk::DescriptorSetLayoutBinding> textureBindings;
-	for (uint32_t i = 0; i < 4; ++i)
+	for (uint32_t i = 0; i < 8; ++i)
 	{
 		textureBindings.push_back(vk::DescriptorSetLayoutBinding()
 			.setBinding(i)
@@ -339,7 +339,7 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 			.setStageFlags(vk::ShaderStageFlagBits::eFragment));
 	}
 	std::vector<vk::DescriptorSetLayoutBinding> samplerBindings;
-	for (uint32_t i = 0; i < 4; ++i)
+	for (uint32_t i = 0; i < 8; ++i)
 	{
 		samplerBindings.push_back(vk::DescriptorSetLayoutBinding()
 			.setBinding(i)
@@ -1642,6 +1642,16 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 			.setY(float(targets[0]._target->get_height()))
 			.setWidth(float(targets[0]._target->get_width()))
 			.setHeight(-float(targets[0]._target->get_height()))
+			.setMinDepth(0.0f)
+			.setMaxDepth(1.0f);
+	}
+	else if (depth_stencil)
+	{
+		render_pass->_viewport = vk::Viewport()
+			.setX(0)
+			.setY(float(depth_stencil->_target->get_height()))
+			.setWidth(float(depth_stencil->_target->get_width()))
+			.setHeight(-float(depth_stencil->_target->get_height()))
 			.setMinDepth(0.0f)
 			.setMaxDepth(1.0f);
 	}

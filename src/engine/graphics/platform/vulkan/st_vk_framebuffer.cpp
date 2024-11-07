@@ -25,8 +25,16 @@ st_vk_framebuffer::st_vk_framebuffer(
 
 	uint32_t attachmentCount = count + (depth_stencil ? 1 : 0);
 
-	_width = targets[0]._target->get_width();
-	_height = targets[0]._target->get_height();
+	if (count > 0)
+	{
+		_width = targets[0]._target->get_width();
+		_height = targets[0]._target->get_height();
+	}
+	else if (depth_stencil)
+	{
+		_width = depth_stencil->_target->get_width();
+		_height = depth_stencil->_target->get_height();
+	}
 
 	std::vector<vk::ImageView> views;
 	views.reserve(count + 1);

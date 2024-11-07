@@ -25,8 +25,8 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	st_render_texture* normal_buffer,
 	st_render_texture* third_buffer,
 	st_render_texture* depth_buffer,
-	st_render_texture* output_buffer,
-	st_render_texture* output_depth)
+	st_render_texture* directional_shadow_map,
+	st_render_texture* output_buffer)
 {
 	st_graphics_context* context = st_graphics_context::get();
 
@@ -43,23 +43,30 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	{
 		{ output_buffer, e_st_load_op::clear, e_st_store_op::store }
 	};
-	st_target_desc ds_target = { output_depth, e_st_load_op::clear, e_st_store_op::store };
 	_pass = context->create_render_pass(
 		1,
 		targets,
-		&ds_target);
+		nullptr);
 
 	_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
 		normal_buffer,
 		third_buffer,
 		depth_buffer,
+		directional_shadow_map,
 		output_buffer,
-		output_depth,
 		_constant_buffer.get(),
 		_light_buffer.get(),
 		_vertex_format.get(),
 		_pass.get());
+
+	_cb._sun_shadow_dim = st_vec4f
+	{
+		static_cast<float>(directional_shadow_map->get_width()),
+		static_cast<float>(directional_shadow_map->get_height()),
+		1.0f / directional_shadow_map->get_width(),
+		1.0f / directional_shadow_map->get_height()
+	};
 }
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()
@@ -78,7 +85,7 @@ void st_deferred_light_render_pass::render(
 	context->set_scissor(0, 0, params->_width, params->_height);
 
 	// Set global pass resource tables.
-	_material->bind(context, params, identity, identity, identity);
+	_material->bind(context, e_st_render_pass_type::deferred, params, identity, identity, identity);
 
 	st_clear_value clears[] =
 	{
@@ -88,22 +95,23 @@ void st_deferred_light_render_pass::render(
 
 	context->begin_render_pass(_pass.get(), clears, std::size(clears));
 
-	st_deferred_light_cb constant_data {};
-	constant_data._inverse_vp = (params->_view * params->_projection).inverse();
-	constant_data._inverse_vp.transpose();
-	constant_data._eye = st_vec4f(params->_eye, 0.0f);
-	if (st_graphics_context::get()->get_api() == e_st_graphics_api::opengl)
-		constant_data._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.0f, 0.0f);
+	_cb._inverse_vp = (params->_view * params->_projection).inverse();
+	_cb._inverse_vp.transpose();
+	_cb._eye = st_vec4f(params->_eye, 0.0f);
+	if (context->get_api() == e_st_graphics_api::opengl)
+		_cb._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.5f, 0.5f);
 	else
-		constant_data._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.0f, 0.0f);
+		_cb._depth_reconstruction = st_vec4f(1.0f, 0.0f, 0.5f, -0.5f);
 
 	if (params->_sun)
 	{
-		constant_data._sun_direction_power = st_vec4f(params->_sun->_direction, params->_sun->_power);
-		constant_data._sun_color = st_vec4f(params->_sun->_color, 1.0f);
+		_cb._sun_direction_power = st_vec4f(params->_sun->_direction, params->_sun->_power);
+		_cb._sun_color = st_vec4f(params->_sun->_color, 1.0f);
+		_cb._sun_vp = params->_sun_view * params->_sun_projection;
+		_cb._sun_vp.transpose();
 	}
 
-	context->update_buffer(_constant_buffer.get(), &constant_data, 0, 1);
+	context->update_buffer(_constant_buffer.get(), &_cb, 0, 1);
 
 	// New light buffer.
 	st_sphere_light_data light_data;

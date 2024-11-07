@@ -45,6 +45,7 @@ st_gaussian_blur_vertical_material::~st_gaussian_blur_vertical_material()
 
 void st_gaussian_blur_vertical_material::bind(
 	st_graphics_context* context,
+	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
@@ -91,6 +92,7 @@ st_gaussian_blur_horizontal_material::~st_gaussian_blur_horizontal_material()
 
 void st_gaussian_blur_horizontal_material::bind(
 	st_graphics_context* context,
+	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

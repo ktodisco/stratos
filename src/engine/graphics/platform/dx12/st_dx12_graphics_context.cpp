@@ -246,10 +246,10 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 	}
 
 	CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 4, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
 	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4, 0);
+	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 0);
 
 	CD3DX12_ROOT_PARAMETER1 root_parameters[4];
 	root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
@@ -1399,29 +1399,41 @@ std::unique_ptr<st_render_pass> st_dx12_graphics_context::create_render_pass(
 	st_target_desc* targets,
 	st_target_desc* depth_stencil)
 {
-	std::unique_ptr<st_dx12_render_pass> pass = std::make_unique<st_dx12_render_pass>();
+	std::unique_ptr<st_dx12_render_pass> render_pass = std::make_unique<st_dx12_render_pass>();
 
 	// Naively, create the viewport from the first target.
 	if (count > 0)
 	{
 		const st_dx12_texture* t = static_cast<const st_dx12_texture*>(targets[0]._target->get_texture());
 
-		pass->_viewport =
+		render_pass->_viewport =
 		{
 			0,
 			0,
-			FLOAT(t->_width),
-			FLOAT(t->_height),
+			float(t->_width),
+			float(t->_height),
 			0.0f,
 			1.0f,
 		};
 	}
-	pass->_framebuffer = std::make_unique<st_dx12_framebuffer>(
+	else if (depth_stencil)
+	{
+		render_pass->_viewport =
+		{
+			0,
+			0,
+			float(depth_stencil->_target->get_width()),
+			float(depth_stencil->_target->get_height()),
+			0.0f,
+			1.0f,
+		};
+	}
+	render_pass->_framebuffer = std::make_unique<st_dx12_framebuffer>(
 		count,
 		targets,
 		depth_stencil);
 
-	return std::move(pass);
+	return std::move(render_pass);
 }
 
 void st_dx12_graphics_context::begin_render_pass(

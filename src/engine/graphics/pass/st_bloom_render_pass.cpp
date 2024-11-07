@@ -81,7 +81,7 @@ void st_bloom_render_pass::render(
 
 	context->set_scissor(0, 0, _targets[0]->get_width(), _targets[0]->get_height());
 
-	_material->bind(context, params, identity, identity, identity);
+	_material->bind(context, e_st_render_pass_type::bloom, params, identity, identity, identity);
 
 	st_clear_value clears[] =
 	{

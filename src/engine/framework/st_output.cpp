@@ -11,6 +11,7 @@
 #include <graphics/material/st_material.h>
 #include <graphics/pass/st_bloom_render_pass.h>
 #include <graphics/pass/st_deferred_light_render_pass.h>
+#include <graphics/pass/st_directional_shadow_pass.h>
 #include <graphics/pass/st_gbuffer_render_pass.h>
 #include <graphics/pass/st_passthrough_render_pass.h>
 #include <graphics/pass/st_tonemap_render_pass.h>
@@ -34,6 +35,16 @@ st_output* st_output::_this = nullptr;
 st_output::st_output(const st_window* window, st_graphics_context* context) :
 	_window(window), _graphics_context(context)
 {
+	_directional_shadow_map = std::make_unique<st_render_texture>(
+		context,
+		2048,
+		2048,
+		st_format_d24_unorm_s8_uint,
+		e_st_texture_usage::depth_target | e_st_texture_usage::sampled,
+		st_texture_state_pixel_shader_read,
+		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }),
+		"Directional Shadow Map");
+
 	_gbuffer_albedo_target = std::make_unique<st_render_texture>(
 		context,
 		_window->get_width(),
@@ -80,15 +91,6 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		st_texture_state_pixel_shader_read,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Deferred Target");
-	_deferred_depth = std::make_unique<st_render_texture>(
-		context,
-		_window->get_width(),
-		_window->get_height(),
-		st_format_d24_unorm_s8_uint,
-		e_st_texture_usage::depth_target | e_st_texture_usage::sampled,
-		st_texture_state_pixel_shader_read,
-		st_vec4f({ 1.0f, (float)(0), 0.0f, 0.0f }),
-		"Deferred Depth");
 
 	_bloom_target = std::make_unique<st_render_texture>(
 		context,
@@ -110,6 +112,8 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Tonemap Target");
 
+	_directional_shadow_pass = std::make_unique<st_directional_shadow_pass>(
+		_directional_shadow_map.get());
 	_gbuffer_pass = std::make_unique<st_gbuffer_render_pass>(
 		_gbuffer_albedo_target.get(),
 		_gbuffer_normal_target.get(),
@@ -120,8 +124,8 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		_gbuffer_normal_target.get(),
 		_gbuffer_third_target.get(),
 		_depth_stencil_target.get(),
-		_deferred_target.get(),
-		_deferred_depth.get());
+		_directional_shadow_map.get(),
+		_deferred_target.get());
 	_bloom_pass = std::make_unique<st_bloom_render_pass>(
 		_deferred_target.get(),
 		_bloom_target.get());
@@ -147,6 +151,7 @@ void st_output::update(st_frame_params* params)
 
 	_graphics_context->begin_frame();
 
+	_directional_shadow_pass->render(_graphics_context, params);
 	_gbuffer_pass->render(_graphics_context, params);
 	_deferred_pass->render(_graphics_context, params);
 	_bloom_pass->render(_graphics_context, params);
@@ -170,6 +175,7 @@ void st_output::get_target_formats(e_st_render_pass_type type, st_pipeline_state
 	// TODO: Assert only one bit set in the type argument.
 	switch (type)
 	{
+	case e_st_render_pass_type::shadow: _directional_shadow_pass->get_target_formats(desc); break;
 	case e_st_render_pass_type::gbuffer: _gbuffer_pass->get_target_formats(desc); break;
 	case e_st_render_pass_type::ui: _ui_pass->get_target_formats(desc); break;
 	default:

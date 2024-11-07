@@ -28,9 +28,20 @@ st_sun_component::~st_sun_component()
 	_light = nullptr;
 }
 
-void st_sun_component::update(struct st_frame_params* params)
+void st_sun_component::update(st_frame_params* params)
 {
 	params->_sun = _light.get();
+
+	// Set up a simple orthographic camera pointing at the origin, oriented with the sun direction.
+	st_vec3f at{ 0.0f, 0.0f, 0.0f };
+	st_vec3f up = st_vec3f::y_vector();
+	st_vec3f eye = at - _light->_direction.scale_result(100.0f);
+
+	st_mat4f view;
+	params->_sun_view.make_lookat_rh(eye, at, up);
+
+	st_mat4f proj;
+	params->_sun_projection.make_orthographic(-10, 10, -10, 10, 0.01f, 120.0f);
 }
 
 void st_sun_component::debug()

@@ -248,6 +248,7 @@ void st_mat4f::make_lookat_rh(const st_vec3f& __restrict eye, const st_vec3f& __
 	z_vec.normalize();
 
 	st_vec3f x_vec = st_vec3f_cross(up, z_vec);
+	if (x_vec.mag2() < 1e-6) x_vec = st_vec3f::x_vector();
 	x_vec.normalize();
 
 	st_vec3f y_vec = st_vec3f_cross(z_vec, x_vec);

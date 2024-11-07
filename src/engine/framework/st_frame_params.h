@@ -51,6 +51,8 @@ struct st_frame_params
 
 	// Sun.
 	struct st_directional_light* _sun = nullptr;
+	st_mat4f _sun_view;
+	st_mat4f _sun_projection;
 
 	// TODO: This will eventually need to turn into a whole management system.
 	struct st_sphere_light* _light = nullptr;

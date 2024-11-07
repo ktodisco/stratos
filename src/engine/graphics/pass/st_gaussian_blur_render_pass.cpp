@@ -80,7 +80,7 @@ void st_gaussian_blur_render_pass::render(
 	{
 		st_render_marker marker(context, "Vertical Blur");
 
-		_vertical_blur_material->bind(context, params, identity, identity, identity);
+		_vertical_blur_material->bind(context, e_st_render_pass_type::gaussian, params, identity, identity, identity);
 
 		st_clear_value clears[] =
 		{
@@ -102,7 +102,7 @@ void st_gaussian_blur_render_pass::render(
 	{
 		st_render_marker marker(context, "Horizontal Blur");
 
-		_horizontal_blur_material->bind(context, params, identity, identity, identity);
+		_horizontal_blur_material->bind(context, e_st_render_pass_type::gaussian, params, identity, identity, identity);
 
 		st_clear_value clears[] =
 		{

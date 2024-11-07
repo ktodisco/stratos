@@ -15,6 +15,8 @@ struct ps_input
 [[vk::binding(1, 0)]] Texture2D normal_texture : register(t1);
 [[vk::binding(2, 0)]] Texture2D third_texture : register(t2);
 [[vk::binding(3, 0)]] Texture2D depth_texture : register(t3);
+[[vk::binding(4, 0)]] Texture2D directional_shadow_map : register(t4);
+[[vk::binding(4, 1)]] SamplerState directional_shadow_sampler : register(s4);
 
 [[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
@@ -24,6 +26,8 @@ struct ps_input
 
 	float4 sun_direction_power;
 	float4 sun_color;
+	float4x4 sun_vp;
+	float4 sun_shadow_dim;
 }
 
 struct st_sphere_light
@@ -32,7 +36,7 @@ struct st_sphere_light
 	float4 color_radius;
 };
 
-[[vk::binding(0, 3)]] StructuredBuffer<st_sphere_light> light_buffer : register(t4);
+[[vk::binding(0, 3)]] StructuredBuffer<st_sphere_light> light_buffer : register(t8);
 
 ps_input vs_main(vs_input input)
 {
@@ -46,6 +50,31 @@ ps_input vs_main(vs_input input)
 	return result;
 };
 
+float directional_light_shadow(in float4 world_position)
+{
+	float4 projection = mul(world_position, sun_vp);
+	projection.xyz /= projection.w;
+	float2 center_uv = (projection.xy + 1.0f) * depth_reconstruction.zw;
+	
+	float occlusion = 0.0f;
+	for (int x = -1; x <= 1; ++x)
+    {
+		for (int y = -1; y <= 1; ++y)
+        {
+			float2 offset = float2(x, y) * sun_shadow_dim.zw;
+			float shadow_depth = directional_shadow_map.Sample(directional_shadow_sampler, center_uv + offset).r * depth_reconstruction.x - depth_reconstruction.y;
+			if (shadow_depth < projection.z - 0.001f)
+            {
+				occlusion += 1.0f;	
+            }
+        }
+    }
+	
+	float visibility = 1.0f - (occlusion / 9.0f);
+	
+	return visibility;
+}
+
 float3 evaluate_directional_light(
 	in float3 light_direction,
 	in float3 light_color,
@@ -55,7 +84,7 @@ float3 evaluate_directional_light(
 	in float metalness,
 	in float linear_roughness,
 	in float3 to_eye,
-	in float3 world_position)
+	in float4 world_position)
 {
 	float3 to_light = -light_direction;
 
@@ -65,9 +94,8 @@ float3 evaluate_directional_light(
 	
 	float3 diffuse_color = albedo * (1.0f - metalness) * light_color.xyz;
 	float3 specular_color = metalness * light_color.xyz;
-
-	// TODO: Shadowing.
-	float visibility_term = 1.0f;
+	
+	float visibility_term = directional_light_shadow(world_position);
 
 	// Division by pi plays the part of the lambertian diffuse.
 	float3 diffuse_result = diffuse_color * irradiance * n_dot_l * visibility_term / k_pi;
@@ -93,7 +121,7 @@ float3 evaluate_sphere_light(
 	in float metalness,
 	in float linear_roughness,
 	in float3 to_eye,
-	in float3 world_position)
+	in float4 world_position)
 {
 	// Unpack light properties.
 	float light_power = light.position_power.w;

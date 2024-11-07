@@ -20,11 +20,14 @@
 st_gbuffer_material::st_gbuffer_material(
 	const char* albedo_texture,
 	const char* mre_texture) :
-	st_material(e_st_render_pass_type::gbuffer)
+	st_material(e_st_render_pass_type::shadow | e_st_render_pass_type::gbuffer)
 {
 	st_graphics_context* context = st_graphics_context::get();
 	_gbuffer_buffer = context->create_buffer(1, sizeof(st_gbuffer_cb), e_st_buffer_usage::uniform);
 	context->add_constant(_gbuffer_buffer.get(), "type_cb0", st_shader_constant_type_block);
+
+	_shadow_buffer = context->create_buffer(1, sizeof(st_shadow_cb), e_st_buffer_usage::uniform);
+	context->add_constant(_shadow_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
 	context->set_texture_meta(_albedo_texture.get(), "SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
@@ -42,52 +45,87 @@ st_gbuffer_material::st_gbuffer_material(
 
 	st_output* output = st_output::get();
 
-	st_pipeline_state_desc desc;
-	desc._shader = st_shader_manager::get()->get_shader(st_shader_gbuffer);
-	desc._vertex_format = _vertex_format.get();
-	desc._blend_desc._target_blend[0]._blend = false;
-	desc._blend_desc._target_blend[1]._blend = false;
-	desc._depth_stencil_desc._depth_enable = true;
-	desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
-	output->get_target_formats(e_st_render_pass_type::gbuffer, desc);
+	{
+		st_pipeline_state_desc desc;
+		desc._shader = st_shader_manager::get()->get_shader(st_shader_gbuffer);
+		desc._vertex_format = _vertex_format.get();
+		desc._blend_desc._target_blend[0]._blend = false;
+		desc._blend_desc._target_blend[1]._blend = false;
+		desc._depth_stencil_desc._depth_enable = true;
+		desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
+		output->get_target_formats(e_st_render_pass_type::gbuffer, desc);
 
-	_pipeline = context->create_pipeline(desc);
+		_gbuffer_pipeline = context->create_pipeline(desc);
+	}
+	{
+		st_pipeline_state_desc desc;
+		desc._shader = st_shader_manager::get()->get_shader(st_shader_shadow);
+		desc._vertex_format = _vertex_format.get();
+		desc._depth_stencil_desc._depth_enable = true;
+		desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
+		output->get_target_formats(e_st_render_pass_type::shadow, desc);
 
-	_resource_table = context->create_resource_table();
-	st_buffer* cbs[] = { _gbuffer_buffer.get() };
-	context->set_constant_buffers(_resource_table.get(), 1, cbs);
+		_shadow_pipeline = context->create_pipeline(desc);
+	}
 
-	st_texture* textures[] = {
-		_albedo_texture.get(),
-		_mre_texture.get()
-	};
-	context->set_textures(_resource_table.get(), std::size(textures), textures);
+	{
+		_gbuffer_resources = context->create_resource_table();
+		st_buffer* cbs[] = { _gbuffer_buffer.get() };
+		context->set_constant_buffers(_gbuffer_resources.get(), 1, cbs);
+
+		st_texture* textures[] = {
+			_albedo_texture.get(),
+			_mre_texture.get()
+		};
+		context->set_textures(_gbuffer_resources.get(), std::size(textures), textures);
+	}
+	{
+		_shadow_resources = context->create_resource_table();
+		st_buffer* cbs[] = { _shadow_buffer.get() };
+		context->set_constant_buffers(_shadow_resources.get(), 1, cbs);
+	}
 }
 
 st_gbuffer_material::~st_gbuffer_material()
 {
-	_pipeline = nullptr;
+	_gbuffer_pipeline = nullptr;
+	_shadow_pipeline = nullptr;
 	_vertex_format = nullptr;
-	_resource_table = nullptr;
+	_gbuffer_resources = nullptr;
+	_shadow_resources = nullptr;
 }
 
 void st_gbuffer_material::bind(
 	st_graphics_context* context,
+	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	context->set_pipeline(_pipeline.get());
-
 	st_mat4f mvp = transform * view * proj;
 	mvp.transpose();
 
-	st_gbuffer_cb gbuffer_cb{};
-	gbuffer_cb._model = transform;
-	gbuffer_cb._mvp = mvp;
-	gbuffer_cb._emissive = _emissive;
-	context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
+	if (pass_type == e_st_render_pass_type::shadow)
+	{
+		context->set_pipeline(_shadow_pipeline.get());
 
-	context->bind_resource_table(_resource_table.get());
+		st_shadow_cb shadow_cb{};
+		shadow_cb._mvp = mvp;
+		context->update_buffer(_shadow_buffer.get(), &shadow_cb, 0, 1);
+
+		context->bind_resource_table(_shadow_resources.get());
+	}
+	else if (pass_type == e_st_render_pass_type::gbuffer)
+	{
+		context->set_pipeline(_gbuffer_pipeline.get());
+
+		st_gbuffer_cb gbuffer_cb{};
+		gbuffer_cb._model = transform;
+		gbuffer_cb._mvp = mvp;
+		gbuffer_cb._emissive = _emissive;
+		context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
+
+		context->bind_resource_table(_gbuffer_resources.get());
+	}
 }

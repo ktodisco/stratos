@@ -79,7 +79,7 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 		}
 		else if (d._material->supports_pass(e_st_render_pass_type::gbuffer))
 		{
-			d._material->bind(context, params, params->_projection, params->_view, d._transform);
+			d._material->bind(context, e_st_render_pass_type::gbuffer, params, params->_projection, params->_view, d._transform);
 		}
 
 		context->draw(d);

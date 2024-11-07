@@ -68,7 +68,8 @@ st_parallax_occlusion_material::~st_parallax_occlusion_material()
 }
 
 void st_parallax_occlusion_material::bind(
-	class st_graphics_context* context,
+	st_graphics_context* context,
+	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

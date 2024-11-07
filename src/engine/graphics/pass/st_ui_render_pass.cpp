@@ -67,9 +67,6 @@ void st_ui_render_pass::render(st_graphics_context* context, const st_frame_para
 	st_mat4f view;
 	view.make_lookat_rh(st_vec3f::z_vector(), -st_vec3f::z_vector(), st_vec3f::y_vector());
 
-	// Clear depth.
-	context->clear(st_clear_flag_depth);
-
 	st_imgui::draw();
 
 	context->begin_render_pass(_pass.get(), nullptr, 0);
@@ -91,7 +88,9 @@ void st_ui_render_pass::draw_dynamic(
 
 		context->set_pipeline(_default_state.get());
 		_default_material->set_color(d._color);
-		_default_material->bind(context, params, proj, view, d._transform);
+		_default_material->bind(context, e_st_render_pass_type::ui, params, proj, view, d._transform);
+
+		context->draw(d);
 	}
 }
 

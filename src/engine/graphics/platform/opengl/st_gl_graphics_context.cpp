@@ -741,6 +741,18 @@ std::unique_ptr<st_render_pass> st_gl_graphics_context::create_render_pass(
 			1.0f,
 		};
 	}
+	else if (depth_stencil)
+	{
+		render_pass->_viewport =
+		{
+			0,
+			0,
+			float(depth_stencil->_target->get_width()),
+			float(depth_stencil->_target->get_height()),
+			0.0f,
+			1.0f,
+		};
+	}
 	render_pass->_framebuffer = std::make_unique<st_gl_framebuffer>(
 		count,
 		targets,

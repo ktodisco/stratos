@@ -10,6 +10,11 @@
 
 #include <graphics/st_pipeline_state_desc.h>
 
+struct st_shadow_cb
+{
+	st_mat4f _mvp;
+};
+
 struct st_gbuffer_cb
 {
 	st_mat4f _model;
@@ -30,6 +35,7 @@ public:
 
 	virtual void bind(
 		class st_graphics_context* context,
+		enum e_st_render_pass_type pass_type,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,
 		const st_mat4f& view,
@@ -39,13 +45,16 @@ public:
 
 private:
 	std::unique_ptr<struct st_buffer> _gbuffer_buffer = nullptr;
+	std::unique_ptr<struct st_buffer> _shadow_buffer = nullptr;
 	std::unique_ptr<struct st_texture> _albedo_texture;
 	std::unique_ptr<struct st_texture> _mre_texture;
 
 	std::unique_ptr<struct st_vertex_format> _vertex_format = nullptr;
-	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
+	std::unique_ptr<struct st_pipeline> _gbuffer_pipeline = nullptr;
+	std::unique_ptr<struct st_pipeline> _shadow_pipeline = nullptr;
 
-	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
+	std::unique_ptr<struct st_resource_table> _gbuffer_resources = nullptr;
+	std::unique_ptr<struct st_resource_table> _shadow_resources = nullptr;
 
 	float _emissive = 0;
 };

@@ -11,22 +11,18 @@
 /*
 ** A render pass that draws the static scene objects to the gbuffer.
 */
-class st_gbuffer_render_pass
+class st_directional_shadow_pass
 {
 public:
-	st_gbuffer_render_pass(
-		class st_render_texture* albedo_buffer,
-		class st_render_texture* normal_buffer,
-		class st_render_texture* third_buffer,
-		class st_render_texture* depth_buffer);
-	~st_gbuffer_render_pass();
+	st_directional_shadow_pass(class st_render_texture* target);
+	~st_directional_shadow_pass();
 
 	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
 	void get_target_formats(struct st_pipeline_state_desc& desc);
 
 private:
-	enum e_st_format _formats[4];
+	class st_render_texture* _target;
 
 	std::unique_ptr<struct st_render_pass> _pass = nullptr;
 };

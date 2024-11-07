@@ -43,6 +43,7 @@ st_unlit_texture_material::~st_unlit_texture_material()
 
 void st_unlit_texture_material::bind(
 	st_graphics_context* context,
+	enum e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,

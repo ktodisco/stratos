@@ -51,7 +51,7 @@ void st_passthrough_render_pass::render(
 
 	context->set_scissor(0, 0, params->_width, params->_height);
 
-	_material->bind(context, params, identity, identity, identity);
+	_material->bind(context, e_st_render_pass_type::passthrough, params, identity, identity, identity);
 
 	st_clear_value clears[] =
 	{

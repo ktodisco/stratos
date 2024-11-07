@@ -54,6 +54,7 @@ public:
 
 	virtual void bind(
 		class st_graphics_context* context,
+		enum e_st_render_pass_type pass_type,
 		const struct st_frame_params* params,
 		const struct st_mat4f& proj,
 		const struct st_mat4f& view,
