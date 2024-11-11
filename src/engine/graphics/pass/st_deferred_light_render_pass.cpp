@@ -30,14 +30,23 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	_constant_buffer = context->create_buffer(1, sizeof(st_deferred_light_cb), e_st_buffer_usage::uniform);
-	context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
+	{
+		st_buffer_desc desc;
+		desc._count = 1;
+		desc._element_size = sizeof(st_deferred_light_cb);
+		desc._usage = e_st_buffer_usage::uniform;
+		_constant_buffer = context->create_buffer(desc);
+		context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
+	}
 
-	_light_buffer = context->create_buffer(
-		1,
-		sizeof(st_sphere_light_data),
-		e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest);
-	context->set_buffer_meta(_light_buffer.get(), "type_StructuredBuffer_st_sphere_light");
+	{
+		st_buffer_desc desc;
+		desc._count = 1;
+		desc._element_size = sizeof(st_sphere_light_data);
+		desc._usage = e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest;
+		_light_buffer = context->create_buffer(desc);
+		context->set_buffer_meta(_light_buffer.get(), "type_StructuredBuffer_st_sphere_light");
+	}
 
 	st_target_desc targets[] =
 	{

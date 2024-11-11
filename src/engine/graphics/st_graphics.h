@@ -396,6 +396,14 @@ struct st_clear_value
 	};
 };
 
+struct st_buffer_desc
+{
+	uint32_t _count = 0;
+	uint32_t _element_size = 0;
+
+	e_st_buffer_usage_flags _usage = e_st_buffer_usage::storage;
+};
+
 struct st_sampler_desc
 {
 	e_st_filter _min_filter = st_filter_nearest;

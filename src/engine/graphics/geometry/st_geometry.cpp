@@ -24,10 +24,13 @@ st_geometry::st_geometry(
 
 	st_graphics_context* context = st_graphics_context::get();
 
-	_vertex_buffer = context->create_buffer(
-		vertex_count,
-		vertex_size,
-		e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
+	{
+		st_buffer_desc desc;
+		desc._count = vertex_count;
+		desc._element_size = vertex_size;
+		desc._usage = e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest;
+		_vertex_buffer = context->create_buffer(desc);
+	}
 
 	uint8_t* head;
 	context->map(_vertex_buffer.get(), 0, { 0, 0 }, (void**)&head);
@@ -38,10 +41,13 @@ st_geometry::st_geometry(
 	_index_count = index_count;
 	const uint32_t index_buffer_size = index_count * sizeof(uint16_t);
 
-	_index_buffer = context->create_buffer(
-		index_count,
-		sizeof(uint16_t),
-		e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
+	{
+		st_buffer_desc desc;
+		desc._count = index_count;
+		desc._element_size = sizeof(uint16_t);
+		desc._usage = e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest;
+		_index_buffer = context->create_buffer(desc);
+	}
 
 	context->map(_index_buffer.get(), 0, { 0, 0 }, (void**)&head);
 	memcpy(head, index_data, index_count * sizeof(uint16_t));

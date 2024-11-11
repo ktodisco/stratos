@@ -59,10 +59,7 @@ public:
 	virtual std::unique_ptr<st_sampler> create_sampler(const st_sampler_desc& desc) = 0;
 
 	// Buffers.
-	virtual std::unique_ptr<st_buffer> create_buffer(
-		const uint32_t count,
-		const size_t element_size,
-		const e_st_buffer_usage_flags usage) = 0;
+	virtual std::unique_ptr<st_buffer> create_buffer(const st_buffer_desc& desc) = 0;
 	virtual std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) = 0;
 	virtual void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) = 0;
 	virtual void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) = 0;

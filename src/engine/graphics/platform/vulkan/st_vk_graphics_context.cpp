@@ -423,14 +423,20 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 
 	// Create dynamic geometry buffers.
 	const uint32_t k_dynamic_buffer_count = 10000;
-	_dynamic_vertex_buffer = create_buffer(
-		k_dynamic_buffer_count,
-		sizeof(st_vk_procedural_vertex),
-		e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
-	_dynamic_index_buffer = create_buffer(
-		k_dynamic_buffer_count,
-		sizeof(uint16_t),
-		e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
+	{
+		st_buffer_desc desc;
+		desc._count = k_dynamic_buffer_count;
+		desc._element_size = sizeof(st_vk_procedural_vertex);
+		desc._usage = e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest;
+		_dynamic_vertex_buffer = create_buffer(desc);
+	}
+	{
+		st_buffer_desc desc;
+		desc._count = k_dynamic_buffer_count;
+		desc._element_size = sizeof(uint16_t);
+		desc._usage = e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest;
+		_dynamic_index_buffer = create_buffer(desc);
+	}
 
 	begin_frame();
 
@@ -1127,34 +1133,31 @@ std::unique_ptr<st_sampler> st_vk_graphics_context::create_sampler(const st_samp
 	return std::move(sampler);
 }
 
-std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(
-	const uint32_t count,
-	const size_t element_size,
-	const e_st_buffer_usage_flags usage)
+std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(const st_buffer_desc& desc)
 {
 	std::unique_ptr<st_vk_buffer> buffer = std::make_unique<st_vk_buffer>();
 	buffer->_device = &_device;
-	buffer->_count = count;
-	buffer->_element_size = element_size;
-	buffer->_usage = usage;
+	buffer->_count = desc._count;
+	buffer->_element_size = desc._element_size;
+	buffer->_usage = desc._usage;
 
 	vk::BufferUsageFlags flags;
 
-	if (usage & e_st_buffer_usage::index) flags |= vk::BufferUsageFlagBits::eIndexBuffer;
-	if (usage & e_st_buffer_usage::indirect) flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
-	if (usage & e_st_buffer_usage::storage) flags |= vk::BufferUsageFlagBits::eStorageBuffer;
-	if (usage & e_st_buffer_usage::storage_texel) flags |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
-	if (usage & e_st_buffer_usage::transfer_dest) flags |= vk::BufferUsageFlagBits::eTransferDst;
-	if (usage & e_st_buffer_usage::transfer_source) flags |= vk::BufferUsageFlagBits::eTransferSrc;
-	if (usage & e_st_buffer_usage::uniform) flags |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst;
-	if (usage & e_st_buffer_usage::uniform_texel) flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
-	if (usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
+	if (desc._usage & e_st_buffer_usage::index) flags |= vk::BufferUsageFlagBits::eIndexBuffer;
+	if (desc._usage & e_st_buffer_usage::indirect) flags |= vk::BufferUsageFlagBits::eIndirectBuffer;
+	if (desc._usage & e_st_buffer_usage::storage) flags |= vk::BufferUsageFlagBits::eStorageBuffer;
+	if (desc._usage & e_st_buffer_usage::storage_texel) flags |= vk::BufferUsageFlagBits::eStorageTexelBuffer;
+	if (desc._usage & e_st_buffer_usage::transfer_dest) flags |= vk::BufferUsageFlagBits::eTransferDst;
+	if (desc._usage & e_st_buffer_usage::transfer_source) flags |= vk::BufferUsageFlagBits::eTransferSrc;
+	if (desc._usage & e_st_buffer_usage::uniform) flags |= vk::BufferUsageFlagBits::eUniformBuffer | vk::BufferUsageFlagBits::eTransferDst;
+	if (desc._usage & e_st_buffer_usage::uniform_texel) flags |= vk::BufferUsageFlagBits::eUniformTexelBuffer;
+	if (desc._usage & e_st_buffer_usage::vertex) flags |= vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
 		.setUsage(flags)
 		.setQueueFamilyIndexCount(1)
 		.setPQueueFamilyIndices(&_queue_family_index)
-		.setSize(align_value(count * element_size, 4));
+		.setSize(align_value(desc._count * desc._element_size, 4));
 
 	VK_VALIDATE(_device.createBuffer(&buffer_info, nullptr, &buffer->_buffer));
 
@@ -1163,7 +1166,7 @@ std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(
 	_device.getBufferMemoryRequirements(buffer->_buffer, &memory_reqs);
 
 	uint32_t memory_index = _device_memory_index;
-	if (usage & e_st_buffer_usage::transfer_dest) memory_index = _mapped_memory_index;
+	if (desc._usage & e_st_buffer_usage::transfer_dest) memory_index = _mapped_memory_index;
 
 	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
 		.setAllocationSize(memory_reqs.size)

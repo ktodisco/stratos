@@ -912,15 +912,12 @@ std::unique_ptr<st_sampler> st_dx12_graphics_context::create_sampler(const st_sa
 	return std::move(sampler);
 }
 
-std::unique_ptr<st_buffer> st_dx12_graphics_context::create_buffer(
-	const uint32_t count,
-	const size_t element_size,
-	const e_st_buffer_usage_flags usage)
+std::unique_ptr<st_buffer> st_dx12_graphics_context::create_buffer(const st_buffer_desc& desc)
 {
 	std::unique_ptr<st_dx12_buffer> buffer = std::make_unique<st_dx12_buffer>();
-	buffer->_count = count;
-	buffer->_element_size = element_size;
-	buffer->_usage = usage;
+	buffer->_count = desc._count;
+	buffer->_element_size = desc._element_size;
+	buffer->_usage = desc._usage;
 
 	// Structured buffers in DX12 are recommended to be 128-byte aligned.
 	const uint32_t k_min_buffer_size = 128;
@@ -928,7 +925,7 @@ std::unique_ptr<st_buffer> st_dx12_graphics_context::create_buffer(
 	const uint32_t k_min_cb_size = 256;
 
 	uint32_t min_size = k_min_buffer_size;
-	if (usage & e_st_buffer_usage::uniform)
+	if (desc._usage & e_st_buffer_usage::uniform)
 		min_size = k_min_cb_size;
 
 	// We store the original size so that the memcpy in update does not overread

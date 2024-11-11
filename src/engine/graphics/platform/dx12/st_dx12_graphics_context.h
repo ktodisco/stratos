@@ -73,10 +73,7 @@ public:
 	std::unique_ptr<st_sampler> create_sampler(const st_sampler_desc& desc) override;
 
 	// Buffers.
-	std::unique_ptr<st_buffer> create_buffer(
-		const uint32_t count,
-		const size_t element_size,
-		const e_st_buffer_usage_flags usage) override;
+	std::unique_ptr<st_buffer> create_buffer(const st_buffer_desc& desc) override;
 	std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) override;
 	void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) override;
 	void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) override;

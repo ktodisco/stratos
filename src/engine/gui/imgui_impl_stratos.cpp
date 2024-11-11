@@ -65,10 +65,11 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
         if (g_pVB) { g_pVB = nullptr; }
         g_VertexBufferSize = draw_data->TotalVtxCount + 5000;
 
-        frameResources->VB = ctx->create_buffer(
-            g_VertexBufferSize,
-            sizeof(ImDrawVert),
-            e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest);
+        st_buffer_desc desc;
+        desc._count = g_VertexBufferSize;
+        desc._element_size = sizeof(ImDrawVert);
+        desc._usage = e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest;
+        frameResources->VB = ctx->create_buffer(desc);
 
         g_pVB = frameResources->VB.get();
         frameResources->VertexBufferSize = g_VertexBufferSize;
@@ -79,10 +80,11 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
         if (g_pIB) { g_pIB = nullptr; }
         g_IndexBufferSize = draw_data->TotalIdxCount + 10000;
 
-        frameResources->IB = ctx->create_buffer(
-            g_IndexBufferSize,
-            sizeof(ImDrawIdx),
-            e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest);
+        st_buffer_desc desc;
+        desc._count = g_IndexBufferSize;
+        desc._element_size = sizeof(ImDrawIdx);
+        desc._usage = e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest;
+        frameResources->IB = ctx->create_buffer(desc);
 
         g_pIB = frameResources->IB.get();
         frameResources->IndexBufferSize = g_IndexBufferSize;
@@ -227,7 +229,11 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 
     // Create the constants and resource table
     {
-        g_constant_buffer = ctx->create_buffer(1, sizeof(imgui_cb), e_st_buffer_usage::uniform);
+        st_buffer_desc desc;
+        desc._count = 1;
+        desc._element_size = sizeof(imgui_cb);
+        desc._usage = e_st_buffer_usage::uniform;
+        g_constant_buffer = ctx->create_buffer(desc);
         ctx->add_constant(g_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
         g_resource_table = ctx->create_resource_table();

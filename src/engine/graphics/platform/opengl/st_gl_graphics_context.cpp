@@ -468,26 +468,23 @@ std::unique_ptr<st_sampler> st_gl_graphics_context::create_sampler(const st_samp
 	return std::move(sampler);
 }
 
-std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(
-	const uint32_t count,
-	const size_t element_size,
-	const e_st_buffer_usage_flags usage)
+std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(const st_buffer_desc& desc)
 {
 	std::unique_ptr<st_gl_buffer> buffer = std::make_unique<st_gl_buffer>();
-	buffer->_usage = usage;
-	buffer->_element_size = element_size;
-	buffer->_count = count;
+	buffer->_usage = desc._usage;
+	buffer->_element_size = desc._element_size;
+	buffer->_count = desc._count;
 
 	GLenum target = GL_SHADER_STORAGE_BUFFER;
 
-	if (usage & e_st_buffer_usage::vertex)
+	if (desc._usage & e_st_buffer_usage::vertex)
 		target = GL_ARRAY_BUFFER;
-	else if (usage & e_st_buffer_usage::index)
+	else if (desc._usage & e_st_buffer_usage::index)
 		target = GL_ELEMENT_ARRAY_BUFFER;
 
 	glGenBuffers(1, &buffer->_buffer);
 	glBindBuffer(target, buffer->_buffer);
-	glBufferData(target, count * element_size, NULL, GL_STATIC_DRAW);
+	glBufferData(target, desc._count * desc._element_size, NULL, GL_STATIC_DRAW);
 	glBindBuffer(target, 0);
 
 	return std::move(buffer);

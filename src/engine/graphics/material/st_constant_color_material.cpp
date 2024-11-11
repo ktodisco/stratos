@@ -14,7 +14,12 @@ st_constant_color_material::st_constant_color_material() :
 	st_material(e_st_render_pass_type::ui)
 {
 	st_graphics_context* context = st_graphics_context::get();
-	_color_buffer = context->create_buffer(1, sizeof(st_constant_color_cb), e_st_buffer_usage::uniform);
+
+	st_buffer_desc desc;
+	desc._count = 1;
+	desc._element_size = sizeof(st_constant_color_cb);
+	desc._usage = e_st_buffer_usage::uniform;
+	_color_buffer = context->create_buffer(desc);
 	context->add_constant(_color_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_resource_table = context->create_resource_table();

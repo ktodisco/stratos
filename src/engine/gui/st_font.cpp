@@ -169,8 +169,14 @@ st_font_material::st_font_material(st_texture* texture) :
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	_constant_buffer = context->create_buffer(1, sizeof(st_font_cb), e_st_buffer_usage::uniform);
-	context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
+	{
+		st_buffer_desc desc;
+		desc._count = 1;
+		desc._element_size = sizeof(st_font_cb);
+		desc._usage = e_st_buffer_usage::uniform;
+		_constant_buffer = context->create_buffer(desc);
+		context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
+	}
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
