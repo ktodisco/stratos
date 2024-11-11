@@ -76,15 +76,15 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 		return;
 	}
 
-	_texture = st_graphics_context::get()->create_texture(
-		image_width,
-		image_height,
-		1,
-		st_format_r8_unorm,
-		e_st_texture_usage::sampled,
-		st_texture_state_pixel_shader_read,
-		st_vec4f::zero_vector(),
-		image_data);
+	st_texture_desc desc;
+	desc._width = image_width;
+	desc._height = image_height;
+	desc._levels = 1;
+	desc._format = st_format_r8_unorm;
+	desc._usage = e_st_texture_usage::sampled;
+	desc._initial_state = st_texture_state_pixel_shader_read;
+	desc._data = image_data;
+	_texture = st_graphics_context::get()->create_texture(desc);
 	delete[] image_data;
 
 	_material = std::make_unique<st_font_material>(_texture.get());

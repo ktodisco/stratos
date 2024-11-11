@@ -18,15 +18,15 @@ st_render_texture::st_render_texture(
 	st_vec4f clear,
 	const char* name) : _width(width), _height(height), _format(format)
 {
-	_texture = context->create_texture(
-		width,
-		height,
-		1,
-		format,
-		usage,
-		initial_state,
-		clear,
-		nullptr);
+	st_texture_desc desc;
+	desc._width = width;
+	desc._height = height;
+	desc._levels = 1;
+	desc._format = format;
+	desc._usage = usage;
+	desc._initial_state = initial_state;
+	desc._clear._color = clear;
+	_texture = context->create_texture(desc);
 	context->set_texture_name(_texture.get(), name);
 	_view = context->create_texture_view(_texture.get());
 }

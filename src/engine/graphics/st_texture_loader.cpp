@@ -60,15 +60,15 @@ std::unique_ptr<st_texture> load_stb_texture(const char* fullpath)
 		return nullptr;
 	}
 
-	std::unique_ptr<st_texture> ret = st_graphics_context::get()->create_texture(
-		width,
-		height,
-		1,
-		st_format_r8g8b8a8_unorm,
-		e_st_texture_usage::sampled,
-		st_texture_state_pixel_shader_read,
-		st_vec4f::zero_vector(),
-		data);
+	st_texture_desc desc;
+	desc._width = width;
+	desc._height = height;
+	desc._levels = 1;
+	desc._format = st_format_r8g8b8a8_unorm;
+	desc._usage = e_st_texture_usage::sampled;
+	desc._initial_state = st_texture_state_pixel_shader_read;
+	desc._data = data;
+	std::unique_ptr<st_texture> ret = st_graphics_context::get()->create_texture(desc);
 
 	stbi_image_free(data);
 
@@ -172,15 +172,15 @@ std::unique_ptr<st_texture> load_dds_texture(const char* fullpath)
 	CloseHandle(hFile);
 
 	// CreateTextureFromDDS.
-	auto texture = st_graphics_context::get()->create_texture(
-		header->width,
-		header->height,
-		header->mipMapCount,
-		get_st_format(header->ddspf),
-		e_st_texture_usage::sampled,
-		st_texture_state_pixel_shader_read,
-		st_vec4f::zero_vector(),
-		bit_data);
+	st_texture_desc desc;
+	desc._width = header->width;
+	desc._height = header->height;
+	desc._levels = header->mipMapCount;
+	desc._format = get_st_format(header->ddspf);
+	desc._usage = e_st_texture_usage::sampled;
+	desc._initial_state = st_texture_state_pixel_shader_read;
+	desc._data = bit_data;
+	auto texture = st_graphics_context::get()->create_texture(desc);
 
 	return std::move(texture);
 }

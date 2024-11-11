@@ -62,15 +62,7 @@ public:
 	void end_marker() override;
 
 	// Textures.
-	std::unique_ptr<st_texture> create_texture(
-		uint32_t width,
-		uint32_t height,
-		uint32_t levels,
-		e_st_format format,
-		e_st_texture_usage_flags usage,
-		e_st_texture_state initial_state,
-		const st_vec4f& clear,
-		void* data) override;
+	std::unique_ptr<st_texture> create_texture(const st_texture_desc& desc) override;
 	void set_texture_meta(st_texture* texture, const char* name) override {}
 	void set_texture_name(st_texture* texture, std::string name) override;
 	void transition(

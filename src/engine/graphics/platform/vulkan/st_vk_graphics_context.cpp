@@ -806,34 +806,26 @@ void st_vk_graphics_context::end_marker()
 	}
 }
 
-std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
-	uint32_t width,
-	uint32_t height,
-	uint32_t mip_count,
-	e_st_format format,
-	e_st_texture_usage_flags usage,
-	e_st_texture_state initial_state,
-	const st_vec4f& clear,
-	void* data)
+std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(const st_texture_desc& desc)
 {
 	std::unique_ptr<st_vk_texture> texture = std::make_unique<st_vk_texture>();
 	texture->_device = &_device;
-	texture->_width = width;
-	texture->_height = height;
-	texture->_levels = mip_count;
-	texture->_format = format;
-	texture->_usage = usage;
+	texture->_width = desc._width;
+	texture->_height = desc._height;
+	texture->_levels = desc._levels;
+	texture->_format = desc._format;
+	texture->_usage = desc._usage;
 
 	vk::ImageUsageFlags flags;
 
-	if (usage & e_st_texture_usage::copy_source) flags |= vk::ImageUsageFlagBits::eTransferSrc;
-	if (usage & e_st_texture_usage::copy_dest) flags |= vk::ImageUsageFlagBits::eTransferDst;
-	if (usage & e_st_texture_usage::sampled) flags |= vk::ImageUsageFlagBits::eSampled;
-	if (usage & e_st_texture_usage::storage) flags |= vk::ImageUsageFlagBits::eStorage;
-	if (usage & e_st_texture_usage::color_target) flags |= vk::ImageUsageFlagBits::eColorAttachment;
-	if (usage & e_st_texture_usage::depth_target) flags |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
-	if (usage & e_st_texture_usage::transient_target) flags |= vk::ImageUsageFlagBits::eTransientAttachment;
-	if (usage & e_st_texture_usage::input_target) flags |= vk::ImageUsageFlagBits::eInputAttachment;
+	if (desc._usage & e_st_texture_usage::copy_source) flags |= vk::ImageUsageFlagBits::eTransferSrc;
+	if (desc._usage & e_st_texture_usage::copy_dest) flags |= vk::ImageUsageFlagBits::eTransferDst;
+	if (desc._usage & e_st_texture_usage::sampled) flags |= vk::ImageUsageFlagBits::eSampled;
+	if (desc._usage & e_st_texture_usage::storage) flags |= vk::ImageUsageFlagBits::eStorage;
+	if (desc._usage & e_st_texture_usage::color_target) flags |= vk::ImageUsageFlagBits::eColorAttachment;
+	if (desc._usage & e_st_texture_usage::depth_target) flags |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+	if (desc._usage & e_st_texture_usage::transient_target) flags |= vk::ImageUsageFlagBits::eTransientAttachment;
+	if (desc._usage & e_st_texture_usage::input_target) flags |= vk::ImageUsageFlagBits::eInputAttachment;
 
 	// TODO: For now, create all with eTransferDst. This is the correct usage for the
 	// buffer copy to upload to the image.
@@ -842,9 +834,9 @@ std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
 	vk::ImageCreateInfo create_info = vk::ImageCreateInfo()
 		.setArrayLayers(1)
 		.setImageType(vk::ImageType::e2D)
-		.setFormat(convert_format(format))
-		.setExtent(vk::Extent3D(width, height, 1))
-		.setMipLevels(mip_count)
+		.setFormat(convert_format(desc._format))
+		.setExtent(vk::Extent3D(desc._width, desc._height, 1))
+		.setMipLevels(desc._levels)
 		.setUsage(flags)
 		.setInitialLayout(vk::ImageLayout::eUndefined)
 		.setTiling(vk::ImageTiling::eOptimal);
@@ -863,15 +855,15 @@ std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
 	VK_VALIDATE(_device.bindImageMemory(texture->_handle, texture->_memory, 0));
 
 	// Transition the image to its intended state.
-	vk::ImageLayout dst_layout = (data != nullptr) ? vk::ImageLayout::eTransferDstOptimal : convert_resource_state(initial_state);
+	vk::ImageLayout dst_layout = (desc._data != nullptr) ? vk::ImageLayout::eTransferDstOptimal : convert_resource_state(desc._initial_state);
 	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
-	if (format == st_format_d16_unorm ||
-		format == st_format_d32_float)
+	if (desc._format == st_format_d16_unorm ||
+		desc._format == st_format_d32_float)
 	{
 		aspect = vk::ImageAspectFlagBits::eDepth;
 	}
-	else if (format == st_format_d24_unorm_s8_uint)
+	else if (desc._format == st_format_d24_unorm_s8_uint)
 	{
 		aspect = vk::ImageAspectFlagBits::eDepth |
 			vk::ImageAspectFlagBits::eStencil;
@@ -882,7 +874,7 @@ std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
 		.setBaseArrayLayer(0)
 		.setLayerCount(1)
 		.setBaseMipLevel(0)
-		.setLevelCount(mip_count);
+		.setLevelCount(desc._levels);
 	vk::ImageMemoryBarrier barriers[] =
 	{
 		vk::ImageMemoryBarrier()
@@ -903,27 +895,27 @@ std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
 		1,
 		barriers);
 
-	if (data)
+	if (desc._data)
 	{
 		std::vector<vk::BufferImageCopy> regions;
 		uint64_t offset = 0;
-		for (int i = 0; i < mip_count; ++i)
+		for (int i = 0; i < desc._levels; ++i)
 		{
-			uint32_t level_width = width >> i;
-			uint32_t level_height = height >> i;
+			uint32_t level_width = desc._width >> i;
+			uint32_t level_height = desc._height >> i;
 
 			// Stop on mips less than size 4.
 			// TODO: This should be mips less than the texel block size of the compressed format.
-			if (is_compressed(format) &&
+			if (is_compressed(desc._format) &&
 				(level_width < 4 || level_height < 4))
 				break;
 
-			size_t bpp = bits_per_pixel(format);
+			size_t bpp = bits_per_pixel(desc._format);
 			size_t num_bytes;
 			get_surface_info(
 				level_width,
 				level_height,
-				format,
+				desc._format,
 				&num_bytes,
 				nullptr,
 				nullptr);
@@ -933,7 +925,7 @@ std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
 
 			memcpy(
 				reinterpret_cast<uint8_t*>(_upload_buffer_head) + _upload_buffer_offset,
-				reinterpret_cast<uint8_t*>(data) + offset,
+				reinterpret_cast<uint8_t*>(desc._data) + offset,
 				num_bytes);
 
 			vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
@@ -968,12 +960,12 @@ std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
 			.setBaseArrayLayer(0)
 			.setLayerCount(1)
 			.setBaseMipLevel(0)
-			.setLevelCount(mip_count);
+			.setLevelCount(desc._levels);
 
 		vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
 			.setImage(texture->_handle)
 			.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-			.setNewLayout(convert_resource_state(initial_state))
+			.setNewLayout(convert_resource_state(desc._initial_state))
 			.setSubresourceRange(range);
 		_command_buffers[st_command_buffer_loading].pipelineBarrier(
 			vk::PipelineStageFlagBits::eTransfer,
@@ -987,11 +979,11 @@ std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(
 			&barrier);
 	}
 
-	texture->_state = initial_state;
+	texture->_state = desc._initial_state;
 
 	// For depth/stencil targets, it's only legal to create a view for
 	// one of the depth or stencil components at a time.
-	if (format == st_format_d24_unorm_s8_uint)
+	if (desc._format == st_format_d24_unorm_s8_uint)
 		range.setAspectMask(vk::ImageAspectFlagBits::eDepth);
 
 	vk::ImageViewCreateInfo view_create_info = vk::ImageViewCreateInfo()

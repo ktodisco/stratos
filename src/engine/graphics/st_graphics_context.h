@@ -47,15 +47,7 @@ public:
 	virtual void end_marker() = 0;
 
 	// Textures.
-	virtual std::unique_ptr<st_texture> create_texture(
-		uint32_t width,
-		uint32_t height,
-		uint32_t levels,
-		e_st_format format,
-		e_st_texture_usage_flags usage,
-		e_st_texture_state initial_state,
-		const st_vec4f& clear,
-		void* data) = 0;
+	virtual std::unique_ptr<st_texture> create_texture(const st_texture_desc& desc) = 0;
 	virtual void set_texture_meta(st_texture* texture, const char* name) = 0;
 	virtual void set_texture_name(st_texture* texture, std::string name) = 0;
 	virtual void transition(

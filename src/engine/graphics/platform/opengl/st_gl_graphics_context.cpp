@@ -360,15 +360,7 @@ void st_gl_graphics_context::end_marker()
 	glPopDebugGroup();
 }
 
-std::unique_ptr<st_texture> st_gl_graphics_context::create_texture(
-	uint32_t width,
-	uint32_t height,
-	uint32_t levels,
-	e_st_format format,
-	e_st_texture_usage_flags usage,
-	e_st_texture_state initial_state,
-	const st_vec4f& clear,
-	void* data)
+std::unique_ptr<st_texture> st_gl_graphics_context::create_texture(const st_texture_desc& desc)
 {
 	std::unique_ptr<st_gl_texture> texture = std::make_unique<st_gl_texture>();
 
@@ -380,22 +372,22 @@ std::unique_ptr<st_texture> st_gl_graphics_context::create_texture(
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTexStorage2D(GL_TEXTURE_2D, levels, convert_format(format), width, height);
+	glTexStorage2D(GL_TEXTURE_2D, desc._levels, convert_format(desc._format), desc._width, desc._height);
 
-	if (data)
+	if (desc._data)
 	{
-		if (is_compressed(format))
+		if (is_compressed(desc._format))
 		{
-			uint8_t* bits = reinterpret_cast<uint8_t*>(data);
+			uint8_t* bits = reinterpret_cast<uint8_t*>(desc._data);
 
-			for (uint32_t mip = 0; mip < levels; ++mip)
+			for (uint32_t mip = 0; mip < desc._levels; ++mip)
 			{
-				uint32_t level_width = width >> mip;
-				uint32_t level_height = height >> mip;
+				uint32_t level_width = desc._width >> mip;
+				uint32_t level_height = desc._height >> mip;
 
 				size_t row_bytes;
 				size_t num_rows;
-				get_surface_info(level_width, level_height, format, nullptr, &row_bytes, &num_rows);
+				get_surface_info(level_width, level_height, desc._format, nullptr, &row_bytes, &num_rows);
 
 				glCompressedTexSubImage2D(
 					GL_TEXTURE_2D,
@@ -404,7 +396,7 @@ std::unique_ptr<st_texture> st_gl_graphics_context::create_texture(
 					0,
 					level_width,
 					level_height,
-					convert_format(format),
+					convert_format(desc._format),
 					row_bytes * num_rows,
 					bits);
 
@@ -415,9 +407,9 @@ std::unique_ptr<st_texture> st_gl_graphics_context::create_texture(
 		{
 			GLenum pixel_format;
 			GLenum type;
-			get_pixel_format_and_type(format, pixel_format, type);
+			get_pixel_format_and_type(desc._format, pixel_format, type);
 
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, pixel_format, type, data);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, desc._width, desc._height, pixel_format, type, desc._data);
 		}
 	}
 

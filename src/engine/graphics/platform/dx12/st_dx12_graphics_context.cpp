@@ -629,35 +629,27 @@ void st_dx12_graphics_context::transition_backbuffer_to_present()
 	transition(_present_target->get_texture(), st_texture_state_copy_source);
 }
 
-std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(
-	uint32_t width,
-	uint32_t height,
-	uint32_t levels,
-	e_st_format format,
-	e_st_texture_usage_flags usage,
-	e_st_texture_state initial_state,
-	const st_vec4f& clear,
-	void* data)
+std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(const st_texture_desc& desc)
 {
 	std::unique_ptr<st_dx12_texture> texture = std::make_unique<st_dx12_texture>();
-	texture->_width = width;
-	texture->_height = height;
-	texture->_levels = levels;
-	texture->_format = format;
-	texture->_usage = usage;
+	texture->_width = desc._width;
+	texture->_height = desc._height;
+	texture->_levels = desc._levels;
+	texture->_format = desc._format;
+	texture->_usage = desc._usage;
 
-	DXGI_FORMAT real_format = convert_format(format);
+	DXGI_FORMAT dx_format = convert_format(desc._format);
 
 	D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
-	if (usage & e_st_texture_usage::color_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	if (usage & e_st_texture_usage::depth_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-	if (usage & e_st_texture_usage::storage) flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	if (desc._usage & e_st_texture_usage::color_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	if (desc._usage & e_st_texture_usage::depth_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	if (desc._usage & e_st_texture_usage::storage) flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 	D3D12_RESOURCE_DESC texture_desc{};
-	texture_desc.MipLevels = levels;
-	texture_desc.Format = real_format;
-	texture_desc.Width = width;
-	texture_desc.Height = height;
+	texture_desc.MipLevels = desc._levels;
+	texture_desc.Format = dx_format;
+	texture_desc.Width = desc._width;
+	texture_desc.Height = desc._height;
 	texture_desc.Flags = flags;
 	texture_desc.DepthOrArraySize = 1;
 	texture_desc.SampleDesc.Count = 1;
@@ -666,23 +658,23 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(
 
 	bool is_target = false;
 	D3D12_CLEAR_VALUE clear_value = {};
-	if (usage & e_st_texture_usage::color_target ||
-		usage & e_st_texture_usage::depth_target)
+	if (desc._usage & e_st_texture_usage::color_target ||
+		desc._usage & e_st_texture_usage::depth_target)
 	{
 		is_target = true;
-		clear_value.Format = (DXGI_FORMAT)format;
+		clear_value.Format = dx_format;
 
-		if (format == st_format_d24_unorm_s8_uint)
+		if (desc._format == st_format_d24_unorm_s8_uint)
 		{
-			clear_value.DepthStencil.Depth = clear.x;
-			clear_value.DepthStencil.Stencil = (uint8_t)clear.y;
+			clear_value.DepthStencil.Depth = desc._clear._depth_stencil._depth;
+			clear_value.DepthStencil.Stencil = desc._clear._depth_stencil._stencil;
 		}
 		else
 		{
-			clear_value.Color[0] = clear.x;
-			clear_value.Color[1] = clear.y;
-			clear_value.Color[2] = clear.z;
-			clear_value.Color[3] = clear.w;
+			clear_value.Color[0] = desc._clear._color.x;
+			clear_value.Color[1] = desc._clear._color.y;
+			clear_value.Color[2] = desc._clear._color.z;
+			clear_value.Color[3] = desc._clear._color.w;
 		}
 	}
 
@@ -708,21 +700,21 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(
 		assert(false);
 	}
 
-	if (data)
+	if (desc._data)
 	{
 		std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-		uint8_t* bits = reinterpret_cast<uint8_t*>(data);
-		for (uint32_t level = 0; level < levels; ++level)
+		uint8_t* bits = reinterpret_cast<uint8_t*>(desc._data);
+		for (uint32_t level = 0; level < desc._levels; ++level)
 		{
-			uint32_t level_width = width >> level;
-			uint32_t level_height = height >> level;
+			uint32_t level_width = desc._width >> level;
+			uint32_t level_height = desc._height >> level;
 
 			size_t row_bytes;
 			size_t num_bytes;
 			get_surface_info(
 				level_width,
 				level_height,
-				format,
+				desc._format,
 				&num_bytes,
 				&row_bytes,
 				nullptr);
@@ -739,18 +731,18 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(
 			bits += num_bytes;
 		}
 
-		size_t alloc_size = (sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(uint32_t) + sizeof(uint64_t)) * levels;
+		size_t alloc_size = (sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(uint32_t) + sizeof(uint64_t)) * desc._levels;
 		auto layouts = reinterpret_cast<D3D12_PLACED_SUBRESOURCE_FOOTPRINT*>(malloc(alloc_size));
 
-		uint64_t* row_sizes_bytes = reinterpret_cast<uint64_t*>(layouts + levels);
-		uint32_t* row_count = reinterpret_cast<uint32_t*>(row_sizes_bytes + levels);
+		uint64_t* row_sizes_bytes = reinterpret_cast<uint64_t*>(layouts + desc._levels);
+		uint32_t* row_count = reinterpret_cast<uint32_t*>(row_sizes_bytes + desc._levels);
 		uint64_t required_size = 0;
-		_device->GetCopyableFootprints(&texture_desc, 0, levels, 0, layouts, row_count, row_sizes_bytes, &required_size);
+		_device->GetCopyableFootprints(&texture_desc, 0, desc._levels, 0, layouts, row_count, row_sizes_bytes, &required_size);
 
 		_upload_buffer_offset = align_value(_upload_buffer_offset, D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT);
 		size_t initial_offset = _upload_buffer_offset;
 
-		for (uint32_t i = 0; i < levels; ++i)
+		for (uint32_t i = 0; i < desc._levels; ++i)
 		{
 			if (row_sizes_bytes[i] > size_t(-1))
 			{
@@ -773,7 +765,7 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(
 			layouts[i].Offset += initial_offset;
 		}
 
-		for (uint32_t i = 0; i < levels; ++i)
+		for (uint32_t i = 0; i < desc._levels; ++i)
 		{
 			// Copy the upload heap to the texture 2D.
 			D3D12_TEXTURE_COPY_LOCATION dest_location
@@ -806,9 +798,9 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(
 		&CD3DX12_RESOURCE_BARRIER::Transition(
 			*texture->_handle.GetAddressOf(),
 			D3D12_RESOURCE_STATE_COPY_DEST,
-			convert_resource_state(initial_state)));
+			convert_resource_state(desc._initial_state)));
 
-	texture->_state = initial_state;
+	texture->_state = desc._initial_state;
 
 	return std::move(texture);
 }

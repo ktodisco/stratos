@@ -377,6 +377,25 @@ struct st_resource
 	virtual ~st_resource() {}
 };
 
+struct st_depth_stencil_clear_value
+{
+	float _depth;
+	uint32_t _stencil;
+};
+
+struct st_clear_value
+{
+	st_clear_value() = delete;
+	st_clear_value(const st_vec4f& v) : _color(v) {}
+	st_clear_value(const st_depth_stencil_clear_value& v) : _depth_stencil(v) {}
+
+	union
+	{
+		st_vec4f _color;
+		st_depth_stencil_clear_value _depth_stencil;
+	};
+};
+
 struct st_sampler_desc
 {
 	e_st_filter _min_filter = st_filter_nearest;
@@ -396,6 +415,22 @@ struct st_sampler_desc
 	float _mip_bias = 0.0f;
 	float _min_mip = 0;
 	float _max_mip = FLT_MAX;
+};
+
+struct st_texture_desc
+{
+	uint32_t _width = 1;
+	uint32_t _height = 1;
+	uint32_t _depth = 1;
+	uint32_t _levels = 1;
+
+	e_st_format _format = st_format_unknown;
+	e_st_texture_usage_flags _usage = e_st_texture_usage::sampled;
+	e_st_texture_state _initial_state = st_texture_state_common;
+
+	st_clear_value _clear = st_vec4f::zero_vector();
+
+	void* _data = nullptr;
 };
 
 struct st_buffer : public st_resource {};
@@ -423,25 +458,6 @@ struct st_target_desc
 	class st_render_texture* _target = nullptr;
 	e_st_load_op _load_op = e_st_load_op::clear;
 	e_st_store_op _store_op = e_st_store_op::store;
-};
-
-struct st_depth_stencil_clear_value
-{
-	float _depth;
-	uint32_t _stencil;
-};
-
-struct st_clear_value
-{
-	st_clear_value() = delete;
-	st_clear_value(const st_vec4f& v) : _color(v) {}
-	st_clear_value(const st_depth_stencil_clear_value& v) : _depth_stencil(v) {}
-
-	union
-	{
-		st_vec4f _color;
-		st_depth_stencil_clear_value _depth_stencil;
-	};
 };
 
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
