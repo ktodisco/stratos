@@ -39,6 +39,8 @@ private:
 	class st_render_texture* _depth;
 	class st_render_texture* _directional_shadow_map;
 
+	std::unique_ptr<struct st_sampler> _shadow_sampler = nullptr;
+
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
 
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;

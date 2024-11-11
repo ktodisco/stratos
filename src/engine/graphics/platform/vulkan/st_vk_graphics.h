@@ -83,10 +83,6 @@ struct st_vk_resource_table : public st_resource_table, public st_vk_resource
 {
 	~st_vk_resource_table()
 	{
-		for (auto& sampler : _sampler_resources)
-		{
-			_device->destroySampler(sampler, nullptr);
-		}
 		_sampler_resources.clear();
 
 		vk::DescriptorSet sets[] =
@@ -110,9 +106,19 @@ struct st_vk_resource_table : public st_resource_table, public st_vk_resource
 	uint32_t _buffer_count = 0;
 	uint32_t _sampler_count = 0;
 
-	std::vector<vk::Sampler> _sampler_resources;
+	std::vector<struct st_vk_sampler*> _sampler_resources;
 
 	vk::DescriptorPool* _pool;
+};
+
+struct st_vk_sampler : public st_sampler, public st_vk_resource
+{
+	~st_vk_sampler()
+	{
+		_device->destroySampler(_sampler, nullptr);
+	}
+
+	vk::Sampler _sampler;
 };
 
 struct st_vk_shader : public st_shader, public st_vk_resource

@@ -4,6 +4,8 @@
 #include "imgui.h"
 #include "imgui_impl_stratos.h"
 
+#include <framework/st_global_resources.h>
+
 #include <graphics/st_drawcall.h>
 #include <graphics/st_graphics.h>
 #include <graphics/st_graphics_context.h>
@@ -229,7 +231,8 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 
         g_resource_table = ctx->create_resource_table();
         st_texture* textures[] = { g_font_texture.get() };
-        ctx->set_textures(g_resource_table.get(), 1, textures);
+        st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+        ctx->set_textures(g_resource_table.get(), 1, textures, samplers);
         st_buffer* cbs[] = { g_constant_buffer.get() };
         ctx->set_constant_buffers(g_resource_table.get(), 1, cbs);
     }

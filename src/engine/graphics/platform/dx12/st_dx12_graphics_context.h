@@ -77,6 +77,9 @@ public:
 		e_st_texture_state new_state) override;
 	std::unique_ptr<st_texture_view> create_texture_view(st_texture* texture) override;
 
+	// Samplers.
+	std::unique_ptr<st_sampler> create_sampler(const st_sampler_desc& desc) override;
+
 	// Buffers.
 	std::unique_ptr<st_buffer> create_buffer(
 		const uint32_t count,
@@ -97,7 +100,11 @@ public:
 	// Resource tables.
 	std::unique_ptr<st_resource_table> create_resource_table() override;
 	void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) override;
-	void set_textures(st_resource_table* table, uint32_t count, st_texture** textures) override;
+	void set_textures(
+		st_resource_table* table,
+		uint32_t count,
+		st_texture** textures,
+		st_sampler** samplers) override;
 	void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) override;
 	void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) override;
 	void bind_resource_table(st_resource_table* table) override;
@@ -152,8 +159,6 @@ private:
 		e_st_format format,
 		uint32_t levels);
 	void destroy_shader_resource_view(st_dx12_descriptor offset);
-	st_dx12_descriptor create_shader_sampler();
-	void destroy_shader_sampler(st_dx12_descriptor offset);
 	// TODO: Combine this with create_shader_resource_view.
 	st_dx12_descriptor create_buffer_view(
 		ID3D12Resource* resource,

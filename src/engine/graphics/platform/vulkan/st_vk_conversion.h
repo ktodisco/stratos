@@ -342,4 +342,28 @@ inline vk::AttachmentStoreOp convert_store_op(e_st_store_op op)
 	return store_op_mappings[uint32_t(op)];
 };
 
+static vk::Filter filter_mappings[] =
+{
+	vk::Filter::eNearest,
+	vk::Filter::eLinear,
+};
+
+inline vk::Filter convert_filter(e_st_filter filter)
+{
+	return filter_mappings[filter];
+}
+
+static vk::SamplerAddressMode address_mode_mappings[] =
+{
+	vk::SamplerAddressMode::eRepeat,
+	vk::SamplerAddressMode::eMirrorClampToEdge,
+	vk::SamplerAddressMode::eClampToEdge,
+	vk::SamplerAddressMode::eClampToBorder,
+};
+
+inline vk::SamplerAddressMode convert_address_mode(e_st_address_mode mode)
+{
+	return address_mode_mappings[mode];
+}
+
 #endif

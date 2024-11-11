@@ -63,6 +63,9 @@ public:
 		e_st_texture_state new_state) = 0;
 	virtual std::unique_ptr<st_texture_view> create_texture_view(st_texture* texture) = 0;
 
+	// Samplers.
+	virtual std::unique_ptr<st_sampler> create_sampler(const st_sampler_desc& desc) = 0;
+
 	// Buffers.
 	virtual std::unique_ptr<st_buffer> create_buffer(
 		const uint32_t count,
@@ -83,7 +86,11 @@ public:
 	// Resource tables.
 	virtual std::unique_ptr<st_resource_table> create_resource_table() = 0;
 	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) = 0;
-	virtual void set_textures(st_resource_table* table, uint32_t count, st_texture** textures) = 0;
+	virtual void set_textures(
+		st_resource_table* table,
+		uint32_t count,
+		st_texture** textures,
+		st_sampler** samplers) = 0;
 	virtual void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) = 0;
 	virtual void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) = 0;
 	virtual void bind_resource_table(st_resource_table* table) = 0;

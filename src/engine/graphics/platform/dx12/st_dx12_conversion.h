@@ -318,4 +318,17 @@ inline D3D12_RESOURCE_STATES convert_resource_state(e_st_texture_state state)
 	return resource_state_mappings[state];
 }
 
+D3D12_TEXTURE_ADDRESS_MODE address_mode_mappings[] =
+{
+	D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+	D3D12_TEXTURE_ADDRESS_MODE_MIRROR,
+	D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+	D3D12_TEXTURE_ADDRESS_MODE_BORDER,
+};
+
+inline D3D12_TEXTURE_ADDRESS_MODE convert_address_mode(e_st_address_mode mode)
+{
+	return address_mode_mappings[mode];
+}
+
 #endif

@@ -1110,6 +1110,31 @@ std::unique_ptr<st_texture_view> st_vk_graphics_context::create_texture_view(st_
 	return std::move(view);
 }
 
+std::unique_ptr<st_sampler> st_vk_graphics_context::create_sampler(const st_sampler_desc& desc)
+{
+	std::unique_ptr<st_vk_sampler> sampler = std::make_unique<st_vk_sampler>();
+	sampler->_device = &_device;
+
+	vk::SamplerCreateInfo create_info = vk::SamplerCreateInfo()
+		.setMagFilter(convert_filter(desc._mag_filter))
+		.setMinFilter(convert_filter(desc._min_filter))
+		.setMipmapMode(desc._mip_filter == st_filter_nearest ? vk::SamplerMipmapMode::eNearest : vk::SamplerMipmapMode::eLinear)
+		.setAddressModeU(convert_address_mode(desc._address_u))
+		.setAddressModeV(convert_address_mode(desc._address_v))
+		.setAddressModeW(convert_address_mode(desc._address_w))
+		.setMipLodBias(desc._mip_bias)
+		.setAnisotropyEnable(false)
+		.setCompareEnable(desc._compare_func != st_compare_func_never)
+		.setCompareOp(convert_compare_op(desc._compare_func))
+		.setMinLod(desc._min_mip)
+		.setMaxLod(desc._max_mip)
+		.setUnnormalizedCoordinates(false);
+
+	VK_VALIDATE(_device.createSampler(&create_info, nullptr, &sampler->_sampler));
+
+	return std::move(sampler);
+}
+
 std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(
 	const uint32_t count,
 	const size_t element_size,
@@ -1255,17 +1280,21 @@ void st_vk_graphics_context::set_constant_buffers(st_resource_table* table_, uin
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
-void st_vk_graphics_context::set_textures(st_resource_table* table_, uint32_t count, st_texture** textures)
+void st_vk_graphics_context::set_textures(
+	st_resource_table* table_,
+	uint32_t count,
+	st_texture** textures,
+	st_sampler** samplers)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 	table->_texture_count = count;
 	table->_sampler_count = count;
 
+	table->_sampler_resources.reserve(count);
+
 	std::vector<vk::DescriptorImageInfo> images;
 	for (int i = 0; i < count; ++i)
 	{
-		create_sampler(table->_sampler_resources.emplace_back());
-
 		vk::ImageView view = vk::ImageView();
 
 		if (textures)
@@ -1274,10 +1303,13 @@ void st_vk_graphics_context::set_textures(st_resource_table* table_, uint32_t co
 			view = texture->_view;
 		}
 
+		st_vk_sampler* sampler = static_cast<st_vk_sampler*>(samplers[i]);
+		table->_sampler_resources.push_back(sampler);
+
 		images.emplace_back() = vk::DescriptorImageInfo()
 			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 			.setImageView(view)
-			.setSampler(table->_sampler_resources.back());
+			.setSampler(sampler->_sampler);
 	}
 
 	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
@@ -1337,7 +1369,7 @@ void st_vk_graphics_context::update_textures(st_resource_table* table_, uint32_t
 		images.emplace_back() = vk::DescriptorImageInfo()
 			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
 			.setImageView(view->_view)
-			.setSampler(table->_sampler_resources.back());
+			.setSampler(table->_sampler_resources[itr]->_sampler);
 	}
 
 	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
@@ -1760,30 +1792,6 @@ void st_vk_graphics_context::begin_render_pass(
 void st_vk_graphics_context::end_render_pass(st_render_pass* pass)
 {
 	_command_buffers[st_command_buffer_graphics].endRenderPass();
-}
-
-void st_vk_graphics_context::create_sampler(vk::Sampler& sampler)
-{
-	vk::SamplerCreateInfo create_info = vk::SamplerCreateInfo()
-		.setMagFilter(vk::Filter::eLinear)
-		.setMinFilter(vk::Filter::eLinear)
-		.setMipmapMode(vk::SamplerMipmapMode::eLinear)
-		.setAddressModeU(vk::SamplerAddressMode::eRepeat)
-		.setAddressModeV(vk::SamplerAddressMode::eRepeat)
-		.setAddressModeW(vk::SamplerAddressMode::eRepeat)
-		.setMipLodBias(0.0f)
-		.setAnisotropyEnable(false)
-		.setCompareEnable(false)
-		.setMinLod(0)
-		.setMaxLod(15.0f)
-		.setUnnormalizedCoordinates(false);
-
-	VK_VALIDATE(_device.createSampler(&create_info, nullptr, &sampler));
-}
-
-void st_vk_graphics_context::destroy_sampler(vk::Sampler& sampler)
-{
-	_device.destroySampler(sampler, nullptr);
 }
 
 #endif

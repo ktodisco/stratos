@@ -306,4 +306,17 @@ inline GLenum convert_stencil_op(e_st_stencil_op stencil_op)
 	return stencil_op_mappings[stencil_op];
 }
 
+GLenum address_mode_mappings[] =
+{
+	GL_REPEAT,
+	GL_MIRRORED_REPEAT,
+	GL_CLAMP_TO_EDGE,
+	GL_CLAMP_TO_BORDER,
+};
+
+inline GLenum convert_address_mode(e_st_address_mode mode)
+{
+	return address_mode_mappings[mode];
+}
+
 #endif

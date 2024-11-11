@@ -7,6 +7,7 @@
 #include <graphics/material/st_parallax_occlusion_material.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_global_resources.h>
 #include <framework/st_output.h>
 
 #include <graphics/geometry/st_vertex_attribute.h>
@@ -56,8 +57,15 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	_resource_table = context->create_resource_table();
 	st_buffer* cbs[] = { _parallax_occlusion_buffer.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
-	st_texture* textures[] = { _albedo_texture.get(), _normal_texture.get() };
-	context->set_textures(_resource_table.get(), std::size(textures), textures);
+	st_texture* textures[] = {
+		_albedo_texture.get(),
+		_normal_texture.get()
+	};
+	st_sampler* samplers[] = {
+		_global_resources->_trilinear_clamp_sampler.get(),
+		_global_resources->_trilinear_clamp_sampler.get(),
+	};
+	context->set_textures(_resource_table.get(), std::size(textures), textures, samplers);
 }
 
 st_parallax_occlusion_material::~st_parallax_occlusion_material()

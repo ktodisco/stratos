@@ -6,6 +6,8 @@
 
 #include <graphics/material/st_unlit_texture_material.h>
 
+#include <framework/st_global_resources.h>
+
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_shader_manager.h>
@@ -34,7 +36,8 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	st_buffer* cbs[] = { _view_buffer.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 	st_texture* textures[] = { _texture.get() };
-	context->set_textures(_resource_table.get(), 1, textures);
+	st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+	context->set_textures(_resource_table.get(), 1, textures, samplers);
 }
 
 st_unlit_texture_material::~st_unlit_texture_material()

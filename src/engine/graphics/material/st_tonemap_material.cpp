@@ -6,6 +6,8 @@
 
 #include <graphics/material/st_tonemap_material.h>
 
+#include <framework/st_global_resources.h>
+
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
@@ -34,7 +36,8 @@ st_tonemap_material::st_tonemap_material(
 
 	_resource_table = context->create_resource_table();
 	st_texture* t = _texture->get_texture();
-	context->set_textures(_resource_table.get(), 1, &t);
+	st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+	context->set_textures(_resource_table.get(), 1, &t, samplers);
 }
 
 st_tonemap_material::~st_tonemap_material()

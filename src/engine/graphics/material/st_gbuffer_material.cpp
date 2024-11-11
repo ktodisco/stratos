@@ -6,6 +6,7 @@
 
 #include <graphics/material/st_gbuffer_material.h>
 
+#include <framework/st_global_resources.h>
 #include <framework/st_output.h>
 
 #include <graphics/geometry/st_vertex_attribute.h>
@@ -77,7 +78,11 @@ st_gbuffer_material::st_gbuffer_material(
 			_albedo_texture.get(),
 			_mre_texture.get()
 		};
-		context->set_textures(_gbuffer_resources.get(), std::size(textures), textures);
+		st_sampler* samplers[] = {
+			_global_resources->_trilinear_clamp_sampler.get(),
+			_global_resources->_trilinear_clamp_sampler.get(),
+		};
+		context->set_textures(_gbuffer_resources.get(), std::size(textures), textures, samplers);
 	}
 	{
 		_shadow_resources = context->create_resource_table();

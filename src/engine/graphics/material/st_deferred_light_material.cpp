@@ -6,6 +6,8 @@
 
 #include <graphics/material/st_deferred_light_material.h>
 
+#include <framework/st_global_resources.h>
+
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
@@ -31,20 +33,33 @@ st_deferred_light_material::st_deferred_light_material(
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_pipeline_state_desc desc;
-	desc._shader = st_shader_manager::get()->get_shader(st_shader_deferred_light);
-	desc._blend_desc._target_blend[0]._blend = false;
-	desc._depth_stencil_desc._depth_enable = false;
-	desc._vertex_format = vertex_format;
-	desc._pass = pass;
-	desc._render_target_count = 1;
-	desc._render_target_formats[0] = output_texture->get_format();
+	{
+		st_pipeline_state_desc desc;
+		desc._shader = st_shader_manager::get()->get_shader(st_shader_deferred_light);
+		desc._blend_desc._target_blend[0]._blend = false;
+		desc._depth_stencil_desc._depth_enable = false;
+		desc._vertex_format = vertex_format;
+		desc._pass = pass;
+		desc._render_target_count = 1;
+		desc._render_target_formats[0] = output_texture->get_format();
 
-	_pipeline = context->create_pipeline(desc);
+		_pipeline = context->create_pipeline(desc);
+	}
 
 	_resource_table = context->create_resource_table();
 	context->set_constant_buffers(_resource_table.get(), 1, &constants);
 	context->set_buffers(_resource_table.get(), 1, &light_buffer);
+
+	{
+		st_sampler_desc desc;
+		desc._min_filter = st_filter_nearest;
+		desc._mag_filter = st_filter_nearest;
+		desc._mip_filter = st_filter_nearest;
+		desc._address_u = st_address_mode_wrap;
+		desc._address_v = st_address_mode_wrap;
+
+		_shadow_sampler = context->create_sampler(desc);
+	}
 
 	st_texture* textures[] = {
 		_albedo->get_texture(),
@@ -53,12 +68,20 @@ st_deferred_light_material::st_deferred_light_material(
 		_depth->get_texture(),
 		_directional_shadow_map->get_texture(),
 	};
-	context->set_textures(_resource_table.get(), std::size(textures), textures);
+	st_sampler* samplers[] = {
+		_global_resources->_trilinear_clamp_sampler.get(),
+		_global_resources->_trilinear_clamp_sampler.get(),
+		_global_resources->_trilinear_clamp_sampler.get(),
+		_global_resources->_trilinear_clamp_sampler.get(),
+		_shadow_sampler.get(),
+	};
+	context->set_textures(_resource_table.get(), std::size(textures), textures, samplers);
 }
 
 st_deferred_light_material::~st_deferred_light_material()
 {
 	_pipeline = nullptr;
+	_shadow_sampler = nullptr;
 	_resource_table = nullptr;
 }
 

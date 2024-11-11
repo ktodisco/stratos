@@ -6,6 +6,8 @@
 
 #include <graphics/material/st_bloom_material.h>
 
+#include <framework/st_global_resources.h>
+
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
@@ -33,7 +35,8 @@ st_bloom_material::st_bloom_material(
 	_pipeline = context->create_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	context->set_textures(_resource_table.get(), 1, &_texture);
+	st_sampler* samplers[] { _global_resources->_trilinear_clamp_sampler.get() };
+	context->set_textures(_resource_table.get(), 1, &_texture, samplers);
 }
 
 st_bloom_material::~st_bloom_material()

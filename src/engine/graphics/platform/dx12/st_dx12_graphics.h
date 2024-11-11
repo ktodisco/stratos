@@ -69,6 +69,11 @@ struct st_dx12_resource_table : public st_resource_table
 	std::vector<st_dx12_descriptor> _buffers;
 };
 
+struct st_dx12_sampler : public st_sampler
+{
+	st_dx12_descriptor _handle;
+};
+
 struct st_dx12_shader : public st_shader
 {
 	~st_dx12_shader()

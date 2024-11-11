@@ -446,6 +446,36 @@ std::unique_ptr<st_texture_view> st_gl_graphics_context::create_texture_view(st_
 	return std::move(view);
 }
 
+std::unique_ptr<st_sampler> st_gl_graphics_context::create_sampler(const st_sampler_desc& desc)
+{
+	std::unique_ptr<st_gl_sampler> sampler = std::make_unique<st_gl_sampler>();
+
+	glGenSamplers(1, &sampler->_handle);
+
+	GLenum min_filter = (desc._mip_filter == st_filter_nearest) ?
+		((desc._min_filter == st_filter_nearest) ? GL_NEAREST_MIPMAP_NEAREST : GL_LINEAR_MIPMAP_NEAREST) :
+		((desc._min_filter == st_filter_nearest) ? GL_NEAREST_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_LINEAR);
+	GLenum mag_filter = (desc._mag_filter == st_filter_nearest) ? GL_NEAREST : GL_LINEAR;
+	glSamplerParameteri(sampler->_handle, GL_TEXTURE_MIN_FILTER, min_filter);
+	glSamplerParameteri(sampler->_handle, GL_TEXTURE_MAG_FILTER, mag_filter);
+
+	glSamplerParameteri(sampler->_handle, GL_TEXTURE_WRAP_S, convert_address_mode(desc._address_u));
+	glSamplerParameteri(sampler->_handle, GL_TEXTURE_WRAP_T, convert_address_mode(desc._address_v));
+	glSamplerParameteri(sampler->_handle, GL_TEXTURE_WRAP_R, convert_address_mode(desc._address_w));
+	glSamplerParameterf(sampler->_handle, GL_TEXTURE_MIN_LOD, desc._min_mip);
+	glSamplerParameterf(sampler->_handle, GL_TEXTURE_MAX_LOD, desc._max_mip);
+	glSamplerParameterf(sampler->_handle, GL_TEXTURE_LOD_BIAS, desc._mip_bias);
+	glSamplerParameteri(
+		sampler->_handle,
+		GL_TEXTURE_COMPARE_MODE,
+		(desc._compare_func != st_compare_func_never) ? GL_NONE : GL_COMPARE_REF_TO_TEXTURE);
+	glSamplerParameteri(sampler->_handle, GL_TEXTURE_COMPARE_FUNC, convert_compare_func(desc._compare_func));
+
+	// TODO: Border color unimplemented.
+
+	return std::move(sampler);
+}
+
 std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(
 	const uint32_t count,
 	const size_t element_size,
@@ -629,7 +659,11 @@ void st_gl_graphics_context::set_constant_buffers(st_resource_table* table_, uin
 {
 }
 
-void st_gl_graphics_context::set_textures(st_resource_table* table_, uint32_t count, st_texture** textures)
+void st_gl_graphics_context::set_textures(
+	st_resource_table* table_,
+	uint32_t count,
+	st_texture** textures,
+	st_sampler** samplers)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
@@ -640,15 +674,13 @@ void st_gl_graphics_context::set_textures(st_resource_table* table_, uint32_t co
 		else
 			table->_srvs.push_back(0);
 
-		// Create a sampler for the texture.
-		GLuint sampler;
-		glGenSamplers(1, &sampler);
-		glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-		table->_samplers.push_back(sampler);
+		if (samplers)
+		{
+			st_gl_sampler* s = static_cast<st_gl_sampler*>(samplers[i]);
+			table->_samplers.push_back(s->_handle);
+		}
+		else
+			table->_samplers.push_back(0);
 	}
 }
 

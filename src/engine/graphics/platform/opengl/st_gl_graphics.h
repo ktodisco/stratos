@@ -97,6 +97,13 @@ struct st_gl_resource_table : public st_resource_table
 	std::vector<GLuint> _samplers;
 };
 
+struct st_gl_sampler : public st_sampler
+{
+	~st_gl_sampler() { glDeleteSamplers(1, &_handle); }
+
+	uint32_t _handle;
+};
+
 struct st_gl_texture : public st_texture
 {
 	~st_gl_texture() { glDeleteTextures(1, &_handle); }

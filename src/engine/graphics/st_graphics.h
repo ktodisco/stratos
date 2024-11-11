@@ -268,6 +268,20 @@ enum e_st_texture_state
 	st_texture_state_copy_dest,
 };
 
+enum e_st_filter
+{
+	st_filter_nearest,
+	st_filter_linear
+};
+
+enum e_st_address_mode
+{
+	st_address_mode_wrap,
+	st_address_mode_mirror,
+	st_address_mode_clamp,
+	st_address_mode_border
+};
+
 enum e_st_descriptor_slot
 {
 	st_descriptor_slot_textures,
@@ -363,11 +377,33 @@ struct st_resource
 	virtual ~st_resource() {}
 };
 
+struct st_sampler_desc
+{
+	e_st_filter _min_filter = st_filter_nearest;
+	e_st_filter _mag_filter = st_filter_nearest;
+	e_st_filter _mip_filter = st_filter_nearest;
+
+	e_st_address_mode _address_u = st_address_mode_clamp;
+	e_st_address_mode _address_v = st_address_mode_clamp;
+	e_st_address_mode _address_w = st_address_mode_clamp;
+
+	uint32_t _anisotropy = 0;
+
+	e_st_compare_func _compare_func = st_compare_func_never;
+
+	st_vec4f _border = st_vec4f::zero_vector();
+
+	float _mip_bias = 0.0f;
+	float _min_mip = 0;
+	float _max_mip = FLT_MAX;
+};
+
 struct st_buffer : public st_resource {};
 struct st_buffer_view : public st_resource {};
 struct st_pipeline : public st_resource {};
 struct st_render_pass : public st_resource {};
 struct st_resource_table : public st_resource {};
+struct st_sampler : public st_resource {};
 struct st_shader : public st_resource {};
 struct st_texture : public st_resource {};
 struct st_texture_view : public st_resource {};
@@ -410,7 +446,6 @@ struct st_clear_value
 
 size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
 
-#include <algorithm>
 #include <cstdint>
 
 template<typename T>

@@ -886,6 +886,40 @@ std::unique_ptr<st_texture_view> st_dx12_graphics_context::create_texture_view(s
 	return std::move(texture_view);
 }
 
+std::unique_ptr<st_sampler> st_dx12_graphics_context::create_sampler(const st_sampler_desc& desc)
+{
+	D3D12_SAMPLER_DESC sampler_desc = {};
+
+	// The dx12 filter enum is organized so all point filters are 0s and linear
+	// filters are always the same bit depending on category.
+	uint32_t filter = 0x0;
+	if (desc._mip_filter == st_filter_linear)
+		filter |= 0x1;
+	if (desc._mag_filter == st_filter_linear)
+		filter |= 0x4;
+	if (desc._min_filter == st_filter_linear)
+		filter |= 0x10;
+
+	sampler_desc.Filter = (D3D12_FILTER)filter;
+
+	sampler_desc.AddressU = convert_address_mode(desc._address_u);
+	sampler_desc.AddressV = convert_address_mode(desc._address_v);
+	sampler_desc.AddressW = convert_address_mode(desc._address_w);
+	sampler_desc.MinLOD = desc._min_mip;
+	sampler_desc.MaxLOD = desc._max_mip;
+	sampler_desc.MipLODBias = desc._mip_bias;
+	sampler_desc.MaxAnisotropy = desc._anisotropy;
+	sampler_desc.ComparisonFunc = convert_comparison_func(desc._compare_func);
+
+	st_dx12_cpu_descriptor_handle sampler_handle = _sampler_heap->allocate_handle();
+	_device->CreateSampler(&sampler_desc, sampler_handle._handle);
+
+	std::unique_ptr<st_dx12_sampler> sampler = std::make_unique<st_dx12_sampler>();
+	sampler->_handle = sampler_handle._offset;
+
+	return std::move(sampler);
+}
+
 std::unique_ptr<st_buffer> st_dx12_graphics_context::create_buffer(
 	const uint32_t count,
 	const size_t element_size,
@@ -1047,11 +1081,12 @@ void st_dx12_graphics_context::set_constant_buffers(
 }
 
 void st_dx12_graphics_context::set_textures(
-	st_resource_table* _table,
+	st_resource_table* table_,
 	uint32_t count,
-	st_texture** textures)
+	st_texture** textures,
+	st_sampler** samplers)
 {
-	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
+	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
 
 	for (uint32_t i = 0; i < count; ++i)
 	{
@@ -1078,8 +1113,15 @@ void st_dx12_graphics_context::set_textures(
 			table->_srvs.push_back(0);
 		}
 
-		st_dx12_descriptor sampler = create_shader_sampler();
-		table->_samplers.push_back(sampler);
+		if (samplers)
+		{
+			st_dx12_sampler* s = static_cast<st_dx12_sampler*>(samplers[i]);
+			table->_samplers.push_back(s->_handle);
+		}
+		else
+		{
+			table->_samplers.push_back(0);
+		}
 	}
 }
 
@@ -1589,31 +1631,6 @@ st_dx12_descriptor st_dx12_graphics_context::create_shader_resource_view(
 void st_dx12_graphics_context::destroy_shader_resource_view(st_dx12_descriptor offset)
 {
 	_resource_heap->deallocate_handle(offset);
-}
-
-st_dx12_descriptor st_dx12_graphics_context::create_shader_sampler()
-{
-	// Create the sampler.
-	D3D12_SAMPLER_DESC sampler_desc = {};
-	sampler_desc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-	sampler_desc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler_desc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler_desc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-	sampler_desc.MinLOD = 0;
-	sampler_desc.MaxLOD = D3D12_FLOAT32_MAX;
-	sampler_desc.MipLODBias = 0.0f;
-	sampler_desc.MaxAnisotropy = 1;
-	sampler_desc.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-
-	st_dx12_cpu_descriptor_handle sampler_handle = _sampler_heap->allocate_handle();
-	_device->CreateSampler(&sampler_desc, sampler_handle._handle);
-
-	return sampler_handle._offset;
-}
-
-void st_dx12_graphics_context::destroy_shader_sampler(st_dx12_descriptor offset)
-{
-	_sampler_heap->deallocate_handle(offset);
 }
 
 st_dx12_descriptor st_dx12_graphics_context::create_buffer_view(

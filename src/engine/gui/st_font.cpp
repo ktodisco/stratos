@@ -8,6 +8,7 @@
 
 #include <framework/st_compiler_defines.h>
 #include <framework/st_frame_params.h>
+#include <framework/st_global_resources.h>
 #include <framework/st_output.h>
 
 #include <graphics/geometry/st_vertex_attribute.h>
@@ -201,7 +202,8 @@ st_font_material::st_font_material(st_texture* texture) :
 	if (_texture)
 	{
 		context->set_texture_meta(_texture, "SPIRV_Cross_Combinedfont_texturefont_sampler");
-		context->set_textures(_resource_table.get(), 1, &_texture);
+		st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+		context->set_textures(_resource_table.get(), 1, &_texture, samplers);
 	}
 }
 
