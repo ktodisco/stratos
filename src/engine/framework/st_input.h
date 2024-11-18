@@ -45,6 +45,7 @@ enum st_button_t
 	k_button_x = 1 << 28,
 	k_button_y = 1 << 29,
 	k_button_z = 1 << 30,
+	k_button_shift = 1 << 31,
 };
 
 /*

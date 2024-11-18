@@ -111,6 +111,10 @@ st_gl_graphics_context::st_gl_graphics_context(const st_window* window)
 		targets,
 		nullptr);
 
+	// Turn on vsync.
+	// TODO: Test for the extension and have a backup.
+	wglSwapIntervalEXT(1);
+
 	_this = this;
 }
 

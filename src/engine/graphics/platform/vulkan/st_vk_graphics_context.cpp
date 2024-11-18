@@ -295,7 +295,7 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 		.setPQueueFamilyIndices(&_queue_family_index)
 		.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity)
 		.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-		.setPresentMode(vk::PresentModeKHR::eImmediate)
+		.setPresentMode(vk::PresentModeKHR::eFifo)
 		.setClipped(false);
 
 	VK_VALIDATE(_device.createSwapchainKHR(&swap_chain_info, nullptr, &_swap_chain));

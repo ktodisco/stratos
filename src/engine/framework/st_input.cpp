@@ -58,6 +58,7 @@ void st_input::handle_key_press(int32_t key_code, int32_t info)
 	case VK_UP: _button_mask |= k_button_up; break;
 	case VK_DOWN: _button_mask |= k_button_down; break;
 	case VK_SPACE: _button_mask |= k_button_space; break;
+	case VK_SHIFT: _button_mask |= k_button_shift; break;
 	case 0x41: _button_mask |= k_button_a; break;
 	case 0x42: _button_mask |= k_button_b; break;
 	case 0x43: _button_mask |= k_button_c; break;
@@ -97,6 +98,7 @@ void st_input::handle_key_release(int32_t key_code, int32_t info)
 	case VK_UP: _button_mask &= ~k_button_up; break;
 	case VK_DOWN: _button_mask &= ~k_button_down; break;
 	case VK_SPACE: _button_mask &= ~k_button_space; break;
+	case VK_SHIFT: _button_mask &= ~k_button_shift; break;
 	case 0x41: _button_mask &= ~k_button_a; break;
 	case 0x42: _button_mask &= ~k_button_b; break;
 	case 0x43: _button_mask &= ~k_button_c; break;
@@ -161,17 +163,7 @@ void st_input::update(st_frame_params* params)
 	auto t1 = std::chrono::high_resolution_clock::now();
 
 	auto delta_time = t1 - t0;
-	auto min_delta_time = std::chrono::milliseconds(16);
 	auto max_delta_time = std::chrono::milliseconds(32);
-	if (delta_time < min_delta_time)
-	{
-#if defined(ST_MINGW) && defined(ST_32_BIT)
-		uint32_t ms = std::chrono::duration_cast<std::chrono::duration<float>>(min_delta_time - delta_time).count();
-		usleep(ms * 1000);
-#else
-		std::this_thread::sleep_for(min_delta_time - delta_time);
-#endif
-	}
 
 	t1 = std::chrono::high_resolution_clock::now();
 	_last_time = t1;
@@ -190,6 +182,7 @@ void st_input::update(st_frame_params* params)
 		params->_delta_time = std::chrono::steady_clock::duration::zero();
 	}
 
+	auto min_delta_time = std::chrono::milliseconds(16);
 	// Allow for a single frame step.
 	if (_pressed_mask & k_button_n)
 	{

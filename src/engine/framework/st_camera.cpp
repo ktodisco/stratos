@@ -13,6 +13,8 @@
 
 #include <math/st_math.h>
 
+#include <chrono>
+
 st_camera::st_camera(const st_vec3f& eye, uint32_t width, uint32_t height)
 	: _width(width), _height(height)
 {
@@ -25,8 +27,11 @@ st_camera::~st_camera()
 
 void st_camera::update(st_frame_params* params)
 {
-	const float k_move_speed = 0.1f;
-	const float k_rotate_speed = 0.5f;
+	const float delta_time = std::chrono::duration_cast<std::chrono::duration<float>>(params->_delta_time).count();
+
+	float modifier = (params->_button_mask & k_button_shift) ? 3.0f : 1.0f;
+	const float k_move_speed = 3.0f * delta_time * modifier;
+	const float k_rotate_speed = 25.0f * delta_time * modifier;
 
 	// Use WASD to control the position.
 	st_vec3f translation = { 0.0f, 0.0f, 0.0f };
