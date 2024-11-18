@@ -16,6 +16,7 @@
 
 st_tonemap_render_pass::st_tonemap_render_pass(
 	st_render_texture* source_buffer,
+	st_render_texture* bloom_buffer,
 	st_render_texture* target_buffer)
 {
 	st_graphics_context* context = st_graphics_context::get();
@@ -31,6 +32,7 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 
 	_material = std::make_unique<st_tonemap_material>(
 		source_buffer,
+		bloom_buffer,
 		target_buffer,
 		_vertex_format.get(),
 		_pass.get());

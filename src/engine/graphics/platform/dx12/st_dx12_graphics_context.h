@@ -174,10 +174,11 @@ private:
 	std::unique_ptr<st_dx12_descriptor_heap> _resource_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _rtv_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _dsv_heap;
+	std::unique_ptr<st_dx12_descriptor_heap> _static_sampler_heap;
 
 	// Heap used for drawing. Descriptors are copied to blocks in this heap with each draw.
 	std::unique_ptr<st_dx12_descriptor_heap> _cbv_srv_heap[k_max_frames];
-	std::unique_ptr<st_dx12_descriptor_heap> _sampler_heap;
+	std::unique_ptr<st_dx12_descriptor_heap> _sampler_heap[k_max_frames];
 
 	std::unique_ptr<st_dx12_descriptor_heap> _gui_srv_heap;
 

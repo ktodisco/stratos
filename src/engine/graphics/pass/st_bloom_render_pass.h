@@ -8,8 +8,8 @@
 
 #include <graphics/pass/st_fullscreen_render_pass.h>
 
+#include <array>
 #include <memory>
-#include <vector>
 
 class st_bloom_render_pass : public st_fullscreen_render_pass
 {
@@ -22,9 +22,19 @@ public:
 	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
 private:
-	std::unique_ptr<struct st_render_pass> _pass = nullptr;
+	std::unique_ptr<class st_render_texture> _threshold_target = nullptr;
+	std::unique_ptr<class st_material> _threshold_material = nullptr;
+	std::unique_ptr<struct st_render_pass> _threshold_pass = nullptr;
 
-	std::vector<std::unique_ptr<class st_render_texture>> _targets;
+	static const uint32_t k_num_downsamples = 4;
+	std::array<std::unique_ptr<struct st_render_pass>, k_num_downsamples> _downsample_passes;
+	std::array<std::unique_ptr<struct st_render_pass>, k_num_downsamples - 1> _upsample_passes;
 
-	std::unique_ptr<class st_gaussian_blur_render_pass> _blur_pass = nullptr;
+	std::array<std::unique_ptr<class st_material>, k_num_downsamples> _downsample_materials;
+	std::array<std::unique_ptr<class st_material>, k_num_downsamples - 1> _upsample_materials;
+
+	std::array<std::unique_ptr<class st_render_texture>, k_num_downsamples> _downsample_targets;
+	std::array<std::unique_ptr<class st_render_texture>, k_num_downsamples> _upsample_targets;
+
+	std::array<std::unique_ptr<class st_gaussian_blur_render_pass>, k_num_downsamples> _blur_passes;
 };

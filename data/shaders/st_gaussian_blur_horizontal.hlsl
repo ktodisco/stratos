@@ -1,6 +1,7 @@
 struct vs_input
 {
 	float3 position : POSITION;
+	float2 uv : UV;
 };
 
 struct ps_input
@@ -12,23 +13,35 @@ struct ps_input
 [[vk::binding(0, 0)]] Texture2D tex : register(t0);
 [[vk::binding(0, 1)]] SamplerState tex_sampler : register(s0);
 
+[[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
+{
+	float4 source_dim;
+}
+
 ps_input vs_main(vs_input input)
 {
 	ps_input result;
 
-	float2 texcoord_base = float2(0.5f, 0.5f);
-	result.uv = input.position.xy * texcoord_base + texcoord_base;
-	result.uv.y = 1.0f - result.uv.y;
-
 	result.position = float4(input.position.xy, 0.0f, 1.0f);
+	result.uv = input.uv;
 
 	return result;
 };
 
 float4 ps_main(ps_input input) : SV_TARGET
 {
-	float3 source = tex.Sample(tex_sampler, input.uv).rgb;
-	float3 filtered = source > 4.0f ? source : 0.0f;
+	float weights[9] =
+    {
+		0.02f, 0.04f, 0.08f, 0.16f, 0.4f, 0.16f, 0.08f, 0.04f, 0.02f
+    };
+	
+	float3 result = float3(0.0f, 0.0f, 0.0f);
+	for (int x = -4; x <= 4; ++x)
+    {
+		float2 offset = float2(x * source_dim.z, 0.0f);
+		float3 source = tex.Sample(tex_sampler, input.uv + offset).rgb;
+		result += source * weights[x + 4];
+    }
 
-	return float4(filtered, 1.0f);
+	return float4(result, 1.0f);
 };

@@ -94,8 +94,8 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 
 	_bloom_target = std::make_unique<st_render_texture>(
 		context,
-		_window->get_width(),
-		_window->get_height(),
+		_window->get_width() / 2,
+		_window->get_height() / 2,
 		st_format_r16g16b16a16_float,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
@@ -131,6 +131,7 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		_bloom_target.get());
 	_tonemap_pass = std::make_unique<st_tonemap_render_pass>(
 		_deferred_target.get(),
+		_bloom_target.get(),
 		_tonemap_target.get());
 	_passthrough_pass = std::make_unique<st_passthrough_render_pass>(
 		_tonemap_target.get());

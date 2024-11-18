@@ -15,11 +15,13 @@
 
 st_tonemap_material::st_tonemap_material(
 	st_render_texture* texture,
+	st_render_texture* bloom,
 	st_render_texture* target,
 	st_vertex_format* vertex_format,
 	st_render_pass* pass) :
 	st_material(e_st_render_pass_type::tonemap),
-	_texture(texture)
+	_texture(texture),
+	_bloom(bloom)
 {
 	st_graphics_context* context = st_graphics_context::get();
 
@@ -35,9 +37,17 @@ st_tonemap_material::st_tonemap_material(
 	_pipeline = context->create_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	st_texture* t = _texture->get_texture();
-	st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
-	context->set_textures(_resource_table.get(), 1, &t, samplers);
+	st_texture* textures[] =
+	{
+		_texture->get_texture(),
+		_bloom->get_texture()
+	};
+	st_sampler* samplers[] =
+	{
+		_global_resources->_trilinear_clamp_sampler.get(),
+		_global_resources->_trilinear_clamp_sampler.get()
+	};
+	context->set_textures(_resource_table.get(), 2, textures, samplers);
 }
 
 st_tonemap_material::~st_tonemap_material()
@@ -57,6 +67,8 @@ void st_tonemap_material::bind(
 	context->set_pipeline(_pipeline.get());
 
 	context->set_texture_meta(_texture->get_texture(), "SPIRV_Cross_Combinedtextex_sampler");
+	context->set_texture_meta(_bloom->get_texture(), "SPIRV_Cross_Combinedbloombloom_sampler");
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
+	context->transition(_bloom->get_texture(), st_texture_state_pixel_shader_read);
 	context->bind_resource_table(_resource_table.get());
 }

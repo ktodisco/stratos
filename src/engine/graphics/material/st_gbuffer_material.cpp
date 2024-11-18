@@ -92,8 +92,8 @@ st_gbuffer_material::st_gbuffer_material(
 			_mre_texture.get()
 		};
 		st_sampler* samplers[] = {
-			_global_resources->_trilinear_clamp_sampler.get(),
-			_global_resources->_trilinear_clamp_sampler.get(),
+			_global_resources->_trilinear_wrap_sampler.get(),
+			_global_resources->_trilinear_wrap_sampler.get(),
 		};
 		context->set_textures(_gbuffer_resources.get(), std::size(textures), textures, samplers);
 	}

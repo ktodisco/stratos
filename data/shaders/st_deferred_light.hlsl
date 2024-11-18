@@ -159,6 +159,8 @@ float3 evaluate_sphere_light(
 			n_dot_h,
 			metalness,
 			linear_roughness) * irradiance;
+	// Cap the specular result to the light power.
+	specular_result = min(specular_result, light_power.xxx);
 	
 	return diffuse_result + specular_result;
 }

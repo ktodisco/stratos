@@ -15,6 +15,7 @@ class st_tonemap_render_pass : public st_fullscreen_render_pass
 public:
 	st_tonemap_render_pass(
 		class st_render_texture* source_buffer,
+		class st_render_texture* bloom_buffer,
 		class st_render_texture* target_buffer);
 	~st_tonemap_render_pass();
 

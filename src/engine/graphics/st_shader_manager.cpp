@@ -44,9 +44,17 @@ st_shader_manager::st_shader_manager(st_graphics_context* context)
 		context->create_shader(
 			"data/shaders/st_tonemap",
 			st_shader_type_vertex | st_shader_type_pixel);
-	_shaders[st_shader_bloom] =
+	_shaders[st_shader_bloom_threshold] =
 		context->create_shader(
-			"data/shaders/st_bloom",
+			"data/shaders/st_bloom_threshold",
+			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_bloom_downsample] =
+		context->create_shader(
+			"data/shaders/st_bloom_downsample",
+			st_shader_type_vertex | st_shader_type_pixel);
+	_shaders[st_shader_bloom_upsample] =
+		context->create_shader(
+			"data/shaders/st_bloom_upsample",
 			st_shader_type_vertex | st_shader_type_pixel);
 	_shaders[st_shader_gaussian_blur_vertical] =
 		context->create_shader(

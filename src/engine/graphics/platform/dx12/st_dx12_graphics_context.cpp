@@ -147,7 +147,7 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 	// TODO: The render target count could either be more dynamic, or defined better.
 	_rtv_heap = std::make_unique<st_dx12_descriptor_heap>(
 		_device.Get(),
-		k_max_frames + 16,
+		k_max_frames + 256,
 		D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
 		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
@@ -157,11 +157,11 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 		D3D12_DESCRIPTOR_HEAP_TYPE_DSV,
 		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
-	_sampler_heap = std::make_unique<st_dx12_descriptor_heap>(
+	_static_sampler_heap = std::make_unique<st_dx12_descriptor_heap>(
 		_device.Get(),
 		k_max_samplers,
 		D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
-		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
 
 	for (uint32_t h_itr = 0; h_itr < k_max_frames; ++h_itr)
 	{
@@ -169,6 +169,12 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 			_device.Get(),
 			k_max_shader_resources,
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+			D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+		_sampler_heap[h_itr] = std::make_unique<st_dx12_descriptor_heap>(
+			_device.Get(),
+			k_max_samplers,
+			D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
 			D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 	}
 
@@ -347,13 +353,14 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 	_upload_buffer = nullptr;
 
 	_gui_srv_heap = nullptr;
-	_sampler_heap = nullptr;
+	_static_sampler_heap = nullptr;
 	_dsv_heap = nullptr;
 	_rtv_heap = nullptr;
 	_resource_heap = nullptr;
 	for (uint32_t h_itr = 0; h_itr < k_max_frames; ++h_itr)
 	{
 		_cbv_srv_heap[h_itr] = nullptr;
+		_sampler_heap[h_itr] = nullptr;
 	}
 
 	for (uint32_t bb_itr = 0; bb_itr < k_max_frames; ++bb_itr)
@@ -444,7 +451,7 @@ void st_dx12_graphics_context::set_shader_resource_table(uint32_t offset)
 
 void st_dx12_graphics_context::set_sampler_table(uint32_t offset)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap->get_handle_gpu(offset);
+	D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap[_frame_index]->get_handle_gpu(offset);
 	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_samplers, sampler_handle);
 }
 
@@ -903,7 +910,7 @@ std::unique_ptr<st_sampler> st_dx12_graphics_context::create_sampler(const st_sa
 	sampler_desc.MaxAnisotropy = desc._anisotropy;
 	sampler_desc.ComparisonFunc = convert_comparison_func(desc._compare_func);
 
-	st_dx12_cpu_descriptor_handle sampler_handle = _sampler_heap->allocate_handle();
+	st_dx12_cpu_descriptor_handle sampler_handle = _static_sampler_heap->allocate_handle();
 	_device->CreateSampler(&sampler_desc, sampler_handle._handle);
 
 	std::unique_ptr<st_dx12_sampler> sampler = std::make_unique<st_dx12_sampler>();
@@ -1198,9 +1205,21 @@ void st_dx12_graphics_context::bind_resource_table(st_resource_table* table_)
 	if (table->_buffers.size() > 0)
 		set_buffer_table(offset);
 
-	// TODO: Samplers are still left as plain entries into the samplers table because
-	// sampler usage is not very complex. This will likely need to change in the future.
-	if (table->_samplers.size() > 0) { set_sampler_table(table->_samplers[0]); }
+	offset = k_invalid_offset;
+	for (uint32_t s_itr = 0; s_itr < table->_samplers.size(); ++s_itr)
+	{
+		st_dx12_cpu_descriptor_handle handle = _sampler_heap[_frame_index]->allocate_handle();
+		if (offset == k_invalid_offset)
+			offset = handle._offset;
+
+		_device->CopyDescriptorsSimple(
+			1,
+			handle._handle,
+			_static_sampler_heap->get_handle_cpu(table->_samplers[s_itr]),
+			D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	}
+	if (table->_samplers.size() > 0)
+		set_sampler_table(offset);
 }
 
 std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* filename, uint8_t type)
@@ -1511,7 +1530,8 @@ void st_dx12_graphics_context::begin_frame()
 
 	// Empty all allocations from this heap. Commands using them have finished executing.
 	_cbv_srv_heap[_frame_index]->empty();
-	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap[_frame_index]->get(), _sampler_heap->get() };
+	_sampler_heap[_frame_index]->empty();
+	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap[_frame_index]->get(), _sampler_heap[_frame_index]->get() };
 	_command_list->SetDescriptorHeaps(_countof(heaps), heaps);
 
 	_dynamic_vertex_bytes_written = 0;

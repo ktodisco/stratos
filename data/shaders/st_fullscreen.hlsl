@@ -1,6 +1,7 @@
 struct vs_input
 {
 	float3 position : POSITION;
+	float2 uv : UV;
 };
 
 struct ps_input
@@ -16,10 +17,8 @@ ps_input vs_main(vs_input input)
 {
 	ps_input result;
 	
-	float2 texcoord_base = float2(0.5f, 0.5f);
-	result.uv = input.position.xy * texcoord_base + texcoord_base;
-	
 	result.position = float4(input.position.xy, 0.0f, 1.0f);
+	result.uv = input.uv;
 	
 	return result;
 };

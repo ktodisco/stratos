@@ -1,6 +1,7 @@
 struct vs_input
 {
 	float3 position : POSITION;
+	float2 uv : UV;
 };
 
 struct ps_input
@@ -10,16 +11,16 @@ struct ps_input
 };
 
 [[vk::binding(0, 0)]] Texture2D tex : register(t0);
+[[vk::binding(1, 0)]] Texture2D bloom : register(t1);
 [[vk::binding(0, 1)]] SamplerState tex_sampler : register(s0);
+[[vk::binding(1, 1)]] SamplerState bloom_sampler : register(s1);
 
 ps_input vs_main(vs_input input)
 {
 	ps_input result;
 	
-	float2 texcoord_base = float2(0.5f, 0.5f);
-	result.uv = input.position.xy * texcoord_base + texcoord_base;
-	
 	result.position = float4(input.position.xy, 0.0f, 1.0f);
+	result.uv = input.uv;
 	
 	return result;
 };
@@ -50,7 +51,9 @@ float3 gamma_correct(float3 x)
 
 float4 ps_main(ps_input input) : SV_TARGET
 {
-	float3 tonemap = aces_film(tex.Sample(tex_sampler, input.uv).rgb);
+	float3 source = tex.Sample(tex_sampler, input.uv).rgb;
+	float3 bloomed = source + bloom.Sample(bloom_sampler, input.uv).rgb;
+	float3 tonemap = aces_film(bloomed);
 	float3 gamma = gamma_correct(tonemap);
 	
 	return float4(gamma, 1.0f);

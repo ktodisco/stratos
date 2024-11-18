@@ -13,6 +13,7 @@ class st_tonemap_material : public st_material
 public:
 	st_tonemap_material(
 		class st_render_texture* texture,
+		class st_render_texture* bloom,
 		class st_render_texture* target,
 		struct st_vertex_format* vertex_format,
 		struct st_render_pass* pass);
@@ -30,5 +31,6 @@ private:
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
 
 	class st_render_texture* _texture;
+	class st_render_texture* _bloom;
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 };

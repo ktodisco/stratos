@@ -17,11 +17,23 @@ void create_global_resources(st_graphics_context* context)
 		desc._min_filter = st_filter_linear;
 		desc._mag_filter = st_filter_linear;
 		desc._mip_filter = st_filter_linear;
+		desc._address_u = st_address_mode_clamp;
+		desc._address_v = st_address_mode_clamp;
+		desc._address_w = st_address_mode_clamp;
+
+		_global_resources->_trilinear_clamp_sampler = context->create_sampler(desc);
+	}
+
+	{
+		st_sampler_desc desc;
+		desc._min_filter = st_filter_linear;
+		desc._mag_filter = st_filter_linear;
+		desc._mip_filter = st_filter_linear;
 		desc._address_u = st_address_mode_wrap;
 		desc._address_v = st_address_mode_wrap;
 		desc._address_w = st_address_mode_wrap;
 
-		_global_resources->_trilinear_clamp_sampler = context->create_sampler(desc);
+		_global_resources->_trilinear_wrap_sampler = context->create_sampler(desc);
 	}
 }
 
