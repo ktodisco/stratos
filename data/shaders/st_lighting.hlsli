@@ -24,7 +24,7 @@ float specular_ndf_ggx_tr(float n_dot_h, float linear_roughness)
 	// While this gives physically accurate results, it does not handle zero roughness and converges on
 	// zero, resulting in no specular highlight.  This is undesirable for area lights, so we nudge with
 	// an epsilon value to avoid zero roughness.
-	float roughness2 = max(linear_roughness * linear_roughness, 0.00001f);
+	float roughness2 = max(linear_roughness * linear_roughness, 1e-6f);
 
 	float num = roughness2;
 	float den = k_pi * pow((n_dot_h * n_dot_h) * (roughness2 - 1.0f) + 1.0f, 2);

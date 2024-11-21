@@ -1,3 +1,4 @@
+#include "st_encoding.hlsli"
 #include "st_gamma_correction.hlsli"
 
 struct vs_input
@@ -44,7 +45,7 @@ ps_input vs_main(vs_input input)
 struct ps_output
 {
 	float4 albedo : SV_Target0;
-	float4 normal : SV_Target1;
+	float2 normal : SV_Target1;
 	float4 third : SV_Target2;
 };
 
@@ -55,8 +56,8 @@ ps_output ps_main(ps_input input)
 	float4 mre = mre_texture.Sample(mre_sampler, input.uv);
 
 	output.albedo = float4(diffuse_texture.SampleBias(diffuse_sampler, input.uv, -0.5f).rgb, mre.r);
-	output.normal = float4(normalize(input.normal) * 0.5f + 0.5f, mre.g);
-	output.third = float4(mre.b * emissive_intensity, 0.0f, 0.0f, 0.0f);
+	output.normal = oct_encode(normalize(input.normal));
+	output.third = float4(mre.g, mre.b * emissive_intensity, 0.0f, 0.0f);
 	
 	return output;
 }

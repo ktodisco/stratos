@@ -1,3 +1,4 @@
+#include "st_encoding.hlsli"
 #include "st_lighting.hlsli"
 
 struct vs_input
@@ -174,10 +175,10 @@ float4 ps_main(ps_input input) : SV_TARGET
 	
 	float3 albedo = albedo_sample.rgb;
 	float metalness = albedo_sample.a;
-	float3 normal = normal_sample.rgb * 2.0f - 1.0f;
-	float roughness = normal_sample.a;
+	float3 normal = oct_decode(normal_sample.rg);
+	float roughness = third_sample.r;
 	float linear_roughness = roughness * roughness;
-	float emissive = third_sample.r;
+	float emissive = third_sample.g;
 
 	float4 clip_position = float4(input.uv * 2.0f - 1.0f, depth, 1.0f);
 	float4 world_position = mul(clip_position, inverse_vp);
