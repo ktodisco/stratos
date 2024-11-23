@@ -36,6 +36,9 @@ float4 ps_main(ps_input input) : SV_TARGET
 {
 	float3 source = tex.Sample(tex_sampler, input.uv).rgb;
 	
+	if (any(isnan(source)))
+		source = 0.0f.xxx;
+	
 	float luma = dot(source, float3(0.2126f, 0.7152f, 0.0722f));
 	float3 thresholded = luma > cutoff ? source : float3(0.0f, 0.0f, 0.0f);
 	
