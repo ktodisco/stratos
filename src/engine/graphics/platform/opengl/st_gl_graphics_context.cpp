@@ -422,12 +422,6 @@ std::unique_ptr<st_texture> st_gl_graphics_context::create_texture(const st_text
 	return std::move(texture);
 }
 
-void st_gl_graphics_context::set_texture_meta(st_texture* texture_, const char* name)
-{
-	st_gl_texture* texture = static_cast<st_gl_texture*>(texture_);
-	texture->_name = name;
-}
-
 void st_gl_graphics_context::set_texture_name(st_texture* texture_, std::string name)
 {
 	st_gl_texture* texture = static_cast<st_gl_texture*>(texture_);
@@ -479,17 +473,27 @@ std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(const st_buffer
 	buffer->_element_size = desc._element_size;
 	buffer->_count = desc._count;
 
-	GLenum target = GL_SHADER_STORAGE_BUFFER;
+	if (desc._usage & e_st_buffer_usage::uniform)
+	{
+		// For uniforms, use local storage to cache contents.
+		buffer->_storage = reinterpret_cast<uint8_t*>(malloc(buffer->_element_size * buffer->_count));
 
-	if (desc._usage & e_st_buffer_usage::vertex)
-		target = GL_ARRAY_BUFFER;
-	else if (desc._usage & e_st_buffer_usage::index)
-		target = GL_ELEMENT_ARRAY_BUFFER;
+		glGenBuffers(1, &buffer->_buffer);
+	}
+	else
+	{
+		GLenum target = GL_SHADER_STORAGE_BUFFER;
 
-	glGenBuffers(1, &buffer->_buffer);
-	glBindBuffer(target, buffer->_buffer);
-	glBufferData(target, desc._count * desc._element_size, NULL, GL_STATIC_DRAW);
-	glBindBuffer(target, 0);
+		if (desc._usage & e_st_buffer_usage::vertex)
+			target = GL_ARRAY_BUFFER;
+		else if (desc._usage & e_st_buffer_usage::index)
+			target = GL_ELEMENT_ARRAY_BUFFER;
+
+		glGenBuffers(1, &buffer->_buffer);
+		glBindBuffer(target, buffer->_buffer);
+		glBufferData(target, desc._count * desc._element_size, NULL, GL_STATIC_DRAW);
+		glBindBuffer(target, 0);
+	}
 
 	return std::move(buffer);
 }
@@ -529,82 +533,10 @@ void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 		map(buffer_, 0, { 0, buffer->_element_size * buffer->_count }, (void**)&head);
 		memcpy(head + offset, data, count * buffer->_element_size);
 		unmap(buffer_, 0, { 0, 0 });
-
-		const st_gl_shader* shader = get_bound_shader();
-
-		st_gl_shader_storage_block ssb = shader->get_shader_storage_block(buffer->_name.c_str());
-		ssb.set(buffer->_buffer, data, count * buffer->_element_size);
 	}
 	else if (buffer->_usage & e_st_buffer_usage::uniform)
 	{
-		const st_gl_shader* shader = get_bound_shader();
-
-		// Update by sending values from the data buffer piece by piece depending on type.
-		size_t offset = 0;
-		for (auto& constant : buffer->_constants)
-		{
-			st_gl_uniform uniform = shader->get_uniform(constant._name.c_str());
-
-			switch (constant._type)
-			{
-			case st_shader_constant_type_float:
-			{
-				char* data_offset = reinterpret_cast<char*>(data) + offset;
-				float* val = reinterpret_cast<float*>(data_offset);
-				uniform.set(*val);
-
-				offset += st_graphics_get_shader_constant_size(constant._type);
-			}
-			break;
-			case st_shader_constant_type_vec2:
-			{
-				char* data_offset = reinterpret_cast<char*>(data) + offset;
-				st_vec2f* vec2 = reinterpret_cast<st_vec2f*>(data_offset);
-				uniform.set(*vec2);
-
-				offset += st_graphics_get_shader_constant_size(constant._type);
-			}
-			break;
-			case st_shader_constant_type_vec3:
-			{
-				char* data_offset = reinterpret_cast<char*>(data) + offset;
-				st_vec3f* vec3 = reinterpret_cast<st_vec3f*>(data_offset);
-				uniform.set(*vec3);
-
-				offset += st_graphics_get_shader_constant_size(constant._type);
-			}
-			break;
-			case st_shader_constant_type_vec4:
-			{
-				char* data_offset = reinterpret_cast<char*>(data) + offset;
-				st_vec4f* vec4 = reinterpret_cast<st_vec4f*>(data_offset);
-				uniform.set(*vec4);
-
-				offset += st_graphics_get_shader_constant_size(constant._type);
-			}
-			break;
-			case st_shader_constant_type_mat4:
-			{
-				char* data_offset = reinterpret_cast<char*>(data) + offset;
-				st_mat4f* mat4 = reinterpret_cast<st_mat4f*>(data_offset);
-				uniform.set(*mat4);
-
-				offset += st_graphics_get_shader_constant_size(constant._type);
-			}
-			break;
-			case st_shader_constant_type_block:
-			{
-				st_gl_uniform_block block = shader->get_uniform_block(constant._name.c_str());
-				block.set(buffer->_buffer, data, buffer->_element_size * buffer->_count);
-
-				offset += buffer->_element_size * buffer->_count;
-			}
-			break;
-			default:
-				assert(false);
-				break;
-			}
-		}
+		memcpy(buffer->_storage, data, buffer->_element_size * buffer->_count);
 	}
 	else if (buffer->_usage & e_st_buffer_usage::vertex)
 	{
@@ -620,10 +552,10 @@ void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 	}
 }
 
-void st_gl_graphics_context::set_buffer_meta(st_buffer* buffer_, std::string name)
+void st_gl_graphics_context::set_buffer_name(st_buffer* buffer_, std::string name)
 {
 	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
-	buffer->_name = name;
+	glObjectLabel(GL_TEXTURE, buffer->_buffer, name.length(), name.c_str());
 }
 
 void st_gl_graphics_context::add_constant(
@@ -650,6 +582,12 @@ std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table
 
 void st_gl_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
 {
+	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		table->_constant_buffers.push_back(cbs[i]);
+	}
 }
 
 void st_gl_graphics_context::set_textures(
@@ -677,8 +615,14 @@ void st_gl_graphics_context::set_textures(
 	}
 }
 
-void st_gl_graphics_context::set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers)
+void st_gl_graphics_context::set_buffers(st_resource_table* table_, uint32_t count, st_buffer** buffers)
 {
+	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		table->_buffers.push_back(buffers[i]);
+	}
 }
 
 void st_gl_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
@@ -696,16 +640,32 @@ void st_gl_graphics_context::bind_resource_table(st_resource_table* table_)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
+	const st_gl_shader* shader = get_bound_shader();
+
 	for (uint32_t i = 0; i < table->_srvs.size(); ++i)
 	{
 		const st_gl_texture* texture = static_cast<const st_gl_texture*>(table->_srvs[i]);
 
-		const st_gl_shader* shader = get_bound_shader();
-
-		st_gl_uniform uniform = shader->get_uniform(texture->_name.c_str());
-		uniform.set(*texture, uniform.get_location());
+		const st_gl_uniform& uniform = shader->get_uniform(i);
+		uniform.set(*texture);
 
 		glBindSampler(uniform.get_location(), table->_samplers[i]);
+	}
+
+	for (uint32_t i = 0; i < table->_constant_buffers.size(); ++i)
+	{
+		const st_gl_buffer* cb = static_cast<const st_gl_buffer*>(table->_constant_buffers[i]);
+	
+		const st_gl_uniform_block& block = shader->get_uniform_block(i);
+		block.set(cb->_buffer, cb->_storage, cb->_element_size * cb->_count);
+	}
+	
+	for (uint32_t i = 0; i < table->_buffers.size(); ++i)
+	{
+		const st_gl_buffer* buffer = static_cast<const st_gl_buffer*>(table->_buffers[i]);
+	
+		const st_gl_shader_storage_block& block = shader->get_shader_storage_block(i);
+		block.set(buffer->_buffer, nullptr, 0);
 	}
 }
 

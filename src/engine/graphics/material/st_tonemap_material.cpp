@@ -66,8 +66,6 @@ void st_tonemap_material::bind(
 {
 	context->set_pipeline(_pipeline.get());
 
-	context->set_texture_meta(_texture->get_texture(), "SPIRV_Cross_Combinedtextex_sampler");
-	context->set_texture_meta(_bloom->get_texture(), "SPIRV_Cross_Combinedbloombloom_sampler");
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
 	context->transition(_bloom->get_texture(), st_texture_state_pixel_shader_read);
 	context->bind_resource_table(_resource_table.get());

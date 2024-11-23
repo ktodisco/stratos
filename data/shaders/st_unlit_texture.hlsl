@@ -14,7 +14,7 @@ struct ps_input
 
 [[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
-	float4x4 mvp;
+	column_major float4x4 mvp;
 }
 
 [[vk::binding(0, 0)]] Texture2D diffuse_texture : register(t0);

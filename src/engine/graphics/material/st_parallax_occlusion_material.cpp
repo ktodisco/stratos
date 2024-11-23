@@ -36,10 +36,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	}
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
-	context->set_texture_meta(_albedo_texture.get(), "SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
-
 	_normal_texture = st_texture_loader::load(normal_texture);
-	context->set_texture_meta(_normal_texture.get(), "SPIRV_Cross_Combinednormal_texturenormal_sampler");
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));

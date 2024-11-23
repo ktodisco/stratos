@@ -207,7 +207,6 @@ st_font_material::st_font_material(st_texture* texture) :
 
 	if (_texture)
 	{
-		context->set_texture_meta(_texture, "SPIRV_Cross_Combinedfont_texturefont_sampler");
 		st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
 		context->set_textures(_resource_table.get(), 1, &_texture, samplers);
 	}

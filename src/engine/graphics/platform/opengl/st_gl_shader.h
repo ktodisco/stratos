@@ -22,23 +22,17 @@ class st_gl_uniform
 	friend class st_gl_shader;
 
 public:
-	void set(float val);
-	void set(const struct st_vec2f& vec);
-	void set(const struct st_vec3f& vec);
-	// MSVC linker has trouble comprehending the validity of the const definition,
-	// so work around it with a non-const definition.
-	void set(struct st_vec3f& vec);
-	void set(const struct st_vec4f& vec);
-	void set(const struct st_mat4f& mat);
-	void set(const struct st_mat4f* mats, uint32_t count);
-	void set(const struct st_gl_texture& tex, uint32_t unit);
+	void set(const struct st_gl_texture& tex) const;
+	st_gl_uniform& operator=(const st_gl_uniform& u);
 
 	int32_t get_location() const { return _location; }
+	uint32_t get_binding() const { return _binding; }
 
 protected:
-	st_gl_uniform(int32_t location);
+	st_gl_uniform(int32_t location, uint32_t binding);
 
-	const int32_t _location;
+	int32_t _location;
+	uint32_t _binding;
 };
 
 /*
@@ -50,7 +44,9 @@ class st_gl_uniform_block
 	friend class st_gl_shader;
 
 public:
-	void set(uint32_t buffer, void* data, size_t size);
+	void set(uint32_t buffer, void* data, size_t size) const;
+
+	int32_t get_location() const { return _location; }
 
 protected:
 	st_gl_uniform_block(int32_t location);
@@ -67,7 +63,9 @@ class st_gl_shader_storage_block
 	friend class st_gl_shader;
 
 public:
-	void set(uint32_t buffer, void* data, size_t size);
+	void set(uint32_t buffer, void* data, size_t size) const;
+
+	int32_t get_location() const { return _location; }
 
 protected:
 	st_gl_shader_storage_block(int32_t location);
@@ -102,6 +100,8 @@ private:
 */
 class st_gl_shader : public st_shader
 {
+	friend class st_gl_graphics_context;
+
 public:
 	st_gl_shader(const char* source, uint8_t type);
 	~st_gl_shader();
@@ -113,15 +113,23 @@ public:
 
 	std::string get_link_log() const;
 
-	st_gl_uniform get_uniform(const char* name) const;
-	st_gl_uniform_block get_uniform_block(const char* name) const;
-	st_gl_shader_storage_block get_shader_storage_block(const char* name) const;
+	const st_gl_uniform& get_uniform(uint32_t index) const;
+	const st_gl_uniform_block& get_uniform_block(uint32_t index) const;
+	const st_gl_shader_storage_block& get_shader_storage_block(uint32_t index) const;
 
 	void use() const;
 	
+private:
+	void reflect();
+
 	uint32_t _handle;
 	st_gl_shader_component* _vs;
 	st_gl_shader_component* _fs;
+
+	// Reflection information, to assist in resource table binding.
+	std::vector<st_gl_uniform> _texture_binds;
+	std::vector<st_gl_uniform_block> _constant_binds;
+	std::vector<st_gl_shader_storage_block> _buffer_binds;
 };
 
 #endif

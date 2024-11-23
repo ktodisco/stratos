@@ -209,7 +209,6 @@ static void ImGui_ImplStratos_CreateFontsTexture(st_graphics_context* ctx)
         desc._initial_state = st_texture_state_pixel_shader_read;
         desc._data = pixels;
         g_font_texture = ctx->create_texture(desc);
-        ctx->set_texture_meta(g_font_texture.get(), "SPIRV_Cross_Combinedtexture0sampler0");
         ctx->set_texture_name(g_font_texture.get(), "ImGui Font");
         ctx->end_loading();
 

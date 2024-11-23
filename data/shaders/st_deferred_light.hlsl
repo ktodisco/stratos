@@ -21,13 +21,13 @@ struct ps_input
 
 [[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
-	float4x4 inverse_vp;
+	column_major float4x4 inverse_vp;
 	float4 eye;
 	float4 depth_reconstruction;
 
 	float4 sun_direction_power;
 	float4 sun_color;
-	float4x4 sun_vp;
+	column_major float4x4 sun_vp;
 	float4 sun_shadow_dim;
 }
 

@@ -1,6 +1,6 @@
 [[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
-    float4x4 ProjectionMatrix;
+    column_major float4x4 ProjectionMatrix;
 };
 
 struct VS_INPUT

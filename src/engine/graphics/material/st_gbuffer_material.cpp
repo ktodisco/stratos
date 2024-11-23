@@ -44,10 +44,7 @@ st_gbuffer_material::st_gbuffer_material(
 	}
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
-	context->set_texture_meta(_albedo_texture.get(), "SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
-
 	_mre_texture = st_texture_loader::load(mre_texture);
-	context->set_texture_meta(_mre_texture.get(), "SPIRV_Cross_Combinedmre_texturemre_sampler");
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));

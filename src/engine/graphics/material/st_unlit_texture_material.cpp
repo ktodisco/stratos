@@ -30,7 +30,6 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	context->add_constant(_view_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_texture = st_texture_loader::load(_texture_file.c_str());
-	context->set_texture_meta(_texture.get(), "SPIRV_Cross_Combineddiffuse_texturediffuse_sampler");
 
 	//state_desc->_shader = st_shader_manager::get()->get_shader(st_shader_unlit_texture);
 	//state_desc->_blend_desc._target_blend[0]._blend = false;

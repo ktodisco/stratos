@@ -17,8 +17,8 @@ struct ps_input
 
 [[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
-	float4x4 model;
-	float4x4 mvp;
+	column_major float4x4 model;
+	column_major float4x4 mvp;
 	float4 eye;
 }
 

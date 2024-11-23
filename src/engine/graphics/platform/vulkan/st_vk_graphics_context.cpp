@@ -1225,6 +1225,18 @@ void st_vk_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 		data);
 }
 
+void st_vk_graphics_context::set_buffer_name(st_buffer* buffer_, std::string name)
+{
+	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
+
+	vk::DebugUtilsObjectNameInfoEXT name_info = vk::DebugUtilsObjectNameInfoEXT()
+		.setObjectType(vk::ObjectType::eBuffer)
+		.setObjectHandle(VK_GET_HANDLE(buffer->_buffer, VkBuffer))
+		.setPObjectName(name.c_str());
+
+	VK_VALIDATE(_device.setDebugUtilsObjectNameEXT(&name_info));
+}
+
 std::unique_ptr<st_resource_table> st_vk_graphics_context::create_resource_table()
 {
 	std::unique_ptr<st_vk_resource_table> table = std::make_unique<st_vk_resource_table>();

@@ -63,7 +63,6 @@ public:
 
 	// Textures.
 	std::unique_ptr<st_texture> create_texture(const st_texture_desc& desc) override;
-	void set_texture_meta(st_texture* texture, const char* name) override {}
 	void set_texture_name(st_texture* texture, std::string name) override;
 	void transition(
 		st_texture* texture,
@@ -79,7 +78,7 @@ public:
 	void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) override;
 	void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) override;
 	void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) override;
-	void set_buffer_meta(st_buffer* buffer, std::string name) override {}
+	void set_buffer_name(st_buffer* buffer, std::string name) override;
 
 	// TODO: In the unified architexture, create_buffer would take a base Buffer* and
 	// the Vulkan implementation would contain both a vkBuffer and vkDeviceMemory.

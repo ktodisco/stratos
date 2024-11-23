@@ -93,7 +93,6 @@ void st_bloom_threshold_material::bind(
 	data._cutoff = _cutoff;
 	context->update_buffer(_cb.get(), &data, 0, 1);
 
-	context->set_texture_meta(_texture->get_texture(), "SPIRV_Cross_Combinedtextex_sampler");
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
 	context->bind_resource_table(_resource_table.get());
 }
@@ -165,7 +164,6 @@ void st_bloom_downsample_material::bind(
 	};
 	context->update_buffer(_cb.get(), &data, 0, 1);
 
-	context->set_texture_meta(_texture->get_texture(), "SPIRV_Cross_Combinedtextex_sampler");
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
 	context->bind_resource_table(_resource_table.get());
 }
@@ -244,8 +242,6 @@ void st_bloom_upsample_material::bind(
 	};
 	context->update_buffer(_cb.get(), &data, 0, 1);
 
-	context->set_texture_meta(_blur->get_texture(), "SPIRV_Cross_Combinedblurblur_sampler");
-	context->set_texture_meta(_step->get_texture(), "SPIRV_Cross_Combinedstepstep_sampler");
 	context->transition(_blur->get_texture(), st_texture_state_pixel_shader_read);
 	context->transition(_step->get_texture(), st_texture_state_pixel_shader_read);
 	context->bind_resource_table(_resource_table.get());

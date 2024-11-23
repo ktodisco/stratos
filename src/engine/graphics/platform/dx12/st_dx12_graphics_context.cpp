@@ -812,10 +812,6 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(const st_te
 	return std::move(texture);
 }
 
-void st_dx12_graphics_context::set_texture_meta(st_texture* texture, const char* name)
-{
-}
-
 void st_dx12_graphics_context::set_texture_name(st_texture* texture_, std::string name)
 {
 	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
@@ -1041,8 +1037,10 @@ void st_dx12_graphics_context::update_buffer(st_buffer* buffer_, void* data, con
 	unmap(buffer_, 0, { 0, 0 });
 }
 
-void st_dx12_graphics_context::set_buffer_meta(st_buffer* buffer, std::string name)
+void st_dx12_graphics_context::set_buffer_name(st_buffer* buffer_, std::string name)
 {
+	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
+	ST_NAME_DX12_OBJECT(buffer->_buffer.Get(), str_to_wstr(name).c_str());
 }
 
 void st_dx12_graphics_context::add_constant(

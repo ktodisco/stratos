@@ -48,7 +48,6 @@ public:
 
 	// Textures.
 	virtual std::unique_ptr<st_texture> create_texture(const st_texture_desc& desc) = 0;
-	virtual void set_texture_meta(st_texture* texture, const char* name) = 0;
 	virtual void set_texture_name(st_texture* texture, std::string name) = 0;
 	virtual void transition(
 		st_texture* texture,
@@ -64,7 +63,7 @@ public:
 	virtual void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) = 0;
 	virtual void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) = 0;
 	virtual void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) = 0;
-	virtual void set_buffer_meta(st_buffer* buffer, std::string name) = 0;
+	virtual void set_buffer_name(st_buffer* buffer, std::string name) = 0;
 
 	// Constant buffers.
 	virtual void add_constant(

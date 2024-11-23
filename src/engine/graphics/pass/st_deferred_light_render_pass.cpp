@@ -45,7 +45,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		desc._element_size = sizeof(st_sphere_light_data);
 		desc._usage = e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest;
 		_light_buffer = context->create_buffer(desc);
-		context->set_buffer_meta(_light_buffer.get(), "type_StructuredBuffer_st_sphere_light");
+		context->set_buffer_name(_light_buffer.get(), "Light Buffer");
 	}
 
 	st_target_desc targets[] =
@@ -93,9 +93,6 @@ void st_deferred_light_render_pass::render(
 
 	context->set_scissor(0, 0, params->_width, params->_height);
 
-	// Set global pass resource tables.
-	_material->bind(context, e_st_render_pass_type::deferred, params, identity, identity, identity);
-
 	st_clear_value clears[] =
 	{
 		st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
@@ -127,6 +124,9 @@ void st_deferred_light_render_pass::render(
 	light_data._position_power = st_vec4f(params->_light->_position, params->_light->_power);
 	light_data._color_radius = st_vec4f(params->_light->_color, params->_light->_radius);
 	context->update_buffer(_light_buffer.get(), &light_data, 0, 1);
+
+	// Set global pass resource tables.
+	_material->bind(context, e_st_render_pass_type::deferred, params, identity, identity, identity);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";

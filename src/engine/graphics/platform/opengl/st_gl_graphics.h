@@ -53,7 +53,12 @@ struct st_gl_constant
 
 struct st_gl_buffer : public st_buffer
 {
-	~st_gl_buffer() { glDeleteBuffers(1, &_buffer); }
+	~st_gl_buffer()
+	{
+		if (_storage)
+			free(_storage);
+		glDeleteBuffers(1, &_buffer);
+	}
 
 	GLuint _buffer;
 	uint32_t _count;
@@ -65,8 +70,6 @@ struct st_gl_buffer : public st_buffer
 		uint8_t* _storage;
 		std::vector<st_gl_constant> _constants;
 	//};
-
-	std::string _name;
 };
 
 struct st_gl_buffer_view : public st_buffer_view
@@ -89,12 +92,14 @@ struct st_gl_resource_table : public st_resource_table
 {
 	~st_gl_resource_table()
 	{
-		glDeleteSamplers(_samplers.size(), _samplers.data());
+		_srvs.clear();
 		_samplers.clear();
 	}
 
+	std::vector<const struct st_buffer*> _constant_buffers;
 	std::vector<const struct st_texture*> _srvs;
 	std::vector<GLuint> _samplers;
+	std::vector<const struct st_buffer*> _buffers;
 };
 
 struct st_gl_sampler : public st_sampler
@@ -113,7 +118,6 @@ struct st_gl_texture : public st_texture
 	uint32_t _height;
 	uint32_t _levels = 1;
 	e_st_format _format;
-	std::string _name;
 };
 
 struct st_gl_texture_view : public st_texture_view

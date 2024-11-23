@@ -95,12 +95,6 @@ void st_deferred_light_material::bind(
 {
 	context->set_pipeline(_pipeline.get());
 
-	context->set_texture_meta(_albedo->get_texture(), "SPIRV_Cross_Combinedalbedo_textureSPIRV_Cross_DummySampler");
-	context->set_texture_meta(_normal->get_texture(), "SPIRV_Cross_Combinednormal_textureSPIRV_Cross_DummySampler");
-	context->set_texture_meta(_third->get_texture(), "SPIRV_Cross_Combinedthird_textureSPIRV_Cross_DummySampler");
-	context->set_texture_meta(_depth->get_texture(), "SPIRV_Cross_Combineddepth_textureSPIRV_Cross_DummySampler");
-	context->set_texture_meta(_directional_shadow_map->get_texture(), "SPIRV_Cross_Combineddirectional_shadow_mapdirectional_shadow_sampler");
-
 	context->transition(_albedo->get_texture(), st_texture_state_pixel_shader_read);
 	context->transition(_normal->get_texture(), st_texture_state_pixel_shader_read);
 	context->transition(_third->get_texture(), st_texture_state_pixel_shader_read);
