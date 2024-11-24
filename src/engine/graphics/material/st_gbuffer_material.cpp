@@ -119,7 +119,6 @@ void st_gbuffer_material::bind(
 	const st_mat4f& transform)
 {
 	st_mat4f mvp = transform * view * proj;
-	mvp.transpose();
 
 	if (pass_type == e_st_render_pass_type::shadow)
 	{

@@ -102,7 +102,6 @@ void st_deferred_light_render_pass::render(
 	context->begin_render_pass(_pass.get(), clears, std::size(clears));
 
 	_cb._inverse_vp = (params->_view * params->_projection).inverse();
-	_cb._inverse_vp.transpose();
 	_cb._eye = st_vec4f(params->_eye, 0.0f);
 	if (context->get_api() == e_st_graphics_api::opengl)
 		_cb._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.5f, 0.5f);
@@ -114,7 +113,6 @@ void st_deferred_light_render_pass::render(
 		_cb._sun_direction_power = st_vec4f(params->_sun->_direction, params->_sun->_power);
 		_cb._sun_color = st_vec4f(params->_sun->_color, 1.0f);
 		_cb._sun_vp = params->_sun_view * params->_sun_projection;
-		_cb._sun_vp.transpose();
 	}
 
 	context->update_buffer(_constant_buffer.get(), &_cb, 0, 1);

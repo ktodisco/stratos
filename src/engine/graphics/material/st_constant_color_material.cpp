@@ -40,7 +40,6 @@ void st_constant_color_material::bind(
 	const st_mat4f& transform)
 {
 	st_mat4f mvp = transform * view * proj;
-	mvp.transpose();
 
 	st_constant_color_cb cb_data{};
 	cb_data._mvp = mvp;

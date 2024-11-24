@@ -90,9 +90,7 @@ void st_parallax_occlusion_material::bind(
 	context->set_pipeline(_pipeline.get());
 
 	st_mat4f mvp = transform * view * proj;
-	mvp.transpose();
 	st_mat4f transform_t = transform;
-	transform_t.transpose();
 
 	st_parallax_occlusion_cb pom_cb{};
 	pom_cb._model = transform_t;

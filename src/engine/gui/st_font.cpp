@@ -230,7 +230,6 @@ void st_font_material::bind(
 	context->set_pipeline(_pipeline.get());
 
 	st_mat4f mvp = transform * view * proj;
-	mvp.transpose();
 
 	st_font_cb cb_data{};
 	cb_data._mvp = mvp;

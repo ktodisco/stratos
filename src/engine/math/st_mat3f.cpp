@@ -22,8 +22,8 @@ void st_mat3f::make_identity()
 void st_mat3f::make_translation(const st_vec2f& __restrict t)
 {
 	make_identity();
-	data[2][0] = t.x;
-	data[2][1] = t.y;
+	data[0][2] = t.x;
+	data[1][2] = t.y;
 	data[2][2] = 1.0f;
 }
 
@@ -45,9 +45,9 @@ void st_mat3f::make_rotation_z(float angle)
 	float s = st_sinf(angle);
 
 	data[0][0] = c;
-	data[0][1] = s;
-	data[1][0] = -s;
-	data[1][2] = c;
+	data[1][0] = s;
+	data[0][1] = -s;
+	data[2][1] = c;
 	data[2][2] = 1.0f;
 }
 
@@ -82,9 +82,9 @@ st_mat3f st_mat3f::operator*(const st_mat3f& __restrict b) const
 			float tmp = 0.0f;
 			for (int k = 0; k < 3; ++k)
 			{
-				tmp += data[i][k] * b.data[k][j];
+				tmp += data[k][i] * b.data[j][k];
 			}
-			result.data[i][j] = tmp;
+			result.data[j][i] = tmp;
 		}
 	}
 	return result;
@@ -99,9 +99,9 @@ st_mat3f& st_mat3f::operator*=(const st_mat3f& __restrict m)
 st_vec3f st_mat3f::transform(const st_vec3f& __restrict in) const
 {
 	st_vec3f result;
-	result.x = in.x * data[0][0] + in.y * data[1][0] + in.z * data[2][0];
-	result.y = in.x * data[0][1] + in.y * data[1][1] + in.z * data[2][1];
-	result.z = in.x * data[0][2] + in.y * data[1][2] + in.z * data[2][2];
+	result.x = in.x * data[0][0] + in.y * data[0][1] + in.z * data[0][2];
+	result.y = in.x * data[1][0] + in.y * data[1][1] + in.z * data[1][2];
+	result.z = in.x * data[2][0] + in.y * data[2][1] + in.z * data[2][2];
 	return result;
 }
 
@@ -121,28 +121,28 @@ void st_mat3f::transpose()
 void st_mat3f::invert()
 {
 	st_mat3f tmp;
-	tmp.data[0][0] = data[1][1] * data[2][2] - data[2][1] * data[1][2];
-	tmp.data[1][0] = -data[0][1] * data[2][2] + data[2][1] * data[0][2];
-	tmp.data[2][0] = data[0][1] * data[1][2] - data[1][1] * data[0][2];
+	tmp.data[0][0] =  data[1][1] * data[2][2] - data[1][2] * data[2][1];
 	tmp.data[0][1] = -data[1][0] * data[2][2] + data[1][2] * data[2][0];
-	tmp.data[1][1] = data[0][0] * data[2][2] - data[0][2] * data[2][0];
-	tmp.data[2][1] = -data[0][0] * data[1][2] + data[0][2] * data[1][0];
-	tmp.data[0][2] = data[1][0] * data[2][1] - data[1][1] * data[2][0];
-	tmp.data[1][2] = -data[0][0] * data[2][1] + data[0][1] * data[2][0];
-	tmp.data[2][2] = data[0][0] * data[1][1] - data[0][1] * data[1][0];
+	tmp.data[0][2] =  data[1][0] * data[2][1] - data[1][1] * data[2][0];
+	tmp.data[1][0] = -data[0][1] * data[2][2] + data[2][1] * data[0][2];
+	tmp.data[1][1] =  data[0][0] * data[2][2] - data[2][0] * data[0][2];
+	tmp.data[1][2] = -data[0][0] * data[2][1] + data[2][0] * data[0][1];
+	tmp.data[2][0] =  data[0][1] * data[1][2] - data[1][1] * data[0][2];
+	tmp.data[2][1] = -data[0][0] * data[1][2] + data[1][0] * data[0][2];
+	tmp.data[2][2] =  data[0][0] * data[1][1] - data[1][0] * data[0][1];
 
-	float inv_det = data[0][0] * tmp.data[0][0] + data[1][0] * tmp.data[1][0] + data[2][0] * tmp.data[2][0];
+	float inv_det = data[0][0] * tmp.data[0][0] + data[0][1] * tmp.data[0][1] + data[0][2] * tmp.data[0][2];
 	// TODO: Assert inv_det is not 0.
 	inv_det = 1.0f / inv_det;
 
 	data[0][0] = tmp.data[0][0] * inv_det;
-	data[1][0] = tmp.data[0][1] * inv_det;
-	data[2][0] = tmp.data[0][2] * inv_det;
 	data[0][1] = tmp.data[1][0] * inv_det;
-	data[1][1] = tmp.data[1][1] * inv_det;
-	data[2][1] = tmp.data[1][2] * inv_det;
 	data[0][2] = tmp.data[2][0] * inv_det;
+	data[1][0] = tmp.data[0][1] * inv_det;
+	data[1][1] = tmp.data[1][1] * inv_det;
 	data[1][2] = tmp.data[2][1] * inv_det;
+	data[2][0] = tmp.data[0][2] * inv_det;
+	data[2][1] = tmp.data[1][2] * inv_det;
 	data[2][2] = tmp.data[2][2] * inv_det;
 }
 

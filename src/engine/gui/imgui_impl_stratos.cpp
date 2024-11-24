@@ -132,10 +132,10 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
         float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
         st_mat4f mvp =
         {
-            2.0f / (R - L), 0.0f, 0.0f, 0.0f,
-            0.0f, 2.0f / (T - B), 0.0f, 0.0f,
-            0.0f, 0.0f, 0.5f, 0.0f,
-            (R + L) / (L - R), (T + B) / (B - T), 0.5f, 1.0f,
+            2.0f / (R - L), 0.0f, 0.0f, (R + L) / (L - R),
+            0.0f, 2.0f / (T - B), 0.0f, (T + B) / (B - T),
+            0.0f, 0.0f, 0.5f, 0.5f,
+            0.0f, 0.0f, 0.0f, 1.0f,
         };
 
         ctx->update_buffer(g_constant_buffer.get(), mvp.data, 0, 1);
