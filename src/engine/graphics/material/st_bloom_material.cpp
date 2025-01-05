@@ -62,7 +62,7 @@ st_bloom_threshold_material::st_bloom_threshold_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_pipeline(desc);
+	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_texture* textures[]{ _texture->get_texture() };
@@ -125,7 +125,7 @@ st_bloom_downsample_material::st_bloom_downsample_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_pipeline(desc);
+	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_texture* textures[] { _texture->get_texture() };
@@ -198,7 +198,7 @@ st_bloom_upsample_material::st_bloom_upsample_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_pipeline(desc);
+	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_sampler* samplers[] =

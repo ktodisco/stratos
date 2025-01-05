@@ -1251,7 +1251,7 @@ std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* f
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_pipeline(const st_graphics_state_desc& desc)
+std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_graphics_pipeline(const st_graphics_state_desc& desc)
 {
 	std::unique_ptr<st_dx12_pipeline> pipeline = std::make_unique<st_dx12_pipeline>();
 

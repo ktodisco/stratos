@@ -51,7 +51,7 @@ st_ui_render_pass::st_ui_render_pass()
 	default_state_desc._render_target_formats[0] = st_format_r8g8b8a8_unorm;
 	default_state_desc._primitive_topology_type = st_primitive_topology_type_line;
 
-	_default_state = context->create_pipeline(default_state_desc);
+	_default_state = context->create_graphics_pipeline(default_state_desc);
 }
 
 st_ui_render_pass::~st_ui_render_pass()

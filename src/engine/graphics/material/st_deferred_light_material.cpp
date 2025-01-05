@@ -43,7 +43,7 @@ st_deferred_light_material::st_deferred_light_material(
 		desc._render_target_count = 1;
 		desc._render_target_formats[0] = output_texture->get_format();
 
-		_pipeline = context->create_pipeline(desc);
+		_pipeline = context->create_graphics_pipeline(desc);
 	}
 
 	_resource_table = context->create_resource_table();

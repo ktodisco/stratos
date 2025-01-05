@@ -199,7 +199,7 @@ st_font_material::st_font_material(st_texture* texture) :
 	desc._depth_stencil_format = st_format_d24_unorm_s8_uint;
 	output->get_target_formats(e_st_render_pass_type::ui, desc);
 
-	_pipeline = context->create_pipeline(desc);
+	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_buffer* cbs[] = { _constant_buffer.get() };

@@ -284,7 +284,7 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 
     desc._dynamic_scissor = true;
 
-    g_pipeline = ctx->create_pipeline(desc);
+    g_pipeline = ctx->create_graphics_pipeline(desc);
 
     return true;
 }

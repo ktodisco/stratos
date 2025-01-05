@@ -56,7 +56,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 	output->get_target_formats(e_st_render_pass_type::gbuffer, desc);
 
-	_pipeline = context->create_pipeline(desc);
+	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_buffer* cbs[] = { _parallax_occlusion_buffer.get() };

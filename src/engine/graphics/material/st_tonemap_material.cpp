@@ -34,7 +34,7 @@ st_tonemap_material::st_tonemap_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_pipeline(desc);
+	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_texture* textures[] =

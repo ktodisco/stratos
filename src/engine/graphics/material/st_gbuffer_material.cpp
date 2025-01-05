@@ -66,7 +66,7 @@ st_gbuffer_material::st_gbuffer_material(
 		desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 		output->get_target_formats(e_st_render_pass_type::gbuffer, desc);
 
-		_gbuffer_pipeline = context->create_pipeline(desc);
+		_gbuffer_pipeline = context->create_graphics_pipeline(desc);
 	}
 	{
 		st_graphics_state_desc desc;
@@ -76,7 +76,7 @@ st_gbuffer_material::st_gbuffer_material(
 		desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 		output->get_target_formats(e_st_render_pass_type::shadow, desc);
 
-		_shadow_pipeline = context->create_pipeline(desc);
+		_shadow_pipeline = context->create_graphics_pipeline(desc);
 	}
 
 	{
