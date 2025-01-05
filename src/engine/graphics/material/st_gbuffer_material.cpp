@@ -57,7 +57,7 @@ st_gbuffer_material::st_gbuffer_material(
 	st_output* output = st_output::get();
 
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_gbuffer);
 		desc._vertex_format = _vertex_format.get();
 		desc._blend_desc._target_blend[0]._blend = false;
@@ -69,7 +69,7 @@ st_gbuffer_material::st_gbuffer_material(
 		_gbuffer_pipeline = context->create_pipeline(desc);
 	}
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_shadow);
 		desc._vertex_format = _vertex_format.get();
 		desc._depth_stencil_desc._depth_enable = true;

@@ -53,7 +53,7 @@ st_bloom_threshold_material::st_bloom_threshold_material(
 		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
-	st_pipeline_state_desc desc;
+	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_bloom_threshold);
 	desc._blend_desc._target_blend[0]._blend = false;
 	desc._depth_stencil_desc._depth_enable = false;
@@ -116,7 +116,7 @@ st_bloom_downsample_material::st_bloom_downsample_material(
 		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
-	st_pipeline_state_desc desc;
+	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_bloom_downsample);
 	desc._blend_desc._target_blend[0]._blend = false;
 	desc._depth_stencil_desc._depth_enable = false;
@@ -189,7 +189,7 @@ st_bloom_upsample_material::st_bloom_upsample_material(
 		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
-	st_pipeline_state_desc desc;
+	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_bloom_upsample);
 	desc._blend_desc._target_blend[0]._blend = false;
 	desc._depth_stencil_desc._depth_enable = false;

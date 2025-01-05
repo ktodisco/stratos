@@ -88,7 +88,7 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 	context->end_render_pass(_pass.get());
 }
 
-void st_gbuffer_render_pass::get_target_formats(struct st_pipeline_state_desc& desc)
+void st_gbuffer_render_pass::get_target_formats(struct st_graphics_state_desc& desc)
 {
 	desc._pass = _pass.get();
 	desc._render_target_count = 3;

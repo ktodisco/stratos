@@ -34,7 +34,7 @@ st_deferred_light_material::st_deferred_light_material(
 	st_graphics_context* context = st_graphics_context::get();
 
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_deferred_light);
 		desc._blend_desc._target_blend[0]._blend = false;
 		desc._depth_stencil_desc._depth_enable = false;

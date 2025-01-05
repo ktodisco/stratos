@@ -68,7 +68,7 @@ void st_directional_shadow_pass::render(st_graphics_context* context, const st_f
 	context->end_render_pass(_pass.get());
 }
 
-void st_directional_shadow_pass::get_target_formats(st_pipeline_state_desc& desc)
+void st_directional_shadow_pass::get_target_formats(st_graphics_state_desc& desc)
 {
 	desc._pass = _pass.get();
 	desc._depth_stencil_format = _target->get_format();

@@ -40,7 +40,7 @@ st_ui_render_pass::st_ui_render_pass()
 	// Set up the default UI material.
 	_default_material = std::make_unique<st_constant_color_material>();
 
-	st_pipeline_state_desc default_state_desc;
+	st_graphics_state_desc default_state_desc;
 	default_state_desc._shader = st_shader_manager::get()->get_shader(st_shader_constant_color);
 	default_state_desc._blend_desc._target_blend[0]._blend = false;
 	default_state_desc._depth_stencil_desc._depth_enable = true;
@@ -94,7 +94,7 @@ void st_ui_render_pass::draw_dynamic(
 	}
 }
 
-void st_ui_render_pass::get_target_formats(struct st_pipeline_state_desc& desc)
+void st_ui_render_pass::get_target_formats(struct st_graphics_state_desc& desc)
 {
 	desc._pass = _pass.get();
 	desc._render_target_count = 1;

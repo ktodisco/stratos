@@ -185,7 +185,7 @@ st_font_material::st_font_material(st_texture* texture) :
 
 	st_output* output = st_output::get();
 
-	st_pipeline_state_desc desc;
+	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_font);
 	desc._depth_stencil_desc._depth_enable = false;
 	desc._blend_desc._target_blend[0]._blend = true;

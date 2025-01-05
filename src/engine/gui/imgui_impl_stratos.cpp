@@ -251,7 +251,7 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 
     g_vertex_format = ctx->create_vertex_format(attributes.data(), 3);
 
-    st_pipeline_state_desc desc;
+    st_graphics_state_desc desc;
     desc._primitive_topology_type = st_primitive_topology_type_triangle;
     desc._sample_mask = UINT_MAX;
     desc._render_target_count = 1;

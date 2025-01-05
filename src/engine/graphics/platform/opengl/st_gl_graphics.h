@@ -79,7 +79,7 @@ struct st_gl_buffer_view : public st_buffer_view
 
 struct st_gl_pipeline : public st_pipeline
 {
-	struct st_pipeline_state_desc _state_desc;
+	struct st_graphics_state_desc _state_desc;
 };
 
 struct st_gl_render_pass : public st_render_pass

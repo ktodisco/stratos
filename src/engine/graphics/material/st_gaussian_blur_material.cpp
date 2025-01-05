@@ -38,7 +38,7 @@ st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(
 	}
 
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_gaussian_blur_vertical);
 		desc._blend_desc._target_blend[0]._blend = false;
 		desc._depth_stencil_desc._depth_enable = false;
@@ -109,7 +109,7 @@ st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(
 	}
 
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_gaussian_blur_horizontal);
 		desc._blend_desc._target_blend[0]._blend = false;
 		desc._depth_stencil_desc._depth_enable = false;

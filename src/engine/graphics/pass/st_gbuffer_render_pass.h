@@ -23,7 +23,7 @@ public:
 
 	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
-	void get_target_formats(struct st_pipeline_state_desc& desc);
+	void get_target_formats(struct st_graphics_state_desc& desc);
 
 private:
 	enum e_st_format _formats[4];

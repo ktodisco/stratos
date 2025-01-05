@@ -105,7 +105,7 @@ public:
 	std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) override;
 
 	// Pipelines.
-	std::unique_ptr<st_pipeline> create_pipeline(const struct st_pipeline_state_desc& desc) override;
+	std::unique_ptr<st_pipeline> create_pipeline(const struct st_graphics_state_desc& desc) override;
 
 	// Geometry.
 	std::unique_ptr<st_vertex_format> create_vertex_format(

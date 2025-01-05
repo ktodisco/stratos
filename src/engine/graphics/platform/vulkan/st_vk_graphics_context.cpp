@@ -1467,7 +1467,7 @@ std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* fil
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(const st_pipeline_state_desc& desc)
+std::unique_ptr<st_pipeline> st_vk_graphics_context::create_pipeline(const st_graphics_state_desc& desc)
 {
 	std::unique_ptr<st_vk_pipeline> pipeline = std::make_unique<st_vk_pipeline>();
 	pipeline->_device = &_device;
