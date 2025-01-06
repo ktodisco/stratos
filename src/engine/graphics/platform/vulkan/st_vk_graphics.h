@@ -130,6 +130,7 @@ struct st_vk_shader : public st_shader, public st_vk_resource
 		_device->destroyShaderModule(_ds, nullptr);
 		_device->destroyShaderModule(_hs, nullptr);
 		_device->destroyShaderModule(_gs, nullptr);
+		_device->destroyShaderModule(_cs, nullptr);
 	}
 
 	vk::ShaderModule _vs;
@@ -137,6 +138,7 @@ struct st_vk_shader : public st_shader, public st_vk_resource
 	vk::ShaderModule _ds;
 	vk::ShaderModule _hs;
 	vk::ShaderModule _gs;
+	vk::ShaderModule _cs;
 
 	uint8_t _type = 0;
 };

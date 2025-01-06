@@ -102,6 +102,7 @@ public:
 
 	// Pipelines.
 	std::unique_ptr<st_pipeline> create_graphics_pipeline(const struct st_graphics_state_desc& desc) override;
+	std::unique_ptr<st_pipeline> create_compute_pipeline(const struct st_compute_state_desc& desc) override;
 
 	// Geometry.
 	std::unique_ptr<st_vertex_format> create_vertex_format(
@@ -166,7 +167,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> _backbuffers[k_max_frames];
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> _command_allocators[k_max_frames];
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _command_queue;
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> _root_signature;
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> _graphics_signature;
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> _compute_signature;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _command_list;
 
 	// Heap used for loaded resources.

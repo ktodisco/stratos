@@ -53,6 +53,7 @@ struct st_gl_constant
 
 struct st_gl_buffer : public st_buffer
 {
+	st_gl_buffer() {}
 	~st_gl_buffer()
 	{
 		if (_storage)
@@ -65,11 +66,11 @@ struct st_gl_buffer : public st_buffer
 	size_t _element_size;
 	e_st_buffer_usage_flags _usage;
 
-	//union
-	//{
+	union
+	{
 		uint8_t* _storage;
 		std::vector<st_gl_constant> _constants;
-	//};
+	};
 };
 
 struct st_gl_buffer_view : public st_buffer_view
@@ -79,7 +80,13 @@ struct st_gl_buffer_view : public st_buffer_view
 
 struct st_gl_pipeline : public st_pipeline
 {
-	struct st_graphics_state_desc _state_desc;
+	st_gl_pipeline() {}
+
+	union
+	{
+		struct st_graphics_state_desc _graphics_desc;
+		struct st_compute_state_desc _compute_desc;
+	};
 };
 
 struct st_gl_render_pass : public st_render_pass

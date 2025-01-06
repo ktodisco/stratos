@@ -88,6 +88,7 @@ public:
 
 	// Pipelines.
 	virtual std::unique_ptr<st_pipeline> create_graphics_pipeline(const struct st_graphics_state_desc& desc) = 0;
+	virtual std::unique_ptr<st_pipeline> create_compute_pipeline(const struct st_compute_state_desc& desc) = 0;
 
 	// Geometry.
 	virtual std::unique_ptr<st_vertex_format> create_vertex_format(

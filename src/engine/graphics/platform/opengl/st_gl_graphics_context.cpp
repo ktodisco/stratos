@@ -145,7 +145,7 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 
 	_bound_pipeline = state;
 
-	const st_graphics_state_desc& state_desc = state->_state_desc;
+	const st_graphics_state_desc& state_desc = state->_graphics_desc;
 	_bound_shader = static_cast<const st_gl_shader*>(state_desc._shader);
 	glUseProgram(_bound_shader->_handle);
 
@@ -221,7 +221,7 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 	glBindBuffer(GL_ARRAY_BUFFER, vertex->_buffer);
 
 	// TODO: Instead of accumulated offset, we need offset into data of st_vertex.
-	const st_gl_vertex_format* format = static_cast<const st_gl_vertex_format*>(_bound_pipeline->_state_desc._vertex_format);
+	const st_gl_vertex_format* format = static_cast<const st_gl_vertex_format*>(_bound_pipeline->_graphics_desc._vertex_format);
 
 	size_t offset = 0;
 	for (uint32_t itr = 0; itr < format->_attributes.size(); ++itr)
@@ -678,7 +678,14 @@ std::unique_ptr<st_shader> st_gl_graphics_context::create_shader(const char* fil
 std::unique_ptr<st_pipeline> st_gl_graphics_context::create_graphics_pipeline(const st_graphics_state_desc& desc)
 {
 	std::unique_ptr<st_gl_pipeline> pipeline = std::make_unique<st_gl_pipeline>();
-	pipeline->_state_desc = desc;
+	pipeline->_graphics_desc = desc;
+	return std::move(pipeline);
+}
+
+std::unique_ptr<st_pipeline> st_gl_graphics_context::create_compute_pipeline(const st_compute_state_desc& desc)
+{
+	std::unique_ptr<st_gl_pipeline> pipeline = std::make_unique<st_gl_pipeline>();
+	pipeline->_compute_desc = desc;
 	return std::move(pipeline);
 }
 

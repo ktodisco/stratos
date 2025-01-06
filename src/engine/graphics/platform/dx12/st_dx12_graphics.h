@@ -83,6 +83,7 @@ struct st_dx12_shader : public st_shader
 		_ds = nullptr;
 		_hs = nullptr;
 		_gs = nullptr;
+		_cs = nullptr;
 	}
 
 	Microsoft::WRL::ComPtr<ID3DBlob> _vs;
@@ -90,6 +91,7 @@ struct st_dx12_shader : public st_shader
 	Microsoft::WRL::ComPtr<ID3DBlob> _ds;
 	Microsoft::WRL::ComPtr<ID3DBlob> _hs;
 	Microsoft::WRL::ComPtr<ID3DBlob> _gs;
+	Microsoft::WRL::ComPtr<ID3DBlob> _cs;
 
 	uint8_t _type = 0;
 };

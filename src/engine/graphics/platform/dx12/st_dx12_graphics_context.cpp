@@ -251,45 +251,90 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 		feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
 	}
 
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
-	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 0);
-
-	CD3DX12_ROOT_PARAMETER1 root_parameters[4];
-	root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-	root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-	root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
-	root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
-
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
-	root_signature_desc.Init_1_1(
-		_countof(root_parameters),
-		root_parameters,
-		0,
-		nullptr,
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	Microsoft::WRL::ComPtr<ID3DBlob> signature;
-	Microsoft::WRL::ComPtr<ID3DBlob> error;
-	result = D3DX12SerializeVersionedRootSignature(
-		&root_signature_desc,
-		feature_data.HighestVersion,
-		&signature,
-		&error);
-
-	if (result != S_OK)
 	{
-		assert(false);
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 0);
+
+		CD3DX12_ROOT_PARAMETER1 root_parameters[4];
+		root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+		root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+		root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
+		root_signature_desc.Init_1_1(
+			_countof(root_parameters),
+			root_parameters,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		Microsoft::WRL::ComPtr<ID3DBlob> signature;
+		Microsoft::WRL::ComPtr<ID3DBlob> error;
+		result = D3DX12SerializeVersionedRootSignature(
+			&root_signature_desc,
+			feature_data.HighestVersion,
+			&signature,
+			&error);
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+
+		result = _device->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			__uuidof(ID3D12RootSignature),
+			(void**)&_graphics_signature);
 	}
 
-	result = _device->CreateRootSignature(
-		0,
-		signature->GetBufferPointer(),
-		signature->GetBufferSize(),
-		__uuidof(ID3D12RootSignature),
-		(void**)&_root_signature);
+	// Create a default compute root signature.
+	{
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+
+		CD3DX12_ROOT_PARAMETER1 root_parameters[4];
+		root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
+		root_signature_desc.Init_1_1(
+			_countof(root_parameters),
+			root_parameters,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		Microsoft::WRL::ComPtr<ID3DBlob> signature;
+		Microsoft::WRL::ComPtr<ID3DBlob> error;
+		result = D3DX12SerializeVersionedRootSignature(
+			&root_signature_desc,
+			feature_data.HighestVersion,
+			&signature,
+			&error);
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+
+		result = _device->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			__uuidof(ID3D12RootSignature),
+			(void**)&_compute_signature);
+	}
 
 	if (result != S_OK)
 	{
@@ -342,7 +387,8 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 	_dynamic_vertex_buffer = nullptr;
 
 	_fence = nullptr;
-	_root_signature = nullptr;
+	_graphics_signature = nullptr;
+	_compute_signature = nullptr;
 	_command_list = nullptr;
 
 	for (uint32_t ca_itr = 0; ca_itr < k_max_frames; ++ca_itr)
@@ -1244,6 +1290,11 @@ std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* f
 		load_shader(std::string(filename) + std::string("_frag"), shader->_ps.GetAddressOf());
 	}
 
+	if (type & st_shader_type_compute)
+	{
+		load_shader(std::string(filename) + std::string("_comp"), shader->_cs.GetAddressOf());
+	}
+
 	// TODO: Other shader types.
 
 	shader->_type = type;
@@ -1259,7 +1310,7 @@ std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_graphics_pipeline(
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_desc = {};
 
 	// Set the root signature from the graphics context.
-	pipeline_desc.pRootSignature = _root_signature.Get();
+	pipeline_desc.pRootSignature = _graphics_signature.Get();
 
 	// Get the input layout from the vertex format.
 	const st_dx12_vertex_format* vertex_format = static_cast<const st_dx12_vertex_format*>(desc._vertex_format);
@@ -1354,6 +1405,26 @@ std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_graphics_pipeline(
 
 	// Create the pipeline state object.
 	_device->CreateGraphicsPipelineState(
+		&pipeline_desc,
+		__uuidof(ID3D12PipelineState),
+		(void**)pipeline->_pipeline.GetAddressOf());
+
+	return std::move(pipeline);
+}
+
+std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_compute_pipeline(const st_compute_state_desc& desc)
+{
+	std::unique_ptr<st_dx12_pipeline> pipeline = std::make_unique<st_dx12_pipeline>();
+
+	D3D12_COMPUTE_PIPELINE_STATE_DESC pipeline_desc = {};
+
+	pipeline_desc.pRootSignature = _compute_signature.Get();
+
+	const st_dx12_shader* shader = static_cast<const st_dx12_shader*>(desc._shader);
+	assert(shader->_type & st_shader_type_compute);
+	pipeline_desc.CS = CD3DX12_SHADER_BYTECODE(shader->_cs.Get());
+
+	_device->CreateComputePipelineState(
 		&pipeline_desc,
 		__uuidof(ID3D12PipelineState),
 		(void**)pipeline->_pipeline.GetAddressOf());
@@ -1524,7 +1595,8 @@ void st_dx12_graphics_context::begin_frame()
 {
 	_command_allocators[_frame_index]->Reset();
 	_command_list->Reset(_command_allocators[_frame_index].Get(), nullptr);
-	_command_list->SetGraphicsRootSignature(_root_signature.Get());
+	_command_list->SetGraphicsRootSignature(_graphics_signature.Get());
+	_command_list->SetComputeRootSignature(_compute_signature.Get());
 
 	// Empty all allocations from this heap. Commands using them have finished executing.
 	_cbv_srv_heap[_frame_index]->empty();

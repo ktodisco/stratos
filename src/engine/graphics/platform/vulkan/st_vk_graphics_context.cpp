@@ -390,7 +390,7 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 		.setPSetLayouts(&_descriptor_layouts[0])
 		.setPushConstantRangeCount(0);
 
-	VK_VALIDATE(_device.createPipelineLayout(&pipeline_layout_info, nullptr, &_pipeline_layout));
+	VK_VALIDATE(_device.createPipelineLayout(&pipeline_layout_info, nullptr, &_graphics_layout));
 
 	// Create the descriptor pool.
 	std::vector<vk::DescriptorPoolSize> pool_sizes;
@@ -497,7 +497,7 @@ st_vk_graphics_context::~st_vk_graphics_context()
 	_instance.destroySurfaceKHR(_window_surface, nullptr);
 
 	_device.destroyDescriptorPool(_descriptor_pool, nullptr);
-	_device.destroyPipelineLayout(_pipeline_layout, nullptr);
+	_device.destroyPipelineLayout(_graphics_layout, nullptr);
 	_device.destroyDescriptorSetLayout(_descriptor_layouts[0], nullptr);
 	_device.destroyDescriptorSetLayout(_descriptor_layouts[1], nullptr);
 	_device.destroyDescriptorSetLayout(_descriptor_layouts[2], nullptr);
@@ -1416,7 +1416,7 @@ void st_vk_graphics_context::bind_resource_table(st_resource_table* table_)
 
 		_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,
-			_pipeline_layout,
+			_graphics_layout,
 			slot,
 			1,
 			&new_set,
@@ -1607,9 +1607,30 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_graphics_pipeline(co
 		.setPColorBlendState(&color_blend)
 		.setPDynamicState(&dynamic_state)
 		.setSubpass(0)
-		.setLayout(_pipeline_layout);
+		.setLayout(_graphics_layout);
 
 	VK_VALIDATE(_device.createGraphicsPipelines(vk::PipelineCache(nullptr), 1, &create_info, nullptr, &pipeline->_pipeline));
+
+	return std::move(pipeline);
+}
+
+std::unique_ptr<st_pipeline> st_vk_graphics_context::create_compute_pipeline(const st_compute_state_desc& desc)
+{
+	std::unique_ptr<st_vk_pipeline> pipeline = std::make_unique<st_vk_pipeline>();
+	pipeline->_device = &_device;
+
+	const st_vk_shader* shader = static_cast<const st_vk_shader*>(desc._shader);
+
+	vk::PipelineShaderStageCreateInfo stage = vk::PipelineShaderStageCreateInfo()
+		.setStage(vk::ShaderStageFlagBits::eCompute)
+		.setModule(shader->_cs)
+		.setPName("cs_main");
+
+	vk::ComputePipelineCreateInfo create_info = vk::ComputePipelineCreateInfo()
+		.setStage(stage)
+		.setLayout(_compute_layout);
+
+	VK_VALIDATE(_device.createComputePipelines(vk::PipelineCache(nullptr), 1, &create_info, nullptr, &pipeline->_pipeline));
 
 	return std::move(pipeline);
 }

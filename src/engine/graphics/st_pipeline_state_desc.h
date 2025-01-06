@@ -78,7 +78,7 @@ struct st_sample_desc
 
 struct st_graphics_state_desc
 {
-	const struct st_shader* _shader = {};
+	const struct st_shader* _shader = nullptr;
 
 	uint32_t _sample_mask = UINT_MAX;
 
@@ -101,4 +101,10 @@ struct st_graphics_state_desc
 	// TODO: The rest of the D3D12_GRAPHICS_PIPELINE_STATE_DESC members.
 
 	bool _dynamic_scissor = false;
+};
+
+struct st_compute_state_desc
+{
+	const struct st_shader* _shader = nullptr;
+
 };

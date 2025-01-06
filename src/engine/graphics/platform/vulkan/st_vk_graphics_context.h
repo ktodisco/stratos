@@ -106,6 +106,7 @@ public:
 
 	// Pipelines.
 	std::unique_ptr<st_pipeline> create_graphics_pipeline(const struct st_graphics_state_desc& desc) override;
+	std::unique_ptr<st_pipeline> create_compute_pipeline(const struct st_compute_state_desc& desc) override;
 
 	// Geometry.
 	std::unique_ptr<st_vertex_format> create_vertex_format(
@@ -172,7 +173,8 @@ private:
 	uint32_t _queue_family_index = UINT_MAX;
 
 	vk::DescriptorSetLayout _descriptor_layouts[st_descriptor_slot_count];
-	vk::PipelineLayout _pipeline_layout;
+	vk::PipelineLayout _graphics_layout;
+	vk::PipelineLayout _compute_layout;
 	vk::DescriptorPool _descriptor_pool;
 
 	std::vector<vk::DescriptorSet> _descriptor_set_pool[k_max_frames];
