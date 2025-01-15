@@ -57,5 +57,5 @@ void st_fullscreen_material::bind(
 	context->set_pipeline(_pipeline.get());
 
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

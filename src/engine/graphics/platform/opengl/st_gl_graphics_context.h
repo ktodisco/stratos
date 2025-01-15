@@ -25,6 +25,7 @@ public:
 	void release() override;
 
 	void set_pipeline(const st_pipeline* state) override;
+	void set_compute_pipeline(const st_pipeline* state) override {}
 	void set_viewport(const st_viewport& viewport) override;
 	void set_scissor(int left, int top, int right, int bottom) override;
 	void set_clear_color(float r, float g, float b, float a) override;
@@ -38,6 +39,9 @@ public:
 	void clear(unsigned int clear_flags) override;
 	void draw(const struct st_static_drawcall& drawcall) override;
 	void draw(const struct st_dynamic_drawcall& drawcall) override;
+
+	// Compute.
+	void dispatch(const st_dispatch_args& args) override {}
 
 	// Backbuffer.
 	class st_render_texture* get_present_target() const override { return _present_target.get(); };
@@ -88,8 +92,10 @@ public:
 		st_texture** textures,
 		st_sampler** samplers) override;
 	void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) override;
+	void set_uavs(st_resource_table* table, uint32_t count, st_texture** textures) override {}
 	void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) override;
-	void bind_resource_table(st_resource_table* table) override;
+	void bind_resources(st_resource_table* table) override;
+	void bind_compute_resources(st_resource_table* table) override {}
 
 	// Shaders.
 	std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) override;

@@ -1389,7 +1389,7 @@ void st_vk_graphics_context::update_textures(st_resource_table* table_, uint32_t
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
-void st_vk_graphics_context::bind_resource_table(st_resource_table* table_)
+void st_vk_graphics_context::bind_resources(st_resource_table* table_)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 

@@ -636,7 +636,7 @@ void st_gl_graphics_context::update_textures(st_resource_table* table_, uint32_t
 	}
 }
 
-void st_gl_graphics_context::bind_resource_table(st_resource_table* table_)
+void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 

@@ -62,5 +62,5 @@ void st_unlit_texture_material::bind(
 	cb_data._mvp = mvp;
 	context->update_buffer(_view_buffer.get(), &cb_data, 0, 1);
 
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

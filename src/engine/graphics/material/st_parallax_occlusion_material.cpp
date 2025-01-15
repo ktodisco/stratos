@@ -98,5 +98,5 @@ void st_parallax_occlusion_material::bind(
 	pom_cb._eye = st_vec4f(params->_eye, 0.0f);
 	context->update_buffer(_parallax_occlusion_buffer.get(), &pom_cb, 0, 1);
 
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

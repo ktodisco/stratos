@@ -86,7 +86,7 @@ void st_gaussian_blur_vertical_material::bind(
 	context->update_buffer(_cb.get(), &data, 0, 1);
 
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }
 
 st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(
@@ -157,5 +157,5 @@ void st_gaussian_blur_horizontal_material::bind(
 	context->update_buffer(_cb.get(), &data, 0, 1);
 
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

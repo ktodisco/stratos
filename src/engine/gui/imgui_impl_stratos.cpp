@@ -168,7 +168,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
                 st_texture_view* view = static_cast<st_texture_view*>(pcmd->TextureId);
                 ctx->update_textures(g_resource_table.get(), 1, &view);
 
-                ctx->bind_resource_table(g_resource_table.get());
+                ctx->bind_resources(g_resource_table.get());
 
                 ctx->set_scissor(
                     int(pcmd->ClipRect.x - pos.x),

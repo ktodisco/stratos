@@ -17,6 +17,7 @@ public:
 	virtual void release() = 0;
 
 	virtual void set_pipeline(const st_pipeline* state) = 0;
+	virtual void set_compute_pipeline(const st_pipeline* state) = 0;
 	virtual void set_viewport(const st_viewport& viewport) = 0;
 	virtual void set_scissor(int left, int top, int right, int bottom) = 0;
 	virtual void set_clear_color(float r, float g, float b, float a) = 0;
@@ -30,6 +31,9 @@ public:
 	virtual void clear(unsigned int clear_flags) = 0;
 	virtual void draw(const struct st_static_drawcall& drawcall) = 0;
 	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
+
+	// Compute.
+	virtual void dispatch(const st_dispatch_args& args) = 0;
 
 	// Backbuffer.
 	virtual class st_render_texture* get_present_target() const = 0;
@@ -80,8 +84,10 @@ public:
 		st_texture** textures,
 		st_sampler** samplers) = 0;
 	virtual void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) = 0;
+	virtual void set_uavs(st_resource_table* table, uint32_t count, st_texture** textures) = 0;
 	virtual void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) = 0;
-	virtual void bind_resource_table(st_resource_table* table) = 0;
+	virtual void bind_resources(st_resource_table* table) = 0;
+	virtual void bind_compute_resources(st_resource_table* table) = 0;
 
 	// Shaders.
 	virtual std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) = 0;

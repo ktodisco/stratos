@@ -65,6 +65,7 @@ struct st_dx12_resource_table : public st_resource_table
 {
 	std::vector<st_dx12_descriptor> _cbvs;
 	std::vector<st_dx12_descriptor> _srvs;
+	std::vector<st_dx12_descriptor> _uavs;
 	std::vector<st_dx12_descriptor> _samplers;
 	std::vector<st_dx12_descriptor> _buffers;
 };

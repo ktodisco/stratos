@@ -101,5 +101,5 @@ void st_deferred_light_material::bind(
 	context->transition(_depth->get_texture(), st_texture_state_pixel_shader_read);
 	context->transition(_directional_shadow_map->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

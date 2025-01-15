@@ -128,7 +128,7 @@ void st_gbuffer_material::bind(
 		shadow_cb._mvp = mvp;
 		context->update_buffer(_shadow_buffer.get(), &shadow_cb, 0, 1);
 
-		context->bind_resource_table(_shadow_resources.get());
+		context->bind_resources(_shadow_resources.get());
 	}
 	else if (pass_type == e_st_render_pass_type::gbuffer)
 	{
@@ -140,6 +140,6 @@ void st_gbuffer_material::bind(
 		gbuffer_cb._emissive = _emissive;
 		context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
 
-		context->bind_resource_table(_gbuffer_resources.get());
+		context->bind_resources(_gbuffer_resources.get());
 	}
 }
