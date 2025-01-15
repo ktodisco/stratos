@@ -1204,6 +1204,12 @@ void st_dx12_graphics_context::bind_resources(st_resource_table* table_)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
 
+	auto set_descriptor_table = [this](e_st_descriptor_slot slot, st_dx12_descriptor_heap* heap, uint32_t offset)
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = heap->get_handle_gpu(offset);
+		_command_list->SetGraphicsRootDescriptorTable(slot, cbv_handle);
+	};
+
 	static uint32_t k_invalid_offset = 0xffffffff;
 
 	uint32_t offset = k_invalid_offset;
@@ -1220,10 +1226,7 @@ void st_dx12_graphics_context::bind_resources(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_cbvs.size() > 0)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-		_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_constants, cbv_handle);
-	}
+		set_descriptor_table(st_descriptor_slot_constants, _cbv_srv_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t srv_itr = 0; srv_itr < table->_srvs.size(); ++srv_itr)
@@ -1239,10 +1242,7 @@ void st_dx12_graphics_context::bind_resources(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_srvs.size() > 0)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-		_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_textures, srv_handle);
-	}
+		set_descriptor_table(st_descriptor_slot_textures, _cbv_srv_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t b_itr = 0; b_itr < table->_buffers.size(); ++b_itr)
@@ -1258,10 +1258,7 @@ void st_dx12_graphics_context::bind_resources(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_buffers.size() > 0)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE buffer_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-		_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_buffers, buffer_handle);
-	}
+		set_descriptor_table(st_descriptor_slot_buffers, _cbv_srv_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t s_itr = 0; s_itr < table->_samplers.size(); ++s_itr)
@@ -1277,15 +1274,18 @@ void st_dx12_graphics_context::bind_resources(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 	}
 	if (table->_samplers.size() > 0)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap[_frame_index]->get_handle_gpu(offset);
-		_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_samplers, sampler_handle);
-	}
+		set_descriptor_table(st_descriptor_slot_samplers, _sampler_heap[_frame_index].get(), offset);
 }
 
 void st_dx12_graphics_context::bind_compute_resources(st_resource_table* table_)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
+
+	auto set_descriptor_table = [this](e_st_descriptor_slot slot, st_dx12_descriptor_heap* heap, uint32_t offset)
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = heap->get_handle_gpu(offset);
+		_command_list->SetComputeRootDescriptorTable(slot, cbv_handle);
+	};
 
 	static uint32_t k_invalid_offset = 0xffffffff;
 
@@ -1303,10 +1303,7 @@ void st_dx12_graphics_context::bind_compute_resources(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_cbvs.size() > 0)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-		_command_list->SetComputeRootDescriptorTable(st_descriptor_slot_constants, cbv_handle);
-	}
+		set_descriptor_table(st_descriptor_slot_constants, _cbv_srv_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t srv_itr = 0; srv_itr < table->_srvs.size(); ++srv_itr)
@@ -1322,10 +1319,7 @@ void st_dx12_graphics_context::bind_compute_resources(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_srvs.size() > 0)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-		_command_list->SetComputeRootDescriptorTable(st_descriptor_slot_textures, srv_handle);
-	}
+		set_descriptor_table(st_descriptor_slot_textures, _cbv_srv_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t s_itr = 0; s_itr < table->_samplers.size(); ++s_itr)
@@ -1341,10 +1335,7 @@ void st_dx12_graphics_context::bind_compute_resources(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 	}
 	if (table->_samplers.size() > 0)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap[_frame_index]->get_handle_gpu(offset);
-		_command_list->SetComputeRootDescriptorTable(st_descriptor_slot_samplers, sampler_handle);
-	}
+		set_descriptor_table(st_descriptor_slot_samplers, _sampler_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t uav_itr = 0; uav_itr < table->_uavs.size(); ++uav_itr)
@@ -1360,10 +1351,7 @@ void st_dx12_graphics_context::bind_compute_resources(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_uavs.size() > 0)
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE uav_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-		_command_list->SetComputeRootDescriptorTable(st_descriptor_slot_uavs, uav_handle);
-	}
+		set_descriptor_table(st_descriptor_slot_uavs, _cbv_srv_heap[_frame_index].get(), offset);
 }
 
 std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* filename, uint8_t type)
