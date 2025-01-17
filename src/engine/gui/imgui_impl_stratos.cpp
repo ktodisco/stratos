@@ -233,7 +233,6 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
         desc._element_size = sizeof(imgui_cb);
         desc._usage = e_st_buffer_usage::uniform;
         g_constant_buffer = ctx->create_buffer(desc);
-        ctx->add_constant(g_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
         g_resource_table = ctx->create_resource_table();
         st_texture* textures[] = { g_font_texture.get() };

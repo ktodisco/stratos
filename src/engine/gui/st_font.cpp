@@ -175,7 +175,6 @@ st_font_material::st_font_material(st_texture* texture) :
 		desc._element_size = sizeof(st_font_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_constant_buffer = context->create_buffer(desc);
-		context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	std::vector<st_vertex_attribute> attributes;

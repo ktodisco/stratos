@@ -110,59 +110,33 @@ std::string st_gl_shader_component::get_compile_log() const
 	return log;
 }
 
-st_gl_shader::st_gl_shader(const char* source, uint8_t type)
+st_gl_shader::st_gl_shader(const char* name, uint8_t type)
 {
 	_handle = glCreateProgram();
 
-	if (type & st_shader_type_vertex &&
-		type & st_shader_type_pixel)
+	auto load_compile_attach = [&](st_gl_shader_component* s, const char* suffix, GLenum type)
 	{
-		std::string source_vs;
-		load_shader(std::string(source) + std::string("_vert.glsl"), source_vs);
+		std::string source;
+		load_shader(std::string(name) + std::string(suffix), source);
 
-		std::string source_fs;
-		load_shader(std::string(source) + std::string("_frag.glsl"), source_fs);
-
-		_vs = new st_gl_shader_component(source_vs.c_str(), GL_VERTEX_SHADER);
-		if (!_vs->compile())
+		s = new st_gl_shader_component(source.c_str(), type);
+		if (!s->compile())
 		{
-			std::cerr << "Failed to compile vertex shader:" << std::endl << _vs->get_compile_log() << std::endl;
+			std::cerr << "Failed to compile shader:" << std::endl << s->get_compile_log() << std::endl;
 			assert(false);
 		}
 
-		_fs = new st_gl_shader_component(source_fs.c_str(), GL_FRAGMENT_SHADER);
-		if (!_fs->compile())
-		{
-			std::cerr << "Failed to compile fragment shader:\n\t" << std::endl << _fs->get_compile_log() << std::endl;
-			assert(false);
-		}
+		attach(*s);
+	};
 
-		attach(*_vs);
-		attach(*_fs);
-		if (!link())
-		{
-			std::cerr << "Failed to link shader program:\n\t" << std::endl << get_link_log() << std::endl;
-			assert(false);
-		}
-	}
-	else if (type & st_shader_type_compute)
+	if (type & st_shader_type_vertex) load_compile_attach(_vs, "_vert.glsl", GL_VERTEX_SHADER);
+	if (type & st_shader_type_pixel) load_compile_attach(_fs, "_frag.glsl", GL_FRAGMENT_SHADER);
+	if (type & st_shader_type_compute) load_compile_attach(_cs, "_comp.glsl", GL_COMPUTE_SHADER);
+
+	if (!link())
 	{
-		std::string source_cs;
-		load_shader(std::string(source) + std::string("_comp.glsl"), source_cs);
-
-		_cs = new st_gl_shader_component(source_cs.c_str(), GL_COMPUTE_SHADER);
-		if (!_cs->compile())
-		{
-			std::cerr << "Failed to compile compute shader:" << std::endl << _cs->get_compile_log() << std::endl;
-			assert(false);
-		}
-
-		attach(*_cs);
-		if (!link())
-		{
-			std::cerr << "Failed to link shader program:\n\t" << std::endl << get_link_log() << std::endl;
-			assert(false);
-		}
+		std::cerr << "Failed to link shader program:\n\t" << std::endl << get_link_log() << std::endl;
+		assert(false);
 	}
 
 	reflect();

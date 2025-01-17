@@ -32,7 +32,6 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 		desc._element_size = sizeof(st_parallax_occlusion_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_parallax_occlusion_buffer = context->create_buffer(desc);
-		context->add_constant(_parallax_occlusion_buffer.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);

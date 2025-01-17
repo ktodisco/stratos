@@ -104,7 +104,7 @@ class st_gl_shader : public st_shader
 	friend class st_gl_graphics_context;
 
 public:
-	st_gl_shader(const char* source, uint8_t type);
+	st_gl_shader(const char* name, uint8_t type);
 	~st_gl_shader();
 
 	void attach(const st_gl_shader_component& shader);

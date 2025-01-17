@@ -34,7 +34,6 @@ st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(
 		desc._element_size = sizeof(st_gaussian_blur_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_cb = context->create_buffer(desc);
-		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	{
@@ -105,7 +104,6 @@ st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(
 		desc._element_size = sizeof(st_gaussian_blur_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_cb = context->create_buffer(desc);
-		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	{

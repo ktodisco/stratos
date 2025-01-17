@@ -330,18 +330,6 @@ enum e_st_clear_flags
 	st_clear_flag_stencil = 4
 };
 
-// TODO: DirectX packing rules do not allow for vec2s or vec3s.
-// It's probably best just to deprecate them.
-enum e_st_shader_constant_type
-{
-	st_shader_constant_type_float,
-	st_shader_constant_type_vec2,
-	st_shader_constant_type_vec3,
-	st_shader_constant_type_vec4,
-	st_shader_constant_type_mat4,
-	st_shader_constant_type_block,
-};
-
 enum class e_st_load_op : uint8_t
 {
 	load,
@@ -476,8 +464,6 @@ struct st_dispatch_args
 	uint32_t thread_count_y = 0;
 	uint32_t thread_count_z = 0;
 };
-
-size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
 
 #include <cstdint>
 

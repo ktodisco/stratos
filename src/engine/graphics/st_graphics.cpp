@@ -49,31 +49,3 @@ std::unique_ptr<st_graphics_context> st_graphics_context::create(e_st_graphics_a
 
 	return std::move(context);
 }
-
-size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type)
-{
-	size_t size = 0;
-
-	switch (constant_type)
-	{
-	case st_shader_constant_type_float:
-		size = sizeof(float);
-	case st_shader_constant_type_vec2:
-		size = sizeof(st_vec2f);
-		break;
-	case st_shader_constant_type_vec3:
-		size = sizeof(st_vec3f);
-		break;
-	case st_shader_constant_type_vec4:
-		size = sizeof(st_vec4f);
-		break;
-	case st_shader_constant_type_mat4:
-		size = sizeof(st_mat4f);
-		break;
-	default:
-		assert(false);
-		break;
-	}
-
-	return size;
-}

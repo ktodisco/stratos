@@ -45,12 +45,6 @@ void get_pixel_format_and_type(
 	GLenum & pixel_format,
 	GLenum & type);
 
-struct st_gl_constant
-{
-	std::string _name;
-	e_st_shader_constant_type _type;
-};
-
 struct st_gl_buffer : public st_buffer
 {
 	st_gl_buffer() {}
@@ -65,12 +59,8 @@ struct st_gl_buffer : public st_buffer
 	uint32_t _count;
 	size_t _element_size;
 	e_st_buffer_usage_flags _usage;
-
-	//union
-	//{
-		uint8_t* _storage;
-		std::vector<st_gl_constant> _constants;
-	//};
+	
+	uint8_t* _storage;
 };
 
 struct st_gl_buffer_view : public st_buffer_view

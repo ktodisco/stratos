@@ -1076,13 +1076,6 @@ void st_dx12_graphics_context::set_buffer_name(st_buffer* buffer_, std::string n
 	ST_NAME_DX12_OBJECT(buffer->_buffer.Get(), str_to_wstr(name).c_str());
 }
 
-void st_dx12_graphics_context::add_constant(
-	st_buffer* buffer,
-	const std::string& name,
-	const e_st_shader_constant_type constant_type)
-{
-}
-
 std::unique_ptr<st_resource_table> st_dx12_graphics_context::create_resource_table()
 {
 	std::unique_ptr<st_dx12_resource_table> table = std::make_unique<st_dx12_resource_table>();

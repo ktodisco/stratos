@@ -69,12 +69,6 @@ public:
 	virtual void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) = 0;
 	virtual void set_buffer_name(st_buffer* buffer, std::string name) = 0;
 
-	// Constant buffers.
-	virtual void add_constant(
-		st_buffer* buffer,
-		const std::string& name,
-		const e_st_shader_constant_type constant_type) = 0;
-
 	// Resource tables.
 	virtual std::unique_ptr<st_resource_table> create_resource_table() = 0;
 	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) = 0;

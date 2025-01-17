@@ -36,7 +36,6 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		desc._element_size = sizeof(st_deferred_light_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_constant_buffer = context->create_buffer(desc);
-		context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	{

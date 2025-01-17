@@ -576,22 +576,6 @@ void st_gl_graphics_context::set_buffer_name(st_buffer* buffer_, std::string nam
 	glObjectLabel(GL_TEXTURE, buffer->_buffer, name.length(), name.c_str());
 }
 
-void st_gl_graphics_context::add_constant(
-	st_buffer* buffer_,
-	const std::string& name,
-	const e_st_shader_constant_type constant_type)
-{
-	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
-
-	assert(buffer->_usage & e_st_buffer_usage::uniform);
-
-	st_gl_constant constant;
-	constant._name = name;
-	constant._type = constant_type;
-
-	buffer->_constants.push_back(constant);
-}
-
 std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table()
 {
 	std::unique_ptr<st_gl_resource_table> table = std::make_unique<st_gl_resource_table>();

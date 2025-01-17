@@ -50,7 +50,6 @@ st_bloom_threshold_material::st_bloom_threshold_material(
 		desc._element_size = sizeof(st_bloom_threshold_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_cb = context->create_buffer(desc);
-		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	st_graphics_state_desc desc;
@@ -113,7 +112,6 @@ st_bloom_downsample_material::st_bloom_downsample_material(
 		desc._element_size = sizeof(st_bloom_downsample_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_cb = context->create_buffer(desc);
-		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	st_graphics_state_desc desc;
@@ -186,7 +184,6 @@ st_bloom_upsample_material::st_bloom_upsample_material(
 		desc._element_size = sizeof(st_bloom_upsample_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_cb = context->create_buffer(desc);
-		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	st_graphics_state_desc desc;

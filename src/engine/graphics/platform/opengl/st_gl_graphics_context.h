@@ -77,12 +77,6 @@ public:
 	void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) override;
 	void set_buffer_name(st_buffer* buffer, std::string name) override;
 
-	// Constant buffers.
-	void add_constant(
-		st_buffer* buffer,
-		const std::string& name,
-		const e_st_shader_constant_type constant_type) override;
-
 	// Resource tables.
 	std::unique_ptr<st_resource_table> create_resource_table() override;
 	void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) override;
