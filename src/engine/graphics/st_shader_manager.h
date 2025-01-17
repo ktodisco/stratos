@@ -9,6 +9,7 @@
 #include <map>
 #include <memory>
 
+// TODO: Replace this with enum class.
 enum e_st_shader_type_flag
 {
 	st_shader_type_vertex = 1,
