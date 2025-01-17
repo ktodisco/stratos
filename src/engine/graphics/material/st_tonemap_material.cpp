@@ -25,7 +25,7 @@ st_tonemap_material::st_tonemap_material(
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_pipeline_state_desc desc;
+	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_tonemap);
 	desc._blend_desc._target_blend[0]._blend = false;
 	desc._depth_stencil_desc._depth_enable = false;
@@ -34,7 +34,7 @@ st_tonemap_material::st_tonemap_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_pipeline(desc);
+	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_texture* textures[] =
@@ -68,5 +68,5 @@ void st_tonemap_material::bind(
 
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
 	context->transition(_bloom->get_texture(), st_texture_state_pixel_shader_read);
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

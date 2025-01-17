@@ -311,6 +311,7 @@ D3D12_RESOURCE_STATES resource_state_mappings[] =
 	D3D12_RESOURCE_STATE_PRESENT, // st_texture_state_present
 	D3D12_RESOURCE_STATE_COPY_SOURCE, // st_texture_state_copy_source
 	D3D12_RESOURCE_STATE_COPY_DEST, // st_texture_state_copy_dest
+	D3D12_RESOURCE_STATE_UNORDERED_ACCESS, // st_texture_state_unordered_access
 };
 
 inline D3D12_RESOURCE_STATES convert_resource_state(e_st_texture_state state)

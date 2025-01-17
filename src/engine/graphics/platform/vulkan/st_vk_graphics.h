@@ -100,11 +100,13 @@ struct st_vk_resource_table : public st_resource_table, public st_vk_resource
 	vk::DescriptorSet _constants;
 	vk::DescriptorSet _buffers;
 	vk::DescriptorSet _samplers;
+	vk::DescriptorSet _uavs;
 
 	uint32_t _texture_count = 0;
 	uint32_t _constant_count = 0;
 	uint32_t _buffer_count = 0;
 	uint32_t _sampler_count = 0;
+	uint32_t _uav_count = 0;
 
 	std::vector<struct st_vk_sampler*> _sampler_resources;
 
@@ -130,6 +132,7 @@ struct st_vk_shader : public st_shader, public st_vk_resource
 		_device->destroyShaderModule(_ds, nullptr);
 		_device->destroyShaderModule(_hs, nullptr);
 		_device->destroyShaderModule(_gs, nullptr);
+		_device->destroyShaderModule(_cs, nullptr);
 	}
 
 	vk::ShaderModule _vs;
@@ -137,6 +140,7 @@ struct st_vk_shader : public st_shader, public st_vk_resource
 	vk::ShaderModule _ds;
 	vk::ShaderModule _hs;
 	vk::ShaderModule _gs;
+	vk::ShaderModule _cs;
 
 	uint8_t _type = 0;
 };

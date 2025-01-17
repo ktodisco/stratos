@@ -65,6 +65,7 @@ struct st_dx12_resource_table : public st_resource_table
 {
 	std::vector<st_dx12_descriptor> _cbvs;
 	std::vector<st_dx12_descriptor> _srvs;
+	std::vector<st_dx12_descriptor> _uavs;
 	std::vector<st_dx12_descriptor> _samplers;
 	std::vector<st_dx12_descriptor> _buffers;
 };
@@ -83,6 +84,7 @@ struct st_dx12_shader : public st_shader
 		_ds = nullptr;
 		_hs = nullptr;
 		_gs = nullptr;
+		_cs = nullptr;
 	}
 
 	Microsoft::WRL::ComPtr<ID3DBlob> _vs;
@@ -90,6 +92,7 @@ struct st_dx12_shader : public st_shader
 	Microsoft::WRL::ComPtr<ID3DBlob> _ds;
 	Microsoft::WRL::ComPtr<ID3DBlob> _hs;
 	Microsoft::WRL::ComPtr<ID3DBlob> _gs;
+	Microsoft::WRL::ComPtr<ID3DBlob> _cs;
 
 	uint8_t _type = 0;
 };

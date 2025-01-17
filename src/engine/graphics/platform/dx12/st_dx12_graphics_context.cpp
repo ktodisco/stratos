@@ -251,45 +251,90 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 		feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
 	}
 
-	CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
-	ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-	ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
-	ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-	ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 0);
-
-	CD3DX12_ROOT_PARAMETER1 root_parameters[4];
-	root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-	root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-	root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
-	root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
-
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
-	root_signature_desc.Init_1_1(
-		_countof(root_parameters),
-		root_parameters,
-		0,
-		nullptr,
-		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-	Microsoft::WRL::ComPtr<ID3DBlob> signature;
-	Microsoft::WRL::ComPtr<ID3DBlob> error;
-	result = D3DX12SerializeVersionedRootSignature(
-		&root_signature_desc,
-		feature_data.HighestVersion,
-		&signature,
-		&error);
-
-	if (result != S_OK)
 	{
-		assert(false);
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 0);
+
+		CD3DX12_ROOT_PARAMETER1 root_parameters[4];
+		root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+		root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+		root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
+		root_signature_desc.Init_1_1(
+			_countof(root_parameters),
+			root_parameters,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		Microsoft::WRL::ComPtr<ID3DBlob> signature;
+		Microsoft::WRL::ComPtr<ID3DBlob> error;
+		result = D3DX12SerializeVersionedRootSignature(
+			&root_signature_desc,
+			feature_data.HighestVersion,
+			&signature,
+			&error);
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+
+		result = _device->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			__uuidof(ID3D12RootSignature),
+			(void**)&_graphics_signature);
 	}
 
-	result = _device->CreateRootSignature(
-		0,
-		signature->GetBufferPointer(),
-		signature->GetBufferSize(),
-		__uuidof(ID3D12RootSignature),
-		(void**)&_root_signature);
+	// Create a default compute root signature.
+	{
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+
+		CD3DX12_ROOT_PARAMETER1 root_parameters[4];
+		root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
+		root_signature_desc.Init_1_1(
+			_countof(root_parameters),
+			root_parameters,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		Microsoft::WRL::ComPtr<ID3DBlob> signature;
+		Microsoft::WRL::ComPtr<ID3DBlob> error;
+		result = D3DX12SerializeVersionedRootSignature(
+			&root_signature_desc,
+			feature_data.HighestVersion,
+			&signature,
+			&error);
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+
+		result = _device->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			__uuidof(ID3D12RootSignature),
+			(void**)&_compute_signature);
+	}
 
 	if (result != S_OK)
 	{
@@ -342,7 +387,8 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 	_dynamic_vertex_buffer = nullptr;
 
 	_fence = nullptr;
-	_root_signature = nullptr;
+	_graphics_signature = nullptr;
+	_compute_signature = nullptr;
 	_command_list = nullptr;
 
 	for (uint32_t ca_itr = 0; ca_itr < k_max_frames; ++ca_itr)
@@ -406,6 +452,12 @@ void st_dx12_graphics_context::set_pipeline(const st_pipeline* _state)
 	_command_list->SetPipelineState(state->_pipeline.Get());
 }
 
+void st_dx12_graphics_context::set_compute_pipeline(const st_pipeline* _state)
+{
+	const st_dx12_pipeline* state = static_cast<const st_dx12_pipeline*>(_state);
+	_command_list->SetPipelineState(state->_pipeline.Get());
+}
+
 void st_dx12_graphics_context::set_viewport(const st_viewport& viewport)
 {
 	D3D12_VIEWPORT v;
@@ -441,30 +493,6 @@ void st_dx12_graphics_context::set_blend_factor(float r, float g, float b, float
 {
 	const float factor[] = { r, g, b, a };
 	_command_list->OMSetBlendFactor(factor);
-}
-
-void st_dx12_graphics_context::set_shader_resource_table(uint32_t offset)
-{
-	D3D12_GPU_DESCRIPTOR_HANDLE srv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_textures, srv_handle);
-}
-
-void st_dx12_graphics_context::set_sampler_table(uint32_t offset)
-{
-	D3D12_GPU_DESCRIPTOR_HANDLE sampler_handle = _sampler_heap[_frame_index]->get_handle_gpu(offset);
-	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_samplers, sampler_handle);
-}
-
-void st_dx12_graphics_context::set_constant_buffer_table(uint32_t offset)
-{
-	D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_constants, cbv_handle);
-}
-
-void st_dx12_graphics_context::set_buffer_table(uint32_t offset)
-{
-	D3D12_GPU_DESCRIPTOR_HANDLE buffer_handle = _cbv_srv_heap[_frame_index]->get_handle_gpu(offset);
-	_command_list->SetGraphicsRootDescriptorTable(st_descriptor_slot_buffers, buffer_handle);
 }
 
 void st_dx12_graphics_context::set_render_targets(
@@ -619,6 +647,11 @@ void st_dx12_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 	_command_list->IASetVertexBuffers(0, 1, &dynamic_vertex_buffer_view.vertex);
 	_command_list->IASetIndexBuffer(&dynamic_index_buffer_view.index);
 	_command_list->DrawIndexedInstanced(drawcall._indices.size(), 1, 0, 0, 0);
+}
+
+void st_dx12_graphics_context::dispatch(const st_dispatch_args& args)
+{
+	_command_list->Dispatch(args.thread_count_x, args.thread_count_y, args.thread_count_z);
 }
 
 st_render_texture* st_dx12_graphics_context::get_present_target() const
@@ -1043,14 +1076,13 @@ void st_dx12_graphics_context::set_buffer_name(st_buffer* buffer_, std::string n
 	ST_NAME_DX12_OBJECT(buffer->_buffer.Get(), str_to_wstr(name).c_str());
 }
 
-void st_dx12_graphics_context::add_constant(
-	st_buffer* buffer,
-	const std::string& name,
-	const e_st_shader_constant_type constant_type)
+std::unique_ptr<st_resource_table> st_dx12_graphics_context::create_resource_table()
 {
+	std::unique_ptr<st_dx12_resource_table> table = std::make_unique<st_dx12_resource_table>();
+	return std::move(table);
 }
 
-std::unique_ptr<st_resource_table> st_dx12_graphics_context::create_resource_table()
+std::unique_ptr<st_resource_table> st_dx12_graphics_context::create_resource_table_compute()
 {
 	std::unique_ptr<st_dx12_resource_table> table = std::make_unique<st_dx12_resource_table>();
 	return std::move(table);
@@ -1138,6 +1170,24 @@ void st_dx12_graphics_context::set_buffers(
 	}
 }
 
+void st_dx12_graphics_context::set_uavs(
+	st_resource_table* _table,
+	uint32_t count,
+	st_texture** textures)
+{
+	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		st_dx12_texture* texture = static_cast<st_dx12_texture*>(textures[i]);
+
+		st_dx12_descriptor uav = create_unordered_access_view(
+			texture->_handle.Get(),
+			texture->_format);
+		table->_uavs.push_back(uav);
+	}
+}
+
 void st_dx12_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
@@ -1149,9 +1199,15 @@ void st_dx12_graphics_context::update_textures(st_resource_table* table_, uint32
 	}
 }
 
-void st_dx12_graphics_context::bind_resource_table(st_resource_table* table_)
+void st_dx12_graphics_context::bind_resources(st_resource_table* table_)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
+
+	auto set_descriptor_table = [this](e_st_descriptor_slot slot, st_dx12_descriptor_heap* heap, uint32_t offset)
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = heap->get_handle_gpu(offset);
+		_command_list->SetGraphicsRootDescriptorTable(slot, cbv_handle);
+	};
 
 	static uint32_t k_invalid_offset = 0xffffffff;
 
@@ -1169,7 +1225,7 @@ void st_dx12_graphics_context::bind_resource_table(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_cbvs.size() > 0)
-		set_constant_buffer_table(offset);
+		set_descriptor_table(st_descriptor_slot_constants, _cbv_srv_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t srv_itr = 0; srv_itr < table->_srvs.size(); ++srv_itr)
@@ -1185,7 +1241,7 @@ void st_dx12_graphics_context::bind_resource_table(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_srvs.size() > 0)
-		set_shader_resource_table(offset);
+		set_descriptor_table(st_descriptor_slot_textures, _cbv_srv_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t b_itr = 0; b_itr < table->_buffers.size(); ++b_itr)
@@ -1201,7 +1257,7 @@ void st_dx12_graphics_context::bind_resource_table(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	}
 	if (table->_buffers.size() > 0)
-		set_buffer_table(offset);
+		set_descriptor_table(st_descriptor_slot_buffers, _cbv_srv_heap[_frame_index].get(), offset);
 
 	offset = k_invalid_offset;
 	for (uint32_t s_itr = 0; s_itr < table->_samplers.size(); ++s_itr)
@@ -1217,7 +1273,84 @@ void st_dx12_graphics_context::bind_resource_table(st_resource_table* table_)
 			D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 	}
 	if (table->_samplers.size() > 0)
-		set_sampler_table(offset);
+		set_descriptor_table(st_descriptor_slot_samplers, _sampler_heap[_frame_index].get(), offset);
+}
+
+void st_dx12_graphics_context::bind_compute_resources(st_resource_table* table_)
+{
+	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
+
+	auto set_descriptor_table = [this](e_st_descriptor_slot slot, st_dx12_descriptor_heap* heap, uint32_t offset)
+	{
+		D3D12_GPU_DESCRIPTOR_HANDLE cbv_handle = heap->get_handle_gpu(offset);
+		_command_list->SetComputeRootDescriptorTable(slot, cbv_handle);
+	};
+
+	static uint32_t k_invalid_offset = 0xffffffff;
+
+	uint32_t offset = k_invalid_offset;
+	for (uint32_t cbv_itr = 0; cbv_itr < table->_cbvs.size(); ++cbv_itr)
+	{
+		st_dx12_cpu_descriptor_handle handle = _cbv_srv_heap[_frame_index]->allocate_handle();
+		if (offset == k_invalid_offset)
+			offset = handle._offset;
+
+		_device->CopyDescriptorsSimple(
+			1,
+			handle._handle,
+			_resource_heap->get_handle_cpu(table->_cbvs[cbv_itr]),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+	if (table->_cbvs.size() > 0)
+		set_descriptor_table(st_descriptor_slot_constants, _cbv_srv_heap[_frame_index].get(), offset);
+
+	offset = k_invalid_offset;
+	for (uint32_t srv_itr = 0; srv_itr < table->_srvs.size(); ++srv_itr)
+	{
+		st_dx12_cpu_descriptor_handle handle = _cbv_srv_heap[_frame_index]->allocate_handle();
+		if (offset == k_invalid_offset)
+			offset = handle._offset;
+
+		_device->CopyDescriptorsSimple(
+			1,
+			handle._handle,
+			_resource_heap->get_handle_cpu(table->_srvs[srv_itr]),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+	if (table->_srvs.size() > 0)
+		set_descriptor_table(st_descriptor_slot_textures, _cbv_srv_heap[_frame_index].get(), offset);
+
+	offset = k_invalid_offset;
+	for (uint32_t s_itr = 0; s_itr < table->_samplers.size(); ++s_itr)
+	{
+		st_dx12_cpu_descriptor_handle handle = _sampler_heap[_frame_index]->allocate_handle();
+		if (offset == k_invalid_offset)
+			offset = handle._offset;
+
+		_device->CopyDescriptorsSimple(
+			1,
+			handle._handle,
+			_static_sampler_heap->get_handle_cpu(table->_samplers[s_itr]),
+			D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+	}
+	if (table->_samplers.size() > 0)
+		set_descriptor_table(st_descriptor_slot_samplers, _sampler_heap[_frame_index].get(), offset);
+
+	offset = k_invalid_offset;
+	for (uint32_t uav_itr = 0; uav_itr < table->_uavs.size(); ++uav_itr)
+	{
+		st_dx12_cpu_descriptor_handle handle = _cbv_srv_heap[_frame_index]->allocate_handle();
+		if (offset == k_invalid_offset)
+			offset = handle._offset;
+
+		_device->CopyDescriptorsSimple(
+			1,
+			handle._handle,
+			_resource_heap->get_handle_cpu(table->_uavs[uav_itr]),
+			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
+	if (table->_uavs.size() > 0)
+		set_descriptor_table(st_descriptor_slot_uavs, _cbv_srv_heap[_frame_index].get(), offset);
 }
 
 std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* filename, uint8_t type)
@@ -1244,6 +1377,11 @@ std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* f
 		load_shader(std::string(filename) + std::string("_frag"), shader->_ps.GetAddressOf());
 	}
 
+	if (type & st_shader_type_compute)
+	{
+		load_shader(std::string(filename) + std::string("_comp"), shader->_cs.GetAddressOf());
+	}
+
 	// TODO: Other shader types.
 
 	shader->_type = type;
@@ -1251,7 +1389,7 @@ std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* f
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_pipeline(const st_pipeline_state_desc& desc)
+std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_graphics_pipeline(const st_graphics_state_desc& desc)
 {
 	std::unique_ptr<st_dx12_pipeline> pipeline = std::make_unique<st_dx12_pipeline>();
 
@@ -1259,7 +1397,7 @@ std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_pipeline(const st_
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipeline_desc = {};
 
 	// Set the root signature from the graphics context.
-	pipeline_desc.pRootSignature = _root_signature.Get();
+	pipeline_desc.pRootSignature = _graphics_signature.Get();
 
 	// Get the input layout from the vertex format.
 	const st_dx12_vertex_format* vertex_format = static_cast<const st_dx12_vertex_format*>(desc._vertex_format);
@@ -1354,6 +1492,26 @@ std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_pipeline(const st_
 
 	// Create the pipeline state object.
 	_device->CreateGraphicsPipelineState(
+		&pipeline_desc,
+		__uuidof(ID3D12PipelineState),
+		(void**)pipeline->_pipeline.GetAddressOf());
+
+	return std::move(pipeline);
+}
+
+std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_compute_pipeline(const st_compute_state_desc& desc)
+{
+	std::unique_ptr<st_dx12_pipeline> pipeline = std::make_unique<st_dx12_pipeline>();
+
+	D3D12_COMPUTE_PIPELINE_STATE_DESC pipeline_desc = {};
+
+	pipeline_desc.pRootSignature = _compute_signature.Get();
+
+	const st_dx12_shader* shader = static_cast<const st_dx12_shader*>(desc._shader);
+	assert(shader->_type & st_shader_type_compute);
+	pipeline_desc.CS = CD3DX12_SHADER_BYTECODE(shader->_cs.Get());
+
+	_device->CreateComputePipelineState(
 		&pipeline_desc,
 		__uuidof(ID3D12PipelineState),
 		(void**)pipeline->_pipeline.GetAddressOf());
@@ -1524,7 +1682,8 @@ void st_dx12_graphics_context::begin_frame()
 {
 	_command_allocators[_frame_index]->Reset();
 	_command_list->Reset(_command_allocators[_frame_index].Get(), nullptr);
-	_command_list->SetGraphicsRootSignature(_root_signature.Get());
+	_command_list->SetGraphicsRootSignature(_graphics_signature.Get());
+	_command_list->SetComputeRootSignature(_compute_signature.Get());
 
 	// Empty all allocations from this heap. Commands using them have finished executing.
 	_cbv_srv_heap[_frame_index]->empty();
@@ -1662,6 +1821,27 @@ st_dx12_descriptor st_dx12_graphics_context::create_buffer_view(
 }
 
 void st_dx12_graphics_context::destroy_buffer_view(st_dx12_descriptor offset)
+{
+	_resource_heap->deallocate_handle(offset);
+}
+
+st_dx12_descriptor st_dx12_graphics_context::create_unordered_access_view(
+	ID3D12Resource* resource,
+	e_st_format format)
+{
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+	uav_desc.Format = convert_format(format);
+	uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+	uav_desc.Texture2D.MipSlice = 0;
+	uav_desc.Texture2D.PlaneSlice = 0;
+
+	st_dx12_cpu_descriptor_handle uav_handle = _resource_heap->allocate_handle();
+	_device->CreateUnorderedAccessView(resource, nullptr, &uav_desc, uav_handle._handle);
+
+	return uav_handle._offset;
+}
+
+void st_dx12_graphics_context::destroy_unordered_access_view(st_dx12_descriptor offset)
 {
 	_resource_heap->deallocate_handle(offset);
 }

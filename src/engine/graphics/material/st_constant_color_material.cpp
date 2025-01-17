@@ -20,7 +20,6 @@ st_constant_color_material::st_constant_color_material() :
 	desc._element_size = sizeof(st_constant_color_cb);
 	desc._usage = e_st_buffer_usage::uniform;
 	_color_buffer = context->create_buffer(desc);
-	context->add_constant(_color_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_resource_table = context->create_resource_table();
 	st_buffer* cbs[] = { _color_buffer.get() };
@@ -46,5 +45,5 @@ void st_constant_color_material::bind(
 	cb_data._color = _color;
 	context->update_buffer(_color_buffer.get(), &cb_data, 0, 1);
 
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

@@ -312,6 +312,7 @@ static vk::ImageLayout resource_state_mappings[] =
 	vk::ImageLayout::ePresentSrcKHR, // st_texture_state_present
 	vk::ImageLayout::eTransferSrcOptimal, // st_texture_state_copy_source
 	vk::ImageLayout::eTransferDstOptimal, // st_texture_state_copy_dest
+	vk::ImageLayout::eGeneral, // st_texture_state_unordered_access
 };
 
 inline vk::ImageLayout convert_resource_state(e_st_texture_state state)

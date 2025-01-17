@@ -168,7 +168,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
                 st_texture_view* view = static_cast<st_texture_view*>(pcmd->TextureId);
                 ctx->update_textures(g_resource_table.get(), 1, &view);
 
-                ctx->bind_resource_table(g_resource_table.get());
+                ctx->bind_resources(g_resource_table.get());
 
                 ctx->set_scissor(
                     int(pcmd->ClipRect.x - pos.x),
@@ -233,7 +233,6 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
         desc._element_size = sizeof(imgui_cb);
         desc._usage = e_st_buffer_usage::uniform;
         g_constant_buffer = ctx->create_buffer(desc);
-        ctx->add_constant(g_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
         g_resource_table = ctx->create_resource_table();
         st_texture* textures[] = { g_font_texture.get() };
@@ -251,7 +250,7 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 
     g_vertex_format = ctx->create_vertex_format(attributes.data(), 3);
 
-    st_pipeline_state_desc desc;
+    st_graphics_state_desc desc;
     desc._primitive_topology_type = st_primitive_topology_type_triangle;
     desc._sample_mask = UINT_MAX;
     desc._render_target_count = 1;
@@ -284,7 +283,7 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 
     desc._dynamic_scissor = true;
 
-    g_pipeline = ctx->create_pipeline(desc);
+    g_pipeline = ctx->create_graphics_pipeline(desc);
 
     return true;
 }

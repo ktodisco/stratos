@@ -175,7 +175,6 @@ st_font_material::st_font_material(st_texture* texture) :
 		desc._element_size = sizeof(st_font_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_constant_buffer = context->create_buffer(desc);
-		context->add_constant(_constant_buffer.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	std::vector<st_vertex_attribute> attributes;
@@ -185,7 +184,7 @@ st_font_material::st_font_material(st_texture* texture) :
 
 	st_output* output = st_output::get();
 
-	st_pipeline_state_desc desc;
+	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_font);
 	desc._depth_stencil_desc._depth_enable = false;
 	desc._blend_desc._target_blend[0]._blend = true;
@@ -199,7 +198,7 @@ st_font_material::st_font_material(st_texture* texture) :
 	desc._depth_stencil_format = st_format_d24_unorm_s8_uint;
 	output->get_target_formats(e_st_render_pass_type::ui, desc);
 
-	_pipeline = context->create_pipeline(desc);
+	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
 	st_buffer* cbs[] = { _constant_buffer.get() };
@@ -236,5 +235,5 @@ void st_font_material::bind(
 	cb_data._color = _color;
 	context->update_buffer(_constant_buffer.get(), &cb_data, 0, 1);
 
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

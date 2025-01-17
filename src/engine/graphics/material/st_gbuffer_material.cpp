@@ -31,7 +31,6 @@ st_gbuffer_material::st_gbuffer_material(
 		desc._element_size = sizeof(st_gbuffer_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_gbuffer_buffer = context->create_buffer(desc);
-		context->add_constant(_gbuffer_buffer.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	{
@@ -40,7 +39,6 @@ st_gbuffer_material::st_gbuffer_material(
 		desc._element_size = sizeof(st_shadow_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_shadow_buffer = context->create_buffer(desc);
-		context->add_constant(_shadow_buffer.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
@@ -57,7 +55,7 @@ st_gbuffer_material::st_gbuffer_material(
 	st_output* output = st_output::get();
 
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_gbuffer);
 		desc._vertex_format = _vertex_format.get();
 		desc._blend_desc._target_blend[0]._blend = false;
@@ -66,17 +64,17 @@ st_gbuffer_material::st_gbuffer_material(
 		desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 		output->get_target_formats(e_st_render_pass_type::gbuffer, desc);
 
-		_gbuffer_pipeline = context->create_pipeline(desc);
+		_gbuffer_pipeline = context->create_graphics_pipeline(desc);
 	}
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_shadow);
 		desc._vertex_format = _vertex_format.get();
 		desc._depth_stencil_desc._depth_enable = true;
 		desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 		output->get_target_formats(e_st_render_pass_type::shadow, desc);
 
-		_shadow_pipeline = context->create_pipeline(desc);
+		_shadow_pipeline = context->create_graphics_pipeline(desc);
 	}
 
 	{
@@ -128,7 +126,7 @@ void st_gbuffer_material::bind(
 		shadow_cb._mvp = mvp;
 		context->update_buffer(_shadow_buffer.get(), &shadow_cb, 0, 1);
 
-		context->bind_resource_table(_shadow_resources.get());
+		context->bind_resources(_shadow_resources.get());
 	}
 	else if (pass_type == e_st_render_pass_type::gbuffer)
 	{
@@ -140,6 +138,6 @@ void st_gbuffer_material::bind(
 		gbuffer_cb._emissive = _emissive;
 		context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
 
-		context->bind_resource_table(_gbuffer_resources.get());
+		context->bind_resources(_gbuffer_resources.get());
 	}
 }

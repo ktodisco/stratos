@@ -32,6 +32,7 @@ public:
 	void release() override {}
 
 	void set_pipeline(const st_pipeline* state) override;
+	void set_compute_pipeline(const st_pipeline* state) override;
 	void set_viewport(const st_viewport& viewport) override;
 	void set_scissor(int left, int top, int right, int bottom) override;
 	void set_clear_color(float r, float g, float b, float a) override {}
@@ -45,6 +46,9 @@ public:
 	void clear(unsigned int clear_flags) override {}
 	void draw(const struct st_static_drawcall& drawcall) override;
 	void draw(const struct st_dynamic_drawcall& drawcall) override;
+
+	// Compute.
+	void dispatch(const st_dispatch_args& args) override;
 
 	// Backbuffer.
 	st_render_texture* get_present_target() const override;
@@ -80,17 +84,9 @@ public:
 	void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) override;
 	void set_buffer_name(st_buffer* buffer, std::string name) override;
 
-	// TODO: In the unified architexture, create_buffer would take a base Buffer* and
-	// the Vulkan implementation would contain both a vkBuffer and vkDeviceMemory.
-
-	// Constant buffers.
-	void add_constant(
-		st_buffer* buffer,
-		const std::string& name,
-		const e_st_shader_constant_type constant_type) override {}
-
 	// Resource tables.
 	std::unique_ptr<st_resource_table> create_resource_table() override;
+	std::unique_ptr<st_resource_table> create_resource_table_compute() override;
 	void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) override;
 	void set_textures(
 		st_resource_table* table,
@@ -98,14 +94,17 @@ public:
 		st_texture** textures,
 		st_sampler** samplers) override;
 	void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) override;
+	void set_uavs(st_resource_table* table, uint32_t count, st_texture** textures) override;
 	void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) override;
-	void bind_resource_table(st_resource_table* table) override;
+	void bind_resources(st_resource_table* table) override;
+	void bind_compute_resources(st_resource_table* table) override;
 
 	// Shaders.
 	std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) override;
 
 	// Pipelines.
-	std::unique_ptr<st_pipeline> create_pipeline(const struct st_pipeline_state_desc& desc) override;
+	std::unique_ptr<st_pipeline> create_graphics_pipeline(const struct st_graphics_state_desc& desc) override;
+	std::unique_ptr<st_pipeline> create_compute_pipeline(const struct st_compute_state_desc& desc) override;
 
 	// Geometry.
 	std::unique_ptr<st_vertex_format> create_vertex_format(
@@ -171,8 +170,10 @@ private:
 
 	uint32_t _queue_family_index = UINT_MAX;
 
-	vk::DescriptorSetLayout _descriptor_layouts[st_descriptor_slot_count];
-	vk::PipelineLayout _pipeline_layout;
+	vk::DescriptorSetLayout _graphics_layouts[st_descriptor_slot_count];
+	vk::DescriptorSetLayout _compute_layouts[st_descriptor_slot_count];
+	vk::PipelineLayout _graphics_signature;
+	vk::PipelineLayout _compute_signature;
 	vk::DescriptorPool _descriptor_pool;
 
 	std::vector<vk::DescriptorSet> _descriptor_set_pool[k_max_frames];

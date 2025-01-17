@@ -29,7 +29,7 @@ struct st_render_target_blend_desc
 	e_st_logic_op _logic_op = st_logic_op_noop;
 };
 
-struct st_pipeline_blend_desc
+struct st_blend_desc
 {
 	bool _alpha_to_coverage = false;
 	bool _independent_blend = false;
@@ -37,7 +37,7 @@ struct st_pipeline_blend_desc
 	st_render_target_blend_desc _target_blend[8] = {};
 };
 
-struct st_pipeline_rasterizer_desc
+struct st_rasterizer_desc
 {
 	e_st_fill_mode _fill_mode = st_fill_mode_solid;
 	e_st_cull_mode _cull_mode = st_cull_mode_back;
@@ -47,7 +47,7 @@ struct st_pipeline_rasterizer_desc
 	// TODO: Rest of D3D12_RASTERIZER_DESC.
 };
 
-struct st_pipeline_stencil_op_desc
+struct st_stencil_op_desc
 {
 	e_st_stencil_op _stencil_fail_op = st_stencil_op_keep;
 	e_st_stencil_op _depth_fail_op = st_stencil_op_keep;
@@ -55,7 +55,7 @@ struct st_pipeline_stencil_op_desc
 	e_st_compare_func _stencil_func = st_compare_func_less;
 };
 
-struct st_pipeline_depth_stencil_desc
+struct st_depth_stencil_desc
 {
 	bool _depth_enable = false;
 
@@ -66,8 +66,8 @@ struct st_pipeline_depth_stencil_desc
 	uint8_t _stencil_read_mask = 0;
 	uint8_t _stencil_write_mask = 0;
 
-	st_pipeline_stencil_op_desc _front_stencil = {};
-	st_pipeline_stencil_op_desc _back_stencil = {};
+	st_stencil_op_desc _front_stencil = {};
+	st_stencil_op_desc _back_stencil = {};
 };
 
 struct st_sample_desc
@@ -76,15 +76,15 @@ struct st_sample_desc
 	uint32_t _quality = 0;
 };
 
-struct st_pipeline_state_desc
+struct st_graphics_state_desc
 {
-	const struct st_shader* _shader = {};
+	const struct st_shader* _shader = nullptr;
 
 	uint32_t _sample_mask = UINT_MAX;
 
-	st_pipeline_blend_desc _blend_desc = {};
-	st_pipeline_rasterizer_desc _rasterizer_desc = {};
-	st_pipeline_depth_stencil_desc _depth_stencil_desc = {};
+	st_blend_desc _blend_desc = {};
+	st_rasterizer_desc _rasterizer_desc = {};
+	st_depth_stencil_desc _depth_stencil_desc = {};
 
 	struct st_vertex_format* _vertex_format = nullptr;
 	struct st_render_pass* _pass = nullptr;
@@ -101,4 +101,10 @@ struct st_pipeline_state_desc
 	// TODO: The rest of the D3D12_GRAPHICS_PIPELINE_STATE_DESC members.
 
 	bool _dynamic_scissor = false;
+};
+
+struct st_compute_state_desc
+{
+	const struct st_shader* _shader = nullptr;
+
 };

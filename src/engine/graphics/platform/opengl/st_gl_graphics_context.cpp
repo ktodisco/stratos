@@ -145,7 +145,7 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 
 	_bound_pipeline = state;
 
-	const st_pipeline_state_desc& state_desc = state->_state_desc;
+	const st_graphics_state_desc& state_desc = state->_graphics_desc;
 	_bound_shader = static_cast<const st_gl_shader*>(state_desc._shader);
 	glUseProgram(_bound_shader->_handle);
 
@@ -165,6 +165,17 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 	set_cull_state(
 		state_desc._rasterizer_desc._cull_mode != st_cull_mode_none,
 		convert_cull_mode(state_desc._rasterizer_desc._cull_mode));
+}
+
+void st_gl_graphics_context::set_compute_pipeline(const st_pipeline* state_)
+{
+	const st_gl_pipeline* state = static_cast<const st_gl_pipeline*>(state_);
+
+	_bound_pipeline = state;
+
+	const st_compute_state_desc& state_desc = state->_compute_desc;
+	_bound_shader = static_cast<const st_gl_shader*>(state_desc._shader);
+	glUseProgram(_bound_shader->_handle);
 }
 
 void st_gl_graphics_context::set_viewport(const st_viewport& viewport)
@@ -221,7 +232,7 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 	glBindBuffer(GL_ARRAY_BUFFER, vertex->_buffer);
 
 	// TODO: Instead of accumulated offset, we need offset into data of st_vertex.
-	const st_gl_vertex_format* format = static_cast<const st_gl_vertex_format*>(_bound_pipeline->_state_desc._vertex_format);
+	const st_gl_vertex_format* format = static_cast<const st_gl_vertex_format*>(_bound_pipeline->_graphics_desc._vertex_format);
 
 	size_t offset = 0;
 	for (uint32_t itr = 0; itr < format->_attributes.size(); ++itr)
@@ -330,6 +341,12 @@ void st_gl_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 	glDeleteBuffers(1, &pos);
 	glDeleteVertexArrays(1, &vao);
 	glBindVertexArray(0);
+}
+
+void st_gl_graphics_context::dispatch(const st_dispatch_args& args)
+{
+	glDispatchCompute(args.thread_count_x, args.thread_count_y, args.thread_count_z);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 void st_gl_graphics_context::swap()
@@ -472,6 +489,7 @@ std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(const st_buffer
 	buffer->_usage = desc._usage;
 	buffer->_element_size = desc._element_size;
 	buffer->_count = desc._count;
+	buffer->_storage = nullptr;
 
 	if (desc._usage & e_st_buffer_usage::uniform)
 	{
@@ -558,23 +576,13 @@ void st_gl_graphics_context::set_buffer_name(st_buffer* buffer_, std::string nam
 	glObjectLabel(GL_TEXTURE, buffer->_buffer, name.length(), name.c_str());
 }
 
-void st_gl_graphics_context::add_constant(
-	st_buffer* buffer_,
-	const std::string& name,
-	const e_st_shader_constant_type constant_type)
+std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table()
 {
-	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
-
-	assert(buffer->_usage & e_st_buffer_usage::uniform);
-
-	st_gl_constant constant;
-	constant._name = name;
-	constant._type = constant_type;
-
-	buffer->_constants.push_back(constant);
+	std::unique_ptr<st_gl_resource_table> table = std::make_unique<st_gl_resource_table>();
+	return std::move(table);
 }
 
-std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table()
+std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table_compute()
 {
 	std::unique_ptr<st_gl_resource_table> table = std::make_unique<st_gl_resource_table>();
 	return std::move(table);
@@ -608,7 +616,7 @@ void st_gl_graphics_context::set_textures(
 		if (samplers)
 		{
 			st_gl_sampler* s = static_cast<st_gl_sampler*>(samplers[i]);
-			table->_samplers.push_back(s->_handle);
+			table->_samplers.push_back(s);
 		}
 		else
 			table->_samplers.push_back(0);
@@ -625,6 +633,16 @@ void st_gl_graphics_context::set_buffers(st_resource_table* table_, uint32_t cou
 	}
 }
 
+void st_gl_graphics_context::set_uavs(st_resource_table* table_, uint32_t count, st_texture** textures)
+{
+	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		table->_uavs.push_back(textures[i]);
+	}
+}
+
 void st_gl_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
@@ -636,7 +654,7 @@ void st_gl_graphics_context::update_textures(st_resource_table* table_, uint32_t
 	}
 }
 
-void st_gl_graphics_context::bind_resource_table(st_resource_table* table_)
+void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
@@ -645,11 +663,10 @@ void st_gl_graphics_context::bind_resource_table(st_resource_table* table_)
 	for (uint32_t i = 0; i < table->_srvs.size(); ++i)
 	{
 		const st_gl_texture* texture = static_cast<const st_gl_texture*>(table->_srvs[i]);
+		const st_gl_sampler* sampler = static_cast<const st_gl_sampler*>(table->_samplers[i]);
 
 		const st_gl_uniform& uniform = shader->get_uniform(i);
-		uniform.set(*texture);
-
-		glBindSampler(uniform.get_location(), table->_samplers[i]);
+		uniform.set_srv(texture, sampler);
 	}
 
 	for (uint32_t i = 0; i < table->_constant_buffers.size(); ++i)
@@ -665,8 +682,21 @@ void st_gl_graphics_context::bind_resource_table(st_resource_table* table_)
 		const st_gl_buffer* buffer = static_cast<const st_gl_buffer*>(table->_buffers[i]);
 	
 		const st_gl_shader_storage_block& block = shader->get_shader_storage_block(i);
-		block.set(buffer->_buffer, nullptr, 0);
+		block.set(buffer->_buffer);
 	}
+
+	for (uint32_t i = 0; i < table->_uavs.size(); ++i)
+	{
+		const st_gl_texture* texture = static_cast<const st_gl_texture*>(table->_uavs[i]);
+
+		const st_gl_uniform& uniform = shader->get_uniform(i);
+		uniform.set_uav(texture);
+	}
+}
+
+void st_gl_graphics_context::bind_compute_resources(st_resource_table* table)
+{
+	bind_resources(table);
 }
 
 std::unique_ptr<st_shader> st_gl_graphics_context::create_shader(const char* filename, uint8_t type)
@@ -675,10 +705,17 @@ std::unique_ptr<st_shader> st_gl_graphics_context::create_shader(const char* fil
 	return std::move(shader);
 }
 
-std::unique_ptr<st_pipeline> st_gl_graphics_context::create_pipeline(const st_pipeline_state_desc& desc)
+std::unique_ptr<st_pipeline> st_gl_graphics_context::create_graphics_pipeline(const st_graphics_state_desc& desc)
 {
 	std::unique_ptr<st_gl_pipeline> pipeline = std::make_unique<st_gl_pipeline>();
-	pipeline->_state_desc = desc;
+	pipeline->_graphics_desc = desc;
+	return std::move(pipeline);
+}
+
+std::unique_ptr<st_pipeline> st_gl_graphics_context::create_compute_pipeline(const st_compute_state_desc& desc)
+{
+	std::unique_ptr<st_gl_pipeline> pipeline = std::make_unique<st_gl_pipeline>();
+	pipeline->_compute_desc = desc;
 	return std::move(pipeline);
 }
 

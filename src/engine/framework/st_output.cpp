@@ -171,7 +171,7 @@ void st_output::update(st_frame_params* params)
 	_graphics_context->release();
 }
 
-void st_output::get_target_formats(e_st_render_pass_type type, st_pipeline_state_desc& desc)
+void st_output::get_target_formats(e_st_render_pass_type type, st_graphics_state_desc& desc)
 {
 	// TODO: Assert only one bit set in the type argument.
 	switch (type)

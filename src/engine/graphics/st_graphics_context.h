@@ -17,6 +17,7 @@ public:
 	virtual void release() = 0;
 
 	virtual void set_pipeline(const st_pipeline* state) = 0;
+	virtual void set_compute_pipeline(const st_pipeline* state) = 0;
 	virtual void set_viewport(const st_viewport& viewport) = 0;
 	virtual void set_scissor(int left, int top, int right, int bottom) = 0;
 	virtual void set_clear_color(float r, float g, float b, float a) = 0;
@@ -30,6 +31,9 @@ public:
 	virtual void clear(unsigned int clear_flags) = 0;
 	virtual void draw(const struct st_static_drawcall& drawcall) = 0;
 	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
+
+	// Compute.
+	virtual void dispatch(const st_dispatch_args& args) = 0;
 
 	// Backbuffer.
 	virtual class st_render_texture* get_present_target() const = 0;
@@ -65,14 +69,12 @@ public:
 	virtual void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) = 0;
 	virtual void set_buffer_name(st_buffer* buffer, std::string name) = 0;
 
-	// Constant buffers.
-	virtual void add_constant(
-		st_buffer* buffer,
-		const std::string& name,
-		const e_st_shader_constant_type constant_type) = 0;
-
 	// Resource tables.
+	// TODO: This would take a root signature object. In the vk backend it would pull the descriptor layouts
+	// from that root signature.
+	// I especially don't like this because there isn't any barrier to forgetting to use one or the other.
 	virtual std::unique_ptr<st_resource_table> create_resource_table() = 0;
+	virtual std::unique_ptr<st_resource_table> create_resource_table_compute() = 0;
 	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) = 0;
 	virtual void set_textures(
 		st_resource_table* table,
@@ -80,14 +82,17 @@ public:
 		st_texture** textures,
 		st_sampler** samplers) = 0;
 	virtual void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) = 0;
+	virtual void set_uavs(st_resource_table* table, uint32_t count, st_texture** textures) = 0;
 	virtual void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) = 0;
-	virtual void bind_resource_table(st_resource_table* table) = 0;
+	virtual void bind_resources(st_resource_table* table) = 0;
+	virtual void bind_compute_resources(st_resource_table* table) = 0;
 
 	// Shaders.
 	virtual std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) = 0;
 
 	// Pipelines.
-	virtual std::unique_ptr<st_pipeline> create_pipeline(const struct st_pipeline_state_desc& desc) = 0;
+	virtual std::unique_ptr<st_pipeline> create_graphics_pipeline(const struct st_graphics_state_desc& desc) = 0;
+	virtual std::unique_ptr<st_pipeline> create_compute_pipeline(const struct st_compute_state_desc& desc) = 0;
 
 	// Geometry.
 	virtual std::unique_ptr<st_vertex_format> create_vertex_format(

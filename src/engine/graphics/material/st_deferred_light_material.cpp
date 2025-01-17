@@ -34,7 +34,7 @@ st_deferred_light_material::st_deferred_light_material(
 	st_graphics_context* context = st_graphics_context::get();
 
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_deferred_light);
 		desc._blend_desc._target_blend[0]._blend = false;
 		desc._depth_stencil_desc._depth_enable = false;
@@ -43,7 +43,7 @@ st_deferred_light_material::st_deferred_light_material(
 		desc._render_target_count = 1;
 		desc._render_target_formats[0] = output_texture->get_format();
 
-		_pipeline = context->create_pipeline(desc);
+		_pipeline = context->create_graphics_pipeline(desc);
 	}
 
 	_resource_table = context->create_resource_table();
@@ -101,5 +101,5 @@ void st_deferred_light_material::bind(
 	context->transition(_depth->get_texture(), st_texture_state_pixel_shader_read);
 	context->transition(_directional_shadow_map->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

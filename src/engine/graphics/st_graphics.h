@@ -266,6 +266,7 @@ enum e_st_texture_state
 	st_texture_state_present,
 	st_texture_state_copy_source,
 	st_texture_state_copy_dest,
+	st_texture_state_unordered_access,
 };
 
 enum e_st_filter
@@ -284,10 +285,11 @@ enum e_st_address_mode
 
 enum e_st_descriptor_slot
 {
-	st_descriptor_slot_textures,
-	st_descriptor_slot_samplers,
-	st_descriptor_slot_constants,
-	st_descriptor_slot_buffers,
+	st_descriptor_slot_textures = 0,
+	st_descriptor_slot_samplers = 1,
+	st_descriptor_slot_constants = 2,
+	st_descriptor_slot_buffers = 3,
+	st_descriptor_slot_uavs = 3,
 
 	st_descriptor_slot_count
 };
@@ -326,18 +328,6 @@ enum e_st_clear_flags
 	st_clear_flag_color = 1,
 	st_clear_flag_depth = 2,
 	st_clear_flag_stencil = 4
-};
-
-// TODO: DirectX packing rules do not allow for vec2s or vec3s.
-// It's probably best just to deprecate them.
-enum e_st_shader_constant_type
-{
-	st_shader_constant_type_float,
-	st_shader_constant_type_vec2,
-	st_shader_constant_type_vec3,
-	st_shader_constant_type_vec4,
-	st_shader_constant_type_mat4,
-	st_shader_constant_type_block,
 };
 
 enum class e_st_load_op : uint8_t
@@ -468,7 +458,12 @@ struct st_target_desc
 	e_st_store_op _store_op = e_st_store_op::store;
 };
 
-size_t st_graphics_get_shader_constant_size(e_st_shader_constant_type constant_type);
+struct st_dispatch_args
+{
+	uint32_t thread_count_x = 0;
+	uint32_t thread_count_y = 0;
+	uint32_t thread_count_z = 0;
+};
 
 #include <cstdint>
 

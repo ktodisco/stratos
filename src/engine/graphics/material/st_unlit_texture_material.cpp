@@ -27,7 +27,6 @@ st_unlit_texture_material::st_unlit_texture_material(const char* texture_file) :
 	desc._element_size = sizeof(st_view_cb);
 	desc._usage = e_st_buffer_usage::uniform;
 	_view_buffer = context->create_buffer(desc);
-	context->add_constant(_view_buffer.get(), "type_cb0", st_shader_constant_type_block);
 
 	_texture = st_texture_loader::load(_texture_file.c_str());
 
@@ -62,5 +61,5 @@ void st_unlit_texture_material::bind(
 	cb_data._mvp = mvp;
 	context->update_buffer(_view_buffer.get(), &cb_data, 0, 1);
 
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

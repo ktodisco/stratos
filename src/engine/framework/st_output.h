@@ -41,7 +41,7 @@ public:
 
 	void update(struct st_frame_params* params);
 
-	void get_target_formats(e_st_render_pass_type type, struct st_pipeline_state_desc& desc);
+	void get_target_formats(e_st_render_pass_type type, struct st_graphics_state_desc& desc);
 
 	static st_output* get() { return _this; }
 

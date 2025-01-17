@@ -34,11 +34,10 @@ st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(
 		desc._element_size = sizeof(st_gaussian_blur_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_cb = context->create_buffer(desc);
-		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_gaussian_blur_vertical);
 		desc._blend_desc._target_blend[0]._blend = false;
 		desc._depth_stencil_desc._depth_enable = false;
@@ -47,7 +46,7 @@ st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(
 		desc._render_target_count = 1;
 		desc._render_target_formats[0] = target->get_format();
 
-		_pipeline = context->create_pipeline(desc);
+		_pipeline = context->create_graphics_pipeline(desc);
 	}
 
 	_resource_table = context->create_resource_table();
@@ -86,7 +85,7 @@ void st_gaussian_blur_vertical_material::bind(
 	context->update_buffer(_cb.get(), &data, 0, 1);
 
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }
 
 st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(
@@ -105,11 +104,10 @@ st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(
 		desc._element_size = sizeof(st_gaussian_blur_cb);
 		desc._usage = e_st_buffer_usage::uniform;
 		_cb = context->create_buffer(desc);
-		context->add_constant(_cb.get(), "type_cb0", st_shader_constant_type_block);
 	}
 
 	{
-		st_pipeline_state_desc desc;
+		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_gaussian_blur_horizontal);
 		desc._blend_desc._target_blend[0]._blend = false;
 		desc._depth_stencil_desc._depth_enable = false;
@@ -118,7 +116,7 @@ st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(
 		desc._render_target_count = 1;
 		desc._render_target_formats[0] = target->get_format();
 
-		_pipeline = context->create_pipeline(desc);
+		_pipeline = context->create_graphics_pipeline(desc);
 	}
 
 	_resource_table = context->create_resource_table();
@@ -157,5 +155,5 @@ void st_gaussian_blur_horizontal_material::bind(
 	context->update_buffer(_cb.get(), &data, 0, 1);
 
 	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
-	context->bind_resource_table(_resource_table.get());
+	context->bind_resources(_resource_table.get());
 }

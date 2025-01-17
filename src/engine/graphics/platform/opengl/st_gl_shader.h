@@ -22,7 +22,8 @@ class st_gl_uniform
 	friend class st_gl_shader;
 
 public:
-	void set(const struct st_gl_texture& tex) const;
+	void set_srv(const struct st_gl_texture* tex, const struct st_gl_sampler* sampler) const;
+	void set_uav(const struct st_gl_texture* tex) const;
 	st_gl_uniform& operator=(const st_gl_uniform& u);
 
 	int32_t get_location() const { return _location; }
@@ -63,7 +64,7 @@ class st_gl_shader_storage_block
 	friend class st_gl_shader;
 
 public:
-	void set(uint32_t buffer, void* data, size_t size) const;
+	void set(uint32_t buffer) const;
 
 	int32_t get_location() const { return _location; }
 
@@ -103,7 +104,7 @@ class st_gl_shader : public st_shader
 	friend class st_gl_graphics_context;
 
 public:
-	st_gl_shader(const char* source, uint8_t type);
+	st_gl_shader(const char* name, uint8_t type);
 	~st_gl_shader();
 
 	void attach(const st_gl_shader_component& shader);
@@ -125,6 +126,7 @@ private:
 	uint32_t _handle;
 	st_gl_shader_component* _vs;
 	st_gl_shader_component* _fs;
+	st_gl_shader_component* _cs;
 
 	// Reflection information, to assist in resource table binding.
 	std::vector<st_gl_uniform> _texture_binds;
