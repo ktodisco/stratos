@@ -92,14 +92,6 @@ void st_deferred_light_render_pass::render(
 
 	context->set_scissor(0, 0, params->_width, params->_height);
 
-	st_clear_value clears[] =
-	{
-		st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
-		st_depth_stencil_clear_value { 1.0f, 0 }
-	};
-
-	context->begin_render_pass(_pass.get(), clears, std::size(clears));
-
 	_cb._inverse_vp = (params->_view * params->_projection).inverse();
 	_cb._eye = st_vec4f(params->_eye, 0.0f);
 	if (context->get_api() == e_st_graphics_api::opengl)
@@ -124,6 +116,16 @@ void st_deferred_light_render_pass::render(
 
 	// Set global pass resource tables.
 	_material->bind(context, e_st_render_pass_type::deferred, params, identity, identity, identity);
+
+	st_clear_value clears[] =
+	{
+		st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
+		st_depth_stencil_clear_value { 1.0f, 0 }
+	};
+
+	// This must come after bind, because bind is going to issue barriers, which on some
+	// platforms cannot happen during a render pass.
+	context->begin_render_pass(_pass.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";

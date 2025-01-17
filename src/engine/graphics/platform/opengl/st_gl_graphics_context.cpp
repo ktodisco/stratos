@@ -582,6 +582,12 @@ std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table
 	return std::move(table);
 }
 
+std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table_compute()
+{
+	std::unique_ptr<st_gl_resource_table> table = std::make_unique<st_gl_resource_table>();
+	return std::move(table);
+}
+
 void st_gl_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);

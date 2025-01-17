@@ -1082,6 +1082,12 @@ std::unique_ptr<st_resource_table> st_dx12_graphics_context::create_resource_tab
 	return std::move(table);
 }
 
+std::unique_ptr<st_resource_table> st_dx12_graphics_context::create_resource_table_compute()
+{
+	std::unique_ptr<st_dx12_resource_table> table = std::make_unique<st_dx12_resource_table>();
+	return std::move(table);
+}
+
 void st_dx12_graphics_context::set_constant_buffers(
 	st_resource_table* _table,
 	uint32_t count,

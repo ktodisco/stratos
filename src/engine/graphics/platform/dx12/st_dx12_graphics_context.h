@@ -85,6 +85,7 @@ public:
 
 	// Resource tables.
 	std::unique_ptr<st_resource_table> create_resource_table() override;
+	std::unique_ptr<st_resource_table> create_resource_table_compute() override;
 	void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) override;
 	void set_textures(
 		st_resource_table* table,

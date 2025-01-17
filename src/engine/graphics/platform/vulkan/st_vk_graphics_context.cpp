@@ -215,7 +215,8 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 		std::cout << "\tCount: " << properties.queueCount << std::endl;
 
 		if (_queue_family_index > queue_family_count &&
-			properties.queueFlags & vk::QueueFlagBits::eGraphics)
+			properties.queueFlags & vk::QueueFlagBits::eGraphics &&
+			properties.queueFlags & vk::QueueFlagBits::eCompute)
 		{
 			_queue_family_index = &properties - &queue_family_properties[0];
 		}
@@ -328,69 +329,138 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 	VK_VALIDATE(_device.mapMemory(_upload_buffer_memory, vk::DeviceSize(), memory_reqs.size, vk::MemoryMapFlags(), &_upload_buffer_head));
 	_upload_buffer_offset = 0;
 
-	// Set up the descriptor set layout. This is akin to the root signature in D3D12.
-	std::vector<vk::DescriptorSetLayoutBinding> textureBindings;
-	for (uint32_t i = 0; i < 8; ++i)
+	// Set up the pipeline layouts. These are akin to root signatures in D3D12.
+	// First the graphics layout.
 	{
-		textureBindings.push_back(vk::DescriptorSetLayoutBinding()
-			.setBinding(i)
-			.setDescriptorCount(1)
-			.setDescriptorType(vk::DescriptorType::eSampledImage)
-			.setStageFlags(vk::ShaderStageFlagBits::eFragment));
-	}
-	std::vector<vk::DescriptorSetLayoutBinding> samplerBindings;
-	for (uint32_t i = 0; i < 8; ++i)
-	{
-		samplerBindings.push_back(vk::DescriptorSetLayoutBinding()
-			.setBinding(i)
-			.setDescriptorCount(1)
-			.setDescriptorType(vk::DescriptorType::eSampler)
-			.setStageFlags(vk::ShaderStageFlagBits::eFragment));
-	}
-	std::vector<vk::DescriptorSetLayoutBinding> constantBindings;
-	for (uint32_t i = 0; i < 2; ++i)
-	{
-		constantBindings.push_back(vk::DescriptorSetLayoutBinding()
-			.setBinding(i)
-			.setDescriptorCount(1)
-			.setDescriptorType(vk::DescriptorType::eUniformBuffer)
-			.setStageFlags(vk::ShaderStageFlagBits::eAll));
-	}
-	std::vector<vk::DescriptorSetLayoutBinding> bufferBindings;
-	for (uint32_t i = 0; i < 1; ++i)
-	{
-		bufferBindings.push_back(vk::DescriptorSetLayoutBinding()
-			.setBinding(i)
-			.setDescriptorCount(1)
-			.setDescriptorType(vk::DescriptorType::eStorageBuffer)
-			.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+		std::vector<vk::DescriptorSetLayoutBinding> textureBindings;
+		for (uint32_t i = 0; i < 8; ++i)
+		{
+			textureBindings.push_back(vk::DescriptorSetLayoutBinding()
+				.setBinding(i)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eSampledImage)
+				.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+		}
+		std::vector<vk::DescriptorSetLayoutBinding> samplerBindings;
+		for (uint32_t i = 0; i < 8; ++i)
+		{
+			samplerBindings.push_back(vk::DescriptorSetLayoutBinding()
+				.setBinding(i)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eSampler)
+				.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+		}
+		std::vector<vk::DescriptorSetLayoutBinding> constantBindings;
+		for (uint32_t i = 0; i < 2; ++i)
+		{
+			constantBindings.push_back(vk::DescriptorSetLayoutBinding()
+				.setBinding(i)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setStageFlags(vk::ShaderStageFlagBits::eAll));
+		}
+		std::vector<vk::DescriptorSetLayoutBinding> bufferBindings;
+		for (uint32_t i = 0; i < 1; ++i)
+		{
+			bufferBindings.push_back(vk::DescriptorSetLayoutBinding()
+				.setBinding(i)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eStorageBuffer)
+				.setStageFlags(vk::ShaderStageFlagBits::eFragment));
+		}
+
+		std::vector<vk::DescriptorSetLayoutCreateInfo> layout_infos;
+		layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(textureBindings.size())
+			.setPBindings(textureBindings.data()));
+		layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(samplerBindings.size())
+			.setPBindings(samplerBindings.data()));
+		layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(constantBindings.size())
+			.setPBindings(constantBindings.data()));
+		layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(bufferBindings.size())
+			.setPBindings(bufferBindings.data()));
+
+		VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[0], nullptr, &_graphics_layouts[0]));
+		VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[1], nullptr, &_graphics_layouts[1]));
+		VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[2], nullptr, &_graphics_layouts[2]));
+		VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[3], nullptr, &_graphics_layouts[3]));
+
+		vk::PipelineLayoutCreateInfo pipeline_layout_info = vk::PipelineLayoutCreateInfo()
+			.setSetLayoutCount(_countof(_graphics_layouts))
+			.setPSetLayouts(&_graphics_layouts[0])
+			.setPushConstantRangeCount(0);
+
+		VK_VALIDATE(_device.createPipelineLayout(&pipeline_layout_info, nullptr, &_graphics_signature));
 	}
 
-	std::vector<vk::DescriptorSetLayoutCreateInfo> layout_infos;
-	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(textureBindings.size())
-		.setPBindings(textureBindings.data()));
-	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(samplerBindings.size())
-		.setPBindings(samplerBindings.data()));
-	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(constantBindings.size())
-		.setPBindings(constantBindings.data()));
-	layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
-		.setBindingCount(bufferBindings.size())
-		.setPBindings(bufferBindings.data()));
+	// Then compute.
+	{
+		std::vector<vk::DescriptorSetLayoutBinding> textureBindings;
+		for (uint32_t i = 0; i < 8; ++i)
+		{
+			textureBindings.push_back(vk::DescriptorSetLayoutBinding()
+				.setBinding(i)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eSampledImage)
+				.setStageFlags(vk::ShaderStageFlagBits::eCompute));
+		}
+		std::vector<vk::DescriptorSetLayoutBinding> samplerBindings;
+		for (uint32_t i = 0; i < 8; ++i)
+		{
+			samplerBindings.push_back(vk::DescriptorSetLayoutBinding()
+				.setBinding(i)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eSampler)
+				.setStageFlags(vk::ShaderStageFlagBits::eCompute));
+		}
+		std::vector<vk::DescriptorSetLayoutBinding> constantBindings;
+		for (uint32_t i = 0; i < 2; ++i)
+		{
+			constantBindings.push_back(vk::DescriptorSetLayoutBinding()
+				.setBinding(i)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eUniformBuffer)
+				.setStageFlags(vk::ShaderStageFlagBits::eCompute));
+		}
+		std::vector<vk::DescriptorSetLayoutBinding> imageBindings;
+		for (uint32_t i = 0; i < 1; ++i)
+		{
+			imageBindings.push_back(vk::DescriptorSetLayoutBinding()
+				.setBinding(i)
+				.setDescriptorCount(1)
+				.setDescriptorType(vk::DescriptorType::eStorageImage)
+				.setStageFlags(vk::ShaderStageFlagBits::eCompute));
+		}
 
-	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[0], nullptr, &_descriptor_layouts[0]));
-	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[1], nullptr, &_descriptor_layouts[1]));
-	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[2], nullptr, &_descriptor_layouts[2]));
-	VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[3], nullptr, &_descriptor_layouts[3]));
+		std::vector<vk::DescriptorSetLayoutCreateInfo> layout_infos;
+		layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(textureBindings.size())
+			.setPBindings(textureBindings.data()));
+		layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(samplerBindings.size())
+			.setPBindings(samplerBindings.data()));
+		layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(constantBindings.size())
+			.setPBindings(constantBindings.data()));
+		layout_infos.push_back(vk::DescriptorSetLayoutCreateInfo()
+			.setBindingCount(imageBindings.size())
+			.setPBindings(imageBindings.data()));
 
-	vk::PipelineLayoutCreateInfo pipeline_layout_info = vk::PipelineLayoutCreateInfo()
-		.setSetLayoutCount(4)
-		.setPSetLayouts(&_descriptor_layouts[0])
-		.setPushConstantRangeCount(0);
+		VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[0], nullptr, &_compute_layouts[0]));
+		VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[1], nullptr, &_compute_layouts[1]));
+		VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[2], nullptr, &_compute_layouts[2]));
+		VK_VALIDATE(_device.createDescriptorSetLayout(&layout_infos[3], nullptr, &_compute_layouts[3]));
 
-	VK_VALIDATE(_device.createPipelineLayout(&pipeline_layout_info, nullptr, &_graphics_layout));
+		vk::PipelineLayoutCreateInfo pipeline_layout_info = vk::PipelineLayoutCreateInfo()
+			.setSetLayoutCount(_countof(_compute_layouts))
+			.setPSetLayouts(&_compute_layouts[0])
+			.setPushConstantRangeCount(0);
+
+		VK_VALIDATE(_device.createPipelineLayout(&pipeline_layout_info, nullptr, &_compute_signature));
+	}
 
 	// Create the descriptor pool.
 	std::vector<vk::DescriptorPoolSize> pool_sizes;
@@ -497,11 +567,12 @@ st_vk_graphics_context::~st_vk_graphics_context()
 	_instance.destroySurfaceKHR(_window_surface, nullptr);
 
 	_device.destroyDescriptorPool(_descriptor_pool, nullptr);
-	_device.destroyPipelineLayout(_graphics_layout, nullptr);
-	_device.destroyDescriptorSetLayout(_descriptor_layouts[0], nullptr);
-	_device.destroyDescriptorSetLayout(_descriptor_layouts[1], nullptr);
-	_device.destroyDescriptorSetLayout(_descriptor_layouts[2], nullptr);
-	_device.destroyDescriptorSetLayout(_descriptor_layouts[3], nullptr);
+	_device.destroyPipelineLayout(_compute_signature, nullptr);
+	_device.destroyPipelineLayout(_graphics_signature, nullptr);
+	for (uint32_t i = 0; i < _countof(_compute_layouts); ++i)
+		_device.destroyDescriptorSetLayout(_compute_layouts[i], nullptr);
+	for (uint32_t i = 0; i < _countof(_graphics_layouts); ++i)
+		_device.destroyDescriptorSetLayout(_graphics_layouts[i], nullptr);
 	_device.freeMemory(_upload_buffer_memory, nullptr);
 	_device.destroyBuffer(_upload_buffer, nullptr);
 	_device.destroyFence(_fence, nullptr);
@@ -527,6 +598,12 @@ void st_vk_graphics_context::set_pipeline(const st_pipeline* pipeline_)
 {
 	const st_vk_pipeline* pipeline = static_cast<const st_vk_pipeline*>(pipeline_);
 	_command_buffers[st_command_buffer_graphics].bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->_pipeline);
+}
+
+void st_vk_graphics_context::set_compute_pipeline(const st_pipeline* pipeline_)
+{
+	const st_vk_pipeline* pipeline = static_cast<const st_vk_pipeline*>(pipeline_);
+	_command_buffers[st_command_buffer_graphics].bindPipeline(vk::PipelineBindPoint::eCompute, pipeline->_pipeline);
 }
 
 void st_vk_graphics_context::set_viewport(const st_viewport& viewport)
@@ -608,6 +685,11 @@ void st_vk_graphics_context::draw(const struct st_dynamic_drawcall& drawcall)
 
 	_dynamic_vertex_bytes_written += sizeof(st_vk_procedural_vertex) * verts.size();
 	_dynamic_index_bytes_written += sizeof(uint16_t) * drawcall._indices.size();
+}
+
+void st_vk_graphics_context::dispatch(const st_dispatch_args& args)
+{
+	_command_buffers[st_command_buffer_graphics].dispatch(args.thread_count_x, args.thread_count_y, args.thread_count_z);
 }
 
 st_render_texture* st_vk_graphics_context::get_present_target() const
@@ -1248,15 +1330,39 @@ std::unique_ptr<st_resource_table> st_vk_graphics_context::create_resource_table
 		vk::DescriptorSetAllocateInfo allocate_info = vk::DescriptorSetAllocateInfo()
 			.setDescriptorPool(_descriptor_pool)
 			.setDescriptorSetCount(1)
-			.setPSetLayouts(&_descriptor_layouts[slot]);
+			.setPSetLayouts(&_graphics_layouts[slot]);
 
 		VK_VALIDATE(_device.allocateDescriptorSets(&allocate_info, set));
 	};
 
 	create_set(st_descriptor_slot_textures, &table->_textures);
-	create_set(st_descriptor_slot_buffers, &table->_buffers);
-	create_set(st_descriptor_slot_constants, &table->_constants);
 	create_set(st_descriptor_slot_samplers, &table->_samplers);
+	create_set(st_descriptor_slot_constants, &table->_constants);
+	create_set(st_descriptor_slot_buffers, &table->_buffers);
+
+	return std::move(table);
+}
+
+std::unique_ptr<st_resource_table> st_vk_graphics_context::create_resource_table_compute()
+{
+	std::unique_ptr<st_vk_resource_table> table = std::make_unique<st_vk_resource_table>();
+	table->_device = &_device;
+	table->_pool = &_descriptor_pool;
+
+	auto create_set = [this](e_st_descriptor_slot slot, vk::DescriptorSet* set)
+	{
+		vk::DescriptorSetAllocateInfo allocate_info = vk::DescriptorSetAllocateInfo()
+			.setDescriptorPool(_descriptor_pool)
+			.setDescriptorSetCount(1)
+			.setPSetLayouts(&_compute_layouts[slot]);
+
+		VK_VALIDATE(_device.allocateDescriptorSets(&allocate_info, set));
+	};
+
+	create_set(st_descriptor_slot_textures, &table->_textures);
+	create_set(st_descriptor_slot_samplers, &table->_samplers);
+	create_set(st_descriptor_slot_constants, &table->_constants);
+	create_set(st_descriptor_slot_buffers, &table->_uavs);
 
 	return std::move(table);
 }
@@ -1364,6 +1470,32 @@ void st_vk_graphics_context::set_buffers(st_resource_table* table_, uint32_t cou
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
+void st_vk_graphics_context::set_uavs(st_resource_table* table_, uint32_t count, st_texture** textures)
+{
+	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+	table->_uav_count = count;
+
+	std::vector<vk::DescriptorImageInfo> infos;
+	for (int i = 0; i < count; ++i)
+	{
+		st_vk_texture* texture = static_cast<st_vk_texture*>(textures[i]);
+		vk::ImageView view = texture->_view;
+
+		infos.emplace_back() = vk::DescriptorImageInfo()
+			.setImageLayout(vk::ImageLayout::eGeneral)
+			.setImageView(view);
+	}
+
+	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
+		.setDescriptorType(vk::DescriptorType::eStorageImage)
+		.setDescriptorCount(count)
+		.setDstSet(table->_uavs)
+		.setDstBinding(0)
+		.setPImageInfo(infos.data());
+
+	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
+}
+
 void st_vk_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
@@ -1401,7 +1533,7 @@ void st_vk_graphics_context::bind_resources(st_resource_table* table_)
 		vk::DescriptorSetAllocateInfo allocate_info = vk::DescriptorSetAllocateInfo()
 			.setDescriptorPool(_descriptor_pool)
 			.setDescriptorSetCount(1)
-			.setPSetLayouts(&_descriptor_layouts[slot]);
+			.setPSetLayouts(&_graphics_layouts[slot]);
 
 		VK_VALIDATE(_device.allocateDescriptorSets(&allocate_info, &new_set));
 
@@ -1416,7 +1548,7 @@ void st_vk_graphics_context::bind_resources(st_resource_table* table_)
 
 		_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
 			vk::PipelineBindPoint::eGraphics,
-			_graphics_layout,
+			_graphics_signature,
 			slot,
 			1,
 			&new_set,
@@ -1426,8 +1558,49 @@ void st_vk_graphics_context::bind_resources(st_resource_table* table_)
 
 	bind_set(st_descriptor_slot_textures, &table->_textures, table->_texture_count);
 	bind_set(st_descriptor_slot_samplers, &table->_samplers, table->_sampler_count);
-	bind_set(st_descriptor_slot_buffers, &table->_buffers, table->_buffer_count);
 	bind_set(st_descriptor_slot_constants, &table->_constants, table->_constant_count);
+	bind_set(st_descriptor_slot_buffers, &table->_buffers, table->_buffer_count);
+}
+
+void st_vk_graphics_context::bind_compute_resources(st_resource_table* table_)
+{
+	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
+
+	auto bind_set = [this](e_st_descriptor_slot slot, const vk::DescriptorSet* set, uint32_t count)
+	{
+		// First, copy the descriptor set to a unique one for this frame.
+		vk::DescriptorSet& new_set = _descriptor_set_pool[_frame_index].emplace_back();
+
+		vk::DescriptorSetAllocateInfo allocate_info = vk::DescriptorSetAllocateInfo()
+			.setDescriptorPool(_descriptor_pool)
+			.setDescriptorSetCount(1)
+			.setPSetLayouts(&_compute_layouts[slot]);
+
+		VK_VALIDATE(_device.allocateDescriptorSets(&allocate_info, &new_set));
+
+		vk::CopyDescriptorSet copy_set = vk::CopyDescriptorSet()
+			.setDescriptorCount(count)
+			.setSrcSet(*set)
+			.setSrcBinding(0)
+			.setDstSet(new_set)
+			.setDstBinding(0);
+
+		_device.updateDescriptorSets(0, nullptr, 1, &copy_set);
+
+		_command_buffers[st_command_buffer_graphics].bindDescriptorSets(
+			vk::PipelineBindPoint::eCompute,
+			_compute_signature,
+			slot,
+			1,
+			&new_set,
+			0,
+			nullptr);
+	};
+
+	bind_set(st_descriptor_slot_textures, &table->_textures, table->_texture_count);
+	bind_set(st_descriptor_slot_samplers, &table->_samplers, table->_sampler_count);
+	bind_set(st_descriptor_slot_constants, &table->_constants, table->_constant_count);
+	bind_set(st_descriptor_slot_uavs, &table->_uavs, table->_uav_count);
 }
 
 std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* filename, uint8_t type)
@@ -1462,6 +1635,13 @@ std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* fil
 		load_shader(
 			std::string(filename) + std::string("_frag.spirv"),
 			shader->_ps);
+	}
+
+	if (type & st_shader_type_compute)
+	{
+		load_shader(
+			std::string(filename) + std::string("_comp.spirv"),
+			shader->_cs);
 	}
 
 	return std::move(shader);
@@ -1607,7 +1787,7 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_graphics_pipeline(co
 		.setPColorBlendState(&color_blend)
 		.setPDynamicState(&dynamic_state)
 		.setSubpass(0)
-		.setLayout(_graphics_layout);
+		.setLayout(_graphics_signature);
 
 	VK_VALIDATE(_device.createGraphicsPipelines(vk::PipelineCache(nullptr), 1, &create_info, nullptr, &pipeline->_pipeline));
 
@@ -1628,7 +1808,7 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_compute_pipeline(con
 
 	vk::ComputePipelineCreateInfo create_info = vk::ComputePipelineCreateInfo()
 		.setStage(stage)
-		.setLayout(_compute_layout);
+		.setLayout(_compute_signature);
 
 	VK_VALIDATE(_device.createComputePipelines(vk::PipelineCache(nullptr), 1, &create_info, nullptr, &pipeline->_pipeline));
 

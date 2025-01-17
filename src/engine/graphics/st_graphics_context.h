@@ -70,7 +70,11 @@ public:
 	virtual void set_buffer_name(st_buffer* buffer, std::string name) = 0;
 
 	// Resource tables.
+	// TODO: This would take a root signature object. In the vk backend it would pull the descriptor layouts
+	// from that root signature.
+	// I especially don't like this because there isn't any barrier to forgetting to use one or the other.
 	virtual std::unique_ptr<st_resource_table> create_resource_table() = 0;
+	virtual std::unique_ptr<st_resource_table> create_resource_table_compute() = 0;
 	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) = 0;
 	virtual void set_textures(
 		st_resource_table* table,
