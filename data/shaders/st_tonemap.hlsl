@@ -45,7 +45,7 @@ float3 gamma_correct(float3 x)
 {
 	float3 low = x * 12.92f;
 	float3 high = (pow(abs(x), 1.0f / 2.4f) * 1.055f) - 0.055f;
-	float3 srgb = (x <= 0.0031308f) ? low : high;
+	float3 srgb = select(x <= 0.0031308f, low, high);
 	return srgb;
 }
 

@@ -66,11 +66,11 @@ struct st_gl_buffer : public st_buffer
 	size_t _element_size;
 	e_st_buffer_usage_flags _usage;
 
-	union
-	{
+	//union
+	//{
 		uint8_t* _storage;
 		std::vector<st_gl_constant> _constants;
-	};
+	//};
 };
 
 struct st_gl_buffer_view : public st_buffer_view
@@ -105,8 +105,9 @@ struct st_gl_resource_table : public st_resource_table
 
 	std::vector<const struct st_buffer*> _constant_buffers;
 	std::vector<const struct st_texture*> _srvs;
-	std::vector<GLuint> _samplers;
+	std::vector<const struct st_sampler*> _samplers;
 	std::vector<const struct st_buffer*> _buffers;
+	std::vector<const struct st_texture*> _uavs;
 };
 
 struct st_gl_sampler : public st_sampler

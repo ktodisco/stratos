@@ -167,6 +167,17 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 		convert_cull_mode(state_desc._rasterizer_desc._cull_mode));
 }
 
+void st_gl_graphics_context::set_compute_pipeline(const st_pipeline* state_)
+{
+	const st_gl_pipeline* state = static_cast<const st_gl_pipeline*>(state_);
+
+	_bound_pipeline = state;
+
+	const st_compute_state_desc& state_desc = state->_compute_desc;
+	_bound_shader = static_cast<const st_gl_shader*>(state_desc._shader);
+	glUseProgram(_bound_shader->_handle);
+}
+
 void st_gl_graphics_context::set_viewport(const st_viewport& viewport)
 {
 	glViewport(
@@ -332,6 +343,12 @@ void st_gl_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 	glBindVertexArray(0);
 }
 
+void st_gl_graphics_context::dispatch(const st_dispatch_args& args)
+{
+	glDispatchCompute(args.thread_count_x, args.thread_count_y, args.thread_count_z);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
 void st_gl_graphics_context::swap()
 {
 	// Copy the present target to the backbuffer.
@@ -472,6 +489,7 @@ std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(const st_buffer
 	buffer->_usage = desc._usage;
 	buffer->_element_size = desc._element_size;
 	buffer->_count = desc._count;
+	buffer->_storage = nullptr;
 
 	if (desc._usage & e_st_buffer_usage::uniform)
 	{
@@ -608,7 +626,7 @@ void st_gl_graphics_context::set_textures(
 		if (samplers)
 		{
 			st_gl_sampler* s = static_cast<st_gl_sampler*>(samplers[i]);
-			table->_samplers.push_back(s->_handle);
+			table->_samplers.push_back(s);
 		}
 		else
 			table->_samplers.push_back(0);
@@ -622,6 +640,16 @@ void st_gl_graphics_context::set_buffers(st_resource_table* table_, uint32_t cou
 	for (uint32_t i = 0; i < count; ++i)
 	{
 		table->_buffers.push_back(buffers[i]);
+	}
+}
+
+void st_gl_graphics_context::set_uavs(st_resource_table* table_, uint32_t count, st_texture** textures)
+{
+	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
+
+	for (uint32_t i = 0; i < count; ++i)
+	{
+		table->_uavs.push_back(textures[i]);
 	}
 }
 
@@ -645,11 +673,10 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 	for (uint32_t i = 0; i < table->_srvs.size(); ++i)
 	{
 		const st_gl_texture* texture = static_cast<const st_gl_texture*>(table->_srvs[i]);
+		const st_gl_sampler* sampler = static_cast<const st_gl_sampler*>(table->_samplers[i]);
 
 		const st_gl_uniform& uniform = shader->get_uniform(i);
-		uniform.set(*texture);
-
-		glBindSampler(uniform.get_location(), table->_samplers[i]);
+		uniform.set_srv(texture, sampler);
 	}
 
 	for (uint32_t i = 0; i < table->_constant_buffers.size(); ++i)
@@ -665,8 +692,21 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 		const st_gl_buffer* buffer = static_cast<const st_gl_buffer*>(table->_buffers[i]);
 	
 		const st_gl_shader_storage_block& block = shader->get_shader_storage_block(i);
-		block.set(buffer->_buffer, nullptr, 0);
+		block.set(buffer->_buffer);
 	}
+
+	for (uint32_t i = 0; i < table->_uavs.size(); ++i)
+	{
+		const st_gl_texture* texture = static_cast<const st_gl_texture*>(table->_uavs[i]);
+
+		const st_gl_uniform& uniform = shader->get_uniform(i);
+		uniform.set_uav(texture);
+	}
+}
+
+void st_gl_graphics_context::bind_compute_resources(st_resource_table* table)
+{
+	bind_resources(table);
 }
 
 std::unique_ptr<st_shader> st_gl_graphics_context::create_shader(const char* filename, uint8_t type)

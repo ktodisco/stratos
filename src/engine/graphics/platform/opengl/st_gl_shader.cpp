@@ -8,6 +8,8 @@
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
+#include <graphics/st_shader_manager.h>
+
 #include <math/st_mat4f.h>
 #include <math/st_vec2f.h>
 #include <math/st_vec3f.h>
@@ -36,11 +38,17 @@ void load_shader(const std::string& filename, std::string& contents)
 
 st_gl_uniform::st_gl_uniform(int32_t location, uint32_t binding) : _location(location), _binding(binding) {}
 
-void st_gl_uniform::set(const st_gl_texture& tex) const
+void st_gl_uniform::set_srv(const st_gl_texture* tex, const st_gl_sampler* sampler) const
 {
 	glActiveTexture(GL_TEXTURE0 + _location);
-	glBindTexture(GL_TEXTURE_2D, (GLuint)tex._handle);
+	glBindTexture(GL_TEXTURE_2D, (GLuint)tex->_handle);
 	glUniform1i(_location, _location);
+	glBindSampler(_location, (GLuint)sampler->_handle);
+}
+
+void st_gl_uniform::set_uav(const st_gl_texture* tex) const
+{
+	glBindImageTexture(_location, (GLuint)tex->_handle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 }
 
 st_gl_uniform& st_gl_uniform::operator=(const st_gl_uniform& u)
@@ -67,10 +75,9 @@ st_gl_shader_storage_block::st_gl_shader_storage_block(int32_t location)
 {
 }
 
-void st_gl_shader_storage_block::set(uint32_t buffer, void* data, size_t size) const
+void st_gl_shader_storage_block::set(uint32_t buffer) const
 {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, _location, buffer);
-	//glBufferData(GL_SHADER_STORAGE_BUFFER, size, data, GL_STATIC_DRAW);
 }
 
 st_gl_shader_component::st_gl_shader_component(const char* source, uint32_t type)
@@ -107,33 +114,55 @@ st_gl_shader::st_gl_shader(const char* source, uint8_t type)
 {
 	_handle = glCreateProgram();
 
-	// TODO: Handle non-vertex and non-pixel types.
-	std::string source_vs;
-	load_shader(std::string(source) + std::string("_vert.glsl"), source_vs);
-
-	std::string source_fs;
-	load_shader(std::string(source) + std::string("_frag.glsl"), source_fs);
-
-	_vs = new st_gl_shader_component(source_vs.c_str(), GL_VERTEX_SHADER);
-	if (!_vs->compile())
+	if (type & st_shader_type_vertex &&
+		type & st_shader_type_pixel)
 	{
-		std::cerr << "Failed to compile vertex shader:" << std::endl << _vs->get_compile_log() << std::endl;
-		assert(false);
+		std::string source_vs;
+		load_shader(std::string(source) + std::string("_vert.glsl"), source_vs);
+
+		std::string source_fs;
+		load_shader(std::string(source) + std::string("_frag.glsl"), source_fs);
+
+		_vs = new st_gl_shader_component(source_vs.c_str(), GL_VERTEX_SHADER);
+		if (!_vs->compile())
+		{
+			std::cerr << "Failed to compile vertex shader:" << std::endl << _vs->get_compile_log() << std::endl;
+			assert(false);
+		}
+
+		_fs = new st_gl_shader_component(source_fs.c_str(), GL_FRAGMENT_SHADER);
+		if (!_fs->compile())
+		{
+			std::cerr << "Failed to compile fragment shader:\n\t" << std::endl << _fs->get_compile_log() << std::endl;
+			assert(false);
+		}
+
+		attach(*_vs);
+		attach(*_fs);
+		if (!link())
+		{
+			std::cerr << "Failed to link shader program:\n\t" << std::endl << get_link_log() << std::endl;
+			assert(false);
+		}
 	}
-
-	_fs = new st_gl_shader_component(source_fs.c_str(), GL_FRAGMENT_SHADER);
-	if (!_fs->compile())
+	else if (type & st_shader_type_compute)
 	{
-		std::cerr << "Failed to compile fragment shader:\n\t" << std::endl << _fs->get_compile_log() << std::endl;
-		assert(false);
-	}
+		std::string source_cs;
+		load_shader(std::string(source) + std::string("_comp.glsl"), source_cs);
 
-	attach(*_vs);
-	attach(*_fs);
-	if (!link())
-	{
-		std::cerr << "Failed to link shader program:\n\t" << std::endl << get_link_log() << std::endl;
-		assert(false);
+		_cs = new st_gl_shader_component(source_cs.c_str(), GL_COMPUTE_SHADER);
+		if (!_cs->compile())
+		{
+			std::cerr << "Failed to compile compute shader:" << std::endl << _cs->get_compile_log() << std::endl;
+			assert(false);
+		}
+
+		attach(*_cs);
+		if (!link())
+		{
+			std::cerr << "Failed to link shader program:\n\t" << std::endl << get_link_log() << std::endl;
+			assert(false);
+		}
 	}
 
 	reflect();
@@ -275,8 +304,7 @@ void st_gl_shader::reflect()
 			printf("\tUniform %s at location %d (block index %d)\n", uniform_name.c_str(), binding, block_index);
 #endif
 
-			if (block_index < 0)
-				_texture_binds.push_back(st_gl_uniform(location, binding));
+			_texture_binds.push_back(st_gl_uniform(location, binding));
 		}
 	}
 
