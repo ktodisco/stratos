@@ -20,7 +20,7 @@ project "stratos"
 		"../3rdparty/WinPixEventRuntime.1.0.170918004/Include/WinPixEventRuntime",
 		"../3rdparty/imgui-1.66",
 		"../3rdparty/assimp-4.1.0/include",
-		"C:/VulkanSDK/1.3.290.0/include",
+		"../3rdparty/vulkan/1.3.290.0/include",
 		
 		"./",
 	}
@@ -29,7 +29,7 @@ project "stratos"
 		"../3rdparty/glew-2.0.0/lib/Release/x64",
 		"../3rdparty/WinPixEventRuntime.1.0.170918004/bin",
 		"../3rdparty/assimp-4.1.0/lib/Release",
-		"C:/VulkanSDK/1.3.290.0/Lib",
+		"../3rdparty/vulkan/1.3.290.0/Lib",
 	}
 	
 	links {
