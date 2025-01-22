@@ -1377,7 +1377,7 @@ void st_dx12_graphics_context::bind_compute_resources(st_resource_table* table_)
 		set_descriptor_table(st_descriptor_slot_uavs, _cbv_srv_heap[_frame_index].get(), offset);
 }
 
-std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* filename, uint8_t type)
+std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* filename, e_st_shader_type_flags type)
 {
 	std::unique_ptr<st_dx12_shader> shader = std::make_unique<st_dx12_shader>();
 
@@ -1391,24 +1391,22 @@ std::unique_ptr<st_shader> st_dx12_graphics_context::create_shader(const char* f
 		D3DReadFileToBlob(full_path.c_str(), blob);
 	};
 
-	if (type & st_shader_type_vertex)
+	if (type & e_st_shader_type::vertex)
 	{
 		load_shader(std::string(filename) + std::string("_vert"), shader->_vs.GetAddressOf());
 	}
 
-	if (type & st_shader_type_pixel)
+	if (type & e_st_shader_type::pixel)
 	{
 		load_shader(std::string(filename) + std::string("_frag"), shader->_ps.GetAddressOf());
 	}
 
-	if (type & st_shader_type_compute)
+	if (type & e_st_shader_type::compute)
 	{
 		load_shader(std::string(filename) + std::string("_comp"), shader->_cs.GetAddressOf());
 	}
 
-	// TODO: Other shader types.
-
-	shader->_type = type;
+	shader->_type = uint8_t(type);
 
 	return std::move(shader);
 }
@@ -1432,11 +1430,11 @@ std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_graphics_pipeline(
 	// Get the shader bytecodes.
 	// Ordinarily I'd use ternary operators here, but that generated code which would call
 	// the shader bytecode helper constructor with a null blob.
-	if (shader->_type & st_shader_type_vertex) { pipeline_desc.VS = CD3DX12_SHADER_BYTECODE(shader->_vs.Get()); }
-	if (shader->_type & st_shader_type_pixel) { pipeline_desc.PS = CD3DX12_SHADER_BYTECODE(shader->_ps.Get()); }
-	if (shader->_type & st_shader_type_domain) { pipeline_desc.DS = CD3DX12_SHADER_BYTECODE(shader->_ds.Get()); }
-	if (shader->_type & st_shader_type_hull) { pipeline_desc.HS = CD3DX12_SHADER_BYTECODE(shader->_hs.Get()); }
-	if (shader->_type & st_shader_type_geometry) { pipeline_desc.GS = CD3DX12_SHADER_BYTECODE(shader->_gs.Get()); }
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::vertex) { pipeline_desc.VS = CD3DX12_SHADER_BYTECODE(shader->_vs.Get()); }
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::pixel) { pipeline_desc.PS = CD3DX12_SHADER_BYTECODE(shader->_ps.Get()); }
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::domain) { pipeline_desc.DS = CD3DX12_SHADER_BYTECODE(shader->_ds.Get()); }
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::hull) { pipeline_desc.HS = CD3DX12_SHADER_BYTECODE(shader->_hs.Get()); }
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::geometry) { pipeline_desc.GS = CD3DX12_SHADER_BYTECODE(shader->_gs.Get()); }
 
 	pipeline_desc.SampleMask = desc._sample_mask;
 
@@ -1532,7 +1530,7 @@ std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_compute_pipeline(c
 	pipeline_desc.pRootSignature = _compute_signature.Get();
 
 	const st_dx12_shader* shader = static_cast<const st_dx12_shader*>(desc._shader);
-	assert(shader->_type & st_shader_type_compute);
+	assert(e_st_shader_type_flags(shader->_type) & e_st_shader_type::compute);
 	pipeline_desc.CS = CD3DX12_SHADER_BYTECODE(shader->_cs.Get());
 
 	_device->CreateComputePipelineState(
@@ -1549,16 +1547,7 @@ std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format
 {
 	std::unique_ptr<st_dx12_vertex_format> vertex_format = std::make_unique<st_dx12_vertex_format>();
 
-	// TODO: Group this into common code.
-	size_t vertex_size = 0;
-
-	for (uint32_t itr = 0; itr < attribute_count; ++itr)
-	{
-		const st_vertex_attribute* attr = &attributes[itr];
-
-		vertex_size += bits_per_pixel(attr->_format) / 8;
-	}
-
+	size_t vertex_size = calculate_vertex_size(attributes, attribute_count);
 	vertex_format->_vertex_size = (uint32_t)vertex_size;
 
 	// Create the element descriptions.

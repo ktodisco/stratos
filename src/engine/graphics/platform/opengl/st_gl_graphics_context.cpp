@@ -149,7 +149,6 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 	_bound_shader = static_cast<const st_gl_shader*>(state_desc._shader);
 	glUseProgram(_bound_shader->_handle);
 
-	// TODO: Convert these.
 	set_depth_state(
 		state_desc._depth_stencil_desc._depth_enable,
 		convert_compare_func(state_desc._depth_stencil_desc._depth_compare));
@@ -231,7 +230,6 @@ void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 
 	glBindBuffer(GL_ARRAY_BUFFER, vertex->_buffer);
 
-	// TODO: Instead of accumulated offset, we need offset into data of st_vertex.
 	const st_gl_vertex_format* format = static_cast<const st_gl_vertex_format*>(_bound_pipeline->_graphics_desc._vertex_format);
 
 	size_t offset = 0;
@@ -702,7 +700,7 @@ void st_gl_graphics_context::bind_compute_resources(st_resource_table* table)
 	bind_resources(table);
 }
 
-std::unique_ptr<st_shader> st_gl_graphics_context::create_shader(const char* filename, uint8_t type)
+std::unique_ptr<st_shader> st_gl_graphics_context::create_shader(const char* filename, e_st_shader_type_flags type)
 {
 	std::unique_ptr<st_gl_shader> shader = std::make_unique<st_gl_shader>(filename, type);
 	return std::move(shader);
@@ -728,16 +726,7 @@ std::unique_ptr<st_vertex_format> st_gl_graphics_context::create_vertex_format(
 {
 	std::unique_ptr<st_gl_vertex_format> format = std::make_unique<st_gl_vertex_format>();
 
-	// TODO: Group this into common code.
-	size_t vertex_size = 0;
-
-	for (uint32_t itr = 0; itr < attribute_count; ++itr)
-	{
-		const st_vertex_attribute* attr = &attributes[itr];
-
-		vertex_size += bits_per_pixel(attr->_format) / 8;
-	}
-
+	size_t vertex_size = calculate_vertex_size(attributes, attribute_count);
 	format->_vertex_size = (uint32_t)vertex_size;
 
 	format->_attributes.reserve(attribute_count);

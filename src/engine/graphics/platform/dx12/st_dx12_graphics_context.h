@@ -99,7 +99,7 @@ public:
 	void bind_compute_resources(st_resource_table* table) override;
 
 	// Shaders.
-	std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) override;
+	std::unique_ptr<st_shader> create_shader(const char* filename, e_st_shader_type_flags type) override;
 
 	// Pipelines.
 	std::unique_ptr<st_pipeline> create_graphics_pipeline(const struct st_graphics_state_desc& desc) override;

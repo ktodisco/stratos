@@ -90,7 +90,7 @@ public:
 	virtual void bind_compute_resources(st_resource_table* table) = 0;
 
 	// Shaders.
-	virtual std::unique_ptr<st_shader> create_shader(const char* filename, uint8_t type) = 0;
+	virtual std::unique_ptr<st_shader> create_shader(const char* filename, e_st_shader_type_flags type) = 0;
 
 	// Pipelines.
 	virtual std::unique_ptr<st_pipeline> create_graphics_pipeline(const struct st_graphics_state_desc& desc) = 0;

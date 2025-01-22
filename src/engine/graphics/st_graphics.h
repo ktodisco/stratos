@@ -300,7 +300,7 @@ enum e_st_descriptor_slot
 	st_descriptor_slot_count
 };
 
-enum class e_st_buffer_usage : uint32_t
+enum class e_st_buffer_usage : uint16_t
 {
 	index = 0x0001,
 	indirect = 0x0002,
@@ -312,10 +312,10 @@ enum class e_st_buffer_usage : uint32_t
 	uniform_texel = 0x0080,
 	vertex = 0x0100,
 };
-using e_st_buffer_usage_flags = st_flags<e_st_buffer_usage, uint32_t>;
+using e_st_buffer_usage_flags = st_flags<e_st_buffer_usage, uint16_t>;
 ST_ENUM_FLAG_OPS(e_st_buffer_usage, e_st_buffer_usage_flags);
 
-enum class e_st_texture_usage : uint32_t
+enum class e_st_texture_usage : uint16_t
 {
 	copy_source = 0x0001,
 	copy_dest = 0x0002,
@@ -326,7 +326,7 @@ enum class e_st_texture_usage : uint32_t
 	transient_target = 0x0040,
 	input_target = 0x0080,
 };
-using e_st_texture_usage_flags = st_flags<e_st_texture_usage, uint32_t>;
+using e_st_texture_usage_flags = st_flags<e_st_texture_usage, uint16_t>;
 ST_ENUM_FLAG_OPS(e_st_texture_usage, e_st_texture_usage_flags);
 
 enum class e_st_view_usage : uint16_t
@@ -337,6 +337,18 @@ enum class e_st_view_usage : uint16_t
 };
 using e_st_view_usage_flags = st_flags<e_st_view_usage, uint16_t>;
 ST_ENUM_FLAG_OPS(e_st_view_usage, e_st_view_usage_flags);
+
+enum class e_st_shader_type : uint8_t
+{
+	vertex = 0x01,
+	pixel = 0x02,
+	domain = 0x04,
+	hull = 0x08,
+	geometry = 0x10,
+	compute = 0x20,
+};
+using e_st_shader_type_flags = st_flags<e_st_shader_type, uint8_t>;
+ST_ENUM_FLAG_OPS(e_st_shader_type, e_st_shader_type_flags);
 
 enum e_st_clear_flags
 {

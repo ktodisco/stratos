@@ -1613,11 +1613,11 @@ void st_vk_graphics_context::bind_compute_resources(st_resource_table* table_)
 	bind_set(st_descriptor_slot_uavs, &table->_uavs, table->_uav_count);
 }
 
-std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* filename, uint8_t type)
+std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* filename, e_st_shader_type_flags type)
 {
 	std::unique_ptr<st_vk_shader> shader = std::make_unique<st_vk_shader>();
 	shader->_device = &_device;
-	shader->_type = type;
+	shader->_type = uint8_t(type);
 
 	auto load_shader = [this](std::string file_name, vk::ShaderModule& shader)
 	{
@@ -1633,21 +1633,21 @@ std::unique_ptr<st_shader> st_vk_graphics_context::create_shader(const char* fil
 		VK_VALIDATE(_device.createShaderModule(&create_info, nullptr, &shader));
 	};
 
-	if (type & st_shader_type_vertex)
+	if (type & e_st_shader_type::vertex)
 	{
 		load_shader(
 			std::string(filename) + std::string("_vert.spirv"),
 			shader->_vs);
 	}
 
-	if (type & st_shader_type_pixel)
+	if (type & e_st_shader_type::pixel)
 	{
 		load_shader(
 			std::string(filename) + std::string("_frag.spirv"),
 			shader->_ps);
 	}
 
-	if (type & st_shader_type_compute)
+	if (type & e_st_shader_type::compute)
 	{
 		load_shader(
 			std::string(filename) + std::string("_comp.spirv"),
@@ -1666,35 +1666,35 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_graphics_pipeline(co
 
 	std::vector<vk::PipelineShaderStageCreateInfo> stages;
 
-	if (shader->_type & st_shader_type_vertex)
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::vertex)
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eVertex)
 			.setModule(shader->_vs)
 			.setPName("vs_main");
 	}
-	if (shader->_type & st_shader_type_pixel)
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::pixel)
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eFragment)
 			.setModule(shader->_ps)
 			.setPName("ps_main");
 	}
-	if (shader->_type & st_shader_type_domain)
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::domain)
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eTessellationEvaluation)
 			.setModule(shader->_ds)
 			.setPName("ds_main");
 	}
-	if (shader->_type & st_shader_type_hull)
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::hull)
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eTessellationControl)
 			.setModule(shader->_hs)
 			.setPName("hs_main");
 	}
-	if (shader->_type & st_shader_type_geometry)
+	if (e_st_shader_type_flags(shader->_type) & e_st_shader_type::geometry)
 	{
 		stages.emplace_back()
 			.setStage(vk::ShaderStageFlagBits::eGeometry)
@@ -1832,17 +1832,9 @@ std::unique_ptr<st_vertex_format> st_vk_graphics_context::create_vertex_format(
 	std::unique_ptr<st_vk_vertex_format> vertex_format = std::make_unique<st_vk_vertex_format>();
 	vertex_format->_device = &_device;
 
-	// TODO: Group this into common code.
-	size_t vertex_size = 0;
-
-	for (uint32_t itr = 0; itr < attribute_count; ++itr)
-	{
-		const st_vertex_attribute* attr = &attributes[itr];
-
-		vertex_size += bytes_per_pixel(attr->_format);
-	}
-
+	size_t vertex_size = calculate_vertex_size(attributes, attribute_count);
 	vertex_format->_vertex_size = (uint32_t)vertex_size;
+
 	// Create the element descriptions.
 	size_t offset = 0;
 	for (uint32_t itr = 0; itr < attribute_count; ++itr)

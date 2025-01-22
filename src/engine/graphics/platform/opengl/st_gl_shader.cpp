@@ -110,7 +110,7 @@ std::string st_gl_shader_component::get_compile_log() const
 	return log;
 }
 
-st_gl_shader::st_gl_shader(const char* name, uint8_t type)
+st_gl_shader::st_gl_shader(const char* name, e_st_shader_type_flags type)
 {
 	_handle = glCreateProgram();
 
@@ -129,9 +129,9 @@ st_gl_shader::st_gl_shader(const char* name, uint8_t type)
 		attach(*s);
 	};
 
-	if (type & st_shader_type_vertex) load_compile_attach(_vs, "_vert.glsl", GL_VERTEX_SHADER);
-	if (type & st_shader_type_pixel) load_compile_attach(_fs, "_frag.glsl", GL_FRAGMENT_SHADER);
-	if (type & st_shader_type_compute) load_compile_attach(_cs, "_comp.glsl", GL_COMPUTE_SHADER);
+	if (type & e_st_shader_type::vertex) load_compile_attach(_vs, "_vert.glsl", GL_VERTEX_SHADER);
+	if (type & e_st_shader_type::pixel) load_compile_attach(_fs, "_frag.glsl", GL_FRAGMENT_SHADER);
+	if (type & e_st_shader_type::compute) load_compile_attach(_cs, "_comp.glsl", GL_COMPUTE_SHADER);
 
 	if (!link())
 	{

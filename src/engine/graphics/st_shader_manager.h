@@ -6,19 +6,10 @@
 ** This file is distributed under the MIT License. See LICENSE.txt.
 */
 
+#include <core/st_flags.h>
+
 #include <map>
 #include <memory>
-
-// TODO: Replace this with enum class.
-enum e_st_shader_type_flag
-{
-	st_shader_type_vertex = 1,
-	st_shader_type_pixel = 2,
-	st_shader_type_domain = 4,
-	st_shader_type_hull = 8,
-	st_shader_type_geometry = 16,
-	st_shader_type_compute = 32,
-};
 
 enum e_st_shader
 {

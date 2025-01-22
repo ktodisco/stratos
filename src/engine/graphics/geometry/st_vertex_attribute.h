@@ -31,3 +31,16 @@ struct st_vertex_attribute
 	e_st_format _format;
 	uint32_t _unit;
 };
+
+inline size_t calculate_vertex_size(const struct st_vertex_attribute* attributes, uint32_t count)
+{
+	size_t vertex_size = 0;
+
+	for (uint32_t itr = 0; itr < count; ++itr)
+	{
+		const st_vertex_attribute* attr = &attributes[itr];
+		vertex_size += bits_per_pixel(attr->_format) / 8;
+	}
+
+	return vertex_size;
+}

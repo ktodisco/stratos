@@ -8,7 +8,6 @@
 
 #include <graphics/st_graphics.h>
 
-// TODO: Custom imgui implementation.
 class st_imgui_graphics
 {
 public:
