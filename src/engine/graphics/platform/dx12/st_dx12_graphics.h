@@ -41,11 +41,10 @@ struct st_dx12_buffer : public st_buffer
 
 struct st_dx12_buffer_view : public st_buffer_view
 {
-	union
-	{
-		D3D12_VERTEX_BUFFER_VIEW vertex;
-		D3D12_INDEX_BUFFER_VIEW index;
-	};
+	~st_dx12_buffer_view();
+
+	st_dx12_descriptor _handle;
+	class st_dx12_descriptor_heap* _heap;
 };
 
 struct st_dx12_pipeline : public st_pipeline
@@ -113,7 +112,10 @@ struct st_dx12_texture : public st_texture
 
 struct st_dx12_texture_view : public st_texture_view
 {
+	~st_dx12_texture_view();
+
 	st_dx12_descriptor _handle;
+	class st_dx12_descriptor_heap* _heap;
 };
 
 struct st_dx12_vertex_format : public st_vertex_format

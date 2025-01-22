@@ -65,7 +65,7 @@ struct st_gl_buffer : public st_buffer
 
 struct st_gl_buffer_view : public st_buffer_view
 {
-	st_gl_buffer* _buffer;
+	const st_buffer_view_desc _desc;
 };
 
 struct st_gl_pipeline : public st_pipeline
@@ -93,11 +93,11 @@ struct st_gl_resource_table : public st_resource_table
 		_samplers.clear();
 	}
 
-	std::vector<const struct st_buffer*> _constant_buffers;
-	std::vector<const struct st_texture*> _srvs;
+	std::vector<const struct st_buffer_view*> _constant_buffers;
+	std::vector<const struct st_texture_view*> _srvs;
 	std::vector<const struct st_sampler*> _samplers;
-	std::vector<const struct st_buffer*> _buffers;
-	std::vector<const struct st_texture*> _uavs;
+	std::vector<const struct st_buffer_view*> _buffers;
+	std::vector<const struct st_texture_view*> _uavs;
 };
 
 struct st_gl_sampler : public st_sampler
@@ -120,7 +120,7 @@ struct st_gl_texture : public st_texture
 
 struct st_gl_texture_view : public st_texture_view
 {
-	const st_gl_texture* _texture;
+	const st_texture_view_desc _desc;
 };
 
 struct st_gl_vertex_format : public st_vertex_format

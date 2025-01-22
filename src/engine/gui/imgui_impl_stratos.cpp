@@ -21,8 +21,8 @@ struct imgui_cb
 };
 
 static st_render_pass* g_render_pass = nullptr;
-//static ID3D12RootSignature* g_pRootSignature = nullptr;
 static std::unique_ptr<st_buffer> g_constant_buffer = nullptr;
+static std::unique_ptr<st_buffer_view> g_constant_buffer_view = nullptr;
 static std::unique_ptr<st_resource_table> g_resource_table = nullptr;
 static std::unique_ptr<st_vertex_format> g_vertex_format = nullptr;
 static std::unique_ptr<st_pipeline> g_pipeline = nullptr;
@@ -165,7 +165,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
             }
             else
             {
-                st_texture_view* view = static_cast<st_texture_view*>(pcmd->TextureId);
+                const st_texture_view* view = static_cast<const st_texture_view*>(pcmd->TextureId);
                 ctx->update_textures(g_resource_table.get(), 1, &view);
 
                 ctx->bind_resources(g_resource_table.get());
@@ -212,7 +212,12 @@ static void ImGui_ImplStratos_CreateFontsTexture(st_graphics_context* ctx)
         ctx->set_texture_name(g_font_texture.get(), "ImGui Font");
         ctx->end_loading();
 
-        g_font_texture_view = ctx->create_texture_view(g_font_texture.get());
+		st_texture_view_desc view_desc;
+		view_desc._texture = g_font_texture.get();
+		view_desc._format = st_format_r8g8b8a8_unorm;
+		view_desc._first_mip = 0;
+		view_desc._mips = 1;
+        g_font_texture_view = ctx->create_texture_view(view_desc);
     }
 
     // Store our identifier
@@ -234,11 +239,15 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
         desc._usage = e_st_buffer_usage::uniform;
         g_constant_buffer = ctx->create_buffer(desc);
 
+		st_buffer_view_desc view_desc;
+		view_desc._buffer = g_constant_buffer.get();
+		g_constant_buffer_view = ctx->create_buffer_view(view_desc);
+
         g_resource_table = ctx->create_resource_table();
-        st_texture* textures[] = { g_font_texture.get() };
-        st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+        const st_texture_view* textures[] = { g_font_texture_view.get() };
+        const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
         ctx->set_textures(g_resource_table.get(), 1, textures, samplers);
-        st_buffer* cbs[] = { g_constant_buffer.get() };
+        const st_buffer_view* cbs[] = { g_constant_buffer_view.get() };
         ctx->set_constant_buffers(g_resource_table.get(), 1, cbs);
     }
 
@@ -293,6 +302,7 @@ void ImGui_ImplStratos_InvalidateDeviceObjects()
     g_pipeline = nullptr;
     g_vertex_format = nullptr;
     g_resource_table = nullptr;
+	g_constant_buffer_view = nullptr;
     g_constant_buffer = nullptr;
     g_font_texture_view = nullptr;
     g_font_texture = nullptr;

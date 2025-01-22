@@ -37,6 +37,7 @@ public:
 
 private:
 	std::unique_ptr<struct st_buffer> _color_buffer = nullptr;
+	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
 	st_vec3f _color = { 0, 0, 0 };
 
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;

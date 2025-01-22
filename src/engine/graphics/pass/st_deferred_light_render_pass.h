@@ -42,7 +42,9 @@ public:
 private:
 	std::unique_ptr<struct st_render_pass> _pass = nullptr;
 	std::unique_ptr<struct st_buffer> _constant_buffer = nullptr;
+	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
 	std::unique_ptr<struct st_buffer> _light_buffer = nullptr;
+	std::unique_ptr<struct st_buffer_view> _lbv = nullptr;
 
 	st_deferred_light_cb _cb;
 };

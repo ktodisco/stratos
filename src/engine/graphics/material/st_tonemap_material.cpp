@@ -37,12 +37,12 @@ st_tonemap_material::st_tonemap_material(
 	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	st_texture* textures[] =
+	const st_texture_view* textures[] =
 	{
-		_texture->get_texture(),
-		_bloom->get_texture()
+		_texture->get_resource_view(),
+		_bloom->get_resource_view()
 	};
-	st_sampler* samplers[] =
+	const st_sampler* samplers[] =
 	{
 		_global_resources->_trilinear_clamp_sampler.get(),
 		_global_resources->_trilinear_clamp_sampler.get()

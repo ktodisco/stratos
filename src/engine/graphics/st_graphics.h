@@ -23,6 +23,12 @@
 #define k_max_shader_resources 4096
 #define k_max_samplers 128
 
+// A generic way to indicate all elements in a buffer.
+enum
+{
+	k_whole_size = 0xffffffff,
+};
+
 enum e_st_primitive_topology_type
 {
 	st_primitive_topology_type_point,
@@ -323,6 +329,15 @@ enum class e_st_texture_usage : uint32_t
 using e_st_texture_usage_flags = st_flags<e_st_texture_usage, uint32_t>;
 ST_ENUM_FLAG_OPS(e_st_texture_usage, e_st_texture_usage_flags);
 
+enum class e_st_view_usage : uint16_t
+{
+	shader_resource = 0x0001,
+	unordered_access = 0x0002,
+	render_target = 0x0004,
+};
+using e_st_view_usage_flags = st_flags<e_st_view_usage, uint16_t>;
+ST_ENUM_FLAG_OPS(e_st_view_usage, e_st_view_usage_flags);
+
 enum e_st_clear_flags
 {
 	st_clear_flag_color = 1,
@@ -394,6 +409,14 @@ struct st_buffer_desc
 	e_st_buffer_usage_flags _usage = e_st_buffer_usage::storage;
 };
 
+struct st_buffer_view_desc
+{
+	const struct st_buffer* _buffer = nullptr;
+	e_st_view_usage_flags _usage = e_st_view_usage::shader_resource;
+	uint32_t _first_element = 0;
+	uint32_t _element_count = k_whole_size;
+};
+
 struct st_sampler_desc
 {
 	e_st_filter _min_filter = st_filter_nearest;
@@ -429,6 +452,17 @@ struct st_texture_desc
 	st_clear_value _clear = st_vec4f::zero_vector();
 
 	void* _data = nullptr;
+};
+
+struct st_texture_view_desc
+{
+	const struct st_texture* _texture = nullptr;
+	e_st_view_usage_flags _usage = e_st_view_usage::shader_resource;
+	e_st_format _format = st_format_unknown;
+	uint16_t _first_slice = 0;
+	uint16_t _slices = 1;
+	uint16_t _first_mip = 0;
+	uint16_t _mips = 0;
 };
 
 struct st_buffer : public st_resource {};

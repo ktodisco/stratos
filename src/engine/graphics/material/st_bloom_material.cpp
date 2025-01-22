@@ -52,6 +52,12 @@ st_bloom_threshold_material::st_bloom_threshold_material(
 		_cb = context->create_buffer(desc);
 	}
 
+	{
+		st_buffer_view_desc desc;
+		desc._buffer = _cb.get();
+		_cbv = context->create_buffer_view(desc);
+	}
+
 	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_bloom_threshold);
 	desc._blend_desc._target_blend[0]._blend = false;
@@ -64,16 +70,17 @@ st_bloom_threshold_material::st_bloom_threshold_material(
 	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	st_texture* textures[]{ _texture->get_texture() };
-	st_sampler* samplers[]{ _global_resources->_trilinear_clamp_sampler.get() };
+	const st_texture_view* textures[]{ _texture->get_resource_view() };
+	const st_sampler* samplers[]{ _global_resources->_trilinear_clamp_sampler.get() };
 	context->set_textures(_resource_table.get(), 1, textures, samplers);
-	st_buffer* cbs[]{ _cb.get() };
+	const st_buffer_view* cbs[]{ _cbv.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_bloom_threshold_material::~st_bloom_threshold_material()
 {
 	_cb = nullptr;
+	_cbv = nullptr;
 	_pipeline = nullptr;
 	_resource_table = nullptr;
 }
@@ -114,6 +121,12 @@ st_bloom_downsample_material::st_bloom_downsample_material(
 		_cb = context->create_buffer(desc);
 	}
 
+	{
+		st_buffer_view_desc desc;
+		desc._buffer = _cb.get();
+		_cbv = context->create_buffer_view(desc);
+	}
+
 	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_bloom_downsample);
 	desc._blend_desc._target_blend[0]._blend = false;
@@ -126,10 +139,10 @@ st_bloom_downsample_material::st_bloom_downsample_material(
 	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	st_texture* textures[] { _texture->get_texture() };
-	st_sampler* samplers[] { _global_resources->_trilinear_clamp_sampler.get() };
+	const st_texture_view* textures[] { _texture->get_resource_view() };
+	const st_sampler* samplers[] { _global_resources->_trilinear_clamp_sampler.get() };
 	context->set_textures(_resource_table.get(), 1, textures, samplers);
-	st_buffer* cbs[] { _cb.get() };
+	const st_buffer_view* cbs[] { _cbv.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 
 	_target_size = st_vec2f { float(target->get_width()), float(target->get_height()) };
@@ -138,6 +151,7 @@ st_bloom_downsample_material::st_bloom_downsample_material(
 st_bloom_downsample_material::~st_bloom_downsample_material()
 {
 	_cb = nullptr;
+	_cbv = nullptr;
 	_pipeline = nullptr;
 	_resource_table = nullptr;
 }
@@ -186,6 +200,12 @@ st_bloom_upsample_material::st_bloom_upsample_material(
 		_cb = context->create_buffer(desc);
 	}
 
+	{
+		st_buffer_view_desc desc;
+		desc._buffer = _cb.get();
+		_cbv = context->create_buffer_view(desc);
+	}
+
 	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_bloom_upsample);
 	desc._blend_desc._target_blend[0]._blend = false;
@@ -198,23 +218,25 @@ st_bloom_upsample_material::st_bloom_upsample_material(
 	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	st_sampler* samplers[] =
+	const st_sampler* samplers[] =
 	{
 		_global_resources->_trilinear_clamp_sampler.get(),
 		_global_resources->_trilinear_clamp_sampler.get(),
 	};
-	st_texture* textures[] =
+	const st_texture_view* textures[] =
 	{
-		_blur->get_texture(),
-		_step->get_texture(),
+		_blur->get_resource_view(),
+		_step->get_resource_view(),
 	};
 	context->set_textures(_resource_table.get(), 2, textures, samplers);
-	st_buffer* cbs[]{ _cb.get() };
+	const st_buffer_view* cbs[]{ _cbv.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_bloom_upsample_material::~st_bloom_upsample_material()
 {
+	_cb = nullptr;
+	_cbv = nullptr;
 	_pipeline = nullptr;
 	_resource_table = nullptr;
 }

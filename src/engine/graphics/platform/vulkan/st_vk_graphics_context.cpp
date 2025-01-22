@@ -1069,19 +1069,6 @@ std::unique_ptr<st_texture> st_vk_graphics_context::create_texture(const st_text
 
 	texture->_state = desc._initial_state;
 
-	// For depth/stencil targets, it's only legal to create a view for
-	// one of the depth or stencil components at a time.
-	if (desc._format == st_format_d24_unorm_s8_uint)
-		range.setAspectMask(vk::ImageAspectFlagBits::eDepth);
-
-	vk::ImageViewCreateInfo view_create_info = vk::ImageViewCreateInfo()
-		.setFormat(convert_format(texture->_format))
-		.setImage(texture->_handle)
-		.setViewType(vk::ImageViewType::e2D)
-		.setSubresourceRange(range);
-
-	VK_VALIDATE(_device.createImageView(&view_create_info, nullptr, &texture->_view));
-
 	return std::move(texture);
 }
 
@@ -1151,9 +1138,9 @@ void st_vk_graphics_context::transition(
 		barriers);
 }
 
-std::unique_ptr<st_texture_view> st_vk_graphics_context::create_texture_view(st_texture* texture_)
+std::unique_ptr<st_texture_view> st_vk_graphics_context::create_texture_view(const st_texture_view_desc& desc)
 {
-	st_vk_texture* texture = static_cast<st_vk_texture*>(texture_);
+	const st_vk_texture* texture = static_cast<const st_vk_texture*>(desc._texture);
 
 	std::unique_ptr<st_vk_texture_view> view = std::make_unique<st_vk_texture_view>();
 	view->_device = &_device;
@@ -1174,13 +1161,13 @@ std::unique_ptr<st_texture_view> st_vk_graphics_context::create_texture_view(st_
 
 	vk::ImageSubresourceRange subresource_range = vk::ImageSubresourceRange()
 		.setAspectMask(aspect)
-		.setBaseMipLevel(0)
-		.setLevelCount(texture->_levels)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1);
+		.setBaseMipLevel(desc._first_mip)
+		.setLevelCount(desc._mips)
+		.setBaseArrayLayer(desc._first_slice)
+		.setLayerCount(desc._slices);
 
 	vk::ImageViewCreateInfo create_info = vk::ImageViewCreateInfo()
-		.setFormat(convert_format(texture->_format))
+		.setFormat(convert_format(desc._format))
 		.setImage(texture->_handle)
 		.setViewType(vk::ImageViewType::e2D)
 		.setSubresourceRange(subresource_range);
@@ -1261,19 +1248,34 @@ std::unique_ptr<st_buffer> st_vk_graphics_context::create_buffer(const st_buffer
 	return std::move(buffer);
 }
 
-std::unique_ptr<st_buffer_view> st_vk_graphics_context::create_buffer_view(st_buffer* buffer_)
+std::unique_ptr<st_buffer_view> st_vk_graphics_context::create_buffer_view(const st_buffer_view_desc& desc)
 {
 	std::unique_ptr<st_vk_buffer_view> view = std::make_unique<st_vk_buffer_view>();
 	view->_device = &_device;
 
-	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
+	const st_vk_buffer* buffer = static_cast<const st_vk_buffer*>(desc._buffer);
+	view->_buffer = buffer;
+	view->_first_element = desc._first_element;
+	view->_element_count = desc._element_count;
 
-	vk::BufferViewCreateInfo create_info = vk::BufferViewCreateInfo()
-		.setBuffer(buffer->_buffer)
-		.setOffset(0)
-		.setRange(buffer->_element_size * buffer->_count);
+	// In the Vulkan spec, vkBufferView objects are only allowed for buffers created with
+	// the uniform texel buffer bit or texel storage buffer bit, so skip this if that's
+	// not the case. When setting resources in descriptor sets, the buffer view isn't used
+	// anyway.
+	if (buffer->_usage & e_st_buffer_usage::uniform_texel ||
+		buffer->_usage & e_st_buffer_usage::storage_texel)
+	{
+		vk::DeviceSize range = (desc._element_count == k_whole_size) ?
+			vk::DeviceSize(VK_WHOLE_SIZE) :
+			desc._element_count * buffer->_element_size;
 
-	VK_VALIDATE(_device.createBufferView(&create_info, nullptr, &view->_view));
+		vk::BufferViewCreateInfo create_info = vk::BufferViewCreateInfo()
+			.setBuffer(buffer->_buffer)
+			.setOffset(desc._first_element * buffer->_element_size)
+			.setRange(range);
+
+		VK_VALIDATE(_device.createBufferView(&create_info, nullptr, &view->_view));
+	}
 
 	return std::move(view);
 }
@@ -1367,7 +1369,7 @@ std::unique_ptr<st_resource_table> st_vk_graphics_context::create_resource_table
 	return std::move(table);
 }
 
-void st_vk_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
+void st_vk_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, const st_buffer_view** cbs)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 	table->_constant_count = count;
@@ -1375,12 +1377,16 @@ void st_vk_graphics_context::set_constant_buffers(st_resource_table* table_, uin
 	std::vector<vk::DescriptorBufferInfo> infos;
 	for (int i = 0; i < count; ++i)
 	{
-		st_vk_buffer* cb = static_cast<st_vk_buffer*>(cbs[i]);
+		const st_vk_buffer_view* cb = static_cast<const st_vk_buffer_view*>(cbs[i]);
+
+		vk::DeviceSize range = (cb->_element_count == k_whole_size) ?
+			vk::DeviceSize(VK_WHOLE_SIZE) :
+			cb->_element_count * cb->_buffer->_element_size;
 
 		infos.emplace_back() = vk::DescriptorBufferInfo()
-			.setBuffer(cb->_buffer)
-			.setOffset(0)
-			.setRange(vk::DeviceSize(VK_WHOLE_SIZE));
+			.setBuffer(cb->_buffer->_buffer)
+			.setOffset(cb->_first_element * cb->_buffer->_element_size)
+			.setRange(range);
 	}
 
 	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
@@ -1396,8 +1402,8 @@ void st_vk_graphics_context::set_constant_buffers(st_resource_table* table_, uin
 void st_vk_graphics_context::set_textures(
 	st_resource_table* table_,
 	uint32_t count,
-	st_texture** textures,
-	st_sampler** samplers)
+	const st_texture_view** textures,
+	const st_sampler** samplers)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 	table->_texture_count = count;
@@ -1412,11 +1418,11 @@ void st_vk_graphics_context::set_textures(
 
 		if (textures)
 		{
-			st_vk_texture* texture = static_cast<st_vk_texture*>(textures[i]);
+			const st_vk_texture_view* texture = static_cast<const st_vk_texture_view*>(textures[i]);
 			view = texture->_view;
 		}
 
-		st_vk_sampler* sampler = static_cast<st_vk_sampler*>(samplers[i]);
+		const st_vk_sampler* sampler = static_cast<const st_vk_sampler*>(samplers[i]);
 		table->_sampler_resources.push_back(sampler);
 
 		images.emplace_back() = vk::DescriptorImageInfo()
@@ -1444,7 +1450,7 @@ void st_vk_graphics_context::set_textures(
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
-void st_vk_graphics_context::set_buffers(st_resource_table* table_, uint32_t count, st_buffer** buffers)
+void st_vk_graphics_context::set_buffers(st_resource_table* table_, uint32_t count, const st_buffer_view** buffers)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 	table->_buffer_count = count;
@@ -1452,12 +1458,16 @@ void st_vk_graphics_context::set_buffers(st_resource_table* table_, uint32_t cou
 	std::vector<vk::DescriptorBufferInfo> infos;
 	for (int i = 0; i < count; ++i)
 	{
-		st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffers[i]);
+		const st_vk_buffer_view* bv = static_cast<const st_vk_buffer_view*>(buffers[i]);
+
+		vk::DeviceSize range = (bv->_element_count == k_whole_size) ?
+			vk::DeviceSize(VK_WHOLE_SIZE) :
+			bv->_element_count * bv->_buffer->_element_size;
 
 		infos.emplace_back() = vk::DescriptorBufferInfo()
-			.setBuffer(buffer->_buffer)
-			.setOffset(0)
-			.setRange(vk::DeviceSize(VK_WHOLE_SIZE));
+			.setBuffer(bv->_buffer->_buffer)
+			.setOffset(bv->_first_element * bv->_buffer->_element_size)
+			.setRange(range);
 	}
 
 	vk::WriteDescriptorSet write_set = vk::WriteDescriptorSet()
@@ -1470,7 +1480,7 @@ void st_vk_graphics_context::set_buffers(st_resource_table* table_, uint32_t cou
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
-void st_vk_graphics_context::set_uavs(st_resource_table* table_, uint32_t count, st_texture** textures)
+void st_vk_graphics_context::set_uavs(st_resource_table* table_, uint32_t count, const st_texture_view** textures)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 	table->_uav_count = count;
@@ -1478,7 +1488,7 @@ void st_vk_graphics_context::set_uavs(st_resource_table* table_, uint32_t count,
 	std::vector<vk::DescriptorImageInfo> infos;
 	for (int i = 0; i < count; ++i)
 	{
-		st_vk_texture* texture = static_cast<st_vk_texture*>(textures[i]);
+		const st_vk_texture_view* texture = static_cast<const st_vk_texture_view*>(textures[i]);
 		vk::ImageView view = texture->_view;
 
 		infos.emplace_back() = vk::DescriptorImageInfo()
@@ -1496,14 +1506,14 @@ void st_vk_graphics_context::set_uavs(st_resource_table* table_, uint32_t count,
 	_device.updateDescriptorSets(1, &write_set, 0, nullptr);
 }
 
-void st_vk_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
+void st_vk_graphics_context::update_textures(st_resource_table* table_, uint32_t count, const st_texture_view** views)
 {
 	st_vk_resource_table* table = static_cast<st_vk_resource_table*>(table_);
 
 	std::vector<vk::DescriptorImageInfo> images;
 	for (uint32_t itr = 0; itr < count; ++itr)
 	{
-		st_vk_texture_view* view = static_cast<st_vk_texture_view*>(views[itr]);
+		const st_vk_texture_view* view = static_cast<const st_vk_texture_view*>(views[itr]);
 
 		images.emplace_back() = vk::DescriptorImageInfo()
 			.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
@@ -2000,6 +2010,18 @@ void st_vk_graphics_context::begin_render_pass(
 void st_vk_graphics_context::end_render_pass(st_render_pass* pass)
 {
 	_command_buffers[st_command_buffer_graphics].endRenderPass();
+}
+
+void st_vk_graphics_context::get_desc(const st_texture* texture_, st_texture_desc* out_desc)
+{
+	assert(out_desc);
+	const st_vk_texture* texture = static_cast<const st_vk_texture*>(texture_);
+	out_desc->_format = texture->_format;
+	out_desc->_width = texture->_width;
+	out_desc->_height = texture->_height;
+	out_desc->_levels = texture->_levels;
+	out_desc->_usage = texture->_usage;
+	// TODO: Depth and others.
 }
 
 #endif

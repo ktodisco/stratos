@@ -70,7 +70,9 @@ public:
 
 private:
 	std::unique_ptr<struct st_buffer> _constant_buffer = nullptr;
+	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
 	struct st_texture* _texture;
+	std::unique_ptr<struct st_texture_view> _view = nullptr;
 	st_vec3f _color;
 
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;

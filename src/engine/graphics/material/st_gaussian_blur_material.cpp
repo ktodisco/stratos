@@ -37,6 +37,12 @@ st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(
 	}
 
 	{
+		st_buffer_view_desc desc;
+		desc._buffer = _cb.get();
+		_cbv = context->create_buffer_view(desc);
+	}
+
+	{
 		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_gaussian_blur_vertical);
 		desc._blend_desc._target_blend[0]._blend = false;
@@ -50,16 +56,17 @@ st_gaussian_blur_vertical_material::st_gaussian_blur_vertical_material(
 	}
 
 	_resource_table = context->create_resource_table();
-	st_texture* t = _texture->get_texture();
-	st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+	const st_texture_view* t = _texture->get_resource_view();
+	const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
 	context->set_textures(_resource_table.get(), 1, &t, samplers);
-	st_buffer* cbs[] = { _cb.get() };
+	const st_buffer_view* cbs[] = { _cbv.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_gaussian_blur_vertical_material::~st_gaussian_blur_vertical_material()
 {
 	_cb = nullptr;
+	_cbv = nullptr;
 	_pipeline = nullptr;
 	_resource_table = nullptr;
 }
@@ -107,6 +114,12 @@ st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(
 	}
 
 	{
+		st_buffer_view_desc desc;
+		desc._buffer = _cb.get();
+		_cbv = context->create_buffer_view(desc);
+	}
+
+	{
 		st_graphics_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_gaussian_blur_horizontal);
 		desc._blend_desc._target_blend[0]._blend = false;
@@ -120,16 +133,17 @@ st_gaussian_blur_horizontal_material::st_gaussian_blur_horizontal_material(
 	}
 
 	_resource_table = context->create_resource_table();
-	st_texture* t = _texture->get_texture();
-	st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+	const st_texture_view* t = _texture->get_resource_view();
+	const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
 	context->set_textures(_resource_table.get(), 1, &t, samplers);
-	st_buffer* cbs[] = { _cb.get() };
+	const st_buffer_view* cbs[] = { _cbv.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_gaussian_blur_horizontal_material::~st_gaussian_blur_horizontal_material()
 {
 	_cb = nullptr;
+	_cbv = nullptr;
 	_pipeline = nullptr;
 	_resource_table = nullptr;
 }

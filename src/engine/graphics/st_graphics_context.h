@@ -56,14 +56,14 @@ public:
 	virtual void transition(
 		st_texture* texture,
 		e_st_texture_state new_state) = 0;
-	virtual std::unique_ptr<st_texture_view> create_texture_view(st_texture* texture) = 0;
+	virtual std::unique_ptr<st_texture_view> create_texture_view(const st_texture_view_desc& desc) = 0;
 
 	// Samplers.
 	virtual std::unique_ptr<st_sampler> create_sampler(const st_sampler_desc& desc) = 0;
 
 	// Buffers.
 	virtual std::unique_ptr<st_buffer> create_buffer(const st_buffer_desc& desc) = 0;
-	virtual std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) = 0;
+	virtual std::unique_ptr<st_buffer_view> create_buffer_view(const st_buffer_view_desc& desc) = 0;
 	virtual void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) = 0;
 	virtual void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) = 0;
 	virtual void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) = 0;
@@ -73,17 +73,19 @@ public:
 	// TODO: This would take a root signature object. In the vk backend it would pull the descriptor layouts
 	// from that root signature.
 	// I especially don't like this because there isn't any barrier to forgetting to use one or the other.
+	// The new API would look like a create and a generic set_resources which has overloads for texture
+	// and buffer views, and each takes the root signature and the slot the resources are going to.
 	virtual std::unique_ptr<st_resource_table> create_resource_table() = 0;
 	virtual std::unique_ptr<st_resource_table> create_resource_table_compute() = 0;
-	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) = 0;
+	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, const st_buffer_view** cbs) = 0;
 	virtual void set_textures(
 		st_resource_table* table,
 		uint32_t count,
-		st_texture** textures,
-		st_sampler** samplers) = 0;
-	virtual void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) = 0;
-	virtual void set_uavs(st_resource_table* table, uint32_t count, st_texture** textures) = 0;
-	virtual void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) = 0;
+		const st_texture_view** textures,
+		const st_sampler** samplers) = 0;
+	virtual void set_buffers(st_resource_table* table, uint32_t count, const st_buffer_view** buffers) = 0;
+	virtual void set_uavs(st_resource_table* table, uint32_t count, const st_texture_view** textures) = 0;
+	virtual void update_textures(st_resource_table* table, uint32_t count, const st_texture_view** views) = 0;
 	virtual void bind_resources(st_resource_table* table) = 0;
 	virtual void bind_compute_resources(st_resource_table* table) = 0;
 
@@ -112,6 +114,7 @@ public:
 
 	// Informational.
 	virtual e_st_graphics_api get_api() = 0;
+	virtual void get_desc(const st_texture* texture, st_texture_desc* out_desc) = 0;
 
 	static std::unique_ptr<st_graphics_context> create(e_st_graphics_api api, const class st_window* window);
 	static st_graphics_context* get();

@@ -61,6 +61,9 @@ struct st_vk_buffer_view : public st_buffer_view, public st_vk_resource
 	~st_vk_buffer_view() { _device->destroyBufferView(_view, nullptr); }
 
 	vk::BufferView _view;
+	const st_vk_buffer* _buffer;
+	uint32_t _first_element;
+	uint32_t _element_count;
 };
 
 struct st_vk_pipeline : public st_pipeline, public st_vk_resource
@@ -108,7 +111,7 @@ struct st_vk_resource_table : public st_resource_table, public st_vk_resource
 	uint32_t _sampler_count = 0;
 	uint32_t _uav_count = 0;
 
-	std::vector<struct st_vk_sampler*> _sampler_resources;
+	std::vector<const struct st_vk_sampler*> _sampler_resources;
 
 	vk::DescriptorPool* _pool;
 };
@@ -149,13 +152,11 @@ struct st_vk_texture : public st_texture, public st_vk_resource
 {
 	~st_vk_texture()
 	{
-		_device->destroyImageView(_view, nullptr);
 		_device->freeMemory(_memory, nullptr);
 		_device->destroyImage(_handle, nullptr);
 	}
 
 	vk::Image _handle;
-	vk::ImageView _view;
 	vk::DeviceMemory _memory;
 
 	uint32_t _width = 0;

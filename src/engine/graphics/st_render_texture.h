@@ -29,7 +29,8 @@ public:
 	~st_render_texture();
 
 	st_texture* get_texture() { return _texture.get(); }
-	const st_texture_view* get_view() const { return _view.get(); }
+	const st_texture_view* get_target_view() const { return _rtv.get(); }
+	const st_texture_view* get_resource_view() const { return _srv.get(); }
 	uint32_t get_width() const { return _width; }
 	uint32_t get_height() const { return _height; }
 	e_st_format get_format() const { return _format; }
@@ -41,5 +42,6 @@ private:
 	e_st_format _format;
 
 	std::unique_ptr<struct st_texture> _texture;
-	std::unique_ptr<struct st_texture_view> _view;
+	std::unique_ptr<struct st_texture_view> _rtv;
+	std::unique_ptr<struct st_texture_view> _srv;
 };

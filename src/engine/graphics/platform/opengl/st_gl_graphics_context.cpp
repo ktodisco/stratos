@@ -445,10 +445,10 @@ void st_gl_graphics_context::set_texture_name(st_texture* texture_, std::string 
 	glObjectLabel(GL_TEXTURE, texture->_handle, name.length(), name.c_str());
 }
 
-std::unique_ptr<st_texture_view> st_gl_graphics_context::create_texture_view(st_texture* texture)
+std::unique_ptr<st_texture_view> st_gl_graphics_context::create_texture_view(const st_texture_view_desc& desc)
 {
 	std::unique_ptr<st_gl_texture_view> view = std::make_unique<st_gl_texture_view>();
-	view->_texture = static_cast<const st_gl_texture*>(texture);
+	memcpy(const_cast<st_texture_view_desc*>(&view->_desc), &desc, sizeof(st_texture_view_desc));
 
 	return std::move(view);
 }
@@ -516,10 +516,10 @@ std::unique_ptr<st_buffer> st_gl_graphics_context::create_buffer(const st_buffer
 	return std::move(buffer);
 }
 
-std::unique_ptr<st_buffer_view> st_gl_graphics_context::create_buffer_view(st_buffer* buffer)
+std::unique_ptr<st_buffer_view> st_gl_graphics_context::create_buffer_view(const st_buffer_view_desc& desc)
 {
 	std::unique_ptr<st_gl_buffer_view> view = std::make_unique<st_gl_buffer_view>();
-	view->_buffer = static_cast<st_gl_buffer*>(buffer);
+	memcpy(const_cast<st_buffer_view_desc*>(&view->_desc), &desc, sizeof(st_buffer_view_desc));
 
 	return std::move(view);
 }
@@ -588,7 +588,7 @@ std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table
 	return std::move(table);
 }
 
-void st_gl_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, st_buffer** cbs)
+void st_gl_graphics_context::set_constant_buffers(st_resource_table* table_, uint32_t count, const st_buffer_view** cbs)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
@@ -601,8 +601,8 @@ void st_gl_graphics_context::set_constant_buffers(st_resource_table* table_, uin
 void st_gl_graphics_context::set_textures(
 	st_resource_table* table_,
 	uint32_t count,
-	st_texture** textures,
-	st_sampler** samplers)
+	const st_texture_view** textures,
+	const st_sampler** samplers)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
@@ -615,7 +615,7 @@ void st_gl_graphics_context::set_textures(
 
 		if (samplers)
 		{
-			st_gl_sampler* s = static_cast<st_gl_sampler*>(samplers[i]);
+			const st_gl_sampler* s = static_cast<const st_gl_sampler*>(samplers[i]);
 			table->_samplers.push_back(s);
 		}
 		else
@@ -623,7 +623,7 @@ void st_gl_graphics_context::set_textures(
 	}
 }
 
-void st_gl_graphics_context::set_buffers(st_resource_table* table_, uint32_t count, st_buffer** buffers)
+void st_gl_graphics_context::set_buffers(st_resource_table* table_, uint32_t count, const st_buffer_view** buffers)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
@@ -633,7 +633,7 @@ void st_gl_graphics_context::set_buffers(st_resource_table* table_, uint32_t cou
 	}
 }
 
-void st_gl_graphics_context::set_uavs(st_resource_table* table_, uint32_t count, st_texture** textures)
+void st_gl_graphics_context::set_uavs(st_resource_table* table_, uint32_t count, const st_texture_view** textures)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
@@ -643,14 +643,13 @@ void st_gl_graphics_context::set_uavs(st_resource_table* table_, uint32_t count,
 	}
 }
 
-void st_gl_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
+void st_gl_graphics_context::update_textures(st_resource_table* table_, uint32_t count, const st_texture_view** views)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
 	for (uint32_t itr = 0; itr < count; ++itr)
 	{
-		st_gl_texture_view* view = static_cast<st_gl_texture_view*>(views[itr]);
-		table->_srvs[itr] = view->_texture;
+		table->_srvs[itr] = views[itr];
 	}
 }
 
@@ -662,7 +661,8 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 
 	for (uint32_t i = 0; i < table->_srvs.size(); ++i)
 	{
-		const st_gl_texture* texture = static_cast<const st_gl_texture*>(table->_srvs[i]);
+		const st_gl_texture_view* view = static_cast<const st_gl_texture_view*>(table->_srvs[i]);
+		const st_gl_texture* texture = static_cast<const st_gl_texture*>(view->_desc._texture);
 		const st_gl_sampler* sampler = static_cast<const st_gl_sampler*>(table->_samplers[i]);
 
 		const st_gl_uniform& uniform = shader->get_uniform(i);
@@ -671,7 +671,8 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 
 	for (uint32_t i = 0; i < table->_constant_buffers.size(); ++i)
 	{
-		const st_gl_buffer* cb = static_cast<const st_gl_buffer*>(table->_constant_buffers[i]);
+		const st_gl_buffer_view* view = static_cast<const st_gl_buffer_view*>(table->_constant_buffers[i]);
+		const st_gl_buffer* cb = static_cast<const st_gl_buffer*>(view->_desc._buffer);
 	
 		const st_gl_uniform_block& block = shader->get_uniform_block(i);
 		block.set(cb->_buffer, cb->_storage, cb->_element_size * cb->_count);
@@ -679,7 +680,8 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 	
 	for (uint32_t i = 0; i < table->_buffers.size(); ++i)
 	{
-		const st_gl_buffer* buffer = static_cast<const st_gl_buffer*>(table->_buffers[i]);
+		const st_gl_buffer_view* view = static_cast<const st_gl_buffer_view*>(table->_buffers[i]);
+		const st_gl_buffer* buffer = static_cast<const st_gl_buffer*>(view->_desc._buffer);
 	
 		const st_gl_shader_storage_block& block = shader->get_shader_storage_block(i);
 		block.set(buffer->_buffer);
@@ -687,7 +689,8 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 
 	for (uint32_t i = 0; i < table->_uavs.size(); ++i)
 	{
-		const st_gl_texture* texture = static_cast<const st_gl_texture*>(table->_uavs[i]);
+		const st_gl_texture_view* view = static_cast<const st_gl_texture_view*>(table->_uavs[i]);
+		const st_gl_texture* texture = static_cast<const st_gl_texture*>(view->_desc._texture);
 
 		const st_gl_uniform& uniform = shader->get_uniform(i);
 		uniform.set_uav(texture);
@@ -834,6 +837,17 @@ void st_gl_graphics_context::set_blend_state(bool enable, GLenum src_factor, GLe
 void st_gl_graphics_context::set_depth_mask(bool enable)
 {
 	glDepthMask(enable ? GL_TRUE : GL_FALSE);
+}
+
+void st_gl_graphics_context::get_desc(const st_texture* texture_, st_texture_desc* out_desc)
+{
+	assert(out_desc);
+	const st_gl_texture* texture = static_cast<const st_gl_texture*>(texture_);
+	out_desc->_format = texture->_format;
+	out_desc->_width = texture->_width;
+	out_desc->_height = texture->_height;
+	out_desc->_levels = texture->_levels;
+	// TODO: Depth and others.
 }
 
 #endif

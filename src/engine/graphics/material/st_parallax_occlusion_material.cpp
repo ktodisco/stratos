@@ -34,8 +34,36 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 		_parallax_occlusion_buffer = context->create_buffer(desc);
 	}
 
+	{
+		st_buffer_view_desc desc;
+		desc._buffer = _parallax_occlusion_buffer.get();
+		_pobv = context->create_buffer_view(desc);
+	}
+
 	_albedo_texture = st_texture_loader::load(albedo_texture);
 	_normal_texture = st_texture_loader::load(normal_texture);
+
+	{
+		st_texture_desc albedo_desc;
+		context->get_desc(_albedo_texture.get(), &albedo_desc);
+		st_texture_view_desc desc;
+		desc._texture = _albedo_texture.get();
+		desc._format = albedo_desc._format;
+		desc._first_mip = 0;
+		desc._mips = albedo_desc._levels;
+		_albedo_view = context->create_texture_view(desc);
+	}
+
+	{
+		st_texture_desc normal_desc;
+		context->get_desc(_normal_texture.get(), &normal_desc);
+		st_texture_view_desc desc;
+		desc._texture = _normal_texture.get();
+		desc._format = normal_desc._format;
+		desc._first_mip = 0;
+		desc._mips = normal_desc._levels;
+		_normal_view = context->create_texture_view(desc);
+	}
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
@@ -58,13 +86,13 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	st_buffer* cbs[] = { _parallax_occlusion_buffer.get() };
+	const st_buffer_view* cbs[] = { _pobv.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
-	st_texture* textures[] = {
-		_albedo_texture.get(),
-		_normal_texture.get()
+	const st_texture_view* textures[] = {
+		_albedo_view.get(),
+		_normal_view.get()
 	};
-	st_sampler* samplers[] = {
+	const st_sampler* samplers[] = {
 		_global_resources->_trilinear_clamp_sampler.get(),
 		_global_resources->_trilinear_clamp_sampler.get(),
 	};
@@ -76,6 +104,13 @@ st_parallax_occlusion_material::~st_parallax_occlusion_material()
 	_pipeline = nullptr;
 	_vertex_format = nullptr;
 	_resource_table = nullptr;
+	_pobv = nullptr;
+	_parallax_occlusion_buffer = nullptr;
+
+	_albedo_view = nullptr;
+	_normal_view = nullptr;
+	_albedo_texture = nullptr;
+	_normal_texture = nullptr;
 }
 
 void st_parallax_occlusion_material::bind(

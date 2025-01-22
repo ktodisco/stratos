@@ -34,6 +34,12 @@ st_gbuffer_material::st_gbuffer_material(
 	}
 
 	{
+		st_buffer_view_desc desc;
+		desc._buffer = _gbuffer_buffer.get();
+		_gbv = context->create_buffer_view(desc);
+	}
+
+	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_shadow_cb);
@@ -41,8 +47,36 @@ st_gbuffer_material::st_gbuffer_material(
 		_shadow_buffer = context->create_buffer(desc);
 	}
 
+	{
+		st_buffer_view_desc desc;
+		desc._buffer = _shadow_buffer.get();
+		_sbv = context->create_buffer_view(desc);
+	}
+
 	_albedo_texture = st_texture_loader::load(albedo_texture);
 	_mre_texture = st_texture_loader::load(mre_texture);
+
+	{
+		st_texture_desc albedo_desc;
+		context->get_desc(_albedo_texture.get(), &albedo_desc);
+		st_texture_view_desc desc;
+		desc._texture = _albedo_texture.get();
+		desc._format = albedo_desc._format;
+		desc._first_mip = 0;
+		desc._mips = albedo_desc._levels;
+		_albedo_view = context->create_texture_view(desc);
+	}
+
+	{
+		st_texture_desc mre_desc;
+		context->get_desc(_mre_texture.get(), &mre_desc);
+		st_texture_view_desc desc;
+		desc._texture = _mre_texture.get();
+		desc._format = mre_desc._format;
+		desc._first_mip = 0;
+		desc._mips = mre_desc._levels;
+		_mre_view = context->create_texture_view(desc);
+	}
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
@@ -79,14 +113,14 @@ st_gbuffer_material::st_gbuffer_material(
 
 	{
 		_gbuffer_resources = context->create_resource_table();
-		st_buffer* cbs[] = { _gbuffer_buffer.get() };
+		const st_buffer_view* cbs[] = { _gbv.get() };
 		context->set_constant_buffers(_gbuffer_resources.get(), 1, cbs);
 
-		st_texture* textures[] = {
-			_albedo_texture.get(),
-			_mre_texture.get()
+		const st_texture_view* textures[] = {
+			_albedo_view.get(),
+			_mre_view.get()
 		};
-		st_sampler* samplers[] = {
+		const st_sampler* samplers[] = {
 			_global_resources->_trilinear_wrap_sampler.get(),
 			_global_resources->_trilinear_wrap_sampler.get(),
 		};
@@ -94,7 +128,7 @@ st_gbuffer_material::st_gbuffer_material(
 	}
 	{
 		_shadow_resources = context->create_resource_table();
-		st_buffer* cbs[] = { _shadow_buffer.get() };
+		const st_buffer_view* cbs[] = { _sbv.get() };
 		context->set_constant_buffers(_shadow_resources.get(), 1, cbs);
 	}
 }
@@ -106,6 +140,15 @@ st_gbuffer_material::~st_gbuffer_material()
 	_vertex_format = nullptr;
 	_gbuffer_resources = nullptr;
 	_shadow_resources = nullptr;
+	_gbv = nullptr;
+	_sbv = nullptr;
+	_gbuffer_buffer = nullptr;
+	_shadow_buffer = nullptr;
+
+	_albedo_view = nullptr;
+	_mre_view = nullptr;
+	_albedo_texture = nullptr;
+	_mre_texture = nullptr;
 }
 
 void st_gbuffer_material::bind(

@@ -20,8 +20,8 @@ st_deferred_light_material::st_deferred_light_material(
 	st_render_texture* depth_texture,
 	st_render_texture* directional_shadow_map,
 	st_render_texture* output_texture,
-	st_buffer* constants,
-	st_buffer* light_buffer,
+	const st_buffer_view* constants,
+	const st_buffer_view* light_buffer,
 	st_vertex_format* vertex_format,
 	st_render_pass* pass) :
 	st_material(e_st_render_pass_type::deferred),
@@ -61,14 +61,14 @@ st_deferred_light_material::st_deferred_light_material(
 		_shadow_sampler = context->create_sampler(desc);
 	}
 
-	st_texture* textures[] = {
-		_albedo->get_texture(),
-		_normal->get_texture(),
-		_third->get_texture(),
-		_depth->get_texture(),
-		_directional_shadow_map->get_texture(),
+	const st_texture_view* textures[] = {
+		_albedo->get_resource_view(),
+		_normal->get_resource_view(),
+		_third->get_resource_view(),
+		_depth->get_resource_view(),
+		_directional_shadow_map->get_resource_view(),
 	};
-	st_sampler* samplers[] = {
+	const st_sampler* samplers[] = {
 		_global_resources->_trilinear_clamp_sampler.get(),
 		_global_resources->_trilinear_clamp_sampler.get(),
 		_global_resources->_trilinear_clamp_sampler.get(),

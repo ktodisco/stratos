@@ -39,12 +39,24 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	}
 
 	{
+		st_buffer_view_desc desc;
+		desc._buffer = _constant_buffer.get();
+		_cbv = context->create_buffer_view(desc);
+	}
+
+	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_sphere_light_data);
 		desc._usage = e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest;
 		_light_buffer = context->create_buffer(desc);
 		context->set_buffer_name(_light_buffer.get(), "Light Buffer");
+	}
+
+	{
+		st_buffer_view_desc desc;
+		desc._buffer = _light_buffer.get();
+		_lbv = context->create_buffer_view(desc);
 	}
 
 	st_target_desc targets[] =
@@ -63,8 +75,8 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		depth_buffer,
 		directional_shadow_map,
 		output_buffer,
-		_constant_buffer.get(),
-		_light_buffer.get(),
+		_cbv.get(),
+		_lbv.get(),
 		_vertex_format.get(),
 		_pass.get());
 
@@ -79,6 +91,11 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 
 st_deferred_light_render_pass::~st_deferred_light_render_pass()
 {
+	_cbv = nullptr;
+	_lbv = nullptr;
+	_constant_buffer = nullptr;
+	_light_buffer = nullptr;
+	_pass = nullptr;
 }
 
 void st_deferred_light_render_pass::render(

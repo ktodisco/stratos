@@ -15,19 +15,29 @@ st_constant_color_material::st_constant_color_material() :
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_buffer_desc desc;
-	desc._count = 1;
-	desc._element_size = sizeof(st_constant_color_cb);
-	desc._usage = e_st_buffer_usage::uniform;
-	_color_buffer = context->create_buffer(desc);
+	{
+		st_buffer_desc desc;
+		desc._count = 1;
+		desc._element_size = sizeof(st_constant_color_cb);
+		desc._usage = e_st_buffer_usage::uniform;
+		_color_buffer = context->create_buffer(desc);
+	}
+
+	{
+		st_buffer_view_desc desc;
+		desc._buffer = _color_buffer.get();
+		_cbv = context->create_buffer_view(desc);
+	}
 
 	_resource_table = context->create_resource_table();
-	st_buffer* cbs[] = { _color_buffer.get() };
+	const st_buffer_view* cbs[] = { _cbv.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_constant_color_material::~st_constant_color_material()
 {
+	_color_buffer = nullptr;
+	_cbv = nullptr;
 }
 
 void st_constant_color_material::bind(

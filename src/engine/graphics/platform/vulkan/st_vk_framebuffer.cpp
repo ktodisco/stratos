@@ -41,15 +41,15 @@ st_vk_framebuffer::st_vk_framebuffer(
 
 	for (int i = 0; i < count; ++i)
 	{
-		st_vk_texture* target = static_cast<st_vk_texture*>(targets[i]._target->get_texture());
+		const st_vk_texture_view* view = static_cast<const st_vk_texture_view*>(targets[i]._target->get_target_view());
 
-		views.push_back(target->_view);
+		views.push_back(view->_view);
 		_targets.push_back(targets[i]._target);
 	}
 
 	if (depth_stencil)
 	{
-		st_vk_texture* ds = static_cast<st_vk_texture*>(depth_stencil->_target->get_texture());
+		const st_vk_texture_view* ds = static_cast<const st_vk_texture_view*>(depth_stencil->_target->get_target_view());
 
 		views.push_back(ds->_view);
 		_depth_stencil = depth_stencil->_target;

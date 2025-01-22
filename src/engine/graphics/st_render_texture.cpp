@@ -28,11 +28,26 @@ st_render_texture::st_render_texture(
 	desc._clear._color = clear;
 	_texture = context->create_texture(desc);
 	context->set_texture_name(_texture.get(), name);
-	_view = context->create_texture_view(_texture.get());
+
+	st_texture_view_desc rtv_desc;
+	rtv_desc._texture = _texture.get();
+	rtv_desc._format = _format;
+	rtv_desc._first_mip = 0;
+	rtv_desc._mips = 1;
+	rtv_desc._usage = e_st_view_usage::render_target;
+	_rtv = context->create_texture_view(rtv_desc);
+
+	st_texture_view_desc srv_desc;
+	srv_desc._texture = _texture.get();
+	srv_desc._format = _format;
+	srv_desc._first_mip = 0;
+	srv_desc._mips = 1;
+	_srv = context->create_texture_view(srv_desc);
 }
 
 st_render_texture::~st_render_texture()
 {
 	_texture = nullptr;
-	_view = nullptr;
+	_rtv = nullptr;
+	_srv = nullptr;
 }

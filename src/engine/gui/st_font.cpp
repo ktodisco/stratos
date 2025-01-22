@@ -177,6 +177,23 @@ st_font_material::st_font_material(st_texture* texture) :
 		_constant_buffer = context->create_buffer(desc);
 	}
 
+	{
+		st_buffer_view_desc desc;
+		desc._buffer = _constant_buffer.get();
+		_cbv = context->create_buffer_view(desc);
+	}
+
+	{
+		st_texture_desc texture_desc;
+		context->get_desc(_texture, &texture_desc);
+		st_texture_view_desc desc;
+		desc._texture = _texture;
+		desc._format = texture_desc._format;
+		desc._first_mip = 0;
+		desc._mips = texture_desc._levels;
+		_view = context->create_texture_view(desc);
+	}
+
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32_float, 1));
@@ -201,13 +218,14 @@ st_font_material::st_font_material(st_texture* texture) :
 	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	st_buffer* cbs[] = { _constant_buffer.get() };
+	const st_buffer_view* cbs[] = { _cbv.get() };
 	context->set_constant_buffers(_resource_table.get(), 1, cbs);
 
 	if (_texture)
 	{
-		st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
-		context->set_textures(_resource_table.get(), 1, &_texture, samplers);
+		const st_texture_view* textures[] = { _view.get() };
+		const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+		context->set_textures(_resource_table.get(), 1, textures, samplers);
 	}
 }
 
@@ -216,6 +234,10 @@ st_font_material::~st_font_material()
 	_pipeline = nullptr;
 	_vertex_format = nullptr;
 	_resource_table = nullptr;
+	_cbv = nullptr;
+	_constant_buffer = nullptr;
+	_view = nullptr;
+	_texture = nullptr;
 }
 
 void st_font_material::bind(

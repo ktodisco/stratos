@@ -18,8 +18,8 @@ public:
 		class st_render_texture* depth_texture,
 		class st_render_texture* directional_shadow_map,
 		class st_render_texture* output_texture,
-		struct st_buffer* constants,
-		struct st_buffer* light_buffer,
+		const struct st_buffer_view* constants,
+		const struct st_buffer_view* light_buffer,
 		struct st_vertex_format* vertex_format,
 		struct st_render_pass* pass);
 	~st_deferred_light_material();

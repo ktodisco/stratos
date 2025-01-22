@@ -49,7 +49,6 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		horizontal_blur_targets,
 		nullptr);
 
-	// TODO: Need to pass the inverse texture sizes to the shaders in these materials.
 	_vertical_blur_material = std::make_unique<st_gaussian_blur_vertical_material>(
 		source_buffer,
 		_intermediate_target.get(),

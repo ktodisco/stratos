@@ -603,10 +603,10 @@ void st_dx12_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 	HRESULT result = _dynamic_vertex_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
 	buffer_begin += _dynamic_vertex_bytes_written;
 
-	st_dx12_buffer_view dynamic_vertex_buffer_view;
-	dynamic_vertex_buffer_view.vertex.BufferLocation = _dynamic_vertex_buffer->GetGPUVirtualAddress() + _dynamic_vertex_bytes_written;
-	dynamic_vertex_buffer_view.vertex.StrideInBytes = sizeof(st_procedural_vertex);
-	dynamic_vertex_buffer_view.vertex.SizeInBytes = drawcall._positions.size() * sizeof(st_procedural_vertex);
+	D3D12_VERTEX_BUFFER_VIEW dynamic_vertex_view;
+	dynamic_vertex_view.BufferLocation = _dynamic_vertex_buffer->GetGPUVirtualAddress() + _dynamic_vertex_bytes_written;
+	dynamic_vertex_view.StrideInBytes = sizeof(st_procedural_vertex);
+	dynamic_vertex_view.SizeInBytes = drawcall._positions.size() * sizeof(st_procedural_vertex);
 
 	if (result != S_OK)
 	{
@@ -629,10 +629,10 @@ void st_dx12_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 	result = _dynamic_index_buffer->Map(0, &range, reinterpret_cast<void**>(&buffer_begin));
 	buffer_begin += _dynamic_index_bytes_written;
 
-	st_dx12_buffer_view dynamic_index_buffer_view;
-	dynamic_index_buffer_view.index.BufferLocation = _dynamic_index_buffer->GetGPUVirtualAddress() + _dynamic_index_bytes_written;
-	dynamic_index_buffer_view.index.Format = DXGI_FORMAT_R16_UINT;
-	dynamic_index_buffer_view.index.SizeInBytes = sizeof(uint16_t) * drawcall._indices.size();
+	D3D12_INDEX_BUFFER_VIEW dynamic_index_view;
+	dynamic_index_view.BufferLocation = _dynamic_index_buffer->GetGPUVirtualAddress() + _dynamic_index_bytes_written;
+	dynamic_index_view.Format = DXGI_FORMAT_R16_UINT;
+	dynamic_index_view.SizeInBytes = sizeof(uint16_t) * drawcall._indices.size();
 
 	if (result != S_OK)
 	{
@@ -644,8 +644,8 @@ void st_dx12_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 	_dynamic_index_bytes_written += sizeof(uint16_t) * drawcall._indices.size();
 
 	_command_list->IASetPrimitiveTopology(convert_topology(drawcall._draw_mode));
-	_command_list->IASetVertexBuffers(0, 1, &dynamic_vertex_buffer_view.vertex);
-	_command_list->IASetIndexBuffer(&dynamic_index_buffer_view.index);
+	_command_list->IASetVertexBuffers(0, 1, &dynamic_vertex_view);
+	_command_list->IASetIndexBuffer(&dynamic_index_view);
 	_command_list->DrawIndexedInstanced(drawcall._indices.size(), 1, 0, 0, 0);
 }
 
@@ -873,42 +873,70 @@ void st_dx12_graphics_context::transition(
 	_command_list->ResourceBarrier(1, &barrier);
 }
 
-// TODO: Rewrite this to replace create_shader_resource_view.
-std::unique_ptr<st_texture_view> st_dx12_graphics_context::create_texture_view(st_texture* texture_)
+std::unique_ptr<st_texture_view> st_dx12_graphics_context::create_texture_view(const st_texture_view_desc& desc)
 {
-	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
+	const st_dx12_texture* texture = static_cast<const st_dx12_texture*>(desc._texture);
 
 	std::unique_ptr<st_dx12_texture_view> texture_view = std::make_unique<st_dx12_texture_view>();
 
-	if (texture->_usage & e_st_texture_usage::depth_target)
+	if (desc._usage & e_st_view_usage::render_target)
 	{
-		// Create the depth/stencil view.
-		st_dx12_cpu_descriptor_handle dsv_handle = _dsv_heap->allocate_handle();
-		_device->CreateDepthStencilView(*texture->_handle.GetAddressOf(), nullptr, dsv_handle._handle);
+		if (texture->_usage & e_st_texture_usage::depth_target)
+		{
+			// Create the depth/stencil view.
+			st_dx12_cpu_descriptor_handle dsv_handle = _dsv_heap->allocate_handle();
+			_device->CreateDepthStencilView(*texture->_handle.GetAddressOf(), nullptr, dsv_handle._handle);
 
-		texture_view->_handle = dsv_handle._offset;
-	}
-	else if (texture->_usage & e_st_texture_usage::color_target)
-	{
-		// Create the render target view.
-		st_dx12_cpu_descriptor_handle rtv_handle = _rtv_heap->allocate_handle();
-		_device->CreateRenderTargetView(*texture->_handle.GetAddressOf(), nullptr, rtv_handle._handle);
+			texture_view->_handle = dsv_handle._offset;
+			texture_view->_heap = _dsv_heap.get();
+		}
+		else if (texture->_usage & e_st_texture_usage::color_target)
+		{
+			// Create the render target view.
+			st_dx12_cpu_descriptor_handle rtv_handle = _rtv_heap->allocate_handle();
+			_device->CreateRenderTargetView(*texture->_handle.GetAddressOf(), nullptr, rtv_handle._handle);
 
-		texture_view->_handle = rtv_handle._offset;
+			texture_view->_handle = rtv_handle._offset;
+			texture_view->_heap = _rtv_heap.get();
+		}
 	}
-	else
+	else if (desc._usage & e_st_view_usage::shader_resource)
 	{
-		// Create the shader resource view.
+		e_st_format format = desc._format;
+		// TODO: Depending on whether we want depth or stencil, this needs to be flexible.
+		if (format == st_format_d24_unorm_s8_uint)
+			format = st_format_r24_unorm_x8_typeless;
+
 		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
 		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srv_desc.Format = convert_format(texture->_format);
+		srv_desc.Format = convert_format(format);
 		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srv_desc.Texture2D.MipLevels = texture->_levels;
+		srv_desc.Texture2D.MostDetailedMip = desc._first_mip;
+		srv_desc.Texture2D.MipLevels = desc._mips;
 
 		st_dx12_cpu_descriptor_handle srv_handle = _resource_heap->allocate_handle();
 		_device->CreateShaderResourceView(texture->_handle.Get(), &srv_desc, srv_handle._handle);
 
 		texture_view->_handle = srv_handle._offset;
+		texture_view->_heap = _resource_heap.get();
+	}
+	else if (desc._usage & e_st_view_usage::unordered_access)
+	{
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
+		uav_desc.Format = convert_format(desc._format);
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+		uav_desc.Texture2D.MipSlice = desc._first_mip;
+		uav_desc.Texture2D.PlaneSlice = desc._first_slice;
+
+		st_dx12_cpu_descriptor_handle uav_handle = _resource_heap->allocate_handle();
+		_device->CreateUnorderedAccessView(texture->_handle.Get(), nullptr, &uav_desc, uav_handle._handle);
+
+		texture_view->_handle = uav_handle._offset;
+		texture_view->_heap = _resource_heap.get();
+	}
+	else
+	{
+		assert(false);
 	}
 
 	return std::move(texture_view);
@@ -1010,26 +1038,48 @@ void st_dx12_graphics_context::create_buffer_internal(size_t size, ID3D12Resourc
 	}
 }
 
-std::unique_ptr<st_buffer_view> st_dx12_graphics_context::create_buffer_view(st_buffer* buffer_)
+std::unique_ptr<st_buffer_view> st_dx12_graphics_context::create_buffer_view(const st_buffer_view_desc& desc)
 {
-	st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffer_);
+	const st_dx12_buffer* buffer = static_cast<const st_dx12_buffer*>(desc._buffer);
 
 	std::unique_ptr<st_dx12_buffer_view> buffer_view = std::make_unique<st_dx12_buffer_view>();
-	if (buffer->_usage & e_st_buffer_usage::vertex)
+	if (desc._usage & e_st_view_usage::shader_resource)
 	{
-		buffer_view->vertex.BufferLocation = buffer->_buffer->GetGPUVirtualAddress();
-		buffer_view->vertex.StrideInBytes = buffer->_element_size;
-		buffer_view->vertex.SizeInBytes = buffer->_element_size * buffer->_count;
+		// Create the shader resource view.
+		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srv_desc.Buffer.FirstElement = desc._first_element;
+		srv_desc.Buffer.NumElements = (desc._element_count == k_whole_size) ? buffer->_count : desc._element_count;
+		srv_desc.Buffer.StructureByteStride = buffer->_element_size;
+		srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+
+		st_dx12_cpu_descriptor_handle srv_handle = _resource_heap->allocate_handle();
+		_device->CreateShaderResourceView(buffer->_buffer.Get(), &srv_desc, srv_handle._handle);
+
+		buffer_view->_handle = srv_handle._offset;
+		buffer_view->_heap = _resource_heap.get();
 	}
-	else if (buffer->_usage & e_st_buffer_usage::index)
+	else if (desc._usage & e_st_view_usage::unordered_access)
 	{
-		buffer_view->index.BufferLocation = buffer->_buffer->GetGPUVirtualAddress();
-		buffer_view->index.SizeInBytes = buffer->_element_size * buffer->_count;
-		buffer_view->index.Format = DXGI_FORMAT_R16_UINT;
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+		uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uav_desc.Buffer.FirstElement = desc._first_element;
+		uav_desc.Buffer.NumElements = (desc._element_count == k_whole_size) ? buffer->_count : desc._element_count;
+		uav_desc.Buffer.StructureByteStride = buffer->_element_size;
+		uav_desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+
+		st_dx12_cpu_descriptor_handle uav_handle = _resource_heap->allocate_handle();
+		_device->CreateUnorderedAccessView(buffer->_buffer.Get(), nullptr, &uav_desc, uav_handle._handle);
+
+		buffer_view->_handle = uav_handle._offset;
+		buffer_view->_heap = _resource_heap.get();
 	}
 	else
 	{
-		// TODO.
+		assert(false);
 	}
 
 	return std::move(buffer_view);
@@ -1091,26 +1141,22 @@ std::unique_ptr<st_resource_table> st_dx12_graphics_context::create_resource_tab
 void st_dx12_graphics_context::set_constant_buffers(
 	st_resource_table* _table,
 	uint32_t count,
-	st_buffer** cbs)
+	const st_buffer_view** cbs)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
 
 	for (uint32_t i = 0; i < count; ++i)
 	{
-		st_dx12_buffer* cb = static_cast<st_dx12_buffer*>(cbs[i]);
-
-		st_dx12_descriptor cbv = create_constant_buffer_view(
-			cb->_buffer->GetGPUVirtualAddress(),
-			cb->_element_size);
-		table->_cbvs.push_back(cbv);
+		const st_dx12_buffer_view* cbv = static_cast<const st_dx12_buffer_view*>(cbs[i]);
+		table->_cbvs.push_back(cbv->_handle);
 	}
 }
 
 void st_dx12_graphics_context::set_textures(
 	st_resource_table* table_,
 	uint32_t count,
-	st_texture** textures,
-	st_sampler** samplers)
+	const st_texture_view** textures,
+	const st_sampler** samplers)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
 
@@ -1118,21 +1164,8 @@ void st_dx12_graphics_context::set_textures(
 	{
 		if (textures)
 		{
-			st_dx12_texture* sr = static_cast<st_dx12_texture*>(textures[i]);
-
-			// TODO: Depending on whether we want depth or stencil, this needs to be flexible.
-			e_st_format format = sr->_format;
-			if (format == st_format_d24_unorm_s8_uint)
-			{
-				format = st_format_r24_unorm_x8_typeless;
-			}
-
-			st_dx12_descriptor srv = create_shader_resource_view(
-				sr->_handle.Get(),
-				format,
-				sr->_levels);
-
-			table->_srvs.push_back(srv);
+			const st_dx12_texture_view* srv = static_cast<const st_dx12_texture_view*>(textures[i]);
+			table->_srvs.push_back(srv->_handle);
 		}
 		else
 		{
@@ -1141,7 +1174,7 @@ void st_dx12_graphics_context::set_textures(
 
 		if (samplers)
 		{
-			st_dx12_sampler* s = static_cast<st_dx12_sampler*>(samplers[i]);
+			const st_dx12_sampler* s = static_cast<const st_dx12_sampler*>(samplers[i]);
 			table->_samplers.push_back(s->_handle);
 		}
 		else
@@ -1154,47 +1187,38 @@ void st_dx12_graphics_context::set_textures(
 void st_dx12_graphics_context::set_buffers(
 	st_resource_table* _table,
 	uint32_t count,
-	st_buffer** buffers)
+	const st_buffer_view** buffers)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
 
 	for (uint32_t i = 0; i < count; ++i)
 	{
-		st_dx12_buffer* buffer = static_cast<st_dx12_buffer*>(buffers[i]);
-
-		st_dx12_descriptor srv = create_buffer_view(
-			buffer->_buffer.Get(),
-			buffer->_count,
-			buffer->_element_size);
-		table->_buffers.push_back(srv);
+		const st_dx12_buffer_view* srv = static_cast<const st_dx12_buffer_view*>(buffers[i]);
+		table->_buffers.push_back(srv->_handle);
 	}
 }
 
 void st_dx12_graphics_context::set_uavs(
 	st_resource_table* _table,
 	uint32_t count,
-	st_texture** textures)
+	const st_texture_view** textures)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(_table);
 
 	for (uint32_t i = 0; i < count; ++i)
 	{
-		st_dx12_texture* texture = static_cast<st_dx12_texture*>(textures[i]);
-
-		st_dx12_descriptor uav = create_unordered_access_view(
-			texture->_handle.Get(),
-			texture->_format);
-		table->_uavs.push_back(uav);
+		const st_dx12_texture_view* uav = static_cast<const st_dx12_texture_view*>(textures[i]);
+		table->_uavs.push_back(uav->_handle);
 	}
 }
 
-void st_dx12_graphics_context::update_textures(st_resource_table* table_, uint32_t count, st_texture_view** views)
+void st_dx12_graphics_context::update_textures(st_resource_table* table_, uint32_t count, const st_texture_view** views)
 {
 	st_dx12_resource_table* table = static_cast<st_dx12_resource_table*>(table_);
 
 	for (uint32_t itr = 0; itr < count; ++itr)
 	{
-		st_dx12_texture_view* view = static_cast<st_dx12_texture_view*>(views[itr]);
+		const st_dx12_texture_view* view = static_cast<const st_dx12_texture_view*>(views[itr]);
 		table->_srvs[itr] = view->_handle;
 	}
 }
@@ -1752,98 +1776,21 @@ void st_dx12_graphics_context::end_marker()
 	PIXEndEvent(_command_list.Get());
 }
 
+void st_dx12_graphics_context::get_desc(const st_texture* texture_, st_texture_desc* out_desc)
+{
+	assert(out_desc);
+	const st_dx12_texture* texture = static_cast<const st_dx12_texture*>(texture_);
+	out_desc->_format = texture->_format;
+	out_desc->_width = texture->_width;
+	out_desc->_height = texture->_height;
+	out_desc->_levels = texture->_levels;
+	out_desc->_usage = texture->_usage;
+	// TODO: Depth and others.
+}
+
 void st_dx12_graphics_context::destroy_target(st_dx12_descriptor target)
 {
 	_rtv_heap->deallocate_handle(target);
-}
-
-st_dx12_descriptor st_dx12_graphics_context::create_constant_buffer_view(
-	D3D12_GPU_VIRTUAL_ADDRESS gpu_address,
-	size_t size)
-{
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc;
-	cbv_desc.BufferLocation = gpu_address;
-	cbv_desc.SizeInBytes = align_value(size, 256);
-
-	st_dx12_cpu_descriptor_handle cbv_handle = _resource_heap->allocate_handle();
-	_device->CreateConstantBufferView(&cbv_desc, cbv_handle._handle);
-
-	return cbv_handle._offset;
-}
-
-void st_dx12_graphics_context::destroy_constant_buffer_view(st_dx12_descriptor offset)
-{
-	_resource_heap->deallocate_handle(offset);
-}
-
-st_dx12_descriptor st_dx12_graphics_context::create_shader_resource_view(
-	ID3D12Resource* resource,
-	e_st_format format,
-	uint32_t levels)
-{
-	// Create the shader resource view.
-	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srv_desc.Format = convert_format(format);
-	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srv_desc.Texture2D.MipLevels = levels;
-
-	st_dx12_cpu_descriptor_handle srv_handle = _resource_heap->allocate_handle();
-	_device->CreateShaderResourceView(resource, &srv_desc, srv_handle._handle);
-
-	return srv_handle._offset;
-}
-
-void st_dx12_graphics_context::destroy_shader_resource_view(st_dx12_descriptor offset)
-{
-	_resource_heap->deallocate_handle(offset);
-}
-
-st_dx12_descriptor st_dx12_graphics_context::create_buffer_view(
-	ID3D12Resource* resource,
-	uint32_t count,
-	size_t element_size)
-{
-	// Create the shader resource view.
-	D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
-	srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-	srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srv_desc.Buffer.FirstElement = 0;
-	srv_desc.Buffer.NumElements = count;
-	srv_desc.Buffer.StructureByteStride = element_size;
-	srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-
-	st_dx12_cpu_descriptor_handle srv_handle = _resource_heap->allocate_handle();
-	_device->CreateShaderResourceView(resource, &srv_desc, srv_handle._handle);
-
-	return srv_handle._offset;
-}
-
-void st_dx12_graphics_context::destroy_buffer_view(st_dx12_descriptor offset)
-{
-	_resource_heap->deallocate_handle(offset);
-}
-
-st_dx12_descriptor st_dx12_graphics_context::create_unordered_access_view(
-	ID3D12Resource* resource,
-	e_st_format format)
-{
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-	uav_desc.Format = convert_format(format);
-	uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-	uav_desc.Texture2D.MipSlice = 0;
-	uav_desc.Texture2D.PlaneSlice = 0;
-
-	st_dx12_cpu_descriptor_handle uav_handle = _resource_heap->allocate_handle();
-	_device->CreateUnorderedAccessView(resource, nullptr, &uav_desc, uav_handle._handle);
-
-	return uav_handle._offset;
-}
-
-void st_dx12_graphics_context::destroy_unordered_access_view(st_dx12_descriptor offset)
-{
-	_resource_heap->deallocate_handle(offset);
 }
 
 #endif

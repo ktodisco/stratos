@@ -28,6 +28,7 @@ public:
 
 private:
 	std::unique_ptr<struct st_buffer> _cb = nullptr;
+	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
 
 	class st_render_texture* _texture;
@@ -54,6 +55,7 @@ public:
 
 private:
 	std::unique_ptr<struct st_buffer> _cb = nullptr;
+	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
 
 	class st_render_texture* _texture;

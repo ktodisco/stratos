@@ -36,8 +36,11 @@ public:
 
 private:
 	std::unique_ptr<struct st_buffer> _parallax_occlusion_buffer = nullptr;
+	std::unique_ptr<struct st_buffer_view> _pobv = nullptr;
 	std::unique_ptr<struct st_texture> _albedo_texture;
+	std::unique_ptr<struct st_texture_view> _albedo_view;
 	std::unique_ptr<struct st_texture> _normal_texture;
+	std::unique_ptr<struct st_texture_view> _normal_view;
 
 	std::unique_ptr<struct st_vertex_format> _vertex_format = nullptr;
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;

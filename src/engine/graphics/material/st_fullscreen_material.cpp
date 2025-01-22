@@ -35,8 +35,8 @@ st_fullscreen_material::st_fullscreen_material(
 	_pipeline = context->create_graphics_pipeline(desc);
 
 	_resource_table = context->create_resource_table();
-	st_texture* t = _texture->get_texture();
-	st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
+	const st_texture_view* t = _texture->get_resource_view();
+	const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
 	context->set_textures(_resource_table.get(), 1, &t, samplers);
 }
 

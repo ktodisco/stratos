@@ -31,6 +31,7 @@ private:
 	float _cutoff = 0.0f;
 	class st_render_texture* _texture;
 	std::unique_ptr<struct st_buffer> _cb = nullptr;
+	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
@@ -58,6 +59,7 @@ private:
 	class st_render_texture* _texture;
 	st_vec2f _target_size = st_vec2f::zero_vector();
 	std::unique_ptr<struct st_buffer> _cb = nullptr;
+	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;
@@ -86,6 +88,7 @@ private:
 	class st_render_texture* _blur;
 	class st_render_texture* _step;
 	std::unique_ptr<struct st_buffer> _cb = nullptr;
+	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
 	std::unique_ptr<struct st_resource_table> _resource_table = nullptr;
 
 	std::unique_ptr<struct st_pipeline> _pipeline = nullptr;

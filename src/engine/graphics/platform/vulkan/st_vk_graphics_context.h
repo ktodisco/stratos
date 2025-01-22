@@ -71,14 +71,14 @@ public:
 	void transition(
 		st_texture* texture,
 		e_st_texture_state new_state) override;
-	std::unique_ptr<st_texture_view> create_texture_view(st_texture* texture) override;
+	std::unique_ptr<st_texture_view> create_texture_view(const st_texture_view_desc& desc) override;
 
 	// Samplers.
 	std::unique_ptr<st_sampler> create_sampler(const st_sampler_desc& desc) override;
 
 	// Buffers.
 	std::unique_ptr<st_buffer> create_buffer(const st_buffer_desc& desc) override;
-	std::unique_ptr<st_buffer_view> create_buffer_view(st_buffer* buffer) override;
+	std::unique_ptr<st_buffer_view> create_buffer_view(const st_buffer_view_desc& desc) override;
 	void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) override;
 	void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) override;
 	void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) override;
@@ -87,15 +87,15 @@ public:
 	// Resource tables.
 	std::unique_ptr<st_resource_table> create_resource_table() override;
 	std::unique_ptr<st_resource_table> create_resource_table_compute() override;
-	void set_constant_buffers(st_resource_table* table, uint32_t count, st_buffer** cbs) override;
+	void set_constant_buffers(st_resource_table* table, uint32_t count, const st_buffer_view** cbs) override;
 	void set_textures(
 		st_resource_table* table,
 		uint32_t count,
-		st_texture** textures,
-		st_sampler** samplers) override;
-	void set_buffers(st_resource_table* table, uint32_t count, st_buffer** buffers) override;
-	void set_uavs(st_resource_table* table, uint32_t count, st_texture** textures) override;
-	void update_textures(st_resource_table* table, uint32_t count, st_texture_view** views) override;
+		const st_texture_view** textures,
+		const st_sampler** samplers) override;
+	void set_buffers(st_resource_table* table, uint32_t count, const st_buffer_view** buffers) override;
+	void set_uavs(st_resource_table* table, uint32_t count, const st_texture_view** textures) override;
+	void update_textures(st_resource_table* table, uint32_t count, const st_texture_view** views) override;
 	void bind_resources(st_resource_table* table) override;
 	void bind_compute_resources(st_resource_table* table) override;
 
@@ -124,6 +124,7 @@ public:
 
 	// Informational.
 	e_st_graphics_api get_api() { return e_st_graphics_api::vulkan; }
+	void get_desc(const st_texture* texture, st_texture_desc* out_desc) override;
 
 	// API-specific.
 	vk::Device* get_device() { return std::addressof(_device); }

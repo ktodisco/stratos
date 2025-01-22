@@ -36,14 +36,14 @@ void st_dx12_framebuffer::bind(st_graphics_context* context)
 	for (auto& t : _targets)
 	{
 		context->transition(t->get_texture(), st_texture_state_render_target);
-		views.push_back(t->get_view());
+		views.push_back(t->get_target_view());
 	}
 
 	const st_texture_view* ds_view = nullptr;
 	if (_depth_stencil)
 	{
 		context->transition(_depth_stencil->get_texture(), st_texture_state_depth_target);
-		ds_view = _depth_stencil->get_view();
+		ds_view = _depth_stencil->get_target_view();
 	}
 
 	// Bind them.
