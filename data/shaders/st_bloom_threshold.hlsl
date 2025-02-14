@@ -36,7 +36,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 {
 	float3 source = tex.Sample(tex_sampler, input.uv).rgb;
 	
-	if (any(isnan(source)))
+	if (any(isnan(source)) || any(isinf(source)))
 		source = 0.0f.xxx;
 	
 	float luma = dot(source, float3(0.2126f, 0.7152f, 0.0722f));

@@ -51,8 +51,13 @@ struct st_frame_params
 
 	// Sun.
 	struct st_directional_light* _sun = nullptr;
+	float _sun_azimuth = 0.0f;
+	float _sun_angle = 0.0f;
 	st_mat4f _sun_view;
 	st_mat4f _sun_projection;
+
+	// Atmosphere.
+	struct st_atmosphere_params* _atmosphere = nullptr;
 
 	// TODO: This will eventually need to turn into a whole management system.
 	struct st_sphere_light* _light = nullptr;

@@ -9,6 +9,7 @@
 #include <framework/st_frame_params.h>
 
 #include <graphics/material/st_material.h>
+#include <graphics/pass/st_atmosphere_pass.h>
 #include <graphics/pass/st_bloom_render_pass.h>
 #include <graphics/pass/st_deferred_light_render_pass.h>
 #include <graphics/pass/st_directional_shadow_pass.h>
@@ -112,6 +113,37 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Tonemap Target");
 
+	_transmittance = std::make_unique<st_render_texture>(
+		context,
+		64,
+		256,
+		st_format_r8g8b8a8_unorm,
+		e_st_texture_usage::storage | e_st_texture_usage::sampled,
+		st_texture_state_unordered_access,
+		st_vec4f { 0.0f, 0.0f, 0.0f, 0.0f },
+		"Atmosphere Transmittance");
+
+	_sky_view = std::make_unique<st_render_texture>(
+		context,
+		256,
+		256,
+		st_format_r11g11b10_float,
+		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
+		st_texture_state_pixel_shader_read,
+		st_vec4f { 0.0f, 0.0f, 0.0f, 0.0f },
+		"Sky View");
+
+	_atmosphere_transmission = std::make_unique<st_atmosphere_transmission_pass>(
+		_transmittance.get());
+	_atmosphere_sky = std::make_unique<st_atmosphere_sky_pass>(
+		_transmittance.get(),
+		_sky_view.get());
+	_atmosphere_pass = std::make_unique<st_atmosphere_render_pass>(
+		_deferred_target.get(),
+		_depth_stencil_target.get(),
+		_transmittance.get(),
+		_sky_view.get());
+
 	_directional_shadow_pass = std::make_unique<st_directional_shadow_pass>(
 		_directional_shadow_map.get());
 	_gbuffer_pass = std::make_unique<st_gbuffer_render_pass>(
@@ -152,9 +184,13 @@ void st_output::update(st_frame_params* params)
 
 	_graphics_context->begin_frame();
 
+	_atmosphere_transmission->compute(_graphics_context, params);
+	_atmosphere_sky->render(_graphics_context, params);
+
 	_directional_shadow_pass->render(_graphics_context, params);
 	_gbuffer_pass->render(_graphics_context, params);
 	_deferred_pass->render(_graphics_context, params);
+	_atmosphere_pass->render(_graphics_context, params);
 	_bloom_pass->render(_graphics_context, params);
 	_tonemap_pass->render(_graphics_context, params);
 

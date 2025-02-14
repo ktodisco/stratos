@@ -104,6 +104,7 @@ struct st_dx12_texture : public st_texture
 
 	uint32_t _width;
 	uint32_t _height;
+	uint32_t _depth;
 	uint32_t _levels = 1;
 	e_st_format _format;
 	e_st_texture_usage_flags _usage = static_cast<e_st_texture_usage_flags>(0);

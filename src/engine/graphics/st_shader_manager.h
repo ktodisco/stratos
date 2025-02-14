@@ -28,6 +28,9 @@ enum e_st_shader
 	st_shader_gaussian_blur_horizontal,
 	st_shader_parallax_occlusion,
 	st_shader_shadow,
+	st_shader_atmosphere_transmission,
+	st_shader_atmosphere_sky_view,
+	st_shader_atmosphere,
 
 	st_shader_imgui,
 };

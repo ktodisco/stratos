@@ -689,7 +689,7 @@ void st_vk_graphics_context::draw(const struct st_dynamic_drawcall& drawcall)
 
 void st_vk_graphics_context::dispatch(const st_dispatch_args& args)
 {
-	_command_buffers[st_command_buffer_graphics].dispatch(args.thread_count_x, args.thread_count_y, args.thread_count_z);
+	_command_buffers[st_command_buffer_graphics].dispatch(args.group_count_x, args.group_count_y, args.group_count_z);
 }
 
 st_render_texture* st_vk_graphics_context::get_present_target() const

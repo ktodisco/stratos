@@ -50,6 +50,13 @@ private:
 	const st_window* _window;
 	class st_graphics_context* _graphics_context;
 
+	// Atmospherics.
+	std::unique_ptr<class st_render_texture> _transmittance;
+	std::unique_ptr<class st_render_texture> _sky_view;
+	std::unique_ptr<class st_atmosphere_transmission_pass> _atmosphere_transmission;
+	std::unique_ptr<class st_atmosphere_sky_pass> _atmosphere_sky;
+	std::unique_ptr<class st_atmosphere_render_pass> _atmosphere_pass;
+
 	std::unique_ptr<class st_directional_shadow_pass> _directional_shadow_pass;
 	std::unique_ptr<class st_gbuffer_render_pass> _gbuffer_pass;
 	std::unique_ptr<class st_deferred_light_render_pass> _deferred_pass;

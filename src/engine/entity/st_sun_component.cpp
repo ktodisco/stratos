@@ -31,6 +31,8 @@ st_sun_component::~st_sun_component()
 void st_sun_component::update(st_frame_params* params)
 {
 	params->_sun = _light.get();
+	params->_sun_azimuth = _azimuth;
+	params->_sun_angle = _angle;
 
 	// Set up a simple orthographic camera pointing at the origin, oriented with the sun direction.
 	st_vec3f at{ 0.0f, 0.0f, 0.0f };
@@ -49,7 +51,7 @@ void st_sun_component::debug()
 	if (ImGui::TreeNode("st_sun_component"))
 	{
 		bool change = ImGui::DragFloat("Azimuth", &_azimuth, 1.0f, 0.0f, 360.0f, "%.1f");
-		change |= ImGui::DragFloat("Angle", &_angle, 1.0f, 0.0f, 90.0f, "%.1f");
+		change |= ImGui::DragFloat("Angle", &_angle, 0.1f, 0.0f, 120.0f, "%.1f");
 
 		if (change)
 			_light->_direction = calculate_direction();

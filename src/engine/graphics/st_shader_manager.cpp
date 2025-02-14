@@ -76,6 +76,18 @@ st_shader_manager::st_shader_manager(st_graphics_context* context)
 		context->create_shader(
 			"data/shaders/st_shadow",
 			e_st_shader_type::vertex | e_st_shader_type::pixel);
+	_shaders[st_shader_atmosphere_transmission] =
+		context->create_shader(
+			"data/shaders/st_atmosphere_transmission",
+			e_st_shader_type::compute);
+	_shaders[st_shader_atmosphere_sky_view] =
+		context->create_shader(
+			"data/shaders/st_atmosphere_sky_view",
+			e_st_shader_type::vertex | e_st_shader_type::pixel);
+	_shaders[st_shader_atmosphere] =
+		context->create_shader(
+			"data/shaders/st_atmosphere_apply",
+			e_st_shader_type::vertex | e_st_shader_type::pixel);
 
 	_this = this;
 }

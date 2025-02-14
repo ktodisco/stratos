@@ -31,7 +31,7 @@ void st_camera::update(st_frame_params* params)
 
 	float modifier = (params->_button_mask & k_button_shift) ? 3.0f : 1.0f;
 	const float k_move_speed = 3.0f * delta_time * modifier;
-	const float k_rotate_speed = 25.0f * delta_time * modifier;
+	const float k_rotate_speed = 50.0f * delta_time * modifier;
 
 	// Use WASD to control the position.
 	st_vec3f translation = { 0.0f, 0.0f, 0.0f };

@@ -474,7 +474,7 @@ struct st_texture_view_desc
 	uint16_t _first_slice = 0;
 	uint16_t _slices = 1;
 	uint16_t _first_mip = 0;
-	uint16_t _mips = 0;
+	uint16_t _mips = 1;
 };
 
 struct st_buffer : public st_resource {};
@@ -506,9 +506,9 @@ struct st_target_desc
 
 struct st_dispatch_args
 {
-	uint32_t thread_count_x = 0;
-	uint32_t thread_count_y = 0;
-	uint32_t thread_count_z = 0;
+	uint32_t group_count_x = 0;
+	uint32_t group_count_y = 0;
+	uint32_t group_count_z = 0;
 };
 
 #include <cstdint>

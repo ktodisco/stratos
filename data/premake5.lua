@@ -46,6 +46,8 @@ project "data"
 	}
 	
 	build_shader("shaders/imgui.hlsl")
+	build_shader("shaders/st_atmosphere_apply.hlsl")
+	build_shader("shaders/st_atmosphere_sky_view.hlsl")
 	build_shader("shaders/st_bloom_downsample.hlsl")
 	build_shader("shaders/st_bloom_threshold.hlsl")
 	build_shader("shaders/st_bloom_upsample.hlsl")
@@ -61,6 +63,8 @@ project "data"
 	build_shader("shaders/st_shadow.hlsl")
 	build_shader("shaders/st_tonemap.hlsl")
 	build_shader("shaders/st_unlit_texture.hlsl")
+	
+	build_compute_shader("shaders/st_atmosphere_transmission.hlsl")
 	
 	prebuildcommands {
 		"{COPYDIR} %[./] %[%{!cfg.targetdir}/data]",

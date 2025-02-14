@@ -651,7 +651,7 @@ void st_dx12_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 
 void st_dx12_graphics_context::dispatch(const st_dispatch_args& args)
 {
-	_command_list->Dispatch(args.thread_count_x, args.thread_count_y, args.thread_count_z);
+	_command_list->Dispatch(args.group_count_x, args.group_count_y, args.group_count_z);
 }
 
 st_render_texture* st_dx12_graphics_context::get_present_target() const
@@ -674,6 +674,7 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(const st_te
 	std::unique_ptr<st_dx12_texture> texture = std::make_unique<st_dx12_texture>();
 	texture->_width = desc._width;
 	texture->_height = desc._height;
+	texture->_depth = desc._depth;
 	texture->_levels = desc._levels;
 	texture->_format = desc._format;
 	texture->_usage = desc._usage;
@@ -690,11 +691,13 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(const st_te
 	texture_desc.Format = dx_format;
 	texture_desc.Width = desc._width;
 	texture_desc.Height = desc._height;
+	texture_desc.DepthOrArraySize = desc._depth;
 	texture_desc.Flags = flags;
-	texture_desc.DepthOrArraySize = 1;
 	texture_desc.SampleDesc.Count = 1;
 	texture_desc.SampleDesc.Quality = 0;
-	texture_desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	texture_desc.Dimension =  desc._depth > 1 ?
+		D3D12_RESOURCE_DIMENSION_TEXTURE3D :
+		D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 
 	bool is_target = false;
 	D3D12_CLEAR_VALUE clear_value = {};
@@ -910,9 +913,18 @@ std::unique_ptr<st_texture_view> st_dx12_graphics_context::create_texture_view(c
 		D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
 		srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srv_desc.Format = convert_format(format);
-		srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srv_desc.Texture2D.MostDetailedMip = desc._first_mip;
-		srv_desc.Texture2D.MipLevels = desc._mips;
+		if (texture->_depth > 1)
+		{
+			srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+			srv_desc.Texture3D.MipLevels = desc._mips;
+			srv_desc.Texture3D.MostDetailedMip = desc._first_mip;
+		}
+		else
+		{
+			srv_desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			srv_desc.Texture2D.MostDetailedMip = desc._first_mip;
+			srv_desc.Texture2D.MipLevels = desc._mips;
+		}
 
 		st_dx12_cpu_descriptor_handle srv_handle = _resource_heap->allocate_handle();
 		_device->CreateShaderResourceView(texture->_handle.Get(), &srv_desc, srv_handle._handle);
@@ -924,9 +936,19 @@ std::unique_ptr<st_texture_view> st_dx12_graphics_context::create_texture_view(c
 	{
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc = {};
 		uav_desc.Format = convert_format(desc._format);
-		uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-		uav_desc.Texture2D.MipSlice = desc._first_mip;
-		uav_desc.Texture2D.PlaneSlice = desc._first_slice;
+		if (texture->_depth > 1)
+		{
+			uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+			uav_desc.Texture3D.MipSlice = desc._first_mip;
+			uav_desc.Texture3D.FirstWSlice = desc._first_slice;
+			uav_desc.Texture3D.WSize = desc._slices > 0 ? desc._slices : -1;
+		}
+		else
+		{
+			uav_desc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+			uav_desc.Texture2D.MipSlice = desc._first_mip;
+			uav_desc.Texture2D.PlaneSlice = desc._first_slice;
+		}
 
 		st_dx12_cpu_descriptor_handle uav_handle = _resource_heap->allocate_handle();
 		_device->CreateUnorderedAccessView(texture->_handle.Get(), nullptr, &uav_desc, uav_handle._handle);
@@ -1772,6 +1794,7 @@ void st_dx12_graphics_context::get_desc(const st_texture* texture_, st_texture_d
 	out_desc->_format = texture->_format;
 	out_desc->_width = texture->_width;
 	out_desc->_height = texture->_height;
+	out_desc->_depth = texture->_depth;
 	out_desc->_levels = texture->_levels;
 	out_desc->_usage = texture->_usage;
 	// TODO: Depth and others.

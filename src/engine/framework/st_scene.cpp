@@ -7,6 +7,7 @@
 #include <framework/st_scene.h>
 
 #include <entity/st_entity.h>
+#include <entity/st_atmosphere_component.h>
 #include <entity/st_sun_component.h>
 
 #include <framework/st_sim.h>
@@ -108,9 +109,16 @@ void st_scene::setup_lighting_test(class st_sim* sim)
 	light_entity->scale(0.1f);
 
 	// Add a sun.
-	std::unique_ptr<st_entity> sun_entity = std::make_unique<st_entity>();
-	std::unique_ptr<st_sun_component> sun = std::make_unique<st_sun_component>(sun_entity.get(), 120.0f, 20.0f, st_vec3f { 1.0f, 1.0f, 0.9f }, 100.0f);
-	sun_entity->add_component(std::move(sun));
-	sim->add_entity(sun_entity.get());
-	_entities.push_back(std::move(sun_entity));
+	std::unique_ptr<st_entity> world_entity = std::make_unique<st_entity>();
+	std::unique_ptr<st_sun_component> sun = std::make_unique<st_sun_component>(world_entity.get(), 120.0f, 30.0f, st_vec3f { 1.0f, 1.0f, 0.9f }, 100.0f);
+	std::unique_ptr<st_atmosphere_component> atmo = std::make_unique<st_atmosphere_component>(
+		world_entity.get(),
+		st_vec2f { 6360.0f, 6420.0f },
+		st_vec4f { 5.8e-6f, 13.5e-6f, 33.1e-6f, 7.994f },
+		st_vec4f { 21e-6f, 21e-6f, 21e-6f, 1.200f },
+		st_vec4f { 0.65e-6f, 1.881e-6f, 0.085e-6f, 25.0f });
+	world_entity->add_component(std::move(sun));
+	world_entity->add_component(std::move(atmo));
+	sim->add_entity(world_entity.get());
+	_entities.push_back(std::move(world_entity));
 }

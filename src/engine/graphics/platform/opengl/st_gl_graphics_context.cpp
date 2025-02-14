@@ -343,7 +343,7 @@ void st_gl_graphics_context::draw(const st_dynamic_drawcall& drawcall)
 
 void st_gl_graphics_context::dispatch(const st_dispatch_args& args)
 {
-	glDispatchCompute(args.thread_count_x, args.thread_count_y, args.thread_count_z);
+	glDispatchCompute(args.group_count_x, args.group_count_y, args.group_count_z);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
@@ -382,6 +382,10 @@ void st_gl_graphics_context::end_marker()
 std::unique_ptr<st_texture> st_gl_graphics_context::create_texture(const st_texture_desc& desc)
 {
 	std::unique_ptr<st_gl_texture> texture = std::make_unique<st_gl_texture>();
+	texture->_format = desc._format;
+	texture->_width = desc._width;
+	texture->_height = desc._height;
+	texture->_levels = desc._levels;
 
 	glGenTextures(1, &texture->_handle);
 
@@ -659,6 +663,9 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 
 	for (uint32_t i = 0; i < table->_srvs.size(); ++i)
 	{
+		if (i >= shader->get_uniform_count())
+			continue;
+
 		const st_gl_texture_view* view = static_cast<const st_gl_texture_view*>(table->_srvs[i]);
 		const st_gl_texture* texture = static_cast<const st_gl_texture*>(view->_desc._texture);
 		const st_gl_sampler* sampler = static_cast<const st_gl_sampler*>(table->_samplers[i]);
@@ -669,6 +676,9 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 
 	for (uint32_t i = 0; i < table->_constant_buffers.size(); ++i)
 	{
+		if (i >= shader->get_uniform_block_count())
+			continue;
+
 		const st_gl_buffer_view* view = static_cast<const st_gl_buffer_view*>(table->_constant_buffers[i]);
 		const st_gl_buffer* cb = static_cast<const st_gl_buffer*>(view->_desc._buffer);
 	
@@ -678,6 +688,9 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 	
 	for (uint32_t i = 0; i < table->_buffers.size(); ++i)
 	{
+		if (i >= shader->get_shader_storage_block_count())
+			continue;
+
 		const st_gl_buffer_view* view = static_cast<const st_gl_buffer_view*>(table->_buffers[i]);
 		const st_gl_buffer* buffer = static_cast<const st_gl_buffer*>(view->_desc._buffer);
 	

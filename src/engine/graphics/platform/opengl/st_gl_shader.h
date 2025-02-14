@@ -118,6 +118,10 @@ public:
 	const st_gl_uniform_block& get_uniform_block(uint32_t index) const;
 	const st_gl_shader_storage_block& get_shader_storage_block(uint32_t index) const;
 
+	uint32_t get_uniform_count() const { return _texture_binds.size(); }
+	uint32_t get_uniform_block_count() const { return _constant_binds.size(); }
+	uint32_t get_shader_storage_block_count() const { return _buffer_binds.size(); }
+
 	void use() const;
 	
 private:
