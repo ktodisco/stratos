@@ -3,6 +3,8 @@ project "stratos"
 	cppdialect "C++17"
 	kind "ConsoleApp"
 	warnings "Off"
+
+	flags { "MultiProcessorCompile" }
 	
 	defines {
 		"_CRT_SECURE_NO_WARNINGS",
@@ -19,7 +21,7 @@ project "stratos"
 		"../3rdparty/lua-5.3.3/src",
 		"../3rdparty/WinPixEventRuntime.1.0.170918004/Include/WinPixEventRuntime",
 		"../3rdparty/imgui-1.66",
-		"../3rdparty/assimp-4.1.0/include",
+		"../3rdparty/assimp-5.4.3/include",
 		"../3rdparty/vulkan/1.3.290.0/include",
 		
 		"./",
@@ -28,7 +30,6 @@ project "stratos"
 	libdirs {
 		"../3rdparty/glew-2.0.0/lib/Release/x64",
 		"../3rdparty/WinPixEventRuntime.1.0.170918004/bin",
-		"../3rdparty/assimp-4.1.0/lib/Release",
 		"../3rdparty/vulkan/1.3.290.0/Lib",
 	}
 	
@@ -43,14 +44,13 @@ project "stratos"
 		"dxguid",
 		"D3DCompiler",
 		"WinPixEventRuntime",
-		"assimp-vc140-mt",
+		"assimp-5.4.3",
 		"vulkan-1",
 	}
 	
 	postbuildcommands {
 		"{COPYFILE} %[../3rdparty/ttf-bitstream-vera-1.10/VeraMono.ttf] %[%{!cfg.targetdir}]",
 		"{COPYFILE} %[../3rdparty/WinPixEventRuntime.1.0.170918004/bin/WinPixEventRuntime.dll] %[%{!cfg.targetdir}]",
-		"{COPYFILE} %[../3rdparty/assimp-4.1.0/bin/Release/assimp-vc140-mt.dll] %[%{!cfg.targetdir}]",
 	}
 	
 	buildoptions {
