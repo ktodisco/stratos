@@ -15,8 +15,6 @@
 #include <windows.h>
 #include <vulkan/vulkan.hpp>
 
-#include <graphics/platform/vulkan/st_vk_framebuffer.h>
-
 #include <vector>
 
 // Ugh. Windows.
@@ -66,6 +64,22 @@ struct st_vk_buffer_view : public st_buffer_view, public st_vk_resource
 	uint32_t _element_count;
 };
 
+struct st_vk_framebuffer : public st_framebuffer, public st_vk_resource
+{
+	~st_vk_framebuffer()
+	{
+		_device->destroyFramebuffer(_framebuffer, nullptr);
+		_targets.clear();
+	}
+
+	vk::Framebuffer _framebuffer;
+	std::vector<st_texture*> _targets;
+	st_texture* _depth_stencil = nullptr;
+
+	uint32_t _width;
+	uint32_t _height;
+};
+
 struct st_vk_pipeline : public st_pipeline, public st_vk_resource
 {
 	~st_vk_pipeline() { _device->destroyPipeline(_pipeline, nullptr); }
@@ -78,7 +92,6 @@ struct st_vk_render_pass : public st_render_pass, public st_vk_resource
 	~st_vk_render_pass() { _device->destroyRenderPass(_render_pass, nullptr); }
 
 	vk::RenderPass _render_pass;
-	std::unique_ptr<class st_vk_framebuffer> _framebuffer;
 	vk::Viewport _viewport;
 };
 
@@ -146,6 +159,25 @@ struct st_vk_shader : public st_shader, public st_vk_resource
 	vk::ShaderModule _cs;
 
 	uint8_t _type = 0;
+};
+
+struct st_vk_swap_chain : public st_swap_chain, public st_vk_resource
+{
+	~st_vk_swap_chain()
+	{
+		_device->destroySwapchainKHR(_swap_chain, nullptr);
+		_instance->destroySurfaceKHR(_window_surface, nullptr);
+
+		for (uint32_t i = 0; i < _backbuffers.size(); ++i)
+			free(_backbuffers[i]);
+	}
+
+	vk::Instance* _instance;
+	vk::SurfaceKHR _window_surface;
+	vk::SwapchainKHR _swap_chain;
+	// The Vulkan swap chain object owns the backbuffer textures, so raw pointers are used here.
+	std::vector<struct st_texture*> _backbuffers;
+	std::vector<std::unique_ptr<st_texture_view>> _backbuffer_views;
 };
 
 struct st_vk_texture : public st_texture, public st_vk_resource

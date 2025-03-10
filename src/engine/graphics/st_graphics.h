@@ -450,6 +450,15 @@ struct st_sampler_desc
 	float _max_mip = FLT_MAX;
 };
 
+struct st_swap_chain_desc
+{
+	void* _window_handle = nullptr;
+	uint32_t _buffer_count = k_max_frames;
+	uint32_t _width = 0;
+	uint32_t _height = 0;
+	e_st_format _format = st_format_unknown;
+};
+
 struct st_texture_desc
 {
 	uint32_t _width = 1;
@@ -477,13 +486,44 @@ struct st_texture_view_desc
 	uint16_t _mips = 1;
 };
 
+struct st_attachment_desc
+{
+	e_st_format _format = st_format_unknown;
+	e_st_load_op _load_op = e_st_load_op::clear;
+	e_st_store_op _store_op = e_st_store_op::store;
+};
+
+struct st_render_pass_desc
+{
+	st_viewport _viewport;
+	uint32_t _attachment_count = 0;
+	st_attachment_desc* _attachments = nullptr;
+	st_attachment_desc _depth_attachment;
+};
+
+struct st_target_desc
+{
+	struct st_texture* _texture = nullptr;
+	struct st_texture_view* _view = nullptr;
+};
+
+struct st_framebuffer_desc
+{
+	struct st_render_pass* _pass = nullptr;
+	uint32_t _target_count = 0;
+	st_target_desc* _targets = nullptr;
+	st_target_desc _depth_target;
+};
+
 struct st_buffer : public st_resource {};
 struct st_buffer_view : public st_resource {};
+struct st_framebuffer : public st_resource {};
 struct st_pipeline : public st_resource {};
 struct st_render_pass : public st_resource {};
 struct st_resource_table : public st_resource {};
 struct st_sampler : public st_resource {};
 struct st_shader : public st_resource {};
+struct st_swap_chain : public st_resource {};
 struct st_texture : public st_resource {};
 struct st_texture_view : public st_resource {};
 struct st_vertex_format : public st_resource
@@ -495,13 +535,6 @@ struct st_range
 {
 	size_t begin;
 	size_t end;
-};
-
-struct st_target_desc
-{
-	class st_render_texture* _target = nullptr;
-	e_st_load_op _load_op = e_st_load_op::clear;
-	e_st_store_op _store_op = e_st_store_op::store;
 };
 
 struct st_dispatch_args

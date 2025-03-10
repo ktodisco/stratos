@@ -116,7 +116,7 @@ int main(int argc, const char** argv)
 	g_font = new st_font("VeraMono.ttf", 16.0f, 512, 512);
 
 	// Create the imgui context.
-	st_imgui::initialize(window.get(), graphics.get());
+	st_imgui::initialize(window.get(), graphics.get(), output->get_swap_chain());
 
 	scene->setup_lighting_test(sim.get());
 
@@ -124,7 +124,8 @@ int main(int argc, const char** argv)
 
 	// TODO: HACK: Commit all loaded resources.
 	graphics->end_frame();
-	graphics->swap();
+	// TODO: Break this up into commit()?
+	graphics->execute();
 
 	// Main loop:
 	while (true)

@@ -47,7 +47,6 @@ void get_pixel_format_and_type(
 
 struct st_gl_buffer : public st_buffer
 {
-	st_gl_buffer() {}
 	~st_gl_buffer()
 	{
 		if (_storage)
@@ -68,9 +67,18 @@ struct st_gl_buffer_view : public st_buffer_view
 	const st_buffer_view_desc _desc;
 };
 
+struct st_gl_framebuffer : public st_framebuffer
+{
+	~st_gl_framebuffer() { glDeleteFramebuffers(1, &_handle); }
+
+	uint32_t _target_count;
+	GLuint _handle;
+};
+
 struct st_gl_pipeline : public st_pipeline
 {
 	st_gl_pipeline() {}
+	~st_gl_pipeline() {}
 
 	union
 	{
@@ -81,8 +89,9 @@ struct st_gl_pipeline : public st_pipeline
 
 struct st_gl_render_pass : public st_render_pass
 {
-	std::unique_ptr<class st_gl_framebuffer> _framebuffer;
 	st_viewport _viewport;
+	std::vector<st_attachment_desc> _color_attachments;
+	st_attachment_desc _depth_attachment;
 };
 
 struct st_gl_resource_table : public st_resource_table
@@ -105,6 +114,14 @@ struct st_gl_sampler : public st_sampler
 	~st_gl_sampler() { glDeleteSamplers(1, &_handle); }
 
 	uint32_t _handle;
+};
+
+struct st_gl_swap_chain : public st_swap_chain
+{
+	~st_gl_swap_chain() { }
+
+	std::vector<std::unique_ptr<st_texture>> _backbuffers;
+	std::vector<std::unique_ptr<st_texture_view>> _backbuffer_views;
 };
 
 struct st_gl_texture : public st_texture

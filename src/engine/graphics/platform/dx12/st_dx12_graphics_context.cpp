@@ -11,7 +11,6 @@
 #include <core/st_core.h>
 
 #include <graphics/platform/dx12/st_dx12_conversion.h>
-#include <graphics/platform/dx12/st_dx12_framebuffer.h>
 
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/st_drawcall.h>
@@ -47,8 +46,7 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 	}
 #endif
 
-	Microsoft::WRL::ComPtr<IDXGIFactory4> factory;
-	HRESULT result = CreateDXGIFactory2(dxgi_factory_flags, __uuidof(IDXGIFactory4), (void**)&factory);
+	HRESULT result = CreateDXGIFactory2(dxgi_factory_flags, __uuidof(IDXGIFactory4), (void**)_dxgi_factory.GetAddressOf());
 
 	if (result != S_OK)
 	{
@@ -59,7 +57,7 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 	std::vector<Microsoft::WRL::ComPtr<IDXGIAdapter1>> adapters;
 	Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
 	for (uint32_t adapter_itr = 0;
-		factory->EnumAdapters1(adapter_itr, &adapter) != DXGI_ERROR_NOT_FOUND;
+		_dxgi_factory->EnumAdapters1(adapter_itr, &adapter) != DXGI_ERROR_NOT_FOUND;
 		++adapter_itr)
 	{
 		adapters.push_back(adapter);
@@ -98,39 +96,6 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 		&queue_desc,
 		__uuidof(ID3D12CommandQueue),
 		(void**)&_command_queue);
-
-	if (result != S_OK)
-	{
-		assert(false);
-	}
-
-	// Create the swap chain.
-	DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
-	swap_chain_desc.BufferCount = k_max_frames;
-	swap_chain_desc.Width = window->get_width();
-	swap_chain_desc.Height = window->get_height();
-	swap_chain_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-	swap_chain_desc.SampleDesc.Count = 1;
-	swap_chain_desc.Scaling = DXGI_SCALING_STRETCH;
-
-	Microsoft::WRL::ComPtr<IDXGISwapChain1> swap_chain;
-	result = factory->CreateSwapChainForHwnd(
-		_command_queue.Get(),
-		window->get_window_handle(),
-		&swap_chain_desc,
-		nullptr,
-		nullptr,
-		&swap_chain);
-
-	if (result != S_OK)
-	{
-		assert(false);
-	}
-
-	// Convert the swap chain to IDXGISwapChain3.
-	swap_chain.As(&_swap_chain);
 
 	if (result != S_OK)
 	{
@@ -191,25 +156,6 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 	// Map the upload buffer.
 	D3D12_RANGE map_range{0, 0};
 	_upload_buffer->Map(0, &map_range, reinterpret_cast<void**>(&_upload_buffer_head));
-
-	// Create frame resources.
-	for (uint32_t rtv_itr = 0; rtv_itr < k_max_frames; ++rtv_itr)
-	{
-		result = _swap_chain->GetBuffer(
-			rtv_itr,
-			__uuidof(ID3D12Resource),
-			(void**)&_backbuffers[rtv_itr]);
-
-		ST_NAME_DX12_OBJECT(_backbuffers[rtv_itr], str_to_wstr("Backbuffer").c_str());
-
-		if (result != S_OK)
-		{
-			assert(false);
-		}
-
-		st_dx12_cpu_descriptor_handle rtv_handle = _rtv_heap->allocate_handle();
-		_device->CreateRenderTargetView(_backbuffers[rtv_itr].Get(), nullptr, rtv_handle._handle);
-	}
 
 	for (uint32_t ca_itr = 0; ca_itr < k_max_frames; ++ca_itr)
 	{
@@ -366,23 +312,10 @@ st_dx12_graphics_context::st_dx12_graphics_context(const st_window* window)
 	create_buffer_internal(k_dynamic_buffer_size, _dynamic_index_buffer.GetAddressOf());
 
 	begin_frame();
-
-	// Create the faux backbuffer target.
-	_present_target = std::make_unique<st_render_texture>(
-		this,
-		window->get_width(),
-		window->get_height(),
-		st_format_r8g8b8a8_unorm,
-		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
-		st_texture_state_copy_source,
-		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
-		"Present Target");
 }
 
 st_dx12_graphics_context::~st_dx12_graphics_context()
 {
-	_present_target = nullptr;
-
 	_dynamic_index_buffer = nullptr;
 	_dynamic_vertex_buffer = nullptr;
 
@@ -409,17 +342,12 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 		_sampler_heap[h_itr] = nullptr;
 	}
 
-	for (uint32_t bb_itr = 0; bb_itr < k_max_frames; ++bb_itr)
-	{
-		_backbuffers[bb_itr] = nullptr;
-	}
-
 	_swap_chain = nullptr;
 	_command_queue = nullptr;
 	_device = nullptr;
+	_dxgi_factory = nullptr;
 
 #if defined(_DEBUG)
-	// Enable the D3D12 debug layer.
 	{
 		HMODULE debug_module = GetModuleHandle("Dxgidebug.dll");
 		if (debug_module)
@@ -497,8 +425,8 @@ void st_dx12_graphics_context::set_blend_factor(float r, float g, float b, float
 
 void st_dx12_graphics_context::set_render_targets(
 	uint32_t count,
-	const st_texture_view** targets,
-	const st_texture_view* depth_stencil)
+	st_texture_view** targets,
+	st_texture_view* depth_stencil)
 {
 	for (uint32_t target_itr = 0; target_itr < count; ++target_itr)
 	{
@@ -654,19 +582,88 @@ void st_dx12_graphics_context::dispatch(const st_dispatch_args& args)
 	_command_list->Dispatch(args.group_count_x, args.group_count_y, args.group_count_z);
 }
 
-st_render_texture* st_dx12_graphics_context::get_present_target() const
+std::unique_ptr<st_swap_chain> st_dx12_graphics_context::create_swap_chain(const st_swap_chain_desc& desc)
 {
-	return _present_target.get();
+	std::unique_ptr<st_dx12_swap_chain> sc = std::make_unique<st_dx12_swap_chain>();
+
+	DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
+	swap_chain_desc.BufferCount = desc._buffer_count;
+	swap_chain_desc.Width = desc._width;
+	swap_chain_desc.Height = desc._height;
+	swap_chain_desc.Format = convert_format(desc._format);
+	swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swap_chain_desc.SampleDesc.Count = 1;
+	swap_chain_desc.Scaling = DXGI_SCALING_STRETCH;
+
+	Microsoft::WRL::ComPtr<IDXGISwapChain1> swap_chain;
+	HRESULT result = _dxgi_factory->CreateSwapChainForHwnd(
+		_command_queue.Get(),
+		(HWND)desc._window_handle,
+		&swap_chain_desc,
+		nullptr,
+		nullptr,
+		sc->_swap_chain_1.GetAddressOf());
+
+	if (result != S_OK)
+	{
+		assert(false);
+	}
+
+	sc->_swap_chain_1.As(&sc->_swap_chain_2);
+	sc->_swap_chain_1.As(&sc->_swap_chain_3);
+
+	sc->_backbuffers.reserve(k_max_frames);
+	ID3D12Resource* buffers[k_max_frames];
+	for (uint32_t b = 0; b < k_max_frames; ++b)
+	{
+		result = sc->_swap_chain_3->GetBuffer(
+			b,
+			__uuidof(ID3D12Resource),
+			(void**)&buffers[b]);
+
+		ST_NAME_DX12_OBJECT(buffers[b], str_to_wstr("Backbuffer").c_str());
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+
+		std::unique_ptr<st_dx12_texture> tex = std::make_unique<st_dx12_texture>();
+		tex->_width = desc._width;
+		tex->_height = desc._height;
+		tex->_depth = 1;
+		tex->_format = desc._format;
+		tex->_levels = 1;
+		tex->_state = st_texture_state_present;
+		tex->_usage = e_st_texture_usage::color_target;
+		tex->_handle = buffers[b];
+		// Releasing the ref gained from GetBuffer here as it's now owned by the swap chain.
+		tex->_handle->Release();
+
+		st_texture_view_desc view_desc;
+		view_desc._texture = tex.get();
+		view_desc._format = desc._format;
+		view_desc._usage = e_st_view_usage::render_target;
+		std::unique_ptr<st_texture_view> view = create_texture_view(view_desc);
+
+		sc->_backbuffers.push_back(std::move(tex));
+		sc->_backbuffer_views.push_back(std::move(view));
+	}
+
+	return std::move(sc);
 }
 
-void st_dx12_graphics_context::transition_backbuffer_to_target()
+st_texture* st_dx12_graphics_context::get_backbuffer(st_swap_chain* swap_chain_, uint32_t index)
 {
-	transition(_present_target->get_texture(), st_texture_state_render_target);
+	st_dx12_swap_chain* swap_chain = static_cast<st_dx12_swap_chain*>(swap_chain_);
+	return swap_chain->_backbuffers[index].get();
 }
 
-void st_dx12_graphics_context::transition_backbuffer_to_present()
+st_texture_view* st_dx12_graphics_context::get_backbuffer_view(st_swap_chain* swap_chain_, uint32_t index)
 {
-	transition(_present_target->get_texture(), st_texture_state_copy_source);
+	st_dx12_swap_chain* swap_chain = static_cast<st_dx12_swap_chain*>(swap_chain_);
+	return swap_chain->_backbuffer_views[index].get();
 }
 
 std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(const st_texture_desc& desc)
@@ -1635,61 +1632,86 @@ std::unique_ptr<st_vertex_format> st_dx12_graphics_context::create_vertex_format
 	return std::move(vertex_format);
 }
 
-std::unique_ptr<st_render_pass> st_dx12_graphics_context::create_render_pass(
-	uint32_t count,
-	st_target_desc* targets,
-	st_target_desc* depth_stencil)
+std::unique_ptr<st_render_pass> st_dx12_graphics_context::create_render_pass(const st_render_pass_desc& desc)
 {
 	std::unique_ptr<st_dx12_render_pass> render_pass = std::make_unique<st_dx12_render_pass>();
+	render_pass->_viewport = desc._viewport;
 
-	// Naively, create the viewport from the first target.
-	if (count > 0)
-	{
-		const st_dx12_texture* t = static_cast<const st_dx12_texture*>(targets[0]._target->get_texture());
-
-		render_pass->_viewport =
-		{
-			0,
-			0,
-			float(t->_width),
-			float(t->_height),
-			0.0f,
-			1.0f,
-		};
-	}
-	else if (depth_stencil)
-	{
-		render_pass->_viewport =
-		{
-			0,
-			0,
-			float(depth_stencil->_target->get_width()),
-			float(depth_stencil->_target->get_height()),
-			0.0f,
-			1.0f,
-		};
-	}
-	render_pass->_framebuffer = std::make_unique<st_dx12_framebuffer>(
-		count,
-		targets,
-		depth_stencil);
+	for (uint32_t i = 0; i < desc._attachment_count; ++i)
+		render_pass->_color_attachments.push_back(desc._attachments[i]);
+	render_pass->_depth_attachment = desc._depth_attachment;
 
 	return std::move(render_pass);
 }
 
 void st_dx12_graphics_context::begin_render_pass(
-	st_render_pass* _pass,
+	st_render_pass* pass_,
+	st_framebuffer* framebuffer,
 	const st_clear_value* clear_values,
 	const uint8_t clear_count)
 {
-	st_dx12_render_pass* pass = static_cast<st_dx12_render_pass*>(_pass);
+	st_dx12_render_pass* pass = static_cast<st_dx12_render_pass*>(pass_);
 
 	set_viewport(pass->_viewport);
-	pass->_framebuffer->bind(this);
+
+	bind_framebuffer(framebuffer);
 }
 
-void st_dx12_graphics_context::end_render_pass(st_render_pass* pass)
+void st_dx12_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer)
 {
+	unbind_framebuffer(framebuffer);
+}
+
+std::unique_ptr<st_framebuffer> st_dx12_graphics_context::create_framebuffer(const st_framebuffer_desc& desc)
+{
+	std::unique_ptr<st_dx12_framebuffer> framebuffer = std::make_unique<st_dx12_framebuffer>();
+
+	for (uint32_t target_itr = 0; target_itr < desc._target_count; target_itr++)
+	{
+		framebuffer->_targets.push_back(desc._targets[target_itr]._texture);
+		framebuffer->_views.push_back(desc._targets[target_itr]._view);
+	}
+
+	framebuffer->_depth_stencil = desc._depth_target._texture;
+	framebuffer->_depth_stencil_view = desc._depth_target._view;
+
+	return std::move(framebuffer);
+}
+
+void st_dx12_graphics_context::bind_framebuffer(st_framebuffer* framebuffer_)
+{
+	st_dx12_framebuffer* framebuffer = static_cast<st_dx12_framebuffer*>(framebuffer_);
+
+	for (auto& t : framebuffer->_targets)
+	{
+		transition(t, st_texture_state_render_target);
+	}
+
+	const st_texture_view* ds_view = nullptr;
+	if (framebuffer->_depth_stencil)
+	{
+		transition(framebuffer->_depth_stencil, st_texture_state_depth_target);
+	}
+
+	// Bind them.
+	set_render_targets(framebuffer->_views.size(), framebuffer->_views.data(), framebuffer->_depth_stencil_view);
+}
+
+void st_dx12_graphics_context::unbind_framebuffer(st_framebuffer* framebuffer_)
+{
+	st_dx12_framebuffer* framebuffer = static_cast<st_dx12_framebuffer*>(framebuffer_);
+
+	for (auto& t : framebuffer->_targets)
+	{
+		transition(t, st_texture_state_pixel_shader_read);
+	}
+
+	if (framebuffer->_depth_stencil)
+	{
+		transition(framebuffer->_depth_stencil, st_texture_state_pixel_shader_read);
+	}
+
+	set_render_targets(0, nullptr, nullptr);
 }
 
 void st_dx12_graphics_context::begin_loading()
@@ -1734,21 +1756,6 @@ void st_dx12_graphics_context::begin_frame()
 
 void st_dx12_graphics_context::end_frame()
 {
-	_command_list->ResourceBarrier(
-		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(_backbuffers[_frame_index].Get(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_COPY_DEST));
-
-	st_dx12_texture* target = static_cast<st_dx12_texture*>(_present_target->get_texture());
-	_command_list->CopyResource(_backbuffers[_frame_index].Get(), target->_handle.Get());
-
-	_command_list->ResourceBarrier(
-		1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(_backbuffers[_frame_index].Get(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATE_PRESENT));
-
 	HRESULT result = _command_list->Close();
 	if (result != S_OK)
 	{
@@ -1756,12 +1763,31 @@ void st_dx12_graphics_context::end_frame()
 	}
 }
 
-void st_dx12_graphics_context::swap()
+void st_dx12_graphics_context::execute()
 {
 	ID3D12CommandList* command_lists[] = { _command_list.Get() };
 	_command_queue->ExecuteCommandLists(_countof(command_lists), command_lists);
 
-	_swap_chain->Present(1, 0);
+	// TODO: Better parallelization.
+	const uint64_t fence = _fence_value;
+	_command_queue->Signal(_fence.Get(), fence);
+	_fence_value++;
+
+	if (_fence->GetCompletedValue() < fence)
+	{
+		_fence->SetEventOnCompletion(fence, _fence_event);
+		WaitForSingleObject(_fence_event, INFINITE);
+	}
+}
+
+void st_dx12_graphics_context::present(st_swap_chain* swap_chain_)
+{
+	ID3D12CommandList* command_lists[] = { _command_list.Get() };
+	_command_queue->ExecuteCommandLists(_countof(command_lists), command_lists);
+
+	st_dx12_swap_chain* swap_chain = static_cast<st_dx12_swap_chain*>(swap_chain_);
+
+	swap_chain->_swap_chain_3->Present(1, 0);
 
 	// TODO: Better parallelization.
 	const uint64_t fence = _fence_value;
@@ -1774,7 +1800,16 @@ void st_dx12_graphics_context::swap()
 		WaitForSingleObject(_fence_event, INFINITE);
 	}
 
-	_frame_index = _swap_chain->GetCurrentBackBufferIndex();
+	_frame_index = swap_chain->_swap_chain_3->GetCurrentBackBufferIndex();
+}
+
+void st_dx12_graphics_context::wait_for_idle()
+{
+	if (_fence->GetCompletedValue() < _fence_value)
+	{
+		_fence->SetEventOnCompletion(_fence_value, _fence_event);
+		WaitForSingleObject(_fence_event, INFINITE);
+	}
 }
 
 void st_dx12_graphics_context::begin_marker(const std::string& marker)

@@ -15,13 +15,16 @@
 
 st_fullscreen_material::st_fullscreen_material(
 	st_render_texture* texture,
-	st_render_texture* target,
+	st_texture* target,
 	st_vertex_format* vertex_format,
 	st_render_pass* pass) :
 	st_material(e_st_render_pass_type::passthrough),
 	_texture(texture)
 {
 	st_graphics_context* context = st_graphics_context::get();
+
+	st_texture_desc target_desc;
+	context->get_desc(target, &target_desc);
 
 	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_fullscreen);
@@ -30,7 +33,7 @@ st_fullscreen_material::st_fullscreen_material(
 	desc._vertex_format = vertex_format;
 	desc._pass = pass;
 	desc._render_target_count = 1;
-	desc._render_target_formats[0] = target->get_format();
+	desc._render_target_formats[0] = target_desc._format;
 
 	_pipeline = context->create_graphics_pipeline(desc);
 

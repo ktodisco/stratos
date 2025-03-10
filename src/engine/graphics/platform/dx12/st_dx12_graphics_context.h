@@ -36,11 +36,6 @@ public:
 	void set_clear_color(float r, float g, float b, float a) override;
 	void set_blend_factor(float r, float g, float b, float a) override;
 
-	void set_render_targets(
-		uint32_t count,
-		const st_texture_view** targets,
-		const st_texture_view* depth_stencil) override;
-
 	void clear(unsigned int clear_flags) override;
 	void draw(const struct st_static_drawcall& drawcall) override;
 	void draw(const struct st_dynamic_drawcall& drawcall) override;
@@ -48,17 +43,19 @@ public:
 	// Compute.
 	void dispatch(const st_dispatch_args& args) override;
 
-	// Backbuffer.
-	st_render_texture* get_present_target() const override;
-	// TODO: These are temporary and a generic solution is needed.
-	void transition_backbuffer_to_target() override;
-	void transition_backbuffer_to_present() override;
+	// Swap chain.
+	std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) override;
+	st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) override;
+	st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) override;
+	void acquire_backbuffer(st_swap_chain* swap_chain) override {}
 
 	void begin_loading() override;
 	void end_loading() override;
 	void begin_frame() override;
 	void end_frame() override;
-	void swap() override;
+	void execute() override;
+	void present(st_swap_chain* swap_chain) override;
+	void wait_for_idle() override;
 
 	void begin_marker(const std::string& marker) override;
 	void end_marker() override;
@@ -111,15 +108,16 @@ public:
 		uint32_t attribute_count) override;
 
 	// Render passes.
-	std::unique_ptr<st_render_pass> create_render_pass(
-		uint32_t count,
-		struct st_target_desc* targets,
-		struct st_target_desc* depth_stencil) override;
+	std::unique_ptr<st_render_pass> create_render_pass(const st_render_pass_desc& desc) override;
 	void begin_render_pass(
 		st_render_pass* pass,
+		st_framebuffer* framebuffer,
 		const st_clear_value* clear_values,
 		const uint8_t clear_count) override;
-	void end_render_pass(st_render_pass* pass) override;
+	void end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer) override;
+
+	// Framebuffers.
+	std::unique_ptr<st_framebuffer> create_framebuffer(const st_framebuffer_desc& desc) override;
 
 	// Informational.
 	e_st_graphics_api get_api() { return e_st_graphics_api::dx12; }
@@ -132,17 +130,23 @@ public:
 
 private:
 
+	void set_render_targets(
+		uint32_t count,
+		st_texture_view** targets,
+		st_texture_view* depth_stencil);
+
+	void bind_framebuffer(st_framebuffer* framebuffer);
+	void unbind_framebuffer(st_framebuffer* framebuffer);
+
 	void create_buffer_internal(size_t size, ID3D12Resource** resource);
 	void destroy_target(st_dx12_descriptor target);
 
 	D3D12_VIEWPORT _viewport;
 	D3D12_RECT _scissor_rect;
 
-	std::unique_ptr<class st_render_texture> _present_target;
-
 	Microsoft::WRL::ComPtr<IDXGISwapChain3> _swap_chain;
+	Microsoft::WRL::ComPtr<IDXGIFactory4> _dxgi_factory;
 	Microsoft::WRL::ComPtr<ID3D12Device> _device;
-	Microsoft::WRL::ComPtr<ID3D12Resource> _backbuffers[k_max_frames];
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> _command_allocators[k_max_frames];
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _command_queue;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> _graphics_signature;
@@ -179,7 +183,6 @@ private:
 
 	// State tracking.
 	float _clear_color[4] = { 0 };
-	uint32_t _frame_index = 0;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE _bound_targets[8] = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE _bound_depth_stencil;

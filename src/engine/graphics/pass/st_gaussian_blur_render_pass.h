@@ -25,6 +25,9 @@ private:
 	std::unique_ptr<struct st_render_pass> _vertical_blur_pass = nullptr;
 	std::unique_ptr<struct st_render_pass> _horizontal_blur_pass = nullptr;
 
+	std::unique_ptr<struct st_framebuffer> _vertical_blur_framebuffer = nullptr;
+	std::unique_ptr<struct st_framebuffer> _horizontal_blur_framebuffer = nullptr;
+
 	std::unique_ptr<class st_render_texture> _intermediate_target = nullptr;
 
 	// Note: It's wasteful on memory to not reuse the base fullscreen pass material, but

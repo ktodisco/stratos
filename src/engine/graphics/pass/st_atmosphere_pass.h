@@ -48,6 +48,7 @@ private:
 	std::unique_ptr<struct st_pipeline> _pipeline;
 	std::unique_ptr<struct st_resource_table> _resources;
 	std::unique_ptr<struct st_render_pass> _pass;
+	std::unique_ptr<struct st_framebuffer> _framebuffer;
 
 	st_render_texture* _transmittance = nullptr;
 	st_render_texture* _target = nullptr;
@@ -72,6 +73,7 @@ private:
 	std::unique_ptr<struct st_pipeline> _pipeline;
 	std::unique_ptr<struct st_resource_table> _resources;
 	std::unique_ptr<struct st_render_pass> _pass;
+	std::unique_ptr<struct st_framebuffer> _framebuffer;
 
 	st_render_texture* _transmittance = nullptr;
 	st_render_texture* _sky_view = nullptr;

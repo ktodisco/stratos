@@ -59,14 +59,28 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		_lbv = context->create_buffer_view(desc);
 	}
 
-	st_target_desc targets[] =
 	{
-		{ output_buffer, e_st_load_op::clear, e_st_store_op::store }
-	};
-	_pass = context->create_render_pass(
-		1,
-		targets,
-		nullptr);
+		st_attachment_desc attachments[] =
+		{
+			{ output_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store }
+		};
+		st_render_pass_desc desc;
+		desc._attachments = attachments;
+		desc._attachment_count = std::size(attachments);
+		desc._viewport = { 0.0f, 0.0f, float(output_buffer->get_width()), float(output_buffer->get_height()), 0.0f, 1.0f };
+
+		_pass = context->create_render_pass(desc);
+	}
+
+	{
+		st_target_desc target = { output_buffer->get_texture(), output_buffer->get_target_view() };
+		st_framebuffer_desc desc;
+		desc._pass = _pass.get();
+		desc._targets = &target;
+		desc._target_count = 1;
+
+		_framebuffer = context->create_framebuffer(desc);
+	}
 
 	_material = std::make_unique<st_deferred_light_material>(
 		albedo_buffer,
@@ -142,7 +156,7 @@ void st_deferred_light_render_pass::render(
 
 	// This must come after bind, because bind is going to issue barriers, which on some
 	// platforms cannot happen during a render pass.
-	context->begin_render_pass(_pass.get(), clears, std::size(clears));
+	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -152,5 +166,5 @@ void st_deferred_light_render_pass::render(
 
 	context->draw(draw_call);
 
-	context->end_render_pass(_pass.get());
+	context->end_render_pass(_pass.get(), _framebuffer.get());
 }

@@ -177,11 +177,26 @@ st_atmosphere_sky_pass::st_atmosphere_sky_pass(st_render_texture* transmittance,
 	}
 
 	{
-		st_target_desc targets[] =
+		st_attachment_desc attachments[] =
 		{
-			{ target, e_st_load_op::clear, e_st_store_op::store },
+			{ target->get_format(), e_st_load_op::clear, e_st_store_op::store }
 		};
-		_pass = context->create_render_pass(1, targets, nullptr);
+		st_render_pass_desc desc;
+		desc._attachments = attachments;
+		desc._attachment_count = std::size(attachments);
+		desc._viewport = { 0.0f, 0.0f, float(target->get_width()), float(target->get_height()), 0.0f, 1.0f };
+
+		_pass = context->create_render_pass(desc);
+	}
+
+	{
+		st_target_desc target = { _target->get_texture(), _target->get_target_view() };
+		st_framebuffer_desc desc;
+		desc._pass = _pass.get();
+		desc._targets = &target;
+		desc._target_count = 1;
+
+		_framebuffer = context->create_framebuffer(desc);
 	}
 
 	{
@@ -236,7 +251,7 @@ void st_atmosphere_sky_pass::render(st_graphics_context* context, const st_frame
 		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
 	};
 
-	context->begin_render_pass(_pass.get(), clears, std::size(clears));
+	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -246,7 +261,7 @@ void st_atmosphere_sky_pass::render(st_graphics_context* context, const st_frame
 
 	context->draw(draw_call);
 
-	context->end_render_pass(_pass.get());
+	context->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 st_atmosphere_render_pass::st_atmosphere_render_pass(
@@ -274,12 +289,28 @@ st_atmosphere_render_pass::st_atmosphere_render_pass(
 	}
 
 	{
-		st_target_desc targets[] =
+		st_attachment_desc attachments[] =
 		{
-			{ target, e_st_load_op::load, e_st_store_op::store },
+			{ target->get_format(), e_st_load_op::load, e_st_store_op::store }
 		};
-		st_target_desc ds = { depth, e_st_load_op::load, e_st_store_op::dont_care };
-		_pass = context->create_render_pass(1, targets, &ds);
+		st_render_pass_desc desc;
+		desc._attachments = attachments;
+		desc._attachment_count = std::size(attachments);
+		desc._depth_attachment = { depth->get_format(), e_st_load_op::load, e_st_store_op::dont_care };
+		desc._viewport = { 0.0f, 0.0f, float(target->get_width()), float(target->get_height()), 0.0f, 1.0f };
+
+		_pass = context->create_render_pass(desc);
+	}
+
+	{
+		st_target_desc t_desc = { target->get_texture(), target->get_target_view() };
+		st_framebuffer_desc desc;
+		desc._pass = _pass.get();
+		desc._targets = &t_desc;
+		desc._target_count = 1;
+		desc._depth_target = { depth->get_texture(), depth->get_target_view() };
+
+		_framebuffer = context->create_framebuffer(desc);
 	}
 
 	{
@@ -345,7 +376,7 @@ void st_atmosphere_render_pass::render(class st_graphics_context* context, const
 	context->set_pipeline(_pipeline.get());
 	context->bind_resources(_resources.get());
 
-	context->begin_render_pass(_pass.get(), nullptr, 0);
+	context->begin_render_pass(_pass.get(), _framebuffer.get(), nullptr, 0);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -355,5 +386,5 @@ void st_atmosphere_render_pass::render(class st_graphics_context* context, const
 
 	context->draw(draw_call);
 
-	context->end_render_pass(_pass.get());
+	context->end_render_pass(_pass.get(), _framebuffer.get());
 }

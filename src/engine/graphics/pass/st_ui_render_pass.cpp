@@ -19,18 +19,34 @@
 #include <gui/st_font.h>
 #include <gui/st_imgui.h>
 
-st_ui_render_pass::st_ui_render_pass()
+st_ui_render_pass::st_ui_render_pass(st_swap_chain* swap_chain)
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_target_desc targets[] =
+	st_texture_desc target_desc;
+	context->get_desc(context->get_backbuffer(swap_chain, 0), &target_desc);
+	_target_format = target_desc._format;
+
 	{
-		{ st_graphics_context::get()->get_present_target(), e_st_load_op::load, e_st_store_op::store }
-	};
-	_pass = context->create_render_pass(
-		1,
-		targets,
-		nullptr);
+		st_attachment_desc attachment = { _target_format, e_st_load_op::load, e_st_store_op::store };
+		st_render_pass_desc desc;
+		desc._attachments = &attachment;
+		desc._attachment_count = 1;
+		desc._viewport = { 0.0f, 0.0f, float(target_desc._width), float(target_desc._height), 0.0f, 1.0f };
+
+		_pass = context->create_render_pass(desc);
+	}
+
+	for (uint32_t i = 0; i < std::size(_framebuffers); ++i)
+	{
+		st_target_desc target = { context->get_backbuffer(swap_chain, i), context->get_backbuffer_view(swap_chain, i) };
+		st_framebuffer_desc desc;
+		desc._pass = _pass.get();
+		desc._targets = &target;
+		desc._target_count = 1;
+
+		_framebuffers[i] = context->create_framebuffer(desc);
+	}
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
@@ -67,11 +83,11 @@ void st_ui_render_pass::render(st_graphics_context* context, const st_frame_para
 	st_mat4f view;
 	view.make_lookat_rh(st_vec3f::z_vector(), -st_vec3f::z_vector(), st_vec3f::y_vector());
 
-	st_imgui::draw();
+	st_imgui::draw(params);
 
-	context->begin_render_pass(_pass.get(), nullptr, 0);
+	context->begin_render_pass(_pass.get(), _framebuffers[params->_frame_index].get(), nullptr, 0);
 	draw_dynamic(context, params, ortho, view);
-	context->end_render_pass(_pass.get());
+	context->end_render_pass(_pass.get(), _framebuffers[params->_frame_index].get());
 }
 
 void st_ui_render_pass::draw_dynamic(
@@ -98,5 +114,5 @@ void st_ui_render_pass::get_target_formats(struct st_graphics_state_desc& desc)
 {
 	desc._pass = _pass.get();
 	desc._render_target_count = 1;
-	desc._render_target_formats[0] = st_graphics_context::get()->get_present_target()->get_format();
+	desc._render_target_formats[0] = _target_format;
 }

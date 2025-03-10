@@ -15,23 +15,39 @@
 #include <graphics/st_render_texture.h>
 
 st_passthrough_render_pass::st_passthrough_render_pass(
-	st_render_texture* source_buffer)
+	st_render_texture* source_buffer,
+	st_swap_chain* swap_chain)
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_target_desc targets[] =
+	st_texture_desc target_desc;
+	context->get_desc(context->get_backbuffer(swap_chain, 0), &target_desc);
+
 	{
-		{ st_graphics_context::get()->get_present_target(), e_st_load_op::clear, e_st_store_op::store }
-	};
-	_pass = context->create_render_pass(
-		1,
-		targets,
-		nullptr);
+		st_attachment_desc attachment = { target_desc._format, e_st_load_op::clear, e_st_store_op::store };
+		st_render_pass_desc desc;
+		desc._attachments = &attachment;
+		desc._attachment_count = 1;
+		desc._viewport = { 0.0f, 0.0f, float(target_desc._width), float(target_desc._height), 0.0f, 1.0f };
+
+		_pass = context->create_render_pass(desc);
+	}
+
+	for (uint32_t i = 0; i < std::size(_framebuffers); ++i)
+	{
+		st_target_desc target = { context->get_backbuffer(swap_chain, i), context->get_backbuffer_view(swap_chain, i) };
+		st_framebuffer_desc desc;
+		desc._pass = _pass.get();
+		desc._targets = &target;
+		desc._target_count = 1;
+
+		_framebuffers[i] = context->create_framebuffer(desc);
+	}
 
 	// Set up the fullscreen material and state.
 	_material = std::make_unique<st_fullscreen_material>(
 		source_buffer,
-		st_graphics_context::get()->get_present_target(),
+		context->get_backbuffer(swap_chain, 0),
 		_vertex_format.get(),
 		_pass.get());
 }
@@ -57,7 +73,7 @@ void st_passthrough_render_pass::render(
 	{
 		st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 	};
-	context->begin_render_pass(_pass.get(), clears, std::size(clears));
+	context->begin_render_pass(_pass.get(), _framebuffers[params->_frame_index].get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -67,5 +83,5 @@ void st_passthrough_render_pass::render(
 
 	context->draw(draw_call);
 
-	context->end_render_pass(_pass.get());
+	context->end_render_pass(_pass.get(), _framebuffers[params->_frame_index].get());
 }

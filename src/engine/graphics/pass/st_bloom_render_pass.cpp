@@ -33,19 +33,34 @@ st_bloom_render_pass::st_bloom_render_pass(
 			st_vec4f::zero_vector(),
 			"Bloom Threshold");
 
-		st_target_desc targets[] =
+		st_attachment_desc attachments[] =
 		{
-			{ _threshold_target.get(), e_st_load_op::clear, e_st_store_op::store }
+			{ _threshold_target->get_format(), e_st_load_op::clear, e_st_store_op::store }
 		};
-		_threshold_pass = context->create_render_pass(1, targets, nullptr);
+		st_render_pass_desc desc;
+		desc._attachments = attachments;
+		desc._attachment_count = std::size(attachments);
+		desc._viewport = { 0.0f, 0.0f, float(_threshold_target->get_width()), float(_threshold_target->get_height()), 0.0f, 1.0f };
 
-		_threshold_material = std::make_unique<st_bloom_threshold_material>(
-			source_buffer,
-			_threshold_target.get(),
-			_vertex_format.get(),
-			_threshold_pass.get(),
-			100.0f);
+		_threshold_pass = context->create_render_pass(desc);
 	}
+
+	{
+		st_target_desc target = { _threshold_target->get_texture(), _threshold_target->get_target_view() };
+		st_framebuffer_desc desc;
+		desc._pass = _threshold_pass.get();
+		desc._targets = &target;
+		desc._target_count = 1;
+
+		_threshold_framebuffer = context->create_framebuffer(desc);
+	}
+
+	_threshold_material = std::make_unique<st_bloom_threshold_material>(
+		source_buffer,
+		_threshold_target.get(),
+		_vertex_format.get(),
+		_threshold_pass.get(),
+		100.0f);
 
 	for (uint32_t d = 0; d < k_num_downsamples; ++d)
 	{
@@ -74,11 +89,24 @@ st_bloom_render_pass::st_bloom_render_pass(
 	// Create the downsample passes.
 	for (uint32_t d = 0; d < k_num_downsamples; ++d)
 	{
-		st_target_desc targets[] =
+		st_attachment_desc attachments[] =
 		{
-			{ _downsample_targets[d].get(), e_st_load_op::clear, e_st_store_op::store }
+			{ _downsample_targets[d]->get_format(), e_st_load_op::clear, e_st_store_op::store }
 		};
-		_downsample_passes[d] = context->create_render_pass(1, targets, nullptr);
+		st_render_pass_desc pass_desc;
+		pass_desc._attachments = attachments;
+		pass_desc._attachment_count = std::size(attachments);
+		pass_desc._viewport = { 0.0f, 0.0f, float(_downsample_targets[d]->get_width()), float(_downsample_targets[d]->get_height()), 0.0f, 1.0f };
+
+		_downsample_passes[d] = context->create_render_pass(pass_desc);
+
+		st_target_desc target = { _downsample_targets[d]->get_texture(), _downsample_targets[d]->get_target_view() };
+		st_framebuffer_desc framebuffer_desc;
+		framebuffer_desc._pass = _downsample_passes[d].get();
+		framebuffer_desc._targets = &target;
+		framebuffer_desc._target_count = 1;
+
+		_downsample_framebuffers[d] = context->create_framebuffer(framebuffer_desc);
 
 		_downsample_materials[d] = std::make_unique<st_bloom_downsample_material>(
 			(d == 0) ? _threshold_target.get() : _downsample_targets[d - 1].get(),
@@ -105,11 +133,24 @@ st_bloom_render_pass::st_bloom_render_pass(
 	// Create the upsample passes.
 	for (uint32_t u = 0; u < (k_num_downsamples - 1); ++u)
 	{
-		st_target_desc targets[] =
+		st_attachment_desc attachments[] =
 		{
-			{ _upsample_targets[u + 1].get(), e_st_load_op::clear, e_st_store_op::store }
+			{ _upsample_targets[u + 1]->get_format(), e_st_load_op::clear, e_st_store_op::store }
 		};
-		_upsample_passes[u] = context->create_render_pass(1, targets, nullptr);
+		st_render_pass_desc pass_desc;
+		pass_desc._attachments = attachments;
+		pass_desc._attachment_count = std::size(attachments);
+		pass_desc._viewport = { 0.0f, 0.0f, float(_upsample_targets[u + 1]->get_width()), float(_upsample_targets[u + 1]->get_height()), 0.0f, 1.0f };
+
+		_upsample_passes[u] = context->create_render_pass(pass_desc);
+
+		st_target_desc target = { _upsample_targets[u + 1]->get_texture(), _upsample_targets[u + 1]->get_target_view() };
+		st_framebuffer_desc framebuffer_desc;
+		framebuffer_desc._pass = _upsample_passes[u].get();
+		framebuffer_desc._targets = &target;
+		framebuffer_desc._target_count = 1;
+
+		_upsample_framebuffers[u] = context->create_framebuffer(framebuffer_desc);
 
 		_upsample_materials[u] = std::make_unique<st_bloom_upsample_material>(
 			(u == 0) ? _upsample_targets[u].get() : _downsample_targets[k_num_downsamples - 1 - u].get(),
@@ -159,7 +200,7 @@ void st_bloom_render_pass::render(
 			st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
 		};
 
-		context->begin_render_pass(_threshold_pass.get(), clears, std::size(clears));
+		context->begin_render_pass(_threshold_pass.get(), _threshold_framebuffer.get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -169,7 +210,7 @@ void st_bloom_render_pass::render(
 
 		context->draw(draw_call);
 
-		context->end_render_pass(_threshold_pass.get());
+		context->end_render_pass(_threshold_pass.get(), _threshold_framebuffer.get());
 	}
 
 	// Downsamples.
@@ -185,7 +226,7 @@ void st_bloom_render_pass::render(
 			st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
 		};
 
-		context->begin_render_pass(_downsample_passes[d].get(), clears, std::size(clears));
+		context->begin_render_pass(_downsample_passes[d].get(), _downsample_framebuffers[d].get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -195,7 +236,7 @@ void st_bloom_render_pass::render(
 
 		context->draw(draw_call);
 
-		context->end_render_pass(_downsample_passes[d].get());
+		context->end_render_pass(_downsample_passes[d].get(), _downsample_framebuffers[d].get());
 	}
 
 	// Blur and upsample.
@@ -213,7 +254,7 @@ void st_bloom_render_pass::render(
 			st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
 		};
 
-		context->begin_render_pass(_upsample_passes[u].get(), clears, std::size(clears));
+		context->begin_render_pass(_upsample_passes[u].get(), _upsample_framebuffers[u].get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -223,7 +264,7 @@ void st_bloom_render_pass::render(
 
 		context->draw(draw_call);
 
-		context->end_render_pass(_upsample_passes[u].get());
+		context->end_render_pass(_upsample_passes[u].get(), _upsample_framebuffers[u].get());
 	}
 
 	// Finally, blur the last target.

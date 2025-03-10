@@ -24,8 +24,21 @@ st_directional_shadow_pass::st_directional_shadow_pass(st_render_texture* target
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_target_desc ds_target = { target, e_st_load_op::clear, e_st_store_op::store };
-	_pass = context->create_render_pass(0, nullptr, &ds_target);
+	{
+		st_render_pass_desc desc;
+		desc._depth_attachment = { target->get_format(), e_st_load_op::clear, e_st_store_op::store };
+		desc._viewport = { 0.0f, 0.0f, float(target->get_width()), float(target->get_height()), 0.0f, 1.0f };
+
+		_pass = context->create_render_pass(desc);
+	}
+
+	{
+		st_framebuffer_desc desc;
+		desc._pass = _pass.get();
+		desc._depth_target = { target->get_texture(), target->get_target_view() };
+
+		_framebuffer = context->create_framebuffer(desc);
+	}
 }
 
 st_directional_shadow_pass::~st_directional_shadow_pass()
@@ -44,7 +57,7 @@ void st_directional_shadow_pass::render(st_graphics_context* context, const st_f
 		st_depth_stencil_clear_value{ 1.0f, 0 }
 	};
 
-	context->begin_render_pass(_pass.get(), clears, std::size(clears));
+	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 	context->clear(st_clear_flag_depth);
 
 	for (auto& d : params->_static_drawcalls)
@@ -65,7 +78,7 @@ void st_directional_shadow_pass::render(st_graphics_context* context, const st_f
 		context->draw(d);
 	}
 
-	context->end_render_pass(_pass.get());
+	context->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 void st_directional_shadow_pass::get_target_formats(st_graphics_state_desc& desc)

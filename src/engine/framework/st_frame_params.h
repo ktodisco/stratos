@@ -64,4 +64,7 @@ struct st_frame_params
 
 	// Somewhat of a hack to make collision stable when stepping with a paused simulation.
 	bool _single_step = false;
+
+	// Graphics state.
+	uint32_t _frame_index = 0;
 };

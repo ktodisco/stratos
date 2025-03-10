@@ -43,12 +43,16 @@ public:
 
 	void get_target_formats(e_st_render_pass_type type, struct st_graphics_state_desc& desc);
 
+	st_swap_chain* get_swap_chain() const { return _swap_chain.get(); }
+
 	static st_output* get() { return _this; }
 
 private:
 
 	const st_window* _window;
 	class st_graphics_context* _graphics_context;
+
+	std::unique_ptr<struct st_swap_chain> _swap_chain;
 
 	// Atmospherics.
 	std::unique_ptr<class st_render_texture> _transmittance;

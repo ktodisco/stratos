@@ -31,11 +31,6 @@ public:
 	void set_clear_color(float r, float g, float b, float a) override;
 	void set_blend_factor(float r, float g, float b, float a) override {}
 
-	void set_render_targets(
-		uint32_t count,
-		const st_texture_view** targets,
-		const st_texture_view* depth_stencil) override;
-
 	void clear(unsigned int clear_flags) override;
 	void draw(const struct st_static_drawcall& drawcall) override;
 	void draw(const struct st_dynamic_drawcall& drawcall) override;
@@ -43,17 +38,19 @@ public:
 	// Compute.
 	void dispatch(const st_dispatch_args& args) override;
 
-	// Backbuffer.
-	class st_render_texture* get_present_target() const override { return _present_target.get(); };
-	// TODO: These are temporary and a generic solution is needed.
-	void transition_backbuffer_to_target() override {};
-	void transition_backbuffer_to_present() override {};
+	// Swap chain.
+	std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) override;
+	st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) override;
+	st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) override;
+	void acquire_backbuffer(st_swap_chain* swap_chain) override {}
 
 	void begin_loading() override {};
 	void end_loading() override {};
 	void begin_frame() override {};
 	void end_frame() override {};
-	void swap() override;
+	void execute() override {};
+	void present(st_swap_chain* swap_chain) override;
+	void wait_for_idle() override;
 
 	void begin_marker(const std::string& marker) override;
 	void end_marker() override;
@@ -105,21 +102,24 @@ public:
 		uint32_t attribute_count) override;
 
 	// Render passes.
-	std::unique_ptr<st_render_pass> create_render_pass(
-		uint32_t count,
-		struct st_target_desc* targets,
-		struct st_target_desc* depth_stencil) override;
+	std::unique_ptr<st_render_pass> create_render_pass(const st_render_pass_desc& desc) override;
 	void begin_render_pass(
 		st_render_pass* pass,
+		st_framebuffer* framebuffer,
 		const st_clear_value* clear_values,
 		const uint8_t clear_count) override;
-	void end_render_pass(st_render_pass* pass) override;
+	void end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer) override;
+
+	// Framebuffers.
+	std::unique_ptr<st_framebuffer> create_framebuffer(const st_framebuffer_desc& desc) override;
 
 	// Informational.
 	e_st_graphics_api get_api() { return e_st_graphics_api::opengl; }
 	void get_desc(const st_texture* texture, st_texture_desc* out_desc) override;
 
 private:
+	void bind_framebuffer(st_framebuffer* framebuffer);
+	void unbind_framebuffer(st_framebuffer* framebuffer);
 	void set_depth_state(bool enable, GLenum func);
 	void set_cull_state(bool enable, GLenum mode);
 	void set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor);
@@ -128,8 +128,6 @@ private:
 	const class st_gl_shader* get_bound_shader() const { return _bound_shader; }
 
 private:
-	std::unique_ptr<class st_render_texture> _present_target;
-	std::unique_ptr<class st_gl_framebuffer> _present_framebuffer;
 
 	HDC _device_context;
 	HGLRC _gl_context;

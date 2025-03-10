@@ -23,11 +23,6 @@ public:
 	virtual void set_clear_color(float r, float g, float b, float a) = 0;
 	virtual void set_blend_factor(float r, float g, float b, float a) = 0;
 
-	virtual void set_render_targets(
-		uint32_t count,
-		const st_texture_view** targets,
-		const st_texture_view* depth_stencil) = 0;
-
 	virtual void clear(unsigned int clear_flags) = 0;
 	virtual void draw(const struct st_static_drawcall& drawcall) = 0;
 	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
@@ -35,17 +30,19 @@ public:
 	// Compute.
 	virtual void dispatch(const st_dispatch_args& args) = 0;
 
-	// Backbuffer.
-	virtual class st_render_texture* get_present_target() const = 0;
-	// TODO: These are temporary and a generic solution is needed.
-	virtual void transition_backbuffer_to_target() = 0;
-	virtual void transition_backbuffer_to_present() = 0;
+	// Swap chain.
+	virtual std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) = 0;
+	virtual st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) = 0;
+	virtual st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) = 0;
+	virtual void acquire_backbuffer(st_swap_chain* swap_chain) = 0;
 
 	virtual void begin_loading() = 0;
 	virtual void end_loading() = 0;
 	virtual void begin_frame() = 0;
 	virtual void end_frame() = 0;
-	virtual void swap() = 0;
+	virtual void execute() = 0;
+	virtual void present(st_swap_chain* swap_chain) = 0;
+	virtual void wait_for_idle() = 0;
 
 	virtual void begin_marker(const std::string& marker) = 0;
 	virtual void end_marker() = 0;
@@ -102,23 +99,27 @@ public:
 		uint32_t attribute_count) = 0;
 
 	// Render passes.
-	virtual std::unique_ptr<st_render_pass> create_render_pass(
-		uint32_t count,
-		struct st_target_desc* targets,
-		struct st_target_desc* depth_stencil) = 0;
+	virtual std::unique_ptr<st_render_pass> create_render_pass(const st_render_pass_desc& desc) = 0;
 	virtual void begin_render_pass(
 		st_render_pass* pass,
+		st_framebuffer* framebuffer,
 		const st_clear_value* clear_values,
 		const uint8_t clear_count) = 0;
-	virtual void end_render_pass(st_render_pass* pass) = 0;
+	virtual void end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer) = 0;
+
+	// Framebuffers.
+	virtual std::unique_ptr<st_framebuffer> create_framebuffer(const st_framebuffer_desc& desc) = 0;
 
 	// Informational.
 	virtual e_st_graphics_api get_api() = 0;
 	virtual void get_desc(const st_texture* texture, st_texture_desc* out_desc) = 0;
 
+	uint32_t get_frame_index() const { return _frame_index; }
+
 	static std::unique_ptr<st_graphics_context> create(e_st_graphics_api api, const class st_window* window);
 	static st_graphics_context* get();
 
 protected:
+	uint32_t _frame_index = 0;
 	static st_graphics_context* _this;
 };

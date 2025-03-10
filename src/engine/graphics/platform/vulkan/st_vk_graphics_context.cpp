@@ -208,7 +208,6 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 	_gpu.getQueueFamilyProperties(&queue_family_count, queue_family_properties.data());
 
 	// Enumerate the queues, and select the one that supports graphics.
-	uint32_t _queue_family_index = UINT_MAX;
 	for (auto& properties : queue_family_properties)
 	{
 		std::cout << "Queue family: " << vk::to_string(properties.queueFlags) << std::endl;
@@ -264,47 +263,6 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 
 	VK_VALIDATE(_device.createFence(&fence_info, nullptr, &_fence));
 	VK_VALIDATE(_device.createFence(&fence_info, nullptr, &_acquire_fence));
-
-	// Create the swap chain.
-	vk::Win32SurfaceCreateInfoKHR win32_surface_info = vk::Win32SurfaceCreateInfoKHR()
-		.setHinstance(GetModuleHandle(NULL))
-		.setHwnd(window->get_window_handle());
-
-	VK_VALIDATE(_instance.createWin32SurfaceKHR(&win32_surface_info, nullptr, &_window_surface));
-
-	uint32_t surface_format_count;
-	VK_VALIDATE(_gpu.getSurfaceFormatsKHR(_window_surface, &surface_format_count, nullptr));
-
-	std::vector<vk::SurfaceFormatKHR> surface_formats;
-	surface_formats.resize(surface_format_count);
-	VK_VALIDATE(_gpu.getSurfaceFormatsKHR(_window_surface, &surface_format_count, surface_formats.data()));
-
-	vk::Bool32 surface_support = false;
-	VK_VALIDATE(_gpu.getSurfaceSupportKHR(_queue_family_index, _window_surface, &surface_support));
-	assert(surface_support);
-
-	vk::SwapchainCreateInfoKHR swap_chain_info = vk::SwapchainCreateInfoKHR()
-		.setSurface(_window_surface)
-		.setMinImageCount(k_max_frames)
-		.setImageFormat(vk::Format::eR8G8B8A8Srgb)
-		.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear)
-		.setImageExtent(vk::Extent2D(window->get_width(), window->get_height()))
-		.setImageArrayLayers(1)
-		.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst)
-		.setImageSharingMode(vk::SharingMode::eExclusive)
-		.setQueueFamilyIndexCount(1)
-		.setPQueueFamilyIndices(&_queue_family_index)
-		.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity)
-		.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-		.setPresentMode(vk::PresentModeKHR::eFifo)
-		.setClipped(false);
-
-	VK_VALIDATE(_device.createSwapchainKHR(&swap_chain_info, nullptr, &_swap_chain));
-
-	uint32_t backbuffer_count;
-	VK_VALIDATE(_device.getSwapchainImagesKHR(_swap_chain, &backbuffer_count, nullptr));
-	assert(backbuffer_count = k_max_frames);
-	VK_VALIDATE(_device.getSwapchainImagesKHR(_swap_chain, &backbuffer_count, &_backbuffers[0]));
 
 	// Create the generic upload buffer.
 	vk::BufferCreateInfo buffer_info = vk::BufferCreateInfo()
@@ -509,48 +467,6 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 	}
 
 	begin_frame();
-
-	// Create the faux backbuffer target.
-	_present_target = std::make_unique<st_render_texture>(
-		this,
-		window->get_width(),
-		window->get_height(),
-		st_format_r8g8b8a8_unorm,
-		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
-		st_texture_state_copy_source,
-		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
-		"Backbuffer");
-
-	// Transition the backbuffer images from the undefined state.
-	for (uint32_t i = 0; i < backbuffer_count; ++i)
-	{
-		vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-			.setAspectMask(vk::ImageAspectFlagBits::eColor)
-			.setBaseArrayLayer(0)
-			.setLayerCount(1)
-			.setBaseMipLevel(0)
-			.setLevelCount(1);
-
-		vk::ImageMemoryBarrier barriers[] =
-		{
-			vk::ImageMemoryBarrier()
-			.setImage(_backbuffers[i])
-			.setOldLayout(vk::ImageLayout::eUndefined)
-			.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
-			.setSubresourceRange(range),
-		};
-
-		_command_buffers[st_command_buffer_loading].pipelineBarrier(
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::DependencyFlags(),
-			0,
-			nullptr,
-			0,
-			nullptr,
-			1,
-			barriers);
-	}
 }
 
 st_vk_graphics_context::~st_vk_graphics_context()
@@ -558,13 +474,8 @@ st_vk_graphics_context::~st_vk_graphics_context()
 	VK_VALIDATE(_queue.waitIdle());
 	VK_VALIDATE(_device.waitIdle());
 
-	_present_target = nullptr;
-
 	_dynamic_index_buffer = nullptr;
 	_dynamic_vertex_buffer = nullptr;
-
-	_device.destroySwapchainKHR(_swap_chain, nullptr);
-	_instance.destroySurfaceKHR(_window_surface, nullptr);
 
 	_device.destroyDescriptorPool(_descriptor_pool, nullptr);
 	_device.destroyPipelineLayout(_compute_signature, nullptr);
@@ -692,21 +603,108 @@ void st_vk_graphics_context::dispatch(const st_dispatch_args& args)
 	_command_buffers[st_command_buffer_graphics].dispatch(args.group_count_x, args.group_count_y, args.group_count_z);
 }
 
-st_render_texture* st_vk_graphics_context::get_present_target() const
+std::unique_ptr<st_swap_chain> st_vk_graphics_context::create_swap_chain(const st_swap_chain_desc& desc)
 {
-	return _present_target.get();
+	std::unique_ptr<st_vk_swap_chain> swap_chain = std::make_unique<st_vk_swap_chain>();
+	swap_chain->_device = &_device;
+	swap_chain->_instance = &_instance;
+
+	vk::Win32SurfaceCreateInfoKHR win32_surface_info = vk::Win32SurfaceCreateInfoKHR()
+		.setHinstance(GetModuleHandle(NULL))
+		.setHwnd((HWND)desc._window_handle);
+
+	VK_VALIDATE(_instance.createWin32SurfaceKHR(&win32_surface_info, nullptr, &swap_chain->_window_surface));
+
+	uint32_t surface_format_count;
+	VK_VALIDATE(_gpu.getSurfaceFormatsKHR(swap_chain->_window_surface, &surface_format_count, nullptr));
+
+	std::vector<vk::SurfaceFormatKHR> surface_formats;
+	surface_formats.resize(surface_format_count);
+	VK_VALIDATE(_gpu.getSurfaceFormatsKHR(swap_chain->_window_surface, &surface_format_count, surface_formats.data()));
+
+	vk::Bool32 surface_support = false;
+	VK_VALIDATE(_gpu.getSurfaceSupportKHR(_queue_family_index, swap_chain->_window_surface, &surface_support));
+	assert(surface_support);
+
+	vk::SwapchainCreateInfoKHR swap_chain_info = vk::SwapchainCreateInfoKHR()
+		.setSurface(swap_chain->_window_surface)
+		.setMinImageCount(desc._buffer_count)
+		.setImageFormat(convert_format(desc._format))
+		.setImageColorSpace(vk::ColorSpaceKHR::eSrgbNonlinear)
+		.setImageExtent(vk::Extent2D(desc._width, desc._height))
+		.setImageArrayLayers(1)
+		.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+		.setImageSharingMode(vk::SharingMode::eExclusive)
+		.setQueueFamilyIndexCount(1)
+		.setPQueueFamilyIndices(&_queue_family_index)
+		.setPreTransform(vk::SurfaceTransformFlagBitsKHR::eIdentity)
+		.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
+		.setPresentMode(vk::PresentModeKHR::eFifo)
+		.setClipped(false);
+
+	VK_VALIDATE(_device.createSwapchainKHR(&swap_chain_info, nullptr, &swap_chain->_swap_chain));
+	uint32_t backbuffer_count;
+	VK_VALIDATE(_device.getSwapchainImagesKHR(swap_chain->_swap_chain, &backbuffer_count, nullptr));
+	assert(backbuffer_count = desc._buffer_count);
+
+	vk::Image* buffers = static_cast<vk::Image*>(alloca(sizeof(vk::Image) * backbuffer_count));
+	VK_VALIDATE(_device.getSwapchainImagesKHR(swap_chain->_swap_chain, &backbuffer_count, buffers));
+
+	swap_chain->_backbuffers.reserve(backbuffer_count);
+	swap_chain->_backbuffer_views.reserve(backbuffer_count);
+	for (uint32_t i = 0; i < backbuffer_count; ++i)
+	{
+		st_vk_texture* buffer = (st_vk_texture*)malloc(sizeof(st_vk_texture));
+		memset(buffer, 0, sizeof(st_vk_texture));
+		buffer->_device = &_device;
+		buffer->_format = desc._format;
+		buffer->_width = desc._width;
+		buffer->_height = desc._height;
+		buffer->_levels = 1;
+		buffer->_usage = e_st_texture_usage::color_target;
+		buffer->_handle = buffers[i];
+
+		st_texture_view_desc view_desc;
+		view_desc._texture = buffer;
+		view_desc._format = desc._format;
+		view_desc._usage = e_st_view_usage::render_target;
+
+		std::unique_ptr<st_texture_view> view = create_texture_view(view_desc);
+
+		swap_chain->_backbuffers.push_back(buffer);
+		swap_chain->_backbuffer_views.push_back(std::move(view));
+	}
+
+	return std::move(swap_chain);
 }
 
-void st_vk_graphics_context::transition_backbuffer_to_target()
+st_texture* st_vk_graphics_context::get_backbuffer(st_swap_chain* swap_chain_, uint32_t index)
 {
-	// Transition the present target to the optimal layout for rendering.
-	transition(_present_target->get_texture(), st_texture_state_render_target);
+	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
+	return swap_chain->_backbuffers[index];
 }
 
-void st_vk_graphics_context::transition_backbuffer_to_present()
+st_texture_view* st_vk_graphics_context::get_backbuffer_view(st_swap_chain* swap_chain_, uint32_t index)
 {
-	// Transition the present target to the optimal layout for copy.
-	transition(_present_target->get_texture(), st_texture_state_copy_source);
+	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
+	return swap_chain->_backbuffer_views[index].get();
+}
+
+void st_vk_graphics_context::acquire_backbuffer(st_swap_chain* swap_chain_)
+{
+	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
+
+	uint32_t backbuffer_index;
+	VK_VALIDATE(_device.acquireNextImageKHR(
+		swap_chain->_swap_chain,
+		std::numeric_limits<uint64_t>::max(),
+		vk::Semaphore(nullptr),
+		_acquire_fence,
+		&backbuffer_index));
+	assert(backbuffer_index == _frame_index);
+
+	VK_VALIDATE(_device.waitForFences(1, &_acquire_fence, true, std::numeric_limits<uint64_t>::max()));
+	VK_VALIDATE(_device.resetFences(1, &_acquire_fence));
 }
 
 void st_vk_graphics_context::begin_loading()
@@ -734,8 +732,6 @@ void st_vk_graphics_context::end_loading()
 
 void st_vk_graphics_context::begin_frame()
 {
-	_frame_index = (_frame_index + 1) % k_max_frames;
-
 	vk::CommandBufferBeginInfo begin_info = vk::CommandBufferBeginInfo()
 		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -774,84 +770,26 @@ void st_vk_graphics_context::end_frame()
 	}
 }
 
-void st_vk_graphics_context::swap()
+void st_vk_graphics_context::execute()
 {
-	// Copy the present target to the backbuffer.
-	uint32_t backbuffer_index;
-	VK_VALIDATE(_device.acquireNextImageKHR(
-		_swap_chain,
-		std::numeric_limits<uint64_t>::max(),
-		vk::Semaphore(nullptr),
-		_acquire_fence,
-		&backbuffer_index));
+	VK_VALIDATE(_command_buffers[st_command_buffer_loading].end());
+	VK_VALIDATE(_command_buffers[st_command_buffer_graphics].end());
 
-	VK_VALIDATE(_device.waitForFences(1, &_acquire_fence, true, std::numeric_limits<uint64_t>::max()));
-	VK_VALIDATE(_device.resetFences(1, &_acquire_fence));
+	vk::SubmitInfo submit_info = vk::SubmitInfo()
+		.setCommandBufferCount(2)
+		.setPCommandBuffers(_command_buffers);
 
-	// Transition the backbuffer images to the optimal layout for the copy.
-	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-		.setAspectMask(vk::ImageAspectFlagBits::eColor)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1)
-		.setBaseMipLevel(0)
-		.setLevelCount(1);
+	vk::Result result = _device.getFenceStatus(_fence);
+	VK_VALIDATE(_queue.submit(1, &submit_info, _fence));
 
-	vk::ImageMemoryBarrier barriers[] =
-	{
-		vk::ImageMemoryBarrier()
-		.setImage(_backbuffers[backbuffer_index])
-		.setOldLayout(vk::ImageLayout::ePresentSrcKHR)
-		.setNewLayout(vk::ImageLayout::eTransferDstOptimal)
-		.setSubresourceRange(range),
-	};
+	// TODO: Better parallelization.
+	VK_VALIDATE(_device.waitForFences(1, &_fence, true, std::numeric_limits<uint64_t>::max()));
+	VK_VALIDATE(_device.resetFences(1, &_fence));
+}
 
-	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::DependencyFlags(),
-		0,
-		nullptr,
-		0,
-		nullptr,
-		1,
-		barriers);
-
-	vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
-		.setAspectMask(vk::ImageAspectFlagBits::eColor)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1)
-		.setMipLevel(0);
-
-	vk::ImageCopy region = vk::ImageCopy()
-		.setExtent(vk::Extent3D(_present_target->get_width(), _present_target->get_height(), 1))
-		.setSrcSubresource(subresource)
-		.setDstSubresource(subresource);
-
-	st_vk_texture* target = static_cast<st_vk_texture*>(_present_target->get_texture());
-
-	_command_buffers[st_command_buffer_graphics].copyImage(
-		target->_handle,
-		vk::ImageLayout::eTransferSrcOptimal,
-		_backbuffers[backbuffer_index],
-		vk::ImageLayout::eTransferDstOptimal,
-		1,
-		&region);
-
-	barriers[0] = vk::ImageMemoryBarrier()
-		.setImage(_backbuffers[backbuffer_index])
-		.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-		.setNewLayout(vk::ImageLayout::ePresentSrcKHR)
-		.setSubresourceRange(range);
-	_command_buffers[st_command_buffer_graphics].pipelineBarrier(
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::DependencyFlags(),
-		0,
-		nullptr,
-		0,
-		nullptr,
-		1,
-		barriers);
+void st_vk_graphics_context::present(st_swap_chain* swap_chain_)
+{
+	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
 
 	VK_VALIDATE(_command_buffers[st_command_buffer_loading].end());
 	VK_VALIDATE(_command_buffers[st_command_buffer_graphics].end());
@@ -865,14 +803,21 @@ void st_vk_graphics_context::swap()
 
 	vk::PresentInfoKHR present_info = vk::PresentInfoKHR()
 		.setSwapchainCount(1)
-		.setPSwapchains(&_swap_chain)
-		.setPImageIndices(&backbuffer_index);
+		.setPSwapchains(&swap_chain->_swap_chain)
+		.setPImageIndices(&_frame_index);
 
 	VK_VALIDATE(_queue.presentKHR(&present_info));
 
 	// TODO: Better parallelization.
 	VK_VALIDATE(_device.waitForFences(1, &_fence, true, std::numeric_limits<uint64_t>::max()));
 	VK_VALIDATE(_device.resetFences(1, &_fence));
+
+	_frame_index = (_frame_index + 1) % k_max_frames;
+}
+
+void st_vk_graphics_context::wait_for_idle()
+{
+	VK_VALIDATE(_device.waitIdle());
 }
 
 void st_vk_graphics_context::begin_marker(const std::string& marker)
@@ -1867,49 +1812,32 @@ std::unique_ptr<st_vertex_format> st_vk_graphics_context::create_vertex_format(
 	return std::move(vertex_format);
 }
 
-std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
-	uint32_t count,
-	st_target_desc* targets,
-	st_target_desc* depth_stencil)
+std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(const st_render_pass_desc& desc)
 {
 	std::unique_ptr<st_vk_render_pass> render_pass = std::make_unique<st_vk_render_pass>();
 	render_pass->_device = &_device;
 
-	// Naively, create the viewport from the first target.
-	if (count > 0)
-	{
-		// Flip the Vulkan viewport to match the coordinate systems of OpenGL and DirectX.
-		render_pass->_viewport = vk::Viewport()
-			.setX(0)
-			.setY(float(targets[0]._target->get_height()))
-			.setWidth(float(targets[0]._target->get_width()))
-			.setHeight(-float(targets[0]._target->get_height()))
-			.setMinDepth(0.0f)
-			.setMaxDepth(1.0f);
-	}
-	else if (depth_stencil)
-	{
-		render_pass->_viewport = vk::Viewport()
-			.setX(0)
-			.setY(float(depth_stencil->_target->get_height()))
-			.setWidth(float(depth_stencil->_target->get_width()))
-			.setHeight(-float(depth_stencil->_target->get_height()))
-			.setMinDepth(0.0f)
-			.setMaxDepth(1.0f);
-	}
+	// Flip the Vulkan viewport to match the coordinate systems of OpenGL and DirectX.
+	render_pass->_viewport = vk::Viewport()
+		.setX(0)
+		.setY(desc._viewport._height)
+		.setWidth(desc._viewport._width)
+		.setHeight(-desc._viewport._height)
+		.setMinDepth(0.0f)
+		.setMaxDepth(1.0f);
 
 	std::vector<vk::AttachmentDescription> attachment_descs;
 	std::vector<vk::AttachmentReference> attachment_refs;
-	for (int i = 0; i < count; ++i)
+	for (int i = 0; i < desc._attachment_count; ++i)
 	{
-		vk::AttachmentDescription desc = vk::AttachmentDescription()
-			.setFormat(convert_format(targets[i]._target->get_format()))
+		vk::AttachmentDescription att_desc = vk::AttachmentDescription()
+			.setFormat(convert_format(desc._attachments[i]._format))
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(convert_load_op(targets[i]._load_op))
-			.setStoreOp(convert_store_op(targets[i]._store_op))
+			.setLoadOp(convert_load_op(desc._attachments[i]._load_op))
+			.setStoreOp(convert_store_op(desc._attachments[i]._store_op))
 			.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal)
 			.setFinalLayout(vk::ImageLayout::eColorAttachmentOptimal);
-		attachment_descs.push_back(desc);
+		attachment_descs.push_back(att_desc);
 
 		vk::AttachmentReference ref = vk::AttachmentReference()
 			.setAttachment(i)
@@ -1920,17 +1848,17 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 	vk::SubpassDescription subpass_desc = vk::SubpassDescription()
 		.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 		.setInputAttachmentCount(0)
-		.setColorAttachmentCount(count)
+		.setColorAttachmentCount(desc._attachment_count)
 		.setPColorAttachments(attachment_refs.data());
 
 	vk::AttachmentReference ds_ref;
-	if (depth_stencil)
+	if (desc._depth_attachment._format != st_format_unknown)
 	{
 		vk::AttachmentDescription ds_desc = vk::AttachmentDescription()
-			.setFormat(convert_format(depth_stencil->_target->get_format()))
+			.setFormat(convert_format(desc._depth_attachment._format))
 			.setSamples(vk::SampleCountFlagBits::e1)
-			.setLoadOp(convert_load_op(depth_stencil->_load_op))
-			.setStoreOp(convert_store_op(depth_stencil->_store_op))
+			.setLoadOp(convert_load_op(desc._depth_attachment._load_op))
+			.setStoreOp(convert_store_op(desc._depth_attachment._store_op))
 			.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		attachment_descs.push_back(ds_desc);
@@ -1951,28 +1879,23 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(
 
 	VK_VALIDATE(_device.createRenderPass(&pass_info, nullptr, &render_pass->_render_pass));
 
-	render_pass->_framebuffer = std::make_unique<st_vk_framebuffer>(
-		&_device,
-		render_pass->_render_pass,
-		count,
-		targets,
-		depth_stencil);
-
 	return std::move(render_pass);
 }
 
 void st_vk_graphics_context::begin_render_pass(
 	st_render_pass* pass_,
+	st_framebuffer* framebuffer_,
 	const st_clear_value* clear_values,
 	const uint8_t clear_count)
 {
 	st_vk_render_pass* pass = static_cast<st_vk_render_pass*>(pass_);
+	st_vk_framebuffer* framebuffer = static_cast<st_vk_framebuffer*>(framebuffer_);
 
 	std::vector<vk::ClearValue> clears;
 	clears.reserve(clear_count);
 	for (uint32_t c_itr = 0; c_itr < clear_count; ++c_itr)
 	{
-		if (c_itr < pass->_framebuffer->get_target_count())
+		if (c_itr < framebuffer->_targets.size())
 		{
 			std::array<float, 4> c;
 			std::copy(clear_values[c_itr]._color.axes, clear_values[c_itr]._color.axes + 4, c.begin());
@@ -1990,18 +1913,92 @@ void st_vk_graphics_context::begin_render_pass(
 	vk::RenderPassBeginInfo begin_info = vk::RenderPassBeginInfo()
 		.setPClearValues(clears.data())
 		.setClearValueCount(clears.size())
-		.setFramebuffer(pass->_framebuffer->get())
-		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(pass->_framebuffer->get_width(), pass->_framebuffer->get_height())))
+		.setFramebuffer(framebuffer->_framebuffer)
+		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(framebuffer->_width, framebuffer->_height)))
 		.setRenderPass(pass->_render_pass);
 
-	pass->_framebuffer->transition(this);
+	bind_framebuffer(framebuffer);
 
 	_command_buffers[st_command_buffer_graphics].beginRenderPass(&begin_info, vk::SubpassContents::eInline);
 }
 
-void st_vk_graphics_context::end_render_pass(st_render_pass* pass)
+void st_vk_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer)
 {
+	unbind_framebuffer(framebuffer);
 	_command_buffers[st_command_buffer_graphics].endRenderPass();
+}
+
+std::unique_ptr<st_framebuffer> st_vk_graphics_context::create_framebuffer(const st_framebuffer_desc& desc)
+{
+	std::unique_ptr<st_vk_framebuffer> framebuffer = std::make_unique<st_vk_framebuffer>();
+	framebuffer->_device = &_device;
+
+	uint32_t attachmentCount = desc._target_count + (desc._depth_target._texture ? 1 : 0);
+
+	if (desc._target_count > 0)
+	{
+		st_vk_texture* t = static_cast<st_vk_texture*>(desc._targets[0]._texture);
+		framebuffer->_width = t->_width;
+		framebuffer->_height = t->_height;
+	}
+	else if (desc._depth_target._texture)
+	{
+		st_vk_texture* ds = static_cast<st_vk_texture*>(desc._depth_target._texture);
+		framebuffer->_width = ds->_width;
+		framebuffer->_height = ds->_height;
+	}
+
+	std::vector<vk::ImageView> views;
+	views.reserve(attachmentCount);
+
+	for (int i = 0; i < desc._target_count; ++i)
+	{
+		const st_vk_texture_view* view = static_cast<const st_vk_texture_view*>(desc._targets[i]._view);
+
+		views.push_back(view->_view);
+		framebuffer->_targets.push_back(desc._targets[i]._texture);
+	}
+
+	if (desc._depth_target._texture)
+	{
+		const st_vk_texture_view* ds = static_cast<const st_vk_texture_view*>(desc._depth_target._view);
+
+		views.push_back(ds->_view);
+		framebuffer->_depth_stencil = desc._depth_target._texture;
+	}
+
+	st_vk_render_pass* pass = static_cast<st_vk_render_pass*>(desc._pass);
+
+	vk::FramebufferCreateInfo create_info = vk::FramebufferCreateInfo()
+		.setAttachmentCount(attachmentCount)
+		.setPAttachments(views.data())
+		.setRenderPass(pass->_render_pass)
+		.setWidth(framebuffer->_width)
+		.setHeight(framebuffer->_height)
+		.setLayers(1);
+
+	VK_VALIDATE(_device.createFramebuffer(&create_info, nullptr, &framebuffer->_framebuffer));
+
+	return std::move(framebuffer);
+}
+
+void st_vk_graphics_context::bind_framebuffer(st_framebuffer* framebuffer_)
+{
+	st_vk_framebuffer* framebuffer = static_cast<st_vk_framebuffer*>(framebuffer_);
+
+	for (uint32_t i = 0; i < framebuffer->_targets.size(); ++i)
+	{
+		transition(framebuffer->_targets[i], st_texture_state_render_target);
+	}
+
+	if (framebuffer->_depth_stencil)
+	{
+		transition(framebuffer->_depth_stencil, st_texture_state_depth_stencil_target);
+	}
+}
+
+void st_vk_graphics_context::unbind_framebuffer(st_framebuffer* framebuffer)
+{
 }
 
 void st_vk_graphics_context::get_desc(const st_texture* texture_, st_texture_desc* out_desc)

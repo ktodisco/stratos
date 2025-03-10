@@ -23,4 +23,5 @@ public:
 
 private:
 	std::unique_ptr<struct st_render_pass> _pass = nullptr;
+	std::unique_ptr<struct st_framebuffer> _framebuffer = nullptr;
 };

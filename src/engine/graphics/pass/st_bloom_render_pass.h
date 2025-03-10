@@ -25,10 +25,14 @@ private:
 	std::unique_ptr<class st_render_texture> _threshold_target = nullptr;
 	std::unique_ptr<class st_material> _threshold_material = nullptr;
 	std::unique_ptr<struct st_render_pass> _threshold_pass = nullptr;
+	std::unique_ptr<struct st_framebuffer> _threshold_framebuffer = nullptr;
 
 	static const uint32_t k_num_downsamples = 4;
 	std::array<std::unique_ptr<struct st_render_pass>, k_num_downsamples> _downsample_passes;
 	std::array<std::unique_ptr<struct st_render_pass>, k_num_downsamples - 1> _upsample_passes;
+
+	std::array<std::unique_ptr<struct st_framebuffer>, k_num_downsamples> _downsample_framebuffers;
+	std::array<std::unique_ptr<struct st_framebuffer>, k_num_downsamples - 1> _upsample_framebuffers;
 
 	std::array<std::unique_ptr<class st_material>, k_num_downsamples> _downsample_materials;
 	std::array<std::unique_ptr<class st_material>, k_num_downsamples - 1> _upsample_materials;

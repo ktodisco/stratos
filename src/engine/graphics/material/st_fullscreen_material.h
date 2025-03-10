@@ -16,7 +16,7 @@ class st_fullscreen_material : public st_material
 public:
 	st_fullscreen_material(
 		class st_render_texture* texture,
-		class st_render_texture* target,
+		struct st_texture* target,
 		struct st_vertex_format* vertex_format,
 		struct st_render_pass* pass);
 	~st_fullscreen_material();

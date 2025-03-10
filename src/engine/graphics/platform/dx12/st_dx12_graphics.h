@@ -47,6 +47,20 @@ struct st_dx12_buffer_view : public st_buffer_view
 	class st_dx12_descriptor_heap* _heap;
 };
 
+struct st_dx12_framebuffer : public st_framebuffer
+{
+	~st_dx12_framebuffer()
+	{
+		_targets.clear();
+		_views.clear();
+	}
+
+	std::vector<st_texture*> _targets;
+	std::vector<st_texture_view*> _views;
+	st_texture* _depth_stencil = nullptr;
+	st_texture_view* _depth_stencil_view = nullptr;
+};
+
 struct st_dx12_pipeline : public st_pipeline
 {
 	~st_dx12_pipeline() { _pipeline = nullptr; }
@@ -56,8 +70,9 @@ struct st_dx12_pipeline : public st_pipeline
 
 struct st_dx12_render_pass : public st_render_pass
 {
-	std::unique_ptr<class st_dx12_framebuffer> _framebuffer;
 	st_viewport _viewport;
+	std::vector<st_attachment_desc> _color_attachments;
+	st_attachment_desc _depth_attachment;
 };
 
 struct st_dx12_resource_table : public st_resource_table
@@ -94,6 +109,26 @@ struct st_dx12_shader : public st_shader
 	Microsoft::WRL::ComPtr<ID3DBlob> _cs;
 
 	uint8_t _type = 0;
+};
+
+struct st_dx12_swap_chain : public st_swap_chain
+{
+	~st_dx12_swap_chain()
+	{
+		_backbuffer_views.clear();
+		_backbuffers.clear();
+
+		_swap_chain_1 = nullptr;
+		_swap_chain_2 = nullptr;
+		_swap_chain_3 = nullptr;
+	}
+
+	Microsoft::WRL::ComPtr<IDXGISwapChain1> _swap_chain_1;
+	Microsoft::WRL::ComPtr<IDXGISwapChain2> _swap_chain_2;
+	Microsoft::WRL::ComPtr<IDXGISwapChain3> _swap_chain_3;
+
+	std::vector<std::unique_ptr<st_texture>> _backbuffers;
+	std::vector<std::unique_ptr<st_texture_view>> _backbuffer_views;
 };
 
 struct st_dx12_texture : public st_texture

@@ -31,17 +31,37 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	_formats[2] = third_buffer->get_format();
 	_formats[3] = depth_buffer->get_format();
 
-	st_target_desc targets[] =
 	{
-		{ albedo_buffer, e_st_load_op::clear, e_st_store_op::store },
-		{ normal_buffer, e_st_load_op::clear, e_st_store_op::store },
-		{ third_buffer, e_st_load_op::clear, e_st_store_op::store },
-	};
-	st_target_desc ds_target = { depth_buffer, e_st_load_op::clear, e_st_store_op::store };
-	_pass = context->create_render_pass(
-		3,
-		targets,
-		&ds_target);
+		st_attachment_desc attachments[] =
+		{
+			{ albedo_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store },
+			{ normal_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store },
+			{ third_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store },
+		};
+		st_render_pass_desc desc;
+		desc._attachments = attachments;
+		desc._attachment_count = std::size(attachments);
+		desc._depth_attachment = { depth_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store };
+		desc._viewport = { 0.0f, 0.0f, float(albedo_buffer->get_width()), float(albedo_buffer->get_height()), 0.0f, 1.0f };
+
+		_pass = context->create_render_pass(desc);
+	}
+
+	{
+		st_target_desc targets[] =
+		{
+			{ albedo_buffer->get_texture(), albedo_buffer->get_target_view(), },
+			{ normal_buffer->get_texture(), normal_buffer->get_target_view(), },
+			{ third_buffer->get_texture(), third_buffer->get_target_view() }
+		};
+		st_framebuffer_desc desc;
+		desc._pass = _pass.get();
+		desc._targets = targets;
+		desc._target_count = std::size(targets);
+		desc._depth_target = { depth_buffer->get_texture(), depth_buffer->get_target_view() };
+
+		_framebuffer = context->create_framebuffer(desc);
+	}
 }
 
 st_gbuffer_render_pass::~st_gbuffer_render_pass()
@@ -62,7 +82,7 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 		st_depth_stencil_clear_value { 1.0f, 0 }
 	};
 
-	context->begin_render_pass(_pass.get(), clears, std::size(clears));
+	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
 	// Clear viewport.
 	context->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
@@ -85,7 +105,7 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 		context->draw(d);
 	}
 
-	context->end_render_pass(_pass.get());
+	context->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 void st_gbuffer_render_pass::get_target_formats(struct st_graphics_state_desc& desc)

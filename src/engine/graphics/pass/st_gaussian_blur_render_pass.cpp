@@ -31,23 +31,51 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Gaussian Blur Intermediate");
 
-	st_target_desc vertical_blur_targets[] =
 	{
-		{ _intermediate_target.get(), e_st_load_op::clear, e_st_store_op::store }
-	};
-	_vertical_blur_pass = context->create_render_pass(
-		1,
-		vertical_blur_targets,
-		nullptr);
+		st_attachment_desc attachments[] =
+		{
+			{ _intermediate_target->get_format(), e_st_load_op::clear, e_st_store_op::store }
+		};
+		st_render_pass_desc desc;
+		desc._attachments = attachments;
+		desc._attachment_count = std::size(attachments);
+		desc._viewport = { 0.0f, 0.0f, float(_intermediate_target->get_width()), float(_intermediate_target->get_height()), 0.0f, 1.0f };
 
-	st_target_desc horizontal_blur_targets[] =
+		_vertical_blur_pass = context->create_render_pass(desc);
+	}
+
 	{
-		{ target_buffer, e_st_load_op::clear, e_st_store_op::store }
-	};
-	_horizontal_blur_pass = context->create_render_pass(
-		1,
-		horizontal_blur_targets,
-		nullptr);
+		st_target_desc target = { _intermediate_target->get_texture(), _intermediate_target->get_target_view() };
+		st_framebuffer_desc desc;
+		desc._pass = _vertical_blur_pass.get();
+		desc._targets = &target;
+		desc._target_count = 1;
+
+		_vertical_blur_framebuffer = context->create_framebuffer(desc);
+	}
+
+	{
+		st_attachment_desc attachments[] =
+		{
+			{ target_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store }
+		};
+		st_render_pass_desc desc;
+		desc._attachments = attachments;
+		desc._attachment_count = std::size(attachments);
+		desc._viewport = { 0.0f, 0.0f, float(target_buffer->get_width()), float(target_buffer->get_height()), 0.0f, 1.0f };
+
+		_horizontal_blur_pass = context->create_render_pass(desc);
+	}
+
+	{
+		st_target_desc target = { target_buffer->get_texture(), target_buffer->get_target_view() };
+		st_framebuffer_desc desc;
+		desc._pass = _horizontal_blur_pass.get();
+		desc._targets = &target;
+		desc._target_count = 1;
+
+		_horizontal_blur_framebuffer = context->create_framebuffer(desc);
+	}
 
 	_vertical_blur_material = std::make_unique<st_gaussian_blur_vertical_material>(
 		source_buffer,
@@ -85,7 +113,7 @@ void st_gaussian_blur_render_pass::render(
 		{
 			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 		};
-		context->begin_render_pass(_vertical_blur_pass.get(), clears, std::size(clears));
+		context->begin_render_pass(_vertical_blur_pass.get(), _vertical_blur_framebuffer.get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -95,7 +123,7 @@ void st_gaussian_blur_render_pass::render(
 
 		context->draw(draw_call);
 
-		context->end_render_pass(_vertical_blur_pass.get());
+		context->end_render_pass(_vertical_blur_pass.get(), _vertical_blur_framebuffer.get());
 	}
 
 	{
@@ -107,7 +135,7 @@ void st_gaussian_blur_render_pass::render(
 		{
 			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 		};
-		context->begin_render_pass(_horizontal_blur_pass.get(), clears, std::size(clears));
+		context->begin_render_pass(_horizontal_blur_pass.get(), _horizontal_blur_framebuffer.get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -117,6 +145,6 @@ void st_gaussian_blur_render_pass::render(
 
 		context->draw(draw_call);
 
-		context->end_render_pass(_horizontal_blur_pass.get());
+		context->end_render_pass(_horizontal_blur_pass.get(), _horizontal_blur_framebuffer.get());
 	}
 }

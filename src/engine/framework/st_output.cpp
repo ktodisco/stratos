@@ -36,6 +36,16 @@ st_output* st_output::_this = nullptr;
 st_output::st_output(const st_window* window, st_graphics_context* context) :
 	_window(window), _graphics_context(context)
 {
+	// Create the swap chain first.
+	{
+		st_swap_chain_desc desc;
+		desc._width = _window->get_width();
+		desc._height = window->get_height();
+		desc._format = st_format_r8g8b8a8_unorm;
+		desc._window_handle = _window->get_window_handle();
+
+		_swap_chain = context->create_swap_chain(desc);
+	}
 	_directional_shadow_map = std::make_unique<st_render_texture>(
 		context,
 		2048,
@@ -166,8 +176,9 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		_bloom_target.get(),
 		_tonemap_target.get());
 	_passthrough_pass = std::make_unique<st_passthrough_render_pass>(
-		_tonemap_target.get());
-	_ui_pass = std::make_unique<st_ui_render_pass>();
+		_tonemap_target.get(),
+		_swap_chain.get());
+	_ui_pass = std::make_unique<st_ui_render_pass>(_swap_chain.get());
 
 	_this = this;
 }
@@ -183,6 +194,7 @@ void st_output::update(st_frame_params* params)
 	_graphics_context->acquire();
 
 	_graphics_context->begin_frame();
+	params->_frame_index = _graphics_context->get_frame_index();
 
 	_atmosphere_transmission->compute(_graphics_context, params);
 	_atmosphere_sky->render(_graphics_context, params);
@@ -194,15 +206,21 @@ void st_output::update(st_frame_params* params)
 	_bloom_pass->render(_graphics_context, params);
 	_tonemap_pass->render(_graphics_context, params);
 
-	_graphics_context->transition_backbuffer_to_target();
+	_graphics_context->acquire_backbuffer(_swap_chain.get());
+	_graphics_context->transition(
+		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
+		st_texture_state_render_target);
 
 	_passthrough_pass->render(_graphics_context, params);
 	_ui_pass->render(_graphics_context, params);
 
 	// Swap the frame buffers and release the context.
-	_graphics_context->transition_backbuffer_to_present();
+	_graphics_context->transition(
+		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
+		st_texture_state_present);
+
 	_graphics_context->end_frame();
-	_graphics_context->swap();
+	_graphics_context->present(_swap_chain.get());
 
 	_graphics_context->release();
 }

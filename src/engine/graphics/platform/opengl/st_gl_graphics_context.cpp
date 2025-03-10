@@ -10,7 +10,6 @@
 
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/platform/opengl/st_gl_conversion.h>
-#include <graphics/platform/opengl/st_gl_framebuffer.h>
 #include <graphics/platform/opengl/st_gl_shader.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_pipeline_state_desc.h>
@@ -90,27 +89,6 @@ st_gl_graphics_context::st_gl_graphics_context(const st_window* window)
 	glDebugMessageCallback((GLDEBUGPROC)gl_message_callback, 0);
 #endif
 
-	// Create the faux backbuffer target.
-	_present_target = std::make_unique<st_render_texture>(
-		this,
-		window->get_width(),
-		window->get_height(),
-		st_format_r8g8b8a8_unorm,
-		e_st_texture_usage::color_target | e_st_texture_usage::copy_source,
-		st_texture_state_copy_source,
-		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
-		"Backbuffer");
-
-	st_target_desc targets[] =
-	{
-		{ _present_target.get(), e_st_load_op::dont_care, e_st_store_op::dont_care }
-	};
-
-	_present_framebuffer = std::make_unique<st_gl_framebuffer>(
-		1,
-		targets,
-		nullptr);
-
 	// Turn on vsync.
 	// TODO: Test for the extension and have a backup.
 	wglSwapIntervalEXT(1);
@@ -120,9 +98,6 @@ st_gl_graphics_context::st_gl_graphics_context(const st_window* window)
 
 st_gl_graphics_context::~st_gl_graphics_context()
 {
-	_present_framebuffer = nullptr;
-	_present_target = nullptr;
-
 	// Destroy the GL context.
 	wglDeleteContext(_gl_context);
 }
@@ -199,14 +174,6 @@ void st_gl_graphics_context::set_clear_color(float r, float g, float b, float a)
 	_clear_color[3] = a;
 
 	glClearColor(r, g, b, a);
-}
-
-void st_gl_graphics_context::set_render_targets(
-	uint32_t count,
-	const st_texture_view** targets,
-	const st_texture_view* depth_stencil)
-{
-
 }
 
 void st_gl_graphics_context::clear(unsigned int clear_flags)
@@ -347,26 +314,55 @@ void st_gl_graphics_context::dispatch(const st_dispatch_args& args)
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
-void st_gl_graphics_context::swap()
+std::unique_ptr<st_swap_chain> st_gl_graphics_context::create_swap_chain(const st_swap_chain_desc& desc)
 {
-	// Copy the present target to the backbuffer.
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, _present_framebuffer->get_handle());
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	glBlitFramebuffer(
-		0,
-		0,
-		_present_target->get_width(),
-		_present_target->get_height(),
-		0,
-		0,
-		_present_target->get_width(),
-		_present_target->get_height(),
-		GL_COLOR_BUFFER_BIT,
-		GL_NEAREST);
+	std::unique_ptr<st_gl_swap_chain> swap_chain = std::make_unique<st_gl_swap_chain>();
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	swap_chain->_backbuffers.reserve(desc._buffer_count);
+	swap_chain->_backbuffer_views.reserve(desc._buffer_count);
 
+	for (uint32_t i = 0; i < desc._buffer_count; ++i)
+	{
+		std::unique_ptr<st_gl_texture> buffer = std::make_unique<st_gl_texture>();
+		buffer->_width = desc._width;
+		buffer->_height = desc._height;
+		buffer->_format = desc._format;
+		buffer->_handle = 0;
+
+		st_texture_view_desc view_desc;
+		view_desc._texture = buffer.get();
+		view_desc._usage = e_st_view_usage::render_target;
+		view_desc._format = desc._format;
+
+		std::unique_ptr<st_texture_view> view = create_texture_view(view_desc);
+
+		swap_chain->_backbuffers.push_back(std::move(buffer));
+		swap_chain->_backbuffer_views.push_back(std::move(view));
+	}
+
+	return std::move(swap_chain);
+}
+
+st_texture* st_gl_graphics_context::get_backbuffer(st_swap_chain* swap_chain_, uint32_t index)
+{
+	st_gl_swap_chain* swap_chain = static_cast<st_gl_swap_chain*>(swap_chain_);
+	return swap_chain->_backbuffers[index].get();
+}
+
+st_texture_view* st_gl_graphics_context::get_backbuffer_view(st_swap_chain* swap_chain_, uint32_t index)
+{
+	st_gl_swap_chain* swap_chain = static_cast<st_gl_swap_chain*>(swap_chain_);
+	return swap_chain->_backbuffer_views[index].get();
+}
+
+void st_gl_graphics_context::present(st_swap_chain* swap_chain)
+{
 	SwapBuffers(_device_context);
+}
+
+void st_gl_graphics_context::wait_for_idle()
+{
+	glFinish();
 }
 
 void st_gl_graphics_context::begin_marker(const std::string& marker)
@@ -575,7 +571,7 @@ void st_gl_graphics_context::update_buffer(st_buffer* buffer_, void* data, const
 void st_gl_graphics_context::set_buffer_name(st_buffer* buffer_, std::string name)
 {
 	st_gl_buffer* buffer = static_cast<st_gl_buffer*>(buffer_);
-	glObjectLabel(GL_TEXTURE, buffer->_buffer, name.length(), name.c_str());
+	glObjectLabel(GL_BUFFER, buffer->_buffer, name.length(), name.c_str());
 }
 
 std::unique_ptr<st_resource_table> st_gl_graphics_context::create_resource_table()
@@ -748,62 +744,129 @@ std::unique_ptr<st_vertex_format> st_gl_graphics_context::create_vertex_format(
 	return std::move(format);
 }
 
-std::unique_ptr<st_render_pass> st_gl_graphics_context::create_render_pass(
-	uint32_t count,
-	st_target_desc* targets,
-	st_target_desc* depth_stencil)
+std::unique_ptr<st_render_pass> st_gl_graphics_context::create_render_pass(const st_render_pass_desc& desc)
 {
 	std::unique_ptr<st_gl_render_pass> render_pass = std::make_unique<st_gl_render_pass>();
+	render_pass->_viewport = desc._viewport;
 
-	// Naively, create the viewport from the first target.
-	if (count > 0)
-	{
-		render_pass->_viewport =
-		{
-			0,
-			0,
-			float(targets[0]._target->get_width()),
-			float(targets[0]._target->get_height()),
-			0.0f,
-			1.0f,
-		};
-	}
-	else if (depth_stencil)
-	{
-		render_pass->_viewport =
-		{
-			0,
-			0,
-			float(depth_stencil->_target->get_width()),
-			float(depth_stencil->_target->get_height()),
-			0.0f,
-			1.0f,
-		};
-	}
-	render_pass->_framebuffer = std::make_unique<st_gl_framebuffer>(
-		count,
-		targets,
-		depth_stencil);
+	for (uint32_t i = 0; i < desc._attachment_count; ++i)
+		render_pass->_color_attachments.push_back(desc._attachments[i]);
+	render_pass->_depth_attachment = desc._depth_attachment;
 
 	return std::move(render_pass);
 }
 
 void st_gl_graphics_context::begin_render_pass(
 	st_render_pass* pass_,
+	st_framebuffer* framebuffer,
 	const st_clear_value* clear_values,
 	const uint8_t clear_count)
 {
 	st_gl_render_pass* pass = static_cast<st_gl_render_pass*>(pass_);
 
 	set_viewport(pass->_viewport);
-	pass->_framebuffer->bind(this);
+	bind_framebuffer(framebuffer);
 }
 
-void st_gl_graphics_context::end_render_pass(st_render_pass* pass_)
+void st_gl_graphics_context::end_render_pass(st_render_pass* pass_, st_framebuffer* framebuffer)
 {
 	st_gl_render_pass* pass = static_cast<st_gl_render_pass*>(pass_);
 
-	pass->_framebuffer->unbind(this);
+	unbind_framebuffer(framebuffer);
+}
+
+std::unique_ptr<st_framebuffer> st_gl_graphics_context::create_framebuffer(const st_framebuffer_desc& desc)
+{
+	std::unique_ptr<st_gl_framebuffer> framebuffer = std::make_unique<st_gl_framebuffer>();
+	framebuffer->_target_count = desc._target_count;
+
+	bool is_backbuffer = false;
+	if (desc._target_count > 0)
+	{
+		st_gl_texture* texture = static_cast<st_gl_texture*>(desc._targets[0]._texture);
+		if (texture->_handle == 0)
+		{
+			is_backbuffer = true;
+		}
+	}
+
+	if (!is_backbuffer)
+	{
+		glGenFramebuffers(1, &framebuffer->_handle);
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->_handle);
+	}
+
+	uint32_t color_attachment = GL_COLOR_ATTACHMENT0;
+	for (uint32_t color_target = 0; color_target < desc._target_count; ++color_target)
+	{
+		st_gl_texture* texture = static_cast<st_gl_texture*>(desc._targets[color_target]._texture);
+
+		if (texture->_handle > 0)
+			glFramebufferTexture2D(
+				GL_FRAMEBUFFER,
+				color_attachment,
+				GL_TEXTURE_2D,
+				texture->_handle,
+				0);
+
+		color_attachment++;
+	}
+
+	if (desc._depth_target._texture)
+	{
+		st_gl_texture* ds = static_cast<st_gl_texture*>(desc._depth_target._texture);
+		glFramebufferTexture2D(
+			GL_FRAMEBUFFER,
+			GL_DEPTH_STENCIL_ATTACHMENT,
+			GL_TEXTURE_2D,
+			ds->_handle,
+			0);
+	}
+
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE)
+	{
+		const GLubyte* error_string = gluErrorString(status);
+		assert(false);
+		GLenum test = GL_INVALID_OPERATION;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	return std::move(framebuffer);
+}
+
+void st_gl_graphics_context::bind_framebuffer(st_framebuffer* framebuffer_)
+{
+	st_gl_framebuffer* framebuffer = static_cast<st_gl_framebuffer*>(framebuffer_);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->_handle);
+
+	// If this is the backbuffer, then there's nothing else to do.
+	if (framebuffer->_handle > 0)
+	{
+		GLenum targets[] =
+		{
+			GL_COLOR_ATTACHMENT0,
+			GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2,
+			GL_COLOR_ATTACHMENT3,
+			GL_COLOR_ATTACHMENT4,
+			GL_COLOR_ATTACHMENT5,
+			GL_COLOR_ATTACHMENT6,
+			GL_COLOR_ATTACHMENT7,
+		};
+
+		glDrawBuffers(framebuffer->_target_count, targets);
+	}
+}
+
+void st_gl_graphics_context::unbind_framebuffer(st_framebuffer* framebuffer)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	GLenum target[] = { GL_BACK_LEFT };
+	glDrawBuffers(1, target);
 }
 
 void st_gl_graphics_context::set_depth_state(bool enable, GLenum func)
