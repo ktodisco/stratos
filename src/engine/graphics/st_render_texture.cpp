@@ -15,8 +15,8 @@ st_render_texture::st_render_texture(
 	e_st_format format,
 	e_st_texture_usage_flags usage,
 	e_st_texture_state initial_state,
-	st_vec4f clear,
-	const char* name) : _width(width), _height(height), _format(format)
+	st_clear_value clear,
+	const char* name) : _width(width), _height(height), _format(format), _clear(clear)
 {
 	st_texture_desc desc;
 	desc._width = width;
@@ -25,7 +25,7 @@ st_render_texture::st_render_texture(
 	desc._format = format;
 	desc._usage = usage;
 	desc._initial_state = initial_state;
-	desc._clear._color = clear;
+	desc._clear = clear;
 	_texture = context->create_texture(desc);
 	context->set_texture_name(_texture.get(), name);
 

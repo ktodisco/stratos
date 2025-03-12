@@ -166,26 +166,6 @@ void st_gl_graphics_context::set_scissor(int left, int top, int right, int botto
 	glScissor(left, top, right - left, bottom - top);
 }
 
-void st_gl_graphics_context::set_clear_color(float r, float g, float b, float a)
-{
-	_clear_color[0] = r;
-	_clear_color[1] = g;
-	_clear_color[2] = b;
-	_clear_color[3] = a;
-
-	glClearColor(r, g, b, a);
-}
-
-void st_gl_graphics_context::clear(unsigned int clear_flags)
-{
-	GLbitfield flags = 0;
-	flags |= (clear_flags & st_clear_flag_color) ? GL_COLOR_BUFFER_BIT : 0;
-	flags |= (clear_flags & st_clear_flag_depth) ? GL_DEPTH_BUFFER_BIT : 0;
-	flags |= (clear_flags & st_clear_flag_stencil) ? GL_STENCIL_BUFFER_BIT : 0;
-
-	glClear(flags);
-}
-
 void st_gl_graphics_context::draw(const st_static_drawcall& drawcall)
 {
 	const st_gl_buffer* vertex = static_cast<const st_gl_buffer*>(drawcall._vertex_buffer);
@@ -785,21 +765,68 @@ std::unique_ptr<st_render_pass> st_gl_graphics_context::create_render_pass(const
 
 void st_gl_graphics_context::begin_render_pass(
 	st_render_pass* pass_,
-	st_framebuffer* framebuffer,
+	st_framebuffer* framebuffer_,
 	const st_clear_value* clear_values,
 	const uint8_t clear_count)
 {
 	st_gl_render_pass* pass = static_cast<st_gl_render_pass*>(pass_);
 
 	set_viewport(pass->_viewport);
-	bind_framebuffer(framebuffer);
+
+	st_gl_framebuffer* framebuffer = static_cast<st_gl_framebuffer*>(framebuffer_);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->_handle);
+
+	// If this is the backbuffer, then there's nothing else to do.
+	if (framebuffer->_handle > 0)
+	{
+		for (uint32_t att = 0; att < pass->_color_attachments.size(); ++att)
+		{
+			const st_attachment_desc& attachment = pass->_color_attachments[att];
+			glDrawBuffer(GL_COLOR_ATTACHMENT0 + att);
+
+			if (attachment._load_op == e_st_load_op::clear)
+			{
+				GLclampf r = clear_values[att]._color.x;
+				GLclampf g = clear_values[att]._color.y;
+				GLclampf b = clear_values[att]._color.z;
+				GLclampf a = clear_values[att]._color.w;
+				glClearColor(r, g, b, a);
+				glClear(GL_COLOR_BUFFER_BIT);
+			}
+		}
+
+		if (pass->_depth_attachment._load_op == e_st_load_op::clear)
+		{
+			glClearDepth(clear_values[clear_count - 1]._depth_stencil._depth);
+			glClearStencil(clear_values[clear_count - 1]._depth_stencil._stencil);
+			glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		}
+
+		GLenum targets[] =
+		{
+			GL_COLOR_ATTACHMENT0,
+			GL_COLOR_ATTACHMENT1,
+			GL_COLOR_ATTACHMENT2,
+			GL_COLOR_ATTACHMENT3,
+			GL_COLOR_ATTACHMENT4,
+			GL_COLOR_ATTACHMENT5,
+			GL_COLOR_ATTACHMENT6,
+			GL_COLOR_ATTACHMENT7,
+		};
+
+		glDrawBuffers(framebuffer->_target_count, targets);
+	}
 }
 
 void st_gl_graphics_context::end_render_pass(st_render_pass* pass_, st_framebuffer* framebuffer)
 {
 	st_gl_render_pass* pass = static_cast<st_gl_render_pass*>(pass_);
 
-	unbind_framebuffer(framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	GLenum target[] = { GL_BACK_LEFT };
+	glDrawBuffers(1, target);
 }
 
 std::unique_ptr<st_framebuffer> st_gl_graphics_context::create_framebuffer(const st_framebuffer_desc& desc)
@@ -861,39 +888,6 @@ std::unique_ptr<st_framebuffer> st_gl_graphics_context::create_framebuffer(const
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	return std::move(framebuffer);
-}
-
-void st_gl_graphics_context::bind_framebuffer(st_framebuffer* framebuffer_)
-{
-	st_gl_framebuffer* framebuffer = static_cast<st_gl_framebuffer*>(framebuffer_);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->_handle);
-
-	// If this is the backbuffer, then there's nothing else to do.
-	if (framebuffer->_handle > 0)
-	{
-		GLenum targets[] =
-		{
-			GL_COLOR_ATTACHMENT0,
-			GL_COLOR_ATTACHMENT1,
-			GL_COLOR_ATTACHMENT2,
-			GL_COLOR_ATTACHMENT3,
-			GL_COLOR_ATTACHMENT4,
-			GL_COLOR_ATTACHMENT5,
-			GL_COLOR_ATTACHMENT6,
-			GL_COLOR_ATTACHMENT7,
-		};
-
-		glDrawBuffers(framebuffer->_target_count, targets);
-	}
-}
-
-void st_gl_graphics_context::unbind_framebuffer(st_framebuffer* framebuffer)
-{
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	GLenum target[] = { GL_BACK_LEFT };
-	glDrawBuffers(1, target);
 }
 
 void st_gl_graphics_context::set_depth_state(bool enable, GLenum func)

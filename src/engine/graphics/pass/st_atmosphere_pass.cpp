@@ -179,7 +179,7 @@ st_atmosphere_sky_pass::st_atmosphere_sky_pass(st_render_texture* transmittance,
 	{
 		st_attachment_desc attachments[] =
 		{
-			{ target->get_format(), e_st_load_op::clear, e_st_store_op::store }
+			{ target->get_format(), e_st_load_op::dont_care, e_st_store_op::store }
 		};
 		st_render_pass_desc desc;
 		desc._attachments = attachments;
@@ -248,7 +248,7 @@ void st_atmosphere_sky_pass::render(st_graphics_context* context, const st_frame
 
 	st_clear_value clears[] =
 	{
-		st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
+		_target->get_clear_value(),
 	};
 
 	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));

@@ -54,11 +54,10 @@ void st_directional_shadow_pass::render(st_graphics_context* context, const st_f
 
 	st_clear_value clears[] =
 	{
-		st_depth_stencil_clear_value{ 1.0f, 0 }
+		_target->get_clear_value()
 	};
 
 	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
-	context->clear(st_clear_flag_depth);
 
 	for (auto& d : params->_static_drawcalls)
 	{

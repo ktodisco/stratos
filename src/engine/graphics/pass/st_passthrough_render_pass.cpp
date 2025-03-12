@@ -24,7 +24,7 @@ st_passthrough_render_pass::st_passthrough_render_pass(
 	context->get_desc(context->get_backbuffer(swap_chain, 0), &target_desc);
 
 	{
-		st_attachment_desc attachment = { target_desc._format, e_st_load_op::clear, e_st_store_op::store };
+		st_attachment_desc attachment = { target_desc._format, e_st_load_op::dont_care, e_st_store_op::store };
 		st_render_pass_desc desc;
 		desc._attachments = &attachment;
 		desc._attachment_count = 1;

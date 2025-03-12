@@ -28,10 +28,8 @@ public:
 	void set_compute_pipeline(const st_pipeline* state) override;
 	void set_viewport(const st_viewport& viewport) override;
 	void set_scissor(int left, int top, int right, int bottom) override;
-	void set_clear_color(float r, float g, float b, float a) override;
 	void set_blend_factor(float r, float g, float b, float a) override {}
 
-	void clear(unsigned int clear_flags) override;
 	void draw(const struct st_static_drawcall& drawcall) override;
 	void draw(const struct st_dynamic_drawcall& drawcall) override;
 
@@ -119,8 +117,6 @@ public:
 	void get_desc(const st_texture* texture, st_texture_desc* out_desc) override;
 
 private:
-	void bind_framebuffer(st_framebuffer* framebuffer);
-	void unbind_framebuffer(st_framebuffer* framebuffer);
 	void set_depth_state(bool enable, GLenum func);
 	void set_cull_state(bool enable, GLenum mode);
 	void set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor);
@@ -134,7 +130,6 @@ private:
 	HGLRC _gl_context;
 
 	// Active draw state.
-	float _clear_color[4] = { 0 };
 	const class st_gl_shader* _bound_shader = nullptr;
 	const struct st_gl_pipeline* _bound_pipeline = nullptr;
 };

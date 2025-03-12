@@ -33,10 +33,8 @@ public:
 	void set_compute_pipeline(const st_pipeline* state) override;
 	void set_viewport(const st_viewport& viewport) override;
 	void set_scissor(int left, int top, int right, int bottom) override;
-	void set_clear_color(float r, float g, float b, float a) override;
 	void set_blend_factor(float r, float g, float b, float a) override;
 
-	void clear(unsigned int clear_flags) override;
 	void draw(const struct st_static_drawcall& drawcall) override;
 	void draw(const struct st_dynamic_drawcall& drawcall) override;
 
@@ -136,9 +134,6 @@ private:
 		st_texture_view** targets,
 		st_texture_view* depth_stencil);
 
-	void bind_framebuffer(st_framebuffer* framebuffer);
-	void unbind_framebuffer(st_framebuffer* framebuffer);
-
 	void create_buffer_internal(size_t size, ID3D12Resource** resource);
 	void destroy_target(st_dx12_descriptor target);
 
@@ -181,9 +176,6 @@ private:
 	HANDLE _fence_event;
 	Microsoft::WRL::ComPtr<ID3D12Fence> _fence;
 	uint64_t _fence_value = 0;
-
-	// State tracking.
-	float _clear_color[4] = { 0 };
 
 	D3D12_CPU_DESCRIPTOR_HANDLE _bound_targets[8] = {};
 	D3D12_CPU_DESCRIPTOR_HANDLE _bound_depth_stencil;

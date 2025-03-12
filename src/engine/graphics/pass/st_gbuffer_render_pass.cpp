@@ -84,10 +84,6 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 
 	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
-	// Clear viewport.
-	context->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-	context->clear(st_clear_flag_color | st_clear_flag_depth);
-
 	// Draw all static geometry.
 	for (auto& d : params->_static_drawcalls)
 	{

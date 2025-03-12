@@ -30,12 +30,12 @@ st_bloom_render_pass::st_bloom_render_pass(
 			source_buffer->get_format(),
 			e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 			st_texture_state_pixel_shader_read,
-			st_vec4f::zero_vector(),
+			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 			"Bloom Threshold");
 
 		st_attachment_desc attachments[] =
 		{
-			{ _threshold_target->get_format(), e_st_load_op::clear, e_st_store_op::store }
+			{ _threshold_target->get_format(), e_st_load_op::dont_care, e_st_store_op::store }
 		};
 		st_render_pass_desc desc;
 		desc._attachments = attachments;
@@ -71,7 +71,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 			source_buffer->get_format(),
 			e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 			st_texture_state_pixel_shader_read,
-			st_vec4f::zero_vector(),
+			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 			"Bloom Downsample");
 
 		uint32_t u = (k_num_downsamples - 1 - d);
@@ -82,7 +82,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 			source_buffer->get_format(),
 			e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 			st_texture_state_pixel_shader_read,
-			st_vec4f::zero_vector(),
+			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 			"Bloom Upsample");
 	}
 
@@ -91,7 +91,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 	{
 		st_attachment_desc attachments[] =
 		{
-			{ _downsample_targets[d]->get_format(), e_st_load_op::clear, e_st_store_op::store }
+			{ _downsample_targets[d]->get_format(), e_st_load_op::dont_care, e_st_store_op::store }
 		};
 		st_render_pass_desc pass_desc;
 		pass_desc._attachments = attachments;
@@ -135,7 +135,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 	{
 		st_attachment_desc attachments[] =
 		{
-			{ _upsample_targets[u + 1]->get_format(), e_st_load_op::clear, e_st_store_op::store }
+			{ _upsample_targets[u + 1]->get_format(), e_st_load_op::dont_care, e_st_store_op::store }
 		};
 		st_render_pass_desc pass_desc;
 		pass_desc._attachments = attachments;
@@ -197,7 +197,7 @@ void st_bloom_render_pass::render(
 
 		st_clear_value clears[] =
 		{
-			st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
+			_threshold_target->get_clear_value(),
 		};
 
 		context->begin_render_pass(_threshold_pass.get(), _threshold_framebuffer.get(), clears, std::size(clears));
@@ -223,7 +223,7 @@ void st_bloom_render_pass::render(
 
 		st_clear_value clears[] =
 		{
-			st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
+			_downsample_targets[d]->get_clear_value(),
 		};
 
 		context->begin_render_pass(_downsample_passes[d].get(), _downsample_framebuffers[d].get(), clears, std::size(clears));
@@ -251,7 +251,7 @@ void st_bloom_render_pass::render(
 
 		st_clear_value clears[] =
 		{
-			st_vec4f{ 0.0f, 0.0f, 0.0f, 1.0f },
+			_upsample_targets[u + 1]->get_clear_value(),
 		};
 
 		context->begin_render_pass(_upsample_passes[u].get(), _upsample_framebuffers[u].get(), clears, std::size(clears));

@@ -24,7 +24,7 @@ public:
 		e_st_format format,
 		e_st_texture_usage_flags usage,
 		e_st_texture_state initial_state,
-		st_vec4f clear,
+		st_clear_value clear,
 		const char* name);
 	~st_render_texture();
 
@@ -34,12 +34,14 @@ public:
 	uint32_t get_width() const { return _width; }
 	uint32_t get_height() const { return _height; }
 	e_st_format get_format() const { return _format; }
+	st_clear_value get_clear_value() const { return _clear; }
 
 private:
 	// TODO: Better to store a desc, or pull from the underlying texture.
 	uint32_t _width;
 	uint32_t _height;
 	e_st_format _format;
+	st_clear_value _clear;
 
 	std::unique_ptr<struct st_texture> _texture;
 	std::unique_ptr<struct st_texture_view> _rtv;

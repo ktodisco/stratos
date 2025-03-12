@@ -1915,6 +1915,15 @@ void st_vk_graphics_context::begin_render_pass(
 	st_vk_render_pass* pass = static_cast<st_vk_render_pass*>(pass_);
 	st_vk_framebuffer* framebuffer = static_cast<st_vk_framebuffer*>(framebuffer_);
 
+	for (uint32_t i = 0; i < framebuffer->_targets.size(); ++i)
+	{
+		transition(framebuffer->_targets[i], st_texture_state_render_target);
+	}
+	if (framebuffer->_depth_stencil)
+	{
+		transition(framebuffer->_depth_stencil, st_texture_state_depth_stencil_target);
+	}
+
 	std::vector<vk::ClearValue> clears;
 	clears.reserve(clear_count);
 	for (uint32_t c_itr = 0; c_itr < clear_count; ++c_itr)
@@ -1941,15 +1950,12 @@ void st_vk_graphics_context::begin_render_pass(
 		.setRenderArea(vk::Rect2D(vk::Offset2D(0, 0), vk::Extent2D(framebuffer->_width, framebuffer->_height)))
 		.setRenderPass(pass->_render_pass);
 
-	bind_framebuffer(framebuffer);
-
 	_command_buffers[st_command_buffer_graphics].beginRenderPass(&begin_info, vk::SubpassContents::eInline);
 	_command_buffers[st_command_buffer_graphics].setViewportWithCount(1, &pass->_viewport);
 }
 
 void st_vk_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer)
 {
-	unbind_framebuffer(framebuffer);
 	_command_buffers[st_command_buffer_graphics].endRenderPass();
 }
 
@@ -2005,25 +2011,6 @@ std::unique_ptr<st_framebuffer> st_vk_graphics_context::create_framebuffer(const
 	VK_VALIDATE(_device.createFramebuffer(&create_info, nullptr, &framebuffer->_framebuffer));
 
 	return std::move(framebuffer);
-}
-
-void st_vk_graphics_context::bind_framebuffer(st_framebuffer* framebuffer_)
-{
-	st_vk_framebuffer* framebuffer = static_cast<st_vk_framebuffer*>(framebuffer_);
-
-	for (uint32_t i = 0; i < framebuffer->_targets.size(); ++i)
-	{
-		transition(framebuffer->_targets[i], st_texture_state_render_target);
-	}
-
-	if (framebuffer->_depth_stencil)
-	{
-		transition(framebuffer->_depth_stencil, st_texture_state_depth_stencil_target);
-	}
-}
-
-void st_vk_graphics_context::unbind_framebuffer(st_framebuffer* framebuffer)
-{
 }
 
 void st_vk_graphics_context::get_desc(const st_texture* texture_, st_texture_desc* out_desc)

@@ -20,10 +20,8 @@ public:
 	virtual void set_compute_pipeline(const st_pipeline* state) = 0;
 	virtual void set_viewport(const st_viewport& viewport) = 0;
 	virtual void set_scissor(int left, int top, int right, int bottom) = 0;
-	virtual void set_clear_color(float r, float g, float b, float a) = 0;
 	virtual void set_blend_factor(float r, float g, float b, float a) = 0;
 
-	virtual void clear(unsigned int clear_flags) = 0;
 	virtual void draw(const struct st_static_drawcall& drawcall) = 0;
 	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
 

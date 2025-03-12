@@ -28,13 +28,13 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		source_buffer->get_format(),
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
-		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
+		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
 		"Gaussian Blur Intermediate");
 
 	{
 		st_attachment_desc attachments[] =
 		{
-			{ _intermediate_target->get_format(), e_st_load_op::clear, e_st_store_op::store }
+			{ _intermediate_target->get_format(), e_st_load_op::dont_care, e_st_store_op::store }
 		};
 		st_render_pass_desc desc;
 		desc._attachments = attachments;
@@ -57,7 +57,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 	{
 		st_attachment_desc attachments[] =
 		{
-			{ target_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store }
+			{ target_buffer->get_format(), e_st_load_op::dont_care, e_st_store_op::store }
 		};
 		st_render_pass_desc desc;
 		desc._attachments = attachments;
@@ -111,7 +111,7 @@ void st_gaussian_blur_render_pass::render(
 
 		st_clear_value clears[] =
 		{
-			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
+			_intermediate_target->get_clear_value(),
 		};
 		context->begin_render_pass(_vertical_blur_pass.get(), _vertical_blur_framebuffer.get(), clears, std::size(clears));
 

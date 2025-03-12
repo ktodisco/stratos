@@ -22,7 +22,7 @@ st_tonemap_render_pass::st_tonemap_render_pass(
 	st_graphics_context* context = st_graphics_context::get();
 
 	{
-		st_attachment_desc attachment = { target_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store };
+		st_attachment_desc attachment = { target_buffer->get_format(), e_st_load_op::dont_care, e_st_store_op::store };
 		st_render_pass_desc desc;
 		desc._attachments = &attachment;
 		desc._attachment_count = 1;

@@ -409,14 +409,6 @@ void st_dx12_graphics_context::set_scissor(int left, int top, int right, int bot
 	_command_list->RSSetScissorRects(1, &rect);
 }
 
-void st_dx12_graphics_context::set_clear_color(float r, float g, float b, float a)
-{
-	_clear_color[0] = r;
-	_clear_color[1] = g;
-	_clear_color[2] = b;
-	_clear_color[3] = a;
-}
-
 void st_dx12_graphics_context::set_blend_factor(float r, float g, float b, float a)
 {
 	const float factor[] = { r, g, b, a };
@@ -453,46 +445,6 @@ void st_dx12_graphics_context::set_render_targets(
 		_bound_targets,
 		false,
 		depth_stencil ? &_bound_depth_stencil : nullptr);
-}
-
-void st_dx12_graphics_context::clear(unsigned int clear_flags)
-{
-	if (clear_flags & st_clear_flag_color)
-	{
-		for (uint32_t target_itr = 0; target_itr < 8; ++target_itr)
-		{
-			if (_bound_targets[target_itr].ptr)
-			{
-				_command_list->ClearRenderTargetView(
-					_bound_targets[target_itr],
-					_clear_color,
-					0,
-					nullptr);
-			}
-		}
-	}
-
-	if (clear_flags & st_clear_flag_depth)
-	{
-		_command_list->ClearDepthStencilView(
-			_bound_depth_stencil,
-			D3D12_CLEAR_FLAG_DEPTH,
-			1.0f,
-			0,
-			0,
-			nullptr);
-	}
-
-	if (clear_flags & st_clear_flag_stencil)
-	{
-		_command_list->ClearDepthStencilView(
-			_bound_depth_stencil,
-			D3D12_CLEAR_FLAG_STENCIL,
-			0.0f,
-			0,
-			0,
-			nullptr);
-	}
 }
 
 void st_dx12_graphics_context::draw(const st_static_drawcall& drawcall)
@@ -1704,7 +1656,7 @@ std::unique_ptr<st_render_pass> st_dx12_graphics_context::create_render_pass(con
 
 void st_dx12_graphics_context::begin_render_pass(
 	st_render_pass* pass_,
-	st_framebuffer* framebuffer,
+	st_framebuffer* framebuffer_,
 	const st_clear_value* clear_values,
 	const uint8_t clear_count)
 {
@@ -1712,12 +1664,64 @@ void st_dx12_graphics_context::begin_render_pass(
 
 	set_viewport(pass->_viewport);
 
-	bind_framebuffer(framebuffer);
+	// Bind the framebuffer.
+	st_dx12_framebuffer* framebuffer = static_cast<st_dx12_framebuffer*>(framebuffer_);
+
+	for (auto& t : framebuffer->_targets)
+	{
+		transition(t, st_texture_state_render_target);
+	}
+
+	const st_texture_view* ds_view = nullptr;
+	if (framebuffer->_depth_stencil)
+	{
+		transition(framebuffer->_depth_stencil, st_texture_state_depth_target);
+	}
+
+	// Bind them.
+	set_render_targets(framebuffer->_views.size(), framebuffer->_views.data(), framebuffer->_depth_stencil_view);
+
+	// Perform any clears.
+	for (uint32_t att = 0; att < pass->_color_attachments.size(); ++att)
+	{
+		const st_attachment_desc& attachment = pass->_color_attachments[att];
+		if (attachment._load_op == e_st_load_op::clear)
+		{
+			_command_list->ClearRenderTargetView(
+				_bound_targets[att],
+				clear_values[att]._color.axes,
+				0,
+				nullptr);
+		}
+	}
+
+	if (framebuffer->_depth_stencil && pass->_depth_attachment._load_op == e_st_load_op::clear)
+	{
+		_command_list->ClearDepthStencilView(
+			_bound_depth_stencil,
+			D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
+			clear_values[clear_count - 1]._depth_stencil._depth,
+			clear_values[clear_count - 1]._depth_stencil._stencil,
+			0,
+			nullptr);
+	}
 }
 
-void st_dx12_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer)
+void st_dx12_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer_)
 {
-	unbind_framebuffer(framebuffer);
+	st_dx12_framebuffer* framebuffer = static_cast<st_dx12_framebuffer*>(framebuffer_);
+
+	for (auto& t : framebuffer->_targets)
+	{
+		transition(t, st_texture_state_pixel_shader_read);
+	}
+
+	if (framebuffer->_depth_stencil)
+	{
+		transition(framebuffer->_depth_stencil, st_texture_state_pixel_shader_read);
+	}
+
+	set_render_targets(0, nullptr, nullptr);
 }
 
 std::unique_ptr<st_framebuffer> st_dx12_graphics_context::create_framebuffer(const st_framebuffer_desc& desc)
@@ -1734,42 +1738,6 @@ std::unique_ptr<st_framebuffer> st_dx12_graphics_context::create_framebuffer(con
 	framebuffer->_depth_stencil_view = desc._depth_target._view;
 
 	return std::move(framebuffer);
-}
-
-void st_dx12_graphics_context::bind_framebuffer(st_framebuffer* framebuffer_)
-{
-	st_dx12_framebuffer* framebuffer = static_cast<st_dx12_framebuffer*>(framebuffer_);
-
-	for (auto& t : framebuffer->_targets)
-	{
-		transition(t, st_texture_state_render_target);
-	}
-
-	const st_texture_view* ds_view = nullptr;
-	if (framebuffer->_depth_stencil)
-	{
-		transition(framebuffer->_depth_stencil, st_texture_state_depth_target);
-	}
-
-	// Bind them.
-	set_render_targets(framebuffer->_views.size(), framebuffer->_views.data(), framebuffer->_depth_stencil_view);
-}
-
-void st_dx12_graphics_context::unbind_framebuffer(st_framebuffer* framebuffer_)
-{
-	st_dx12_framebuffer* framebuffer = static_cast<st_dx12_framebuffer*>(framebuffer_);
-
-	for (auto& t : framebuffer->_targets)
-	{
-		transition(t, st_texture_state_pixel_shader_read);
-	}
-
-	if (framebuffer->_depth_stencil)
-	{
-		transition(framebuffer->_depth_stencil, st_texture_state_pixel_shader_read);
-	}
-
-	set_render_targets(0, nullptr, nullptr);
 }
 
 void st_dx12_graphics_context::begin_loading()

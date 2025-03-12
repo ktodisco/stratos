@@ -62,7 +62,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	{
 		st_attachment_desc attachments[] =
 		{
-			{ output_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store }
+			{ output_buffer->get_format(), e_st_load_op::dont_care, e_st_store_op::store }
 		};
 		st_render_pass_desc desc;
 		desc._attachments = attachments;

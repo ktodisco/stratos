@@ -350,13 +350,6 @@ enum class e_st_shader_type : uint8_t
 using e_st_shader_type_flags = st_flags<e_st_shader_type, uint8_t>;
 ST_ENUM_FLAG_OPS(e_st_shader_type, e_st_shader_type_flags);
 
-enum e_st_clear_flags
-{
-	st_clear_flag_color = 1,
-	st_clear_flag_depth = 2,
-	st_clear_flag_stencil = 4
-};
-
 enum class e_st_load_op : uint8_t
 {
 	load,
@@ -489,8 +482,8 @@ struct st_texture_view_desc
 struct st_attachment_desc
 {
 	e_st_format _format = st_format_unknown;
-	e_st_load_op _load_op = e_st_load_op::clear;
-	e_st_store_op _store_op = e_st_store_op::store;
+	e_st_load_op _load_op = e_st_load_op::dont_care;
+	e_st_store_op _store_op = e_st_store_op::dont_care;
 };
 
 struct st_render_pass_desc
