@@ -175,6 +175,16 @@ st_vk_graphics_context::st_vk_graphics_context(const st_window* window)
 		}
 	}
 
+	auto bda_extension = std::find_if(extension_names.begin(), extension_names.end(),
+		[](const char* str) { return strcmp(str, "VK_EXT_buffer_device_address") == 0; });
+	if (bda_extension != extension_names.end())
+	{
+		auto khr_extension = std::find_if(extension_names.begin(), extension_names.end(),
+			[](const char* str) { return strcmp(str, "VK_KHR_buffer_device_address") == 0; });
+		if (khr_extension != extension_names.end())
+			extension_names.erase(khr_extension);
+	}
+
 	// Query the device capabilities.
 	_gpu.getProperties(&_caps);
 
