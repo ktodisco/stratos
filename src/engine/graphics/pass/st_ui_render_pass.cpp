@@ -59,7 +59,7 @@ st_ui_render_pass::st_ui_render_pass(st_swap_chain* swap_chain)
 	st_graphics_state_desc default_state_desc;
 	default_state_desc._shader = st_shader_manager::get()->get_shader(st_shader_constant_color);
 	default_state_desc._blend_desc._target_blend[0]._blend = false;
-	default_state_desc._depth_stencil_desc._depth_enable = true;
+	default_state_desc._depth_stencil_desc._depth_enable = false;
 	default_state_desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 	default_state_desc._vertex_format = _vertex_format.get();
 	default_state_desc._pass = _pass.get();
