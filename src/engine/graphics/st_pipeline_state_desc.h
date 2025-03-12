@@ -99,8 +99,6 @@ struct st_graphics_state_desc
 	st_sample_desc _sample_desc = {};
 
 	// TODO: The rest of the D3D12_GRAPHICS_PIPELINE_STATE_DESC members.
-
-	bool _dynamic_scissor = false;
 };
 
 struct st_compute_state_desc

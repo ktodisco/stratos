@@ -65,6 +65,12 @@ st_window::~st_window()
 	_module_handle = 0;
 }
 
+void st_window::resize(uint32_t width, uint32_t height)
+{
+	_width = width;
+	_height = height;
+}
+
 bool st_window::update()
 {
 	return _message_thread->pump_messages() && !_shutdown;

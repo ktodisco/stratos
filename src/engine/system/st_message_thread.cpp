@@ -81,6 +81,11 @@ LRESULT st_message_thread::handle_message(HWND window_handle, UINT message, WPAR
 		ValidateRect(window_handle, NULL);
 		break;
 	case WM_SIZE:
+		{
+			uint32_t width = LOWORD(l_param);
+			uint32_t height = HIWORD(l_param);
+			_window->resize(width, height);
+		}
 		break;
 	}
 

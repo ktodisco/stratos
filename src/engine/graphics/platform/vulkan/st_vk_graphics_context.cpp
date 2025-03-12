@@ -527,7 +527,7 @@ void st_vk_graphics_context::set_viewport(const st_viewport& viewport)
 		.setY(viewport._height - viewport._y)
 		.setMinDepth(viewport._min_depth)
 		.setMaxDepth(viewport._max_depth);
-	_command_buffers[st_command_buffer_graphics].setViewport(0, 1, &view);
+	_command_buffers[st_command_buffer_graphics].setViewportWithCount(1, &view);
 }
 
 void st_vk_graphics_context::set_scissor(int left, int top, int right, int bottom)
@@ -535,7 +535,7 @@ void st_vk_graphics_context::set_scissor(int left, int top, int right, int botto
 	vk::Rect2D scissor = vk::Rect2D()
 		.setOffset({ left, top })
 		.setExtent({ uint32_t(right - left), uint32_t(bottom - top) });
-	_command_buffers[st_command_buffer_graphics].setScissor(0, 1, &scissor);
+	_command_buffers[st_command_buffer_graphics].setScissorWithCount(1, &scissor);
 }
 
 void st_vk_graphics_context::draw(const st_static_drawcall& drawcall)
@@ -603,12 +603,8 @@ void st_vk_graphics_context::dispatch(const st_dispatch_args& args)
 	_command_buffers[st_command_buffer_graphics].dispatch(args.group_count_x, args.group_count_y, args.group_count_z);
 }
 
-std::unique_ptr<st_swap_chain> st_vk_graphics_context::create_swap_chain(const st_swap_chain_desc& desc)
+void st_vk_graphics_context::create_swap_chain_internal(const st_swap_chain_desc& desc, st_vk_swap_chain* swap_chain)
 {
-	std::unique_ptr<st_vk_swap_chain> swap_chain = std::make_unique<st_vk_swap_chain>();
-	swap_chain->_device = &_device;
-	swap_chain->_instance = &_instance;
-
 	vk::Win32SurfaceCreateInfoKHR win32_surface_info = vk::Win32SurfaceCreateInfoKHR()
 		.setHinstance(GetModuleHandle(NULL))
 		.setHwnd((HWND)desc._window_handle);
@@ -674,8 +670,34 @@ std::unique_ptr<st_swap_chain> st_vk_graphics_context::create_swap_chain(const s
 		swap_chain->_backbuffers.push_back(buffer);
 		swap_chain->_backbuffer_views.push_back(std::move(view));
 	}
+}
+
+std::unique_ptr<st_swap_chain> st_vk_graphics_context::create_swap_chain(const st_swap_chain_desc& desc)
+{
+	std::unique_ptr<st_vk_swap_chain> swap_chain = std::make_unique<st_vk_swap_chain>();
+	swap_chain->_device = &_device;
+	swap_chain->_instance = &_instance;
+
+	create_swap_chain_internal(desc, swap_chain.get());
 
 	return std::move(swap_chain);
+}
+
+void st_vk_graphics_context::reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain_)
+{
+	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
+
+	for (uint32_t i = 0; i < swap_chain->_backbuffers.size(); ++i)
+		free(swap_chain->_backbuffers[i]);
+	swap_chain->_backbuffers.clear();
+	swap_chain->_backbuffer_views.clear();
+
+	_device.destroySwapchainKHR(swap_chain->_swap_chain, nullptr);
+	_instance.destroySurfaceKHR(swap_chain->_window_surface, nullptr);
+
+	create_swap_chain_internal(desc, swap_chain);
+
+	_frame_index = 0;
 }
 
 st_texture* st_vk_graphics_context::get_backbuffer(st_swap_chain* swap_chain_, uint32_t index)
@@ -695,12 +717,13 @@ void st_vk_graphics_context::acquire_backbuffer(st_swap_chain* swap_chain_)
 	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
 
 	uint32_t backbuffer_index;
-	VK_VALIDATE(_device.acquireNextImageKHR(
+	vk::Result result = _device.acquireNextImageKHR(
 		swap_chain->_swap_chain,
 		std::numeric_limits<uint64_t>::max(),
 		vk::Semaphore(nullptr),
 		_acquire_fence,
-		&backbuffer_index));
+		&backbuffer_index);
+	// TODO: Anything special with suboptimalKHR here?
 	assert(backbuffer_index == _frame_index);
 
 	VK_VALIDATE(_device.waitForFences(1, &_acquire_fence, true, std::numeric_limits<uint64_t>::max()));
@@ -806,7 +829,8 @@ void st_vk_graphics_context::present(st_swap_chain* swap_chain_)
 		.setPSwapchains(&swap_chain->_swap_chain)
 		.setPImageIndices(&_frame_index);
 
-	VK_VALIDATE(_queue.presentKHR(&present_info));
+	result = _queue.presentKHR(&present_info);
+	// TODO: Anything special with suboptimalKHR here?
 
 	// TODO: Better parallelization.
 	VK_VALIDATE(_device.waitForFences(1, &_fence, true, std::numeric_limits<uint64_t>::max()));
@@ -1720,8 +1744,8 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_graphics_pipeline(co
 		.setLogicOpEnable(false);
 
 	std::vector<vk::DynamicState> dynamic_states;
-	if (desc._dynamic_scissor)
-		dynamic_states.push_back(vk::DynamicState::eScissor);
+	dynamic_states.push_back(vk::DynamicState::eViewportWithCount);
+	dynamic_states.push_back(vk::DynamicState::eScissorWithCount);
 
 	vk::PipelineDynamicStateCreateInfo dynamic_state = vk::PipelineDynamicStateCreateInfo()
 		.setDynamicStateCount(dynamic_states.size())
@@ -1734,7 +1758,7 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_graphics_pipeline(co
 		.setPStages(stages.data())
 		.setPVertexInputState(&vertex_format->_input_layout)
 		.setPInputAssemblyState(&input_assembly)
-		.setPViewportState(&viewport)
+		.setPViewportState(nullptr)
 		.setRenderPass(render_pass->_render_pass)
 		.setPRasterizationState(&raster)
 		.setPMultisampleState(&multisample)
@@ -1920,6 +1944,7 @@ void st_vk_graphics_context::begin_render_pass(
 	bind_framebuffer(framebuffer);
 
 	_command_buffers[st_command_buffer_graphics].beginRenderPass(&begin_info, vk::SubpassContents::eInline);
+	_command_buffers[st_command_buffer_graphics].setViewportWithCount(1, &pass->_viewport);
 }
 
 void st_vk_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer)

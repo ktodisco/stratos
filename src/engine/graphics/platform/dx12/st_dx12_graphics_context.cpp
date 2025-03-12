@@ -613,9 +613,10 @@ std::unique_ptr<st_swap_chain> st_dx12_graphics_context::create_swap_chain(const
 	sc->_swap_chain_1.As(&sc->_swap_chain_2);
 	sc->_swap_chain_1.As(&sc->_swap_chain_3);
 
-	sc->_backbuffers.reserve(k_max_frames);
+	sc->_backbuffers.reserve(desc._buffer_count);
+	sc->_backbuffer_views.reserve(desc._buffer_count);
 	ID3D12Resource* buffers[k_max_frames];
-	for (uint32_t b = 0; b < k_max_frames; ++b)
+	for (uint32_t b = 0; b < desc._buffer_count; ++b)
 	{
 		result = sc->_swap_chain_3->GetBuffer(
 			b,
@@ -652,6 +653,63 @@ std::unique_ptr<st_swap_chain> st_dx12_graphics_context::create_swap_chain(const
 	}
 
 	return std::move(sc);
+}
+
+void st_dx12_graphics_context::reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain_)
+{
+	st_dx12_swap_chain* swap_chain = static_cast<st_dx12_swap_chain*>(swap_chain_);
+
+	swap_chain->_backbuffers.clear();
+	swap_chain->_backbuffer_views.clear();
+
+	HRESULT result = swap_chain->_swap_chain_3->ResizeBuffers(
+		desc._buffer_count,
+		desc._width,
+		desc._height,
+		convert_format(desc._format),
+		0);
+
+	swap_chain->_backbuffers.reserve(desc._buffer_count);
+	swap_chain->_backbuffer_views.reserve(desc._buffer_count);
+	ID3D12Resource* buffers[k_max_frames];
+	for (uint32_t b = 0; b < desc._buffer_count; ++b)
+	{
+		result = swap_chain->_swap_chain_3->GetBuffer(
+			b,
+			__uuidof(ID3D12Resource),
+			(void**)&buffers[b]);
+
+		ST_NAME_DX12_OBJECT(buffers[b], str_to_wstr("Backbuffer").c_str());
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+
+		std::unique_ptr<st_dx12_texture> tex = std::make_unique<st_dx12_texture>();
+		tex->_width = desc._width;
+		tex->_height = desc._height;
+		tex->_depth = 1;
+		tex->_format = desc._format;
+		tex->_levels = 1;
+		tex->_state = st_texture_state_present;
+		tex->_usage = e_st_texture_usage::color_target;
+		tex->_handle = buffers[b];
+		// Releasing the ref gained from GetBuffer here as it's now owned by the swap chain.
+		tex->_handle->Release();
+
+		st_texture_view_desc view_desc;
+		view_desc._texture = tex.get();
+		view_desc._format = desc._format;
+		view_desc._usage = e_st_view_usage::render_target;
+		std::unique_ptr<st_texture_view> view = create_texture_view(view_desc);
+
+		swap_chain->_backbuffers.push_back(std::move(tex));
+		swap_chain->_backbuffer_views.push_back(std::move(view));
+	}
+
+	// Update the current frame index.
+	_frame_index = swap_chain->_swap_chain_3->GetCurrentBackBufferIndex();
 }
 
 st_texture* st_dx12_graphics_context::get_backbuffer(st_swap_chain* swap_chain_, uint32_t index)
@@ -1805,9 +1863,13 @@ void st_dx12_graphics_context::present(st_swap_chain* swap_chain_)
 
 void st_dx12_graphics_context::wait_for_idle()
 {
-	if (_fence->GetCompletedValue() < _fence_value)
+	const uint64_t fence = _fence_value;
+	_command_queue->Signal(_fence.Get(), fence);
+	_fence_value++;
+
+	if (_fence->GetCompletedValue() < fence)
 	{
-		_fence->SetEventOnCompletion(_fence_value, _fence_event);
+		_fence->SetEventOnCompletion(fence, _fence_event);
 		WaitForSingleObject(_fence_event, INFINITE);
 	}
 }

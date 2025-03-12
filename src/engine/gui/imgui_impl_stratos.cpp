@@ -226,6 +226,8 @@ static void ImGui_ImplStratos_CreateFontsTexture(st_graphics_context* ctx)
 
 bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
 {
+	ctx->acquire();
+
     if (g_pipeline)
         ImGui_ImplStratos_InvalidateDeviceObjects();
 
@@ -290,9 +292,9 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
     desc._depth_stencil_desc._depth_compare = st_compare_func_always;
     desc._depth_stencil_desc._stencil_enable = false;
 
-    desc._dynamic_scissor = true;
-
     g_pipeline = ctx->create_graphics_pipeline(desc);
+
+	ctx->release();
 
     return true;
 }

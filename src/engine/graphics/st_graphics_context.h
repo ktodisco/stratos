@@ -32,6 +32,7 @@ public:
 
 	// Swap chain.
 	virtual std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) = 0;
+	virtual void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) = 0;
 	virtual st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) = 0;
 	virtual st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) = 0;
 	virtual void acquire_backbuffer(st_swap_chain* swap_chain) = 0;

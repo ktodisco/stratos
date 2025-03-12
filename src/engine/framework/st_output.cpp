@@ -20,6 +20,8 @@
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
 
+#include <gui/st_imgui.h>
+
 #include <math/st_mat4f.h>
 #include <math/st_quatf.h>
 #include <math/st_vec4f.h>
@@ -34,18 +36,134 @@
 st_output* st_output::_this = nullptr;
 
 st_output::st_output(const st_window* window, st_graphics_context* context) :
-	_window(window), _graphics_context(context)
+	_window(window), _width(window->get_width()), _height(window->get_height()), _graphics_context(context)
 {
 	// Create the swap chain first.
 	{
 		st_swap_chain_desc desc;
 		desc._width = _window->get_width();
-		desc._height = window->get_height();
+		desc._height = _window->get_height();
 		desc._format = st_format_r8g8b8a8_unorm;
 		desc._window_handle = _window->get_window_handle();
 
 		_swap_chain = context->create_swap_chain(desc);
 	}
+
+	recreate_textures(_graphics_context);
+	recreate_passes(_graphics_context);
+
+	_this = this;
+}
+
+st_output::~st_output()
+{
+	_this = nullptr;
+}
+
+bool st_output::update_swap_chain()
+{
+	bool recreated = false;
+
+	if (_window->get_width() != _width ||
+		_window->get_height() != _height)
+	{
+		// TODO: Wait for idle, recreate swap chain.
+		_graphics_context->wait_for_idle();
+
+		{
+			st_swap_chain_desc desc;
+			desc._width = _window->get_width();
+			desc._height = _window->get_height();
+			desc._format = st_format_r8g8b8a8_unorm;
+			desc._window_handle = _window->get_window_handle();
+
+			_graphics_context->reconfigure_swap_chain(desc, _swap_chain.get());
+		}
+
+		_graphics_context->acquire();
+		_graphics_context->begin_frame();
+
+		st_imgui::shutdown();
+		recreate_textures(_graphics_context);
+		recreate_passes(_graphics_context);
+		st_imgui::initialize(_window, _graphics_context, _swap_chain.get());
+
+		_graphics_context->end_frame();
+		_graphics_context->execute();
+		_graphics_context->release();
+
+		_width = _window->get_width();
+		_height = _window->get_height();
+
+		recreated = true;
+	}
+
+	return recreated;
+}
+
+void st_output::update(st_frame_params* params)
+{
+	// Acquire the render context.
+	_graphics_context->acquire();
+
+	_graphics_context->begin_frame();
+	params->_frame_index = _graphics_context->get_frame_index();
+
+	_atmosphere_transmission->compute(_graphics_context, params);
+	_atmosphere_sky->render(_graphics_context, params);
+
+	_directional_shadow_pass->render(_graphics_context, params);
+	_gbuffer_pass->render(_graphics_context, params);
+	_deferred_pass->render(_graphics_context, params);
+	_atmosphere_pass->render(_graphics_context, params);
+	_bloom_pass->render(_graphics_context, params);
+	_tonemap_pass->render(_graphics_context, params);
+
+	_graphics_context->acquire_backbuffer(_swap_chain.get());
+	_graphics_context->transition(
+		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
+		st_texture_state_render_target);
+
+	_passthrough_pass->render(_graphics_context, params);
+	_ui_pass->render(_graphics_context, params);
+
+	// Swap the frame buffers and release the context.
+	_graphics_context->transition(
+		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
+		st_texture_state_present);
+
+	_graphics_context->end_frame();
+	_graphics_context->present(_swap_chain.get());
+
+	_graphics_context->release();
+}
+
+void st_output::get_target_formats(e_st_render_pass_type type, st_graphics_state_desc& desc)
+{
+	// TODO: Assert only one bit set in the type argument.
+	switch (type)
+	{
+	case e_st_render_pass_type::shadow: _directional_shadow_pass->get_target_formats(desc); break;
+	case e_st_render_pass_type::gbuffer: _gbuffer_pass->get_target_formats(desc); break;
+	case e_st_render_pass_type::ui: _ui_pass->get_target_formats(desc); break;
+	default:
+		assert(false);
+	};
+}
+
+void st_output::recreate_textures(class st_graphics_context* context)
+{
+	_transmittance = nullptr;
+	_sky_view = nullptr;
+	_directional_shadow_map = nullptr;
+	_gbuffer_albedo_target = nullptr;
+	_gbuffer_normal_target = nullptr;
+	_gbuffer_third_target = nullptr;
+	_depth_stencil_target = nullptr;
+	_deferred_target = nullptr;
+	_bloom_target = nullptr;
+	_tonemap_target = nullptr;
+
 	_directional_shadow_map = std::make_unique<st_render_texture>(
 		context,
 		2048,
@@ -142,6 +260,20 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		st_texture_state_pixel_shader_read,
 		st_vec4f { 0.0f, 0.0f, 0.0f, 0.0f },
 		"Sky View");
+}
+
+void st_output::recreate_passes(class st_graphics_context* context)
+{
+	_atmosphere_transmission = nullptr;
+	_atmosphere_sky = nullptr;
+	_atmosphere_pass = nullptr;
+	_directional_shadow_pass = nullptr;
+	_gbuffer_pass = nullptr;
+	_deferred_pass = nullptr;
+	_bloom_pass = nullptr;
+	_tonemap_pass = nullptr;
+	_passthrough_pass = nullptr;
+	_ui_pass = nullptr;
 
 	_atmosphere_transmission = std::make_unique<st_atmosphere_transmission_pass>(
 		_transmittance.get());
@@ -179,61 +311,4 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		_tonemap_target.get(),
 		_swap_chain.get());
 	_ui_pass = std::make_unique<st_ui_render_pass>(_swap_chain.get());
-
-	_this = this;
-}
-
-st_output::~st_output()
-{
-	_this = nullptr;
-}
-
-void st_output::update(st_frame_params* params)
-{
-	// Acquire the render context.
-	_graphics_context->acquire();
-
-	_graphics_context->begin_frame();
-	params->_frame_index = _graphics_context->get_frame_index();
-
-	_atmosphere_transmission->compute(_graphics_context, params);
-	_atmosphere_sky->render(_graphics_context, params);
-
-	_directional_shadow_pass->render(_graphics_context, params);
-	_gbuffer_pass->render(_graphics_context, params);
-	_deferred_pass->render(_graphics_context, params);
-	_atmosphere_pass->render(_graphics_context, params);
-	_bloom_pass->render(_graphics_context, params);
-	_tonemap_pass->render(_graphics_context, params);
-
-	_graphics_context->acquire_backbuffer(_swap_chain.get());
-	_graphics_context->transition(
-		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
-		st_texture_state_render_target);
-
-	_passthrough_pass->render(_graphics_context, params);
-	_ui_pass->render(_graphics_context, params);
-
-	// Swap the frame buffers and release the context.
-	_graphics_context->transition(
-		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
-		st_texture_state_present);
-
-	_graphics_context->end_frame();
-	_graphics_context->present(_swap_chain.get());
-
-	_graphics_context->release();
-}
-
-void st_output::get_target_formats(e_st_render_pass_type type, st_graphics_state_desc& desc)
-{
-	// TODO: Assert only one bit set in the type argument.
-	switch (type)
-	{
-	case e_st_render_pass_type::shadow: _directional_shadow_pass->get_target_formats(desc); break;
-	case e_st_render_pass_type::gbuffer: _gbuffer_pass->get_target_formats(desc); break;
-	case e_st_render_pass_type::ui: _ui_pass->get_target_formats(desc); break;
-	default:
-		assert(false);
-	};
 }

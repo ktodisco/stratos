@@ -76,7 +76,7 @@ void st_dx12_descriptor_heap::deallocate_handle(uint32_t offset)
 		st_descriptor_free_block* block = (*itr).get();
 
 		// Handle the case where the freed handle is at the end of an existing free block.
-		if (offset == (block->_index + block->_size))
+		if (offset == (block->_index + block->_size - 1))
 		{
 			block->_size++;
 

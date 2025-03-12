@@ -165,11 +165,11 @@ struct st_vk_swap_chain : public st_swap_chain, public st_vk_resource
 {
 	~st_vk_swap_chain()
 	{
-		_device->destroySwapchainKHR(_swap_chain, nullptr);
-		_instance->destroySurfaceKHR(_window_surface, nullptr);
-
 		for (uint32_t i = 0; i < _backbuffers.size(); ++i)
 			free(_backbuffers[i]);
+
+		_device->destroySwapchainKHR(_swap_chain, nullptr);
+		_instance->destroySurfaceKHR(_window_surface, nullptr);
 	}
 
 	vk::Instance* _instance;

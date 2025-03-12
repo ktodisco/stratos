@@ -20,6 +20,7 @@ public:
 	~st_camera();
 
 	void update(struct st_frame_params* params);
+	void resize(uint32_t width, uint32_t height) { _width = width; _height = height; }
 
 	void set_yaw(float yaw) { _yaw = yaw; }
 	void set_pitch(float pitch) { _pitch = pitch; }

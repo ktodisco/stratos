@@ -19,20 +19,13 @@ public:
 	st_window(std::string window_name, uint32_t width, uint32_t height, st_input* input);
 	~st_window();
 
-	HWND get_window_handle() const
-	{
-		return _window_handle;
-	}
+	HWND get_window_handle() const { return _window_handle; }
 
-	uint32_t get_width() const
-	{
-		return _width;
-	}
+	uint32_t get_width() const { return _width; }
 
-	uint32_t get_height() const
-	{
-		return _height;
-	}
+	uint32_t get_height() const { return _height; }
+
+	void resize(uint32_t width, uint32_t height);
 
 	bool update();
 	void close();

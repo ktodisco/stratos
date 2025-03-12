@@ -47,6 +47,7 @@ public:
 
 	// Swap chain.
 	std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) override;
+	void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) override;
 	st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) override;
 	st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) override;
 	void acquire_backbuffer(st_swap_chain* swap_chain) override;
@@ -130,6 +131,8 @@ public:
 private:
 	void bind_framebuffer(st_framebuffer* framebuffer);
 	void unbind_framebuffer(st_framebuffer* framebuffer);
+
+	void create_swap_chain_internal(const st_swap_chain_desc& desc, st_vk_swap_chain* swap_chain);
 
 	vk::Instance _instance;
 	vk::PhysicalDevice _gpu;

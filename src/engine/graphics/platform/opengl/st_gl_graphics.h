@@ -18,6 +18,7 @@
 
 #include <Windows.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,7 @@
 	GLenum GLUE(er, __LINE__) = glGetError(); \
 	if (GLUE(er, __LINE__) != GL_NO_ERROR) \
 	{ \
+		std::cout << "OpenGL encountered an error: " << gluErrorString(GLUE(er, __LINE__)) << std::endl; \
 		assert(false); \
 	}
 

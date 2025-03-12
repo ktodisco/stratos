@@ -343,6 +343,33 @@ std::unique_ptr<st_swap_chain> st_gl_graphics_context::create_swap_chain(const s
 	return std::move(swap_chain);
 }
 
+void st_gl_graphics_context::reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain_)
+{
+	st_gl_swap_chain* swap_chain = static_cast<st_gl_swap_chain*>(swap_chain_);
+
+	swap_chain->_backbuffers.clear();
+	swap_chain->_backbuffer_views.clear();
+
+	for (uint32_t i = 0; i < desc._buffer_count; ++i)
+	{
+		std::unique_ptr<st_gl_texture> buffer = std::make_unique<st_gl_texture>();
+		buffer->_width = desc._width;
+		buffer->_height = desc._height;
+		buffer->_format = desc._format;
+		buffer->_handle = 0;
+
+		st_texture_view_desc view_desc;
+		view_desc._texture = buffer.get();
+		view_desc._usage = e_st_view_usage::render_target;
+		view_desc._format = desc._format;
+
+		std::unique_ptr<st_texture_view> view = create_texture_view(view_desc);
+
+		swap_chain->_backbuffers.push_back(std::move(buffer));
+		swap_chain->_backbuffer_views.push_back(std::move(view));
+	}
+}
+
 st_texture* st_gl_graphics_context::get_backbuffer(st_swap_chain* swap_chain_, uint32_t index)
 {
 	st_gl_swap_chain* swap_chain = static_cast<st_gl_swap_chain*>(swap_chain_);

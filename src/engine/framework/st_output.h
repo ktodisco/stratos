@@ -39,6 +39,7 @@ public:
 	st_output(const st_window* window, class st_graphics_context* graphics);
 	~st_output();
 
+	bool update_swap_chain();
 	void update(struct st_frame_params* params);
 
 	void get_target_formats(e_st_render_pass_type type, struct st_graphics_state_desc& desc);
@@ -49,7 +50,12 @@ public:
 
 private:
 
+	void recreate_textures(class st_graphics_context* context);
+	void recreate_passes(class st_graphics_context* context);
+
 	const st_window* _window;
+	uint32_t _width;
+	uint32_t _height;
 	class st_graphics_context* _graphics_context;
 
 	std::unique_ptr<struct st_swap_chain> _swap_chain;
