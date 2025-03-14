@@ -71,12 +71,42 @@ void st_dx12_descriptor_heap::deallocate_handle(uint32_t offset)
 {
 	bool success = false;
 
-	for (auto itr = _free_blocks.begin(); itr != _free_blocks.end(); ++itr)
+	auto itr = _free_blocks.begin();
+	for (itr; itr != _free_blocks.end(); ++itr)
 	{
 		st_descriptor_free_block* block = (*itr).get();
 
+		// Handle the case where the freed handle is at the beginning of an existing free block.
+		if (offset == (block->_index - 1))
+		{
+			block->_size++;
+			block->_index = offset;
+
+			// Handle the case where this block now joins with the block before it.
+			if (itr != _free_blocks.begin())
+			{
+				auto prev_block = std::next(itr, -1);
+				if ((*prev_block)->_index + (*prev_block)->_size == block->_index)
+				{
+					// Prefer to keep around this block, as it's guaranteed to be older in memory and
+					// will help with fragmentation.
+					block->_index = (*prev_block)->_index;
+					block->_size += (*prev_block)->_size;
+					_free_blocks.remove(*prev_block);
+				}
+			}
+
+			success = true;
+			break;
+		}
+
+		// Order is guaranteed in the free block list, so if not at the front of the only block that
+		// would contain this handle, exit.
+		if (offset < block->_index)
+			break;
+
 		// Handle the case where the freed handle is at the end of an existing free block.
-		if (offset == (block->_index + block->_size - 1))
+		if (offset == (block->_index + block->_size))
 		{
 			block->_size++;
 
@@ -90,19 +120,10 @@ void st_dx12_descriptor_heap::deallocate_handle(uint32_t offset)
 					// will help with fragmentation.
 					(*next_block)->_index = block->_index;
 					(*next_block)->_size += block->_size;
-					_free_blocks.pop_front();
+					_free_blocks.remove(*itr);
 				}
 			}
 
-			success = true;
-			break;
-		}
-
-		// Handle the case where the freed handle is at the beginning of an existing free block.
-		if (offset == (block->_index - 1))
-		{
-			block->_size++;
-			block->_index = offset;
 			success = true;
 			break;
 		}
@@ -110,10 +131,10 @@ void st_dx12_descriptor_heap::deallocate_handle(uint32_t offset)
 
 	if (!success)
 	{
-		// Set up the initial free block.
-		_free_blocks.push_front(std::make_unique<st_descriptor_free_block>());
-		_free_blocks.front()->_index = offset;
-		_free_blocks.front()->_size = 1;
+		// Insert this as a new free block.
+		auto block = _free_blocks.insert(itr, std::make_unique<st_descriptor_free_block>());
+		(*block)->_index = offset;
+		(*block)->_size = 1;
 	}
 }
 
@@ -151,6 +172,12 @@ D3D12_GPU_DESCRIPTOR_HANDLE st_dx12_descriptor_heap::get_handle_gpu(st_dx12_desc
 uint32_t st_dx12_descriptor_heap::get_descriptor_size() const
 {
 	return _descriptor_size;
+}
+
+void st_dx12_descriptor_heap::report_leaks() const
+{
+	assert(_free_blocks.size() == 1);
+	assert(_free_blocks.front()->_size == _size);
 }
 
 #endif

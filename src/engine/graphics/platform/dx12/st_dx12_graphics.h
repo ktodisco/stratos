@@ -86,7 +86,10 @@ struct st_dx12_resource_table : public st_resource_table
 
 struct st_dx12_sampler : public st_sampler
 {
+	~st_dx12_sampler();
+
 	st_dx12_descriptor _handle;
+	class st_dx12_descriptor_heap* _heap;
 };
 
 struct st_dx12_shader : public st_shader

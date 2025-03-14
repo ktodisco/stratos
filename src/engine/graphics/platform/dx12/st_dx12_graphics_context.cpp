@@ -331,6 +331,14 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 
 	_upload_buffer = nullptr;
 
+#if _DEBUG
+	_gui_srv_heap->report_leaks();
+	_static_sampler_heap->report_leaks();
+	_dsv_heap->report_leaks();
+	_rtv_heap->report_leaks();
+	_resource_heap->report_leaks();
+#endif
+
 	_gui_srv_heap = nullptr;
 	_static_sampler_heap = nullptr;
 	_dsv_heap = nullptr;
@@ -338,6 +346,9 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 	_resource_heap = nullptr;
 	for (uint32_t h_itr = 0; h_itr < k_max_frames; ++h_itr)
 	{
+		_cbv_srv_heap[h_itr]->empty();
+		_sampler_heap[h_itr]->empty();
+
 		_cbv_srv_heap[h_itr] = nullptr;
 		_sampler_heap[h_itr] = nullptr;
 	}
@@ -1001,6 +1012,7 @@ std::unique_ptr<st_sampler> st_dx12_graphics_context::create_sampler(const st_sa
 
 	std::unique_ptr<st_dx12_sampler> sampler = std::make_unique<st_dx12_sampler>();
 	sampler->_handle = sampler_handle._offset;
+	sampler->_heap = _static_sampler_heap.get();
 
 	return std::move(sampler);
 }

@@ -59,6 +59,8 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE get_handle_gpu(st_dx12_descriptor offset) const;
 	uint32_t get_descriptor_size() const;
 
+	void report_leaks() const;
+
 private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _heap;
 	uint32_t _descriptor_size;

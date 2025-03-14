@@ -13,6 +13,11 @@ st_dx12_buffer_view::~st_dx12_buffer_view()
 	_heap->deallocate_handle(_handle);
 }
 
+st_dx12_sampler::~st_dx12_sampler()
+{
+	_heap->deallocate_handle(_handle);
+}
+
 st_dx12_texture_view::~st_dx12_texture_view()
 {
 	_heap->deallocate_handle(_handle);
