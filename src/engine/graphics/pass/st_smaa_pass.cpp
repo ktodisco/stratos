@@ -24,7 +24,7 @@ st_smaa_pass::st_smaa_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* stencil_buffer,
 	st_swap_chain* swap_chain)
-	: _stencil_buffer(stencil_buffer)
+	: _source_buffer(source_buffer), _stencil_buffer(stencil_buffer)
 {
 	st_graphics_context* context = st_graphics_context::get();
 
@@ -46,9 +46,9 @@ st_smaa_pass::st_smaa_pass(
 		_cbv = context->create_buffer_view(desc);
 	}
 
-	_create_edges_pass(context, source_buffer);
+	_create_edges_pass(context);
 	_create_weights_pass(context);
-	_create_blend_pass(context, source_buffer, swap_chain);
+	_create_blend_pass(context, swap_chain);
 }
 
 st_smaa_pass::~st_smaa_pass()
@@ -75,12 +75,12 @@ void st_smaa_pass::render(class st_graphics_context* context, const struct st_fr
 	_render_blend_pass(context, params);
 }
 
-void st_smaa_pass::_create_edges_pass(st_graphics_context* context, st_render_texture* source_buffer)
+void st_smaa_pass::_create_edges_pass(st_graphics_context* context)
 {
 	_edges_target = std::make_unique<st_render_texture>(
 		context,
-		source_buffer->get_width(),
-		source_buffer->get_height(),
+		_source_buffer->get_width(),
+		_source_buffer->get_height(),
 		st_format_r16g16_float,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
@@ -132,7 +132,7 @@ void st_smaa_pass::_create_edges_pass(st_graphics_context* context, st_render_te
 	{
 		_edges_resources = context->create_resource_table();
 		const st_buffer_view* cbv = _cbv.get();
-		const st_texture_view* srv = source_buffer->get_resource_view();
+		const st_texture_view* srv = _source_buffer->get_resource_view();
 		const st_sampler* sampler = _global_resources->_point_clamp_sampler.get();
 		context->set_constant_buffers(_edges_resources.get(), 1, &cbv);
 		context->set_textures(_edges_resources.get(), 1, &srv, &sampler);
@@ -238,10 +238,7 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 	}
 }
 
-void st_smaa_pass::_create_blend_pass(
-	st_graphics_context* context,
-	st_render_texture* source_buffer,
-	st_swap_chain* swap_chain)
+void st_smaa_pass::_create_blend_pass(st_graphics_context* context, st_swap_chain* swap_chain)
 {
 	st_texture_desc target_desc;
 	context->get_desc(context->get_backbuffer(swap_chain, 0), &target_desc);
@@ -287,7 +284,7 @@ void st_smaa_pass::_create_blend_pass(
 		_blend_resources = context->create_resource_table();
 		const st_buffer_view* cbv = _cbv.get();
 		const st_texture_view* srvs[] = {
-			source_buffer->get_resource_view(),
+			_source_buffer->get_resource_view(),
 			_weights_target->get_resource_view()
 		};
 		const st_sampler* samplers[] = {
@@ -305,6 +302,8 @@ void st_smaa_pass::_render_edges_pass(class st_graphics_context* context, const 
 
 	st_mat4f identity;
 	identity.make_identity();
+
+	context->transition(_source_buffer->get_texture(), st_texture_state_pixel_shader_read);
 
 	context->set_pipeline(_edges_pipeline.get());
 	context->bind_resources(_edges_resources.get());
@@ -335,6 +334,8 @@ void st_smaa_pass::_render_weights_pass(class st_graphics_context* context, cons
 	st_mat4f identity;
 	identity.make_identity();
 
+	context->transition(_edges_target->get_texture(), st_texture_state_pixel_shader_read);
+
 	context->set_pipeline(_weights_pipeline.get());
 	context->bind_resources(_weights_resources.get());
 
@@ -363,6 +364,8 @@ void st_smaa_pass::_render_blend_pass(class st_graphics_context* context, const 
 
 	st_mat4f identity;
 	identity.make_identity();
+
+	context->transition(_weights_target->get_texture(), st_texture_state_pixel_shader_read);
 
 	context->set_pipeline(_blend_pipeline.get());
 	context->bind_resources(_blend_resources.get());

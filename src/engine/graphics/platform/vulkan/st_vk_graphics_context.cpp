@@ -1975,17 +1975,6 @@ void st_vk_graphics_context::begin_render_pass(
 void st_vk_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer_)
 {
 	_command_buffers[st_command_buffer_graphics].endRenderPass();
-
-	st_vk_framebuffer* framebuffer = static_cast<st_vk_framebuffer*>(framebuffer_);
-
-	for (uint32_t i = 0; i < framebuffer->_targets.size(); ++i)
-	{
-		transition(framebuffer->_targets[i], st_texture_state_pixel_shader_read);
-	}
-	if (framebuffer->_depth_stencil)
-	{
-		transition(framebuffer->_depth_stencil, st_texture_state_pixel_shader_read);
-	}
 }
 
 std::unique_ptr<st_framebuffer> st_vk_graphics_context::create_framebuffer(const st_framebuffer_desc& desc)

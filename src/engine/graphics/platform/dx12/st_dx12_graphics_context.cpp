@@ -1724,18 +1724,6 @@ void st_dx12_graphics_context::begin_render_pass(
 
 void st_dx12_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer_)
 {
-	st_dx12_framebuffer* framebuffer = static_cast<st_dx12_framebuffer*>(framebuffer_);
-
-	for (auto& t : framebuffer->_targets)
-	{
-		transition(t, st_texture_state_pixel_shader_read);
-	}
-
-	if (framebuffer->_depth_stencil)
-	{
-		transition(framebuffer->_depth_stencil, st_texture_state_pixel_shader_read);
-	}
-
 	set_render_targets(0, nullptr, nullptr);
 }
 

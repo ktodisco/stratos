@@ -22,18 +22,16 @@ public:
 	void render(class st_graphics_context* context, const struct st_frame_params* params);
 
 private:
-	void _create_edges_pass(class st_graphics_context* context, class st_render_texture* source_buffer);
+	void _create_edges_pass(class st_graphics_context* context);
 	void _create_weights_pass(class st_graphics_context* context);
-	void _create_blend_pass(
-		class st_graphics_context* context,
-		class st_render_texture* source_buffer,
-		struct st_swap_chain* swap_chain);
+	void _create_blend_pass(class st_graphics_context* context, struct st_swap_chain* swap_chain);
 
 	void _render_edges_pass(class st_graphics_context* context, const struct st_frame_params* params);
 	void _render_weights_pass(class st_graphics_context* context, const struct st_frame_params* params);
 	void _render_blend_pass(class st_graphics_context* context, const struct st_frame_params* params);
 
 private:
+	st_render_texture* _source_buffer = nullptr;
 	st_render_texture* _stencil_buffer = nullptr;
 
 	std::unique_ptr<struct st_buffer> _cb = nullptr;
