@@ -65,7 +65,9 @@ struct st_dx12_pipeline : public st_pipeline
 {
 	~st_dx12_pipeline() { _pipeline = nullptr; }
 
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipeline;
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> _pipeline = nullptr;
+
+	uint8_t _stencil_ref = 0;
 };
 
 struct st_dx12_render_pass : public st_render_pass

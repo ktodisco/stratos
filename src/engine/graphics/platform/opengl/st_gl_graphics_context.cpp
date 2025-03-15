@@ -128,6 +128,8 @@ void st_gl_graphics_context::set_pipeline(const st_pipeline* state_)
 		state_desc._depth_stencil_desc._depth_enable,
 		convert_compare_func(state_desc._depth_stencil_desc._depth_compare));
 
+	set_stencil_state(state_desc._depth_stencil_desc);
+
 	set_depth_mask(
 		state_desc._depth_stencil_desc._depth_mask != st_depth_write_mask_zero);
 
@@ -899,6 +901,41 @@ void st_gl_graphics_context::set_depth_state(bool enable, GLenum func)
 	}
 	else
 		glDisable(GL_DEPTH_TEST);
+}
+
+void st_gl_graphics_context::set_stencil_state(const st_depth_stencil_desc& desc)
+{
+	if (desc._stencil_enable)
+	{
+		glEnable(GL_STENCIL_TEST);
+
+		glStencilOpSeparate(
+			GL_FRONT,
+			convert_stencil_op(desc._front_stencil._stencil_fail_op),
+			convert_stencil_op(desc._front_stencil._depth_fail_op),
+			convert_stencil_op(desc._front_stencil._stencil_pass_op));
+		glStencilOpSeparate(
+			GL_BACK,
+			convert_stencil_op(desc._back_stencil._stencil_fail_op),
+			convert_stencil_op(desc._back_stencil._depth_fail_op),
+			convert_stencil_op(desc._back_stencil._stencil_pass_op));
+
+		glStencilFuncSeparate(
+			GL_FRONT,
+			convert_compare_func(desc._front_stencil._stencil_func),
+			desc._stencil_ref,
+			desc._stencil_read_mask);
+
+		glStencilFuncSeparate(
+			GL_BACK,
+			convert_compare_func(desc._back_stencil._stencil_func),
+			desc._stencil_ref,
+			desc._stencil_read_mask);
+
+		glStencilMask(desc._stencil_read_mask);
+	}
+	else
+		glDisable(GL_STENCIL_TEST);
 }
 
 void st_gl_graphics_context::set_cull_state(bool enable, GLenum mode)

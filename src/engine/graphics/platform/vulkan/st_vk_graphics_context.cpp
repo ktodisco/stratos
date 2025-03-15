@@ -1715,13 +1715,19 @@ std::unique_ptr<st_pipeline> st_vk_graphics_context::create_graphics_pipeline(co
 		.setFailOp(convert_stencil_op(desc._depth_stencil_desc._front_stencil._stencil_fail_op))
 		.setDepthFailOp(convert_stencil_op(desc._depth_stencil_desc._front_stencil._depth_fail_op))
 		.setPassOp(convert_stencil_op(desc._depth_stencil_desc._front_stencil._stencil_pass_op))
-		.setCompareOp(convert_compare_op(desc._depth_stencil_desc._front_stencil._stencil_func));
+		.setCompareOp(convert_compare_op(desc._depth_stencil_desc._front_stencil._stencil_func))
+		.setCompareMask(desc._depth_stencil_desc._stencil_read_mask)
+		.setWriteMask(desc._depth_stencil_desc._stencil_write_mask)
+		.setReference(desc._depth_stencil_desc._stencil_ref);
 
 	vk::StencilOpState stencil_back = vk::StencilOpState()
 		.setFailOp(convert_stencil_op(desc._depth_stencil_desc._back_stencil._stencil_fail_op))
 		.setDepthFailOp(convert_stencil_op(desc._depth_stencil_desc._back_stencil._depth_fail_op))
 		.setPassOp(convert_stencil_op(desc._depth_stencil_desc._back_stencil._stencil_pass_op))
-		.setCompareOp(convert_compare_op(desc._depth_stencil_desc._back_stencil._stencil_func));
+		.setCompareOp(convert_compare_op(desc._depth_stencil_desc._back_stencil._stencil_func))
+		.setCompareMask(desc._depth_stencil_desc._stencil_read_mask)
+		.setWriteMask(desc._depth_stencil_desc._stencil_write_mask)
+		.setReference(desc._depth_stencil_desc._stencil_ref);
 
 	vk::PipelineDepthStencilStateCreateInfo depth_stencil = vk::PipelineDepthStencilStateCreateInfo()
 		.setDepthTestEnable(desc._depth_stencil_desc._depth_enable)
@@ -1893,6 +1899,8 @@ std::unique_ptr<st_render_pass> st_vk_graphics_context::create_render_pass(const
 			.setSamples(vk::SampleCountFlagBits::e1)
 			.setLoadOp(convert_load_op(desc._depth_attachment._load_op))
 			.setStoreOp(convert_store_op(desc._depth_attachment._store_op))
+			.setStencilLoadOp(convert_load_op(desc._depth_attachment._load_op))
+			.setStencilStoreOp(convert_store_op(desc._depth_attachment._store_op))
 			.setInitialLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
 			.setFinalLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 		attachment_descs.push_back(ds_desc);
@@ -1964,9 +1972,20 @@ void st_vk_graphics_context::begin_render_pass(
 	_command_buffers[st_command_buffer_graphics].setViewportWithCount(1, &pass->_viewport);
 }
 
-void st_vk_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer)
+void st_vk_graphics_context::end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer_)
 {
 	_command_buffers[st_command_buffer_graphics].endRenderPass();
+
+	st_vk_framebuffer* framebuffer = static_cast<st_vk_framebuffer*>(framebuffer_);
+
+	for (uint32_t i = 0; i < framebuffer->_targets.size(); ++i)
+	{
+		transition(framebuffer->_targets[i], st_texture_state_pixel_shader_read);
+	}
+	if (framebuffer->_depth_stencil)
+	{
+		transition(framebuffer->_depth_stencil, st_texture_state_pixel_shader_read);
+	}
 }
 
 std::unique_ptr<st_framebuffer> st_vk_graphics_context::create_framebuffer(const st_framebuffer_desc& desc)

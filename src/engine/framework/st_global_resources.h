@@ -15,6 +15,7 @@ struct st_global_resources
 {
 	std::unique_ptr<st_sampler> _trilinear_clamp_sampler = nullptr;
 	std::unique_ptr<st_sampler> _trilinear_wrap_sampler = nullptr;
+	std::unique_ptr<st_sampler> _point_clamp_sampler = nullptr;
 };
 
 extern std::unique_ptr<st_global_resources> _global_resources;

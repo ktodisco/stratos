@@ -41,20 +41,11 @@ float3 aces_film(float3 x)
 	return result;
 }
 
-float3 gamma_correct(float3 x)
-{
-	float3 low = x * 12.92f;
-	float3 high = (pow(abs(x), 1.0f / 2.4f) * 1.055f) - 0.055f;
-	float3 srgb = select(x <= 0.0031308f, low, high);
-	return srgb;
-}
-
 float4 ps_main(ps_input input) : SV_TARGET
 {
 	float3 source = tex.Sample(tex_sampler, input.uv).rgb;
 	float3 bloomed = source + bloom.Sample(bloom_sampler, input.uv).rgb;
 	float3 tonemap = aces_film(bloomed);
-	float3 gamma = gamma_correct(tonemap);
 	
-	return float4(gamma, 1.0f);
+	return float4(tonemap, 1.0f);
 };

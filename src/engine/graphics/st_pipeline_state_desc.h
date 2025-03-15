@@ -65,6 +65,7 @@ struct st_depth_stencil_desc
 	bool _stencil_enable = false;
 	uint8_t _stencil_read_mask = 0;
 	uint8_t _stencil_write_mask = 0;
+	uint8_t _stencil_ref = 0;
 
 	st_stencil_op_desc _front_stencil = {};
 	st_stencil_op_desc _back_stencil = {};

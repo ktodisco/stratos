@@ -389,6 +389,8 @@ void st_dx12_graphics_context::set_pipeline(const st_pipeline* _state)
 {
 	const st_dx12_pipeline* state = static_cast<const st_dx12_pipeline*>(_state);
 	_command_list->SetPipelineState(state->_pipeline.Get());
+
+	_command_list->OMSetStencilRef(state->_stencil_ref);
 }
 
 void st_dx12_graphics_context::set_compute_pipeline(const st_pipeline* _state)
@@ -819,7 +821,7 @@ std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(const st_te
 
 			MemcpySubresource(&DestData, &subresources[i], static_cast<size_t>(row_sizes_bytes[i]), row_count[i], layouts[i].Footprint.Depth);
 
-			_upload_buffer_offset += (layouts[i].Footprint.RowPitch * layouts[i].Footprint.Height * layouts[i].Footprint.Depth) / 4;
+			_upload_buffer_offset += DestData.SlicePitch * layouts[i].Footprint.Depth;
 
 			// The offset of the layout needs to be adjusted by the amount we've written into the upload buffer
 			// to this point in the frame, for when it's used as a copy location below.
@@ -1535,6 +1537,7 @@ std::unique_ptr<st_pipeline> st_dx12_graphics_context::create_graphics_pipeline(
 	depth_stencil_desc.BackFace = back_desc;
 
 	pipeline_desc.DepthStencilState = depth_stencil_desc;
+	pipeline->_stencil_ref = desc._depth_stencil_desc._stencil_ref;
 
 	// Primitive topology.
 	pipeline_desc.PrimitiveTopologyType = convert_topology_type(desc._primitive_topology_type);

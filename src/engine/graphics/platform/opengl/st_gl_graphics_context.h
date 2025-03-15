@@ -118,6 +118,7 @@ public:
 
 private:
 	void set_depth_state(bool enable, GLenum func);
+	void set_stencil_state(const st_depth_stencil_desc& desc);
 	void set_cull_state(bool enable, GLenum mode);
 	void set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor);
 	void set_depth_mask(bool enable);

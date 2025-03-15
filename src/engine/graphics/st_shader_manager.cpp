@@ -88,6 +88,18 @@ st_shader_manager::st_shader_manager(st_graphics_context* context)
 		context->create_shader(
 			"data/shaders/st_atmosphere_apply",
 			e_st_shader_type::vertex | e_st_shader_type::pixel);
+	_shaders[st_shader_smaa_edges] =
+		context->create_shader(
+			"data/shaders/st_smaa_edges",
+			e_st_shader_type::vertex | e_st_shader_type::pixel);
+	_shaders[st_shader_smaa_weights] =
+		context->create_shader(
+			"data/shaders/st_smaa_weights",
+			e_st_shader_type::vertex | e_st_shader_type::pixel);
+	_shaders[st_shader_smaa_blend] =
+		context->create_shader(
+			"data/shaders/st_smaa_blend",
+			e_st_shader_type::vertex | e_st_shader_type::pixel);
 
 	_this = this;
 }

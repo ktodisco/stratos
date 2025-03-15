@@ -175,7 +175,7 @@ std::unique_ptr<st_texture> load_dds_texture(const char* fullpath)
 	st_texture_desc desc;
 	desc._width = header->width;
 	desc._height = header->height;
-	desc._levels = header->mipMapCount;
+	desc._levels = std::max(header->mipMapCount, 1u);
 	desc._format = get_st_format(header->ddspf);
 	desc._usage = e_st_texture_usage::sampled;
 	desc._initial_state = st_texture_state_pixel_shader_read;

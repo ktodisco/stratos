@@ -35,6 +35,18 @@ void create_global_resources(st_graphics_context* context)
 
 		_global_resources->_trilinear_wrap_sampler = context->create_sampler(desc);
 	}
+
+	{
+		st_sampler_desc desc;
+		desc._min_filter = st_filter_nearest;
+		desc._mag_filter = st_filter_nearest;
+		desc._mip_filter = st_filter_nearest;
+		desc._address_u = st_address_mode_clamp;
+		desc._address_v = st_address_mode_clamp;
+		desc._address_w = st_address_mode_clamp;
+
+		_global_resources->_point_clamp_sampler = context->create_sampler(desc);
+	}
 }
 
 void destroy_global_resources()

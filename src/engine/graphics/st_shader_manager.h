@@ -31,6 +31,9 @@ enum e_st_shader
 	st_shader_atmosphere_transmission,
 	st_shader_atmosphere_sky_view,
 	st_shader_atmosphere,
+	st_shader_smaa_edges,
+	st_shader_smaa_weights,
+	st_shader_smaa_blend,
 
 	st_shader_imgui,
 };

@@ -14,7 +14,7 @@
 #include <graphics/pass/st_deferred_light_render_pass.h>
 #include <graphics/pass/st_directional_shadow_pass.h>
 #include <graphics/pass/st_gbuffer_render_pass.h>
-#include <graphics/pass/st_passthrough_render_pass.h>
+#include <graphics/pass/st_smaa_pass.h>
 #include <graphics/pass/st_tonemap_render_pass.h>
 #include <graphics/pass/st_ui_render_pass.h>
 #include <graphics/st_graphics_context.h>
@@ -124,7 +124,7 @@ void st_output::update(st_frame_params* params)
 		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
 		st_texture_state_render_target);
 
-	_passthrough_pass->render(_graphics_context, params);
+	_smaa_pass->render(_graphics_context, params);
 	_ui_pass->render(_graphics_context, params);
 
 	// Swap the frame buffers and release the context.
@@ -272,7 +272,7 @@ void st_output::recreate_passes(class st_graphics_context* context)
 	_deferred_pass = nullptr;
 	_bloom_pass = nullptr;
 	_tonemap_pass = nullptr;
-	_passthrough_pass = nullptr;
+	_smaa_pass = nullptr;
 	_ui_pass = nullptr;
 
 	_atmosphere_transmission = std::make_unique<st_atmosphere_transmission_pass>(
@@ -307,8 +307,9 @@ void st_output::recreate_passes(class st_graphics_context* context)
 		_deferred_target.get(),
 		_bloom_target.get(),
 		_tonemap_target.get());
-	_passthrough_pass = std::make_unique<st_passthrough_render_pass>(
+	_smaa_pass = std::make_unique<st_smaa_pass>(
 		_tonemap_target.get(),
+		_depth_stencil_target.get(),
 		_swap_chain.get());
 	_ui_pass = std::make_unique<st_ui_render_pass>(_swap_chain.get());
 }

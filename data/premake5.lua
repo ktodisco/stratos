@@ -41,7 +41,7 @@ project "data"
 		"scripts/*.*",
 		"shaders/*.hlsl",
 		"shaders/*.hlsli",
-		"textures/*.*",
+		"textures/**.*",
 		"xnormal_test/*.*",
 	}
 	
@@ -61,6 +61,9 @@ project "data"
 	build_shader("shaders/st_parallax_occlusion.hlsl")
 	build_shader("shaders/st_phong.hlsl")
 	build_shader("shaders/st_shadow.hlsl")
+	build_shader("shaders/st_smaa_edges.hlsl")
+	build_shader("shaders/st_smaa_weights.hlsl")
+	build_shader("shaders/st_smaa_blend.hlsl")
 	build_shader("shaders/st_tonemap.hlsl")
 	build_shader("shaders/st_unlit_texture.hlsl")
 	
