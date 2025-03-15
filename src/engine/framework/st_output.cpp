@@ -235,7 +235,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		context,
 		_window->get_width(),
 		_window->get_height(),
-		st_format_r8g8b8a8_unorm,
+		st_format_r11g11b10_float,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
