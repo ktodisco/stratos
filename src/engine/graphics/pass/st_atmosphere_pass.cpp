@@ -28,9 +28,9 @@ struct st_atmosphere_constants
 	st_vec4f _mie_params = st_vec4f::zero_vector();
 	st_vec4f _ozone_params = st_vec4f::zero_vector();
 	st_vec3f _light_dir = st_vec3f::zero_vector();
-	float pad0 = 0.0f;
+	float _exposure_value = 0.0f;
 	st_vec2f _light_angles = st_vec2f::zero_vector();
-	float pad1 = 0.0f;
+	float _sun_power = 0.0f;
 	float pad2 = 0.0f;
 	st_mat4f _inverse_p;
 	st_mat4f _inverse_v;
@@ -72,6 +72,13 @@ static void build_constants(st_atmosphere_constants& constants, const st_frame_p
 	};
 	constants._inverse_p = params->_projection.inverse();
 	constants._inverse_v = params->_view.inverse();
+
+	constants._exposure_value = params->_exposure_value;
+
+	if (params->_sun)
+	{
+		constants._sun_power = params->_sun->_power;
+	}
 }
 
 st_atmosphere_transmission_pass::st_atmosphere_transmission_pass(st_render_texture* transmittance)

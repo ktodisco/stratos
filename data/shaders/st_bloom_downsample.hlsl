@@ -53,6 +53,6 @@ float4 ps_main(ps_input input) : SV_TARGET
 	
 	float3 filtered = (ma * 0.5f) + ((tl + tr + bl + br) * 0.125f);
 	
-	// Simulate a physical reduction in the radiance that spreads out on the photo receptor.
+	// Simulate a physical reduction in the luminance that spreads out on the photo receptor.
 	return float4(filtered * 0.45f, 1.0f);
 };

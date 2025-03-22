@@ -23,6 +23,12 @@ struct st_deferred_light_cb
 	st_vec4f _sun_color = st_vec4f::zero_vector();
 	st_mat4f _sun_vp;
 	st_vec4f _sun_shadow_dim;
+
+	float _exposure_value;
+
+	float pad0;
+	float pad1;
+	float pad2;
 };
 
 class st_deferred_light_render_pass : public st_fullscreen_render_pass

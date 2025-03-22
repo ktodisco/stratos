@@ -110,7 +110,7 @@ void st_scene::setup_lighting_test(class st_sim* sim)
 
 	// Add a sun.
 	std::unique_ptr<st_entity> world_entity = std::make_unique<st_entity>();
-	std::unique_ptr<st_sun_component> sun = std::make_unique<st_sun_component>(world_entity.get(), 120.0f, 30.0f, st_vec3f { 1.0f, 1.0f, 0.9f }, 100.0f);
+	std::unique_ptr<st_sun_component> sun = std::make_unique<st_sun_component>(world_entity.get(), 120.0f, 30.0f, st_vec3f { 1.0f, 1.0f, 0.9f }, 110000.0f);
 	std::unique_ptr<st_atmosphere_component> atmo = std::make_unique<st_atmosphere_component>(
 		world_entity.get(),
 		st_vec2f { 6360.0f, 6420.0f },

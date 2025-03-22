@@ -43,11 +43,13 @@ struct st_frame_params
 	std::vector<st_dynamic_drawcall> _gui_drawcalls;
 	std::atomic_flag _gui_drawcall_lock = ATOMIC_FLAG_INIT;
 
+	// Camera.
 	st_mat4f _view;
 	st_mat4f _projection;
 	st_vec3f _eye;
 	uint32_t _width;
 	uint32_t _height;
+	float _exposure_value = 0.0f;
 
 	// Sun.
 	struct st_directional_light* _sun = nullptr;

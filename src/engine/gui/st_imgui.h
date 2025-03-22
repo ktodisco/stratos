@@ -19,7 +19,7 @@ public:
 		struct st_swap_chain* swap_chain);
 	static void shutdown();
 
-	static void update(struct st_frame_params* params, class st_sim* sim);
+	static void update(struct st_frame_params* params, class st_sim* sim, class st_camera* camera);
 
 	static void new_frame();
 	static void draw(const struct st_frame_params* params);

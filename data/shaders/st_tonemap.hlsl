@@ -27,15 +27,11 @@ ps_input vs_main(vs_input input)
 
 float3 aces_film(float3 x)
 {
-	// Tonemap down to the reference white level of 80 nits.
-	const float k_ref_white = 80.0f;
-	x /= k_ref_white;
-	
-    float a = 2.51f;
-    float b = 0.03f;
-    float c = 2.43f;
-    float d = 0.59f;
-    float e = 0.14f;
+	float a = 2.51f;
+	float b = 0.03f;
+	float c = 2.43f;
+	float d = 0.59f;
+	float e = 0.14f;
 	float3 result = saturate((x * (a * x + b)) / (x * (c * x + d) + e));
 
 	return result;

@@ -20,9 +20,9 @@ struct st_atmosphere_constants
 	float4 mie_params;
 	float4 ozone_params;
 	float3 light_dir;
-	float pad0;
+	float exposure_value;
 	float2 light_angles;
-	float pad1;
+	float sun_power;
 	float pad2;
 	column_major float4x4 inverse_p;
 	column_major float4x4 inverse_v;

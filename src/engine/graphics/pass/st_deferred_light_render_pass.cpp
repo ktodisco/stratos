@@ -125,6 +125,7 @@ void st_deferred_light_render_pass::render(
 
 	_cb._inverse_vp = (params->_view * params->_projection).inverse();
 	_cb._eye = st_vec4f(params->_eye, 0.0f);
+	_cb._exposure_value = params->_exposure_value;
 	if (context->get_api() == e_st_graphics_api::opengl)
 		_cb._depth_reconstruction = st_vec4f(2.0f, 1.0f, 0.5f, 0.5f);
 	else

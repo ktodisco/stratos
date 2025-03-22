@@ -6,6 +6,7 @@
 
 #include <gui/st_imgui.h>
 
+#include <framework/st_camera.h>
 #include <framework/st_frame_params.h>
 #include <framework/st_sim.h>
 
@@ -82,7 +83,7 @@ void st_imgui::shutdown()
 	_context = nullptr;
 }
 
-void st_imgui::update(st_frame_params* params, st_sim* sim)
+void st_imgui::update(st_frame_params* params, st_sim* sim, st_camera* camera)
 {
 	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
@@ -121,6 +122,7 @@ void st_imgui::update(st_frame_params* params, st_sim* sim)
 		ImGui::Text("Graphics API: %s", api.c_str());
 	}
 
+	camera->debug();
 	sim->debug();
 
 	if (ImGui::CollapsingHeader("Utilities"))

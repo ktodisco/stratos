@@ -29,6 +29,12 @@ struct ps_input
 	float4 sun_color;
 	column_major float4x4 sun_vp;
 	float4 sun_shadow_dim;
+	
+	float exposure_value;
+	
+	float pad0;
+	float pad1;
+	float pad2;
 }
 
 struct st_sphere_light
@@ -79,7 +85,7 @@ float directional_light_shadow(in float4 world_position)
 float3 evaluate_directional_light(
 	in float3 light_direction,
 	in float3 light_color,
-	in float irradiance,
+	in float illuminance,
 	in float3 albedo,
 	in float3 normal,
 	in float metalness,
@@ -99,7 +105,7 @@ float3 evaluate_directional_light(
 	float visibility_term = directional_light_shadow(world_position);
 
 	// Division by pi plays the part of the lambertian diffuse.
-	float3 diffuse_result = diffuse_color * irradiance * n_dot_l * visibility_term / k_pi;
+	float3 diffuse_result = diffuse_color * illuminance * n_dot_l * visibility_term / k_pi;
 
 	float3 half_vector = normalize(to_eye + to_light);
 	float n_dot_h = saturate(dot(normal, half_vector));
@@ -110,7 +116,7 @@ float3 evaluate_directional_light(
 			n_dot_l,
 			n_dot_h,
 			metalness,
-			linear_roughness) * irradiance;
+			linear_roughness) * illuminance;
 	
 	return diffuse_result + specular_result;
 }
@@ -137,7 +143,7 @@ float3 evaluate_sphere_light(
 	float n_dot_l = saturate(n_dot_l_raw);
 	float n_dot_v = saturate(dot(normal, to_eye));
 
-	float irradiance = light_falloff(light_power, dist_to_light);
+	float illuminance = light_falloff(light_power, dist_to_light);
 	
 	float3 diffuse_color = albedo * (1.0f - metalness) * light.color_radius.xyz;
 	float3 specular_color = metalness * light.color_radius.xyz;
@@ -145,7 +151,7 @@ float3 evaluate_sphere_light(
 	float visibility_term = get_sphere_visibility(to_light, dist_to_light_center, n_dot_l_raw, light_radius);
 
 	// Division by pi plays the part of the lambertian diffuse.
-	float3 diffuse_result = diffuse_color * irradiance * visibility_term / k_pi;
+	float3 diffuse_result = diffuse_color * illuminance * visibility_term / k_pi;
 
 	float3 reflection = reflect(-to_eye, normal);
 	float3 center_to_ray = dot(to_light, reflection) * reflection - to_light;
@@ -159,7 +165,7 @@ float3 evaluate_sphere_light(
 			n_dot_l,
 			n_dot_h,
 			metalness,
-			linear_roughness) * irradiance;
+			linear_roughness) * illuminance;
 	// Cap the specular result to the light power.
 	specular_result = min(specular_result, light_power.xxx);
 	
@@ -207,6 +213,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 		world_position);
 	
 	lit_color += emissive * albedo_sample;
+	lit_color *= exposure_value;
 
 	return float4(lit_color, 1.0f);
 };

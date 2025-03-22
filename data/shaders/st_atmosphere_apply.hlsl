@@ -55,7 +55,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 		return 0.0f.xxxx;
 	
 	float2 uv = atmosphere_sky_decode_uv(view_dir);
-	float3 result = sky_view.Sample(sky_view_sampler, uv);
+	float3 result = sky_view.Sample(sky_view_sampler, uv) * constants.sun_power;
 	
 	// If looking at the sun, output the max.
 	if (dot(view_dir, to_sun) > 0.9995f)
@@ -64,7 +64,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 		float h = height / (atmo_radius - planet_radius);
 		float y = dot(-normalize(viewpoint), to_sun) * 0.5f + 0.5f;
 		float3 t_sun = transmittance.Sample(transmittance_sampler, float2(h, y)).rgb;
-		result += float4(120000.xxx * t_sun, 1.0f);
+		result = float4(constants.sun_power * t_sun, 1.0f);
 	}
 	
 	// This value is temporary but deliberate. It's calculated as the sun power - 120,000 lux -
@@ -72,5 +72,5 @@ float4 ps_main(ps_input input) : SV_TARGET
 	// tonemapping.
 	// Pre-expsosure will be replaced by a real camera exposure calculation, and the reference
 	// white multiply will be corrected with it.
-	return float4(result * 438.0f, 1.0f);
+	return float4(result * constants.exposure_value, 1.0f);
 }

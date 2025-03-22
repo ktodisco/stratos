@@ -13,6 +13,8 @@
 
 #include <math/st_math.h>
 
+#include <imgui.h>
+
 #include <chrono>
 
 st_camera::st_camera(const st_vec3f& eye, uint32_t width, uint32_t height)
@@ -91,4 +93,20 @@ void st_camera::update(st_frame_params* params)
 	params->_view = view;
 	params->_projection = projection;
 	params->_eye = eye;
+
+	// Now calculate the exposure value given the camera properties.
+	float aperture = _focal_length / _diameter;
+	float l_avg = (1000.0f / 65.0f) * (aperture * aperture) / (_iso * _speed);
+	params->_exposure_value = 0.18f / l_avg;
+}
+
+void st_camera::debug()
+{
+	if (ImGui::CollapsingHeader("Camera"))
+	{
+		ImGui::DragFloat("Focal Length", &_focal_length, 1.0f, 10.0f, 800.0f, "%.1f");
+		ImGui::DragFloat("Diameter", &_diameter, 1.0f, 1.0f, 50.0f, "%.1f");
+		ImGui::DragFloat("Speed", &_speed, 0.001f, 0.001f, 2.0f, "%.3f");
+		ImGui::DragFloat("ISO", &_iso, 1.0f, 50.0f, 1600.0f, "%.1f");
+	}
 }
