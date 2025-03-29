@@ -167,6 +167,12 @@ enum e_st_format
 	st_format_force_uint
 };
 
+enum e_st_color_space
+{
+	st_color_space_srgb,
+	st_color_space_st2084,
+};
+
 enum e_st_blend
 {
 	st_blend_zero,
@@ -363,6 +369,12 @@ enum class e_st_store_op : uint8_t
 	dont_care,
 };
 
+enum class e_st_swap_chain_status : uint8_t
+{
+	current,
+	out_of_date,
+};
+
 enum class e_st_graphics_api : uint8_t
 {
 	dx12,
@@ -450,6 +462,7 @@ struct st_swap_chain_desc
 	uint32_t _width = 0;
 	uint32_t _height = 0;
 	e_st_format _format = st_format_unknown;
+	e_st_color_space _color_space = st_color_space_srgb;
 };
 
 struct st_texture_desc

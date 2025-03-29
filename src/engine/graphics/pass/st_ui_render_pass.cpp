@@ -19,33 +19,30 @@
 #include <gui/st_font.h>
 #include <gui/st_imgui.h>
 
-st_ui_render_pass::st_ui_render_pass(st_swap_chain* swap_chain)
+st_ui_render_pass::st_ui_render_pass(const st_window* window, st_render_texture* target)
 {
 	st_graphics_context* context = st_graphics_context::get();
 
-	st_texture_desc target_desc;
-	context->get_desc(context->get_backbuffer(swap_chain, 0), &target_desc);
-	_target_format = target_desc._format;
+	_target_format = target->get_format();
 
 	{
 		st_attachment_desc attachment = { _target_format, e_st_load_op::load, e_st_store_op::store };
 		st_render_pass_desc desc;
 		desc._attachments = &attachment;
 		desc._attachment_count = 1;
-		desc._viewport = { 0.0f, 0.0f, float(target_desc._width), float(target_desc._height), 0.0f, 1.0f };
+		desc._viewport = { 0.0f, 0.0f, float(target->get_width()), float(target->get_height()), 0.0f, 1.0f };
 
 		_pass = context->create_render_pass(desc);
 	}
 
-	for (uint32_t i = 0; i < std::size(_framebuffers); ++i)
 	{
-		st_target_desc target = { context->get_backbuffer(swap_chain, i), context->get_backbuffer_view(swap_chain, i) };
+		st_target_desc target_desc = { target->get_texture(), target->get_target_view() };
 		st_framebuffer_desc desc;
 		desc._pass = _pass.get();
-		desc._targets = &target;
+		desc._targets = &target_desc;
 		desc._target_count = 1;
 
-		_framebuffers[i] = context->create_framebuffer(desc);
+		_framebuffer = context->create_framebuffer(desc);
 	}
 
 	std::vector<st_vertex_attribute> attributes;
@@ -64,14 +61,17 @@ st_ui_render_pass::st_ui_render_pass(st_swap_chain* swap_chain)
 	default_state_desc._vertex_format = _vertex_format.get();
 	default_state_desc._pass = _pass.get();
 	default_state_desc._render_target_count = 1;
-	default_state_desc._render_target_formats[0] = st_format_r8g8b8a8_unorm;
+	default_state_desc._render_target_formats[0] = _target_format;
 	default_state_desc._primitive_topology_type = st_primitive_topology_type_line;
 
 	_default_state = context->create_graphics_pipeline(default_state_desc);
+
+	st_imgui::initialize(window, context, _target_format, _pass.get());
 }
 
 st_ui_render_pass::~st_ui_render_pass()
 {
+	st_imgui::shutdown();
 }
 
 void st_ui_render_pass::render(st_graphics_context* context, const st_frame_params* params)
@@ -83,11 +83,12 @@ void st_ui_render_pass::render(st_graphics_context* context, const st_frame_para
 	st_mat4f view;
 	view.make_lookat_rh(st_vec3f::z_vector(), -st_vec3f::z_vector(), st_vec3f::y_vector());
 
+	context->begin_render_pass(_pass.get(), _framebuffer.get(), nullptr, 0);
+
+	draw_dynamic(context, params, ortho, view);
 	st_imgui::draw(params);
 
-	context->begin_render_pass(_pass.get(), _framebuffers[params->_frame_index].get(), nullptr, 0);
-	draw_dynamic(context, params, ortho, view);
-	context->end_render_pass(_pass.get(), _framebuffers[params->_frame_index].get());
+	context->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 void st_ui_render_pass::draw_dynamic(

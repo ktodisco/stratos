@@ -48,7 +48,7 @@ public:
 	void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) override;
 	st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) override;
 	st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) override;
-	void acquire_backbuffer(st_swap_chain* swap_chain) override;
+	e_st_swap_chain_status acquire_backbuffer(st_swap_chain* swap_chain) override;
 
 	void begin_loading() override;
 	void end_loading() override;
@@ -122,6 +122,9 @@ public:
 	// Informational.
 	e_st_graphics_api get_api() { return e_st_graphics_api::vulkan; }
 	void get_desc(const st_texture* texture, st_texture_desc* out_desc) override;
+	void get_supported_formats(
+		const class st_window* window,
+		std::vector<e_st_format>& formats) override;
 
 	// API-specific.
 	vk::Device* get_device() { return std::addressof(_device); }

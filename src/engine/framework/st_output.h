@@ -44,11 +44,11 @@ public:
 
 	void get_target_formats(e_st_render_pass_type type, struct st_graphics_state_desc& desc);
 
-	st_swap_chain* get_swap_chain() const { return _swap_chain.get(); }
-
 	static st_output* get() { return _this; }
 
 private:
+
+	e_st_format choose_backbuffer_format();
 
 	void recreate_textures(class st_graphics_context* context);
 	void recreate_passes(class st_graphics_context* context);
@@ -56,9 +56,12 @@ private:
 	const st_window* _window;
 	uint32_t _width;
 	uint32_t _height;
+	e_st_format _backbuffer_format;
+	e_st_color_space _backbuffer_color_space;
 	class st_graphics_context* _graphics_context;
 
 	std::unique_ptr<struct st_swap_chain> _swap_chain;
+	bool _out_of_date = false;
 
 	// Atmospherics.
 	std::unique_ptr<class st_render_texture> _transmittance;
@@ -74,6 +77,7 @@ private:
 	std::unique_ptr<class st_tonemap_render_pass> _tonemap_pass;
 	std::unique_ptr<class st_smaa_pass> _smaa_pass;
 	std::unique_ptr<class st_ui_render_pass> _ui_pass;
+	std::unique_ptr<class st_display_pass> _display_pass;
 
 	std::unique_ptr<class st_render_texture> _directional_shadow_map;
 
@@ -83,9 +87,7 @@ private:
 	std::unique_ptr<class st_render_texture> _depth_stencil_target;
 
 	std::unique_ptr<class st_render_texture> _deferred_target;
-
 	std::unique_ptr<class st_render_texture> _bloom_target;
-
 	std::unique_ptr<class st_render_texture> _tonemap_target;
 
 	static st_output* _this;

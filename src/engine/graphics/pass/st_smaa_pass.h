@@ -16,7 +16,7 @@ public:
 	st_smaa_pass(
 		class st_render_texture* source_buffer,
 		class st_render_texture* stencil_buffer,
-		struct st_swap_chain* swap_chain);
+		class st_render_texture* target_buffer);
 	~st_smaa_pass();
 
 	void render(class st_graphics_context* context, const struct st_frame_params* params);
@@ -24,7 +24,7 @@ public:
 private:
 	void _create_edges_pass(class st_graphics_context* context);
 	void _create_weights_pass(class st_graphics_context* context);
-	void _create_blend_pass(class st_graphics_context* context, struct st_swap_chain* swap_chain);
+	void _create_blend_pass(class st_graphics_context* context);
 
 	void _render_edges_pass(class st_graphics_context* context, const struct st_frame_params* params);
 	void _render_weights_pass(class st_graphics_context* context, const struct st_frame_params* params);
@@ -33,6 +33,7 @@ private:
 private:
 	st_render_texture* _source_buffer = nullptr;
 	st_render_texture* _stencil_buffer = nullptr;
+	st_render_texture* _target_buffer = nullptr;
 
 	std::unique_ptr<struct st_buffer> _cb = nullptr;
 	std::unique_ptr<struct st_buffer_view> _cbv = nullptr;
@@ -55,7 +56,7 @@ private:
 	std::unique_ptr<struct st_resource_table> _weights_resources = nullptr;
 
 	std::unique_ptr<struct st_render_pass> _blend_pass = nullptr;
-	std::unique_ptr<struct st_framebuffer> _blend_framebuffers[k_max_frames];
+	std::unique_ptr<struct st_framebuffer> _blend_framebuffer;
 	std::unique_ptr<struct st_pipeline> _blend_pipeline = nullptr;
 	std::unique_ptr<struct st_resource_table> _blend_resources = nullptr;
 };

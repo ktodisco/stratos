@@ -973,4 +973,12 @@ void st_gl_graphics_context::get_desc(const st_texture* texture_, st_texture_des
 	// TODO: Depth and others.
 }
 
+void st_gl_graphics_context::get_supported_formats(
+	const st_window* window,
+	std::vector<e_st_format>& formats)
+{
+	formats.push_back(st_format_r8g8b8a8_unorm);
+	formats.push_back(st_format_r8g8b8a8_unorm_srgb);
+}
+
 #endif

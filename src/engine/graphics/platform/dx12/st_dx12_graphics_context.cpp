@@ -578,6 +578,21 @@ std::unique_ptr<st_swap_chain> st_dx12_graphics_context::create_swap_chain(const
 	sc->_swap_chain_1.As(&sc->_swap_chain_2);
 	sc->_swap_chain_1.As(&sc->_swap_chain_3);
 
+	UINT color_space_support = 0;
+	result = sc->_swap_chain_3->CheckColorSpaceSupport(convert_color_space(desc._color_space), &color_space_support);
+	if (result != S_OK)
+	{
+		assert(false);
+	}
+
+	e_st_format supported_format = desc._format;
+	if ((color_space_support & DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT) == DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG_PRESENT)
+	{
+		sc->_swap_chain_3->SetColorSpace1(convert_color_space(desc._color_space));
+	}
+	else
+		assert(false);
+
 	sc->_backbuffers.reserve(desc._buffer_count);
 	sc->_backbuffer_views.reserve(desc._buffer_count);
 	ID3D12Resource* buffers[k_max_frames];
@@ -687,6 +702,13 @@ st_texture_view* st_dx12_graphics_context::get_backbuffer_view(st_swap_chain* sw
 {
 	st_dx12_swap_chain* swap_chain = static_cast<st_dx12_swap_chain*>(swap_chain_);
 	return swap_chain->_backbuffer_views[index].get();
+}
+
+e_st_swap_chain_status st_dx12_graphics_context::acquire_backbuffer(st_swap_chain* swap_chain)
+{
+	return _dxgi_factory->IsCurrent() ?
+		e_st_swap_chain_status::current :
+		e_st_swap_chain_status::out_of_date;
 }
 
 std::unique_ptr<st_texture> st_dx12_graphics_context::create_texture(const st_texture_desc& desc)
@@ -1868,9 +1890,65 @@ void st_dx12_graphics_context::get_desc(const st_texture* texture_, st_texture_d
 	// TODO: Depth and others.
 }
 
-void st_dx12_graphics_context::destroy_target(st_dx12_descriptor target)
+void st_dx12_graphics_context::get_supported_formats(
+	const st_window* window,
+	std::vector<e_st_format>& formats)
 {
-	_rtv_heap->deallocate_handle(target);
+	// These formats are always supported.
+	formats.push_back(st_format_r8g8b8a8_unorm);
+	formats.push_back(st_format_r8g8b8a8_unorm_srgb);
+
+	// Test for HDR support.
+    Microsoft::WRL::ComPtr<IDXGIAdapter1> dxgi_adapter;
+    HRESULT result = _dxgi_factory->EnumAdapters1(0, &dxgi_adapter);
+
+	Microsoft::WRL::ComPtr<IDXGIOutput> current_output;
+    Microsoft::WRL::ComPtr<IDXGIOutput> best_output;
+    float best_intersect_area = -1;
+
+	RECT window_bounds;
+	HWND window_handle = window->get_window_handle();
+	GetWindowRect(window_handle, &window_bounds);
+
+	auto compute_intersection_area = [](int ax1, int ay1, int ax2, int ay2, int bx1, int by1, int bx2, int by2)
+	{
+		return max(0, min(ax2, bx2) - max(ax1, bx1)) * max(0, min(ay2, by2) - max(ay1, by1));
+	};
+
+	uint32_t i = 0;
+    while (dxgi_adapter->EnumOutputs(i, &current_output) != DXGI_ERROR_NOT_FOUND)
+    {
+        int ax1 = window_bounds.left;
+        int ay1 = window_bounds.top;
+        int ax2 = window_bounds.right;
+        int ay2 = window_bounds.bottom;
+
+        DXGI_OUTPUT_DESC desc;
+        result = current_output->GetDesc(&desc);
+        RECT r = desc.DesktopCoordinates;
+        int bx1 = r.left;
+        int by1 = r.top;
+        int bx2 = r.right;
+        int by2 = r.bottom;
+
+        int intersect_area = compute_intersection_area(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2);
+        if (intersect_area > best_intersect_area)
+        {
+            best_output = current_output;
+            best_intersect_area = static_cast<float>(intersect_area);
+        }
+
+        i++;
+    }
+
+    Microsoft::WRL::ComPtr<IDXGIOutput6> output6;
+    result = best_output.As(&output6);
+
+    DXGI_OUTPUT_DESC1 desc1;
+    result = output6->GetDesc1(&desc1);
+
+    if (desc1.ColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020)
+		formats.push_back(st_format_r10g10b10a2_unorm);
 }
 
 #endif

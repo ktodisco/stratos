@@ -166,6 +166,17 @@ inline DXGI_FORMAT convert_format(e_st_format format)
 	return format_mappings[format];
 }
 
+DXGI_COLOR_SPACE_TYPE color_space_mappings[] =
+{
+	DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,
+	DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020,
+};
+
+inline DXGI_COLOR_SPACE_TYPE convert_color_space(e_st_color_space space)
+{
+	return color_space_mappings[space];
+}
+
 D3D12_BLEND blend_mappings[] =
 {
 	D3D12_BLEND_ZERO, // st_blend_zero

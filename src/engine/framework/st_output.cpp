@@ -13,6 +13,7 @@
 #include <graphics/pass/st_bloom_render_pass.h>
 #include <graphics/pass/st_deferred_light_render_pass.h>
 #include <graphics/pass/st_directional_shadow_pass.h>
+#include <graphics/pass/st_display_pass.h>
 #include <graphics/pass/st_gbuffer_render_pass.h>
 #include <graphics/pass/st_smaa_pass.h>
 #include <graphics/pass/st_tonemap_render_pass.h>
@@ -40,10 +41,16 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 {
 	// Create the swap chain first.
 	{
+		_backbuffer_format = choose_backbuffer_format();
+		_backbuffer_color_space = (_backbuffer_format == st_format_r10g10b10a2_unorm) ?
+			st_color_space_st2084 :
+			st_color_space_srgb;
+
 		st_swap_chain_desc desc;
 		desc._width = _window->get_width();
 		desc._height = _window->get_height();
-		desc._format = st_format_r8g8b8a8_unorm;
+		desc._format = _backbuffer_format;
+		desc._color_space = _backbuffer_color_space;
 		desc._window_handle = _window->get_window_handle();
 
 		_swap_chain = context->create_swap_chain(desc);
@@ -64,17 +71,23 @@ bool st_output::update_swap_chain()
 {
 	bool recreated = false;
 
-	if (_window->get_width() != _width ||
+	if (_out_of_date ||
+		_window->get_width() != _width ||
 		_window->get_height() != _height)
 	{
-		// TODO: Wait for idle, recreate swap chain.
 		_graphics_context->wait_for_idle();
 
 		{
+			_backbuffer_format = choose_backbuffer_format();
+			_backbuffer_color_space = (_backbuffer_format == st_format_r10g10b10a2_unorm) ?
+				st_color_space_st2084 :
+				st_color_space_srgb;
+
 			st_swap_chain_desc desc;
 			desc._width = _window->get_width();
 			desc._height = _window->get_height();
-			desc._format = st_format_r8g8b8a8_unorm;
+			desc._format = _backbuffer_format;
+			desc._color_space = _backbuffer_color_space;
 			desc._window_handle = _window->get_window_handle();
 
 			_graphics_context->reconfigure_swap_chain(desc, _swap_chain.get());
@@ -83,10 +96,8 @@ bool st_output::update_swap_chain()
 		_graphics_context->acquire();
 		_graphics_context->begin_frame();
 
-		st_imgui::shutdown();
 		recreate_textures(_graphics_context);
 		recreate_passes(_graphics_context);
-		st_imgui::initialize(_window, _graphics_context, _swap_chain.get());
 
 		_graphics_context->end_frame();
 		_graphics_context->execute();
@@ -103,11 +114,11 @@ bool st_output::update_swap_chain()
 
 void st_output::update(st_frame_params* params)
 {
-	// Acquire the render context.
 	_graphics_context->acquire();
 
 	_graphics_context->begin_frame();
 	params->_frame_index = _graphics_context->get_frame_index();
+	params->_color_space = _backbuffer_color_space;
 
 	_atmosphere_transmission->compute(_graphics_context, params);
 	_atmosphere_sky->render(_graphics_context, params);
@@ -118,14 +129,21 @@ void st_output::update(st_frame_params* params)
 	_atmosphere_pass->render(_graphics_context, params);
 	_bloom_pass->render(_graphics_context, params);
 	_tonemap_pass->render(_graphics_context, params);
+	_smaa_pass->render(_graphics_context, params);
+	_ui_pass->render(_graphics_context, params);
 
-	_graphics_context->acquire_backbuffer(_swap_chain.get());
+	e_st_swap_chain_status status = _graphics_context->acquire_backbuffer(_swap_chain.get());
+	if (status != e_st_swap_chain_status::current)
+	{
+		_out_of_date = true;
+		return;
+	}
+
 	_graphics_context->transition(
 		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
 		st_texture_state_render_target);
 
-	_smaa_pass->render(_graphics_context, params);
-	_ui_pass->render(_graphics_context, params);
+	_display_pass->render(_graphics_context, params);
 
 	// Swap the frame buffers and release the context.
 	_graphics_context->transition(
@@ -149,6 +167,29 @@ void st_output::get_target_formats(e_st_render_pass_type type, st_graphics_state
 	default:
 		assert(false);
 	};
+}
+
+e_st_format st_output::choose_backbuffer_format()
+{
+	std::vector<e_st_format> formats;
+	formats.reserve(4);
+
+	_graphics_context->get_supported_formats(_window, formats);
+
+	// Order of preference for backbuffer formats. HDR first, SDR second.
+	e_st_format format_order[] = {
+		st_format_r10g10b10a2_unorm,
+		st_format_r8g8b8a8_unorm,
+	};
+
+	for (uint32_t i = 0; i < _countof(format_order); ++i)
+	{
+		if (std::find(formats.begin(), formats.end(), format_order[i]) != formats.end())
+			return format_order[i];
+	}
+
+	// As a last resort fallback to standard.
+	return st_format_r8g8b8a8_unorm;
 }
 
 void st_output::recreate_textures(class st_graphics_context* context)
@@ -274,6 +315,7 @@ void st_output::recreate_passes(class st_graphics_context* context)
 	_tonemap_pass = nullptr;
 	_smaa_pass = nullptr;
 	_ui_pass = nullptr;
+	_display_pass = nullptr;
 
 	_atmosphere_transmission = std::make_unique<st_atmosphere_transmission_pass>(
 		_transmittance.get());
@@ -310,6 +352,7 @@ void st_output::recreate_passes(class st_graphics_context* context)
 	_smaa_pass = std::make_unique<st_smaa_pass>(
 		_tonemap_target.get(),
 		_depth_stencil_target.get(),
-		_swap_chain.get());
-	_ui_pass = std::make_unique<st_ui_render_pass>(_swap_chain.get());
+		_deferred_target.get());
+	_ui_pass = std::make_unique<st_ui_render_pass>(_window, _deferred_target.get());
+	_display_pass = std::make_unique<st_display_pass>(_deferred_target.get(), _swap_chain.get());
 }

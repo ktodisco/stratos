@@ -34,6 +34,7 @@ enum e_st_shader
 	st_shader_smaa_edges,
 	st_shader_smaa_weights,
 	st_shader_smaa_blend,
+	st_shader_display,
 
 	st_shader_imgui,
 };

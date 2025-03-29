@@ -17,7 +17,7 @@
 class st_ui_render_pass
 {
 public:
-	st_ui_render_pass(struct st_swap_chain* swap_chain);
+	st_ui_render_pass(const class st_window* window, class st_render_texture* target);
 	~st_ui_render_pass();
 
 	void render(class st_graphics_context* context, const struct st_frame_params* params);
@@ -37,7 +37,7 @@ private:
 	std::unique_ptr<struct st_vertex_format> _vertex_format = nullptr;
 
 	std::unique_ptr<struct st_render_pass> _pass = nullptr;
-	std::unique_ptr<struct st_framebuffer> _framebuffers[k_max_frames];
+	std::unique_ptr<struct st_framebuffer> _framebuffer;
 
 	e_st_format _target_format = st_format_unknown;
 };

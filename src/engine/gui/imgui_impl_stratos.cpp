@@ -272,12 +272,13 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
     desc._vertex_format = g_vertex_format.get();
     desc._pass = g_render_pass;
 
-    // Create the blending setup
+    // Create the blending setup. It uses premultiplied alpha to resolve differences when
+	// blending in linear space vs. srgb, which is imgui's default.
     desc._blend_desc._target_blend[0]._blend = true;
-    desc._blend_desc._target_blend[0]._src_blend = st_blend_src_alpha;
+    desc._blend_desc._target_blend[0]._src_blend = st_blend_one;
     desc._blend_desc._target_blend[0]._dst_blend = st_blend_inv_src_alpha;
     desc._blend_desc._target_blend[0]._blend_op = st_blend_op_add;
-    desc._blend_desc._target_blend[0]._src_blend_alpha = st_blend_inv_src_alpha;
+    desc._blend_desc._target_blend[0]._src_blend_alpha = st_blend_one;
     desc._blend_desc._target_blend[0]._dst_blend_alpha = st_blend_zero;
     desc._blend_desc._target_blend[0]._blend_op_alpha = st_blend_op_add;
 

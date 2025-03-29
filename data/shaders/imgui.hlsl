@@ -1,3 +1,5 @@
+#include "st_gamma_correction.hlsli"
+
 [[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
     column_major float4x4 ProjectionMatrix;
@@ -32,5 +34,8 @@ PS_INPUT vs_main(VS_INPUT input)
 float4 ps_main(PS_INPUT input) : SV_Target
 {
     float4 out_col = input.col * texture0.Sample(sampler0, input.uv);
+	out_col.rgb *= out_col.a;
+	out_col.rgb = srgb_to_linear(out_col.rgb);
+	out_col.a = 1.0f - srgb_to_linear(1.0f - out_col.aaa);
     return out_col;
 }

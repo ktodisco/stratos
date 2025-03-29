@@ -69,4 +69,5 @@ struct st_frame_params
 
 	// Graphics state.
 	uint32_t _frame_index = 0;
+	e_st_color_space _color_space = st_color_space_srgb;
 };

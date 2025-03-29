@@ -100,6 +100,10 @@ st_shader_manager::st_shader_manager(st_graphics_context* context)
 		context->create_shader(
 			"data/shaders/st_smaa_blend",
 			e_st_shader_type::vertex | e_st_shader_type::pixel);
+	_shaders[st_shader_display] = 
+		context->create_shader(
+			"data/shaders/st_display",
+			e_st_shader_type::vertex | e_st_shader_type::pixel);
 
 	_this = this;
 }

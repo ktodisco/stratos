@@ -53,6 +53,7 @@ project "data"
 	build_shader("shaders/st_bloom_upsample.hlsl")
 	build_shader("shaders/st_constant_color.hlsl")
 	build_shader("shaders/st_deferred_light.hlsl")
+	build_shader("shaders/st_display.hlsl")
 	build_shader("shaders/st_font_simple.hlsl")
 	build_shader("shaders/st_fullscreen.hlsl")
 	build_shader("shaders/st_gaussian_blur_horizontal.hlsl")

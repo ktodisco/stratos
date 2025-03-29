@@ -722,9 +722,11 @@ st_texture_view* st_vk_graphics_context::get_backbuffer_view(st_swap_chain* swap
 	return swap_chain->_backbuffer_views[index].get();
 }
 
-void st_vk_graphics_context::acquire_backbuffer(st_swap_chain* swap_chain_)
+e_st_swap_chain_status st_vk_graphics_context::acquire_backbuffer(st_swap_chain* swap_chain_)
 {
 	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
+
+	e_st_swap_chain_status status = e_st_swap_chain_status::current;
 
 	uint32_t backbuffer_index;
 	vk::Result result = _device.acquireNextImageKHR(
@@ -734,10 +736,15 @@ void st_vk_graphics_context::acquire_backbuffer(st_swap_chain* swap_chain_)
 		_acquire_fence,
 		&backbuffer_index);
 	// TODO: Anything special with suboptimalKHR here?
+	if (result == vk::Result::eErrorOutOfDateKHR)
+		status = e_st_swap_chain_status::out_of_date;
+
 	assert(backbuffer_index == _frame_index);
 
 	VK_VALIDATE(_device.waitForFences(1, &_acquire_fence, true, std::numeric_limits<uint64_t>::max()));
 	VK_VALIDATE(_device.resetFences(1, &_acquire_fence));
+
+	return status;
 }
 
 void st_vk_graphics_context::begin_loading()
@@ -2041,6 +2048,44 @@ void st_vk_graphics_context::get_desc(const st_texture* texture_, st_texture_des
 	out_desc->_levels = texture->_levels;
 	out_desc->_usage = texture->_usage;
 	// TODO: Depth and others.
+}
+
+void st_vk_graphics_context::get_supported_formats(
+	const st_window* window,
+	std::vector<e_st_format>& formats)
+{
+	formats.push_back(st_format_r8g8b8a8_unorm);
+	formats.push_back(st_format_r8g8b8a8_unorm_srgb);
+
+	vk::Win32SurfaceCreateInfoKHR win32_surface_info = vk::Win32SurfaceCreateInfoKHR()
+		.setHinstance(GetModuleHandle(NULL))
+		.setHwnd((HWND)window->get_window_handle());
+
+	// TODO: This surface is already on the swap chain, but use of this function predates
+	// swap chain creation. The surface best belongs to a platform-specific window/graphics
+	// interface type, which for the vulkan backend would be all of the win32/KHR functions.
+	// On DX, as an alternative example, it would be the IDXGI* types.
+	vk::SurfaceKHR surface;
+	VK_VALIDATE(_instance.createWin32SurfaceKHR(&win32_surface_info, nullptr, &surface));
+
+	uint32_t surface_format_count;
+	VK_VALIDATE(_gpu.getSurfaceFormatsKHR(surface, &surface_format_count, nullptr));
+
+	std::vector<vk::SurfaceFormatKHR> surface_formats;
+	surface_formats.resize(surface_format_count);
+	VK_VALIDATE(_gpu.getSurfaceFormatsKHR(surface, &surface_format_count, surface_formats.data()));
+
+	if (std::find_if(surface_formats.begin(), surface_formats.end(), [](const vk::SurfaceFormatKHR& format)
+		{
+			return format.format == vk::Format::eA2B10G10R10UnormPack32;
+		}) != surface_formats.end())
+	{
+		// TODO: Vulkan has an issue where getSurfaceFormatsKHR always returns an HDR format
+		// even if the OS HDR setting is not on.
+		//formats.push_back(st_format_r10g10b10a2_unorm);
+	}
+
+	_instance.destroySurfaceKHR(surface, nullptr);
 }
 
 #endif

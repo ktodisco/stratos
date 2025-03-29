@@ -23,8 +23,6 @@
 
 #include <examples/imgui_impl_win32.h>
 
-std::unique_ptr<st_render_pass> st_imgui::_render_pass = nullptr;
-std::unique_ptr<st_framebuffer> st_imgui::_framebuffers[k_max_frames] = {};
 st_graphics_context* st_imgui::_context = nullptr;
 bool st_imgui::_open = true;
 bool st_imgui::_axes_widget = false;
@@ -32,39 +30,16 @@ bool st_imgui::_axes_widget = false;
 void st_imgui::initialize(
 	const st_window* window,
 	st_graphics_context* context,
-	st_swap_chain* swap_chain)
+	e_st_format rtv_format,
+	st_render_pass* pass)
 {
 	_context = context;
-
-	st_texture_desc target_desc;
-	context->get_desc(context->get_backbuffer(swap_chain, 0), &target_desc);
-
-	{
-		st_attachment_desc attachment = { target_desc._format, e_st_load_op::load, e_st_store_op::store };
-		st_render_pass_desc desc;
-		desc._attachments = &attachment;
-		desc._attachment_count = 1;
-		desc._viewport = { 0.0f, 0.0f, float(target_desc._width), float(target_desc._height), 0.0f, 1.0f };
-
-		_render_pass = context->create_render_pass(desc);
-	}
-
-	for (uint32_t i = 0; i < std::size(_framebuffers); ++i)
-	{
-		st_target_desc target = { context->get_backbuffer(swap_chain, i), context->get_backbuffer_view(swap_chain, i) };
-		st_framebuffer_desc desc;
-		desc._pass = _render_pass.get();
-		desc._targets = &target;
-		desc._target_count = 1;
-
-		_framebuffers[i] = context->create_framebuffer(desc);
-	}
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
 	ImGui_ImplWin32_Init(window->get_window_handle());
-	ImGui_ImplStratos_Init(2, st_format_r8g8b8a8_unorm, _render_pass.get());
+	ImGui_ImplStratos_Init(2, rtv_format, pass);
 
 	ImGui::StyleColorsDark();
 }
@@ -75,11 +50,6 @@ void st_imgui::shutdown()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
-	_render_pass = nullptr;
-	for (uint32_t i = 0; i < std::size(_framebuffers); ++i)
-	{
-		_framebuffers[i] = nullptr;
-	}
 	_context = nullptr;
 }
 
@@ -148,10 +118,7 @@ void st_imgui::new_frame()
 void st_imgui::draw(const st_frame_params* params)
 {
 	ImGui::Render();
-
-	_context->begin_render_pass(_render_pass.get(), _framebuffers[params->_frame_index].get(), nullptr, 0);
 	ImGui_ImplStratos_RenderDrawData(ImGui::GetDrawData(), _context);
-	_context->end_render_pass(_render_pass.get(), _framebuffers[params->_frame_index].get());
 }
 
 void st_imgui::draw_axes_widget(st_frame_params* params)

@@ -18,13 +18,18 @@
 struct st_smaa_constants
 {
 	st_vec4f _dimensions;
+	float _is_hdr;
+
+	float pad0;
+	float pad1;
+	float pad2;
 };
 
 st_smaa_pass::st_smaa_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* stencil_buffer,
-	st_swap_chain* swap_chain)
-	: _source_buffer(source_buffer), _stencil_buffer(stencil_buffer)
+	st_render_texture* target_buffer)
+	: _source_buffer(source_buffer), _stencil_buffer(stencil_buffer), _target_buffer(target_buffer)
 {
 	st_graphics_context* context = st_graphics_context::get();
 
@@ -48,7 +53,7 @@ st_smaa_pass::st_smaa_pass(
 
 	_create_edges_pass(context);
 	_create_weights_pass(context);
-	_create_blend_pass(context, swap_chain);
+	_create_blend_pass(context);
 }
 
 st_smaa_pass::~st_smaa_pass()
@@ -66,6 +71,7 @@ void st_smaa_pass::render(class st_graphics_context* context, const struct st_fr
 		1.0f / _edges_target->get_width(),
 		1.0f / _edges_target->get_height()
 	};
+	data._is_hdr = params->_color_space == st_color_space_st2084;
 	context->update_buffer(_cb.get(), &data, 0, 1);
 
 	context->set_scissor(0, 0, params->_width, params->_height);
@@ -238,33 +244,26 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 	}
 }
 
-void st_smaa_pass::_create_blend_pass(st_graphics_context* context, st_swap_chain* swap_chain)
+void st_smaa_pass::_create_blend_pass(st_graphics_context* context)
 {
-	st_texture_desc target_desc;
-	context->get_desc(context->get_backbuffer(swap_chain, 0), &target_desc);
-
 	{
-		st_attachment_desc attachment = { target_desc._format, e_st_load_op::dont_care, e_st_store_op::store };
+		st_attachment_desc attachment = { _target_buffer->get_format(), e_st_load_op::dont_care, e_st_store_op::store };
 		st_render_pass_desc desc;
 		desc._attachments = &attachment;
 		desc._attachment_count = 1;
-		desc._viewport = { 0.0f, 0.0f, float(target_desc._width), float(target_desc._height), 0.0f, 1.0f };
+		desc._viewport = { 0.0f, 0.0f, float(_target_buffer->get_width()), float(_target_buffer->get_height()), 0.0f, 1.0f };
 
 		_blend_pass = context->create_render_pass(desc);
 	}
 
-	for (uint32_t i = 0; i < std::size(_blend_framebuffers); ++i)
 	{
-		st_target_desc target = {
-			context->get_backbuffer(swap_chain, i),
-			context->get_backbuffer_view(swap_chain, i)
-		};
+		st_target_desc target = { _target_buffer->get_texture(), _target_buffer->get_target_view() };
 		st_framebuffer_desc desc;
 		desc._pass = _blend_pass.get();
 		desc._targets = &target;
 		desc._target_count = 1;
 
-		_blend_framebuffers[i] = context->create_framebuffer(desc);
+		_blend_framebuffer = context->create_framebuffer(desc);
 	}
 
 	{
@@ -275,7 +274,7 @@ void st_smaa_pass::_create_blend_pass(st_graphics_context* context, st_swap_chai
 		desc._vertex_format = _vertex_format.get();
 		desc._pass = _blend_pass.get();
 		desc._render_target_count = 1;
-		desc._render_target_formats[0] = target_desc._format;
+		desc._render_target_formats[0] = _target_buffer->get_format();
 
 		_blend_pipeline = context->create_graphics_pipeline(desc);
 	}
@@ -370,7 +369,7 @@ void st_smaa_pass::_render_blend_pass(class st_graphics_context* context, const 
 	context->set_pipeline(_blend_pipeline.get());
 	context->bind_resources(_blend_resources.get());
 
-	context->begin_render_pass(_blend_pass.get(), _blend_framebuffers[params->_frame_index].get(), nullptr, 0);
+	context->begin_render_pass(_blend_pass.get(), _blend_framebuffer.get(), nullptr, 0);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -380,5 +379,5 @@ void st_smaa_pass::_render_blend_pass(class st_graphics_context* context, const 
 
 	context->draw(draw_call);
 
-	context->end_render_pass(_blend_pass.get(), _blend_framebuffers[params->_frame_index].get());
+	context->end_render_pass(_blend_pass.get(), _blend_framebuffer.get());
 }

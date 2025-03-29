@@ -8,6 +8,8 @@
 
 #include <graphics/st_graphics.h>
 
+#include <vector>
+
 class st_graphics_context
 {
 public:
@@ -33,7 +35,7 @@ public:
 	virtual void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) = 0;
 	virtual st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) = 0;
 	virtual st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) = 0;
-	virtual void acquire_backbuffer(st_swap_chain* swap_chain) = 0;
+	virtual e_st_swap_chain_status acquire_backbuffer(st_swap_chain* swap_chain) = 0;
 
 	virtual void begin_loading() = 0;
 	virtual void end_loading() = 0;
@@ -112,6 +114,9 @@ public:
 	// Informational.
 	virtual e_st_graphics_api get_api() = 0;
 	virtual void get_desc(const st_texture* texture, st_texture_desc* out_desc) = 0;
+	virtual void get_supported_formats(
+		const class st_window* window,
+		std::vector<e_st_format>& formats) = 0;
 
 	uint32_t get_frame_index() const { return _frame_index; }
 

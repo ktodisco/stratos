@@ -19,6 +19,11 @@ struct ps_input
 [[vk::binding(0, 2)]] cbuffer cb0 : register(b0)
 {
 	float4 dimensions;
+	float is_hdr;
+	
+	float pad0;
+	float pad1;
+	float pad2;
 };
 
 #include "st_smaa.hlsli"
@@ -35,14 +40,6 @@ ps_input vs_main(vs_input input)
 	return result;
 };
 
-float3 gamma_correct(float3 x)
-{
-	float3 low = x * 12.92f;
-	float3 high = (pow(abs(x), 1.0f / 2.4f) * 1.055f) - 0.055f;
-	float3 srgb = select(x <= 0.0031308f, low, high);
-	return srgb;
-}
-
 float4 ps_main(ps_input input) : SV_TARGET
 {
 	float4 result = SMAANeighborhoodBlendingPS(
@@ -50,8 +47,6 @@ float4 ps_main(ps_input input) : SV_TARGET
 		input.offset,
 		source_tex,
 		weights_tex);
-	
-	result.rgb = gamma_correct(result.rgb);
 	
 	return result;
 };
