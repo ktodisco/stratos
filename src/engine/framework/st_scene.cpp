@@ -115,7 +115,7 @@ void st_scene::setup_lighting_test(class st_sim* sim)
 		world_entity.get(),
 		st_vec2f { 6360.0f, 6420.0f },
 		st_vec4f { 5.8e-6f, 13.5e-6f, 33.1e-6f, 7.994f },
-		st_vec4f { 21e-6f, 21e-6f, 21e-6f, 1.200f },
+		st_vec4f { 9e-6f, 9e-6f, 9e-6f, 1.200f },
 		st_vec4f { 0.65e-6f, 1.881e-6f, 0.085e-6f, 25.0f });
 	world_entity->add_component(std::move(sun));
 	world_entity->add_component(std::move(atmo));

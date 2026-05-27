@@ -294,8 +294,8 @@ void st_output::recreate_textures(class st_graphics_context* context)
 
 	_sky_view = std::make_unique<st_render_texture>(
 		context,
-		256,
-		256,
+		192,
+		104,
 		st_format_r11g11b10_float,
 		e_st_texture_usage::color_target | e_st_texture_usage::sampled,
 		st_texture_state_pixel_shader_read,

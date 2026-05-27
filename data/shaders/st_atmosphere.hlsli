@@ -34,7 +34,8 @@ float3 atmosphere_sky_encode_uv(in float2 uv)
 	// v is quadratic to get more pixels at the horizon.
 	float u = uv.x * PI_2;
 	float l = uv.y < 0.5f ? 1.0f - 2.0f * uv.y : uv.y * 2.0f - 1.0f;
-	float v = l * l * PI_OVER_2;
+    float l2 = uv.y < 0.5f ? -l * l : l * l;
+	float v = l2 * PI_OVER_2;
 	
 	// Assemble the view direction.
 	float3 view_dir = float3(cos(u) * cos(v), sin(v), sin(u) * cos(v));	

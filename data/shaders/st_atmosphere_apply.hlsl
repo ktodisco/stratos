@@ -62,7 +62,7 @@ float4 ps_main(ps_input input) : SV_TARGET
 	{
 		float height = viewpoint.y - planet_radius;
 		float h = height / (atmo_radius - planet_radius);
-		float y = dot(-normalize(viewpoint), to_sun) * 0.5f + 0.5f;
+		float y = dot(normalize(viewpoint), to_sun) * 0.5f + 0.5f;
 		float3 t_sun = transmittance.Sample(transmittance_sampler, float2(h, y)).rgb;
 		result = float4(constants.sun_power * t_sun, 1.0f);
 	}

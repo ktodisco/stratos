@@ -67,36 +67,54 @@ float4 ps_main(ps_input input) : SV_TARGET
 	
 	// Integrate the scattering along the ray through to the atmosphere boundary.
     float sample_length = distance / float(num_samples);
+    float3 t_view = 1.0f.xxx;
+    float3 luminance = 0.0f.xxx;
     for (int i = 0; i < num_samples; ++i)
     {
         float3 sample_point = viewpoint + view_dir * (sample_length * (float(i) + 0.5f));
 
-		float3 sample_down = -normalize(sample_point);
+		float3 up = normalize(sample_point);
 
         // Sample incoming direct light transmission to this height.
         float height = sample_point.y - planet_radius;
         float h = height / (atmo_radius - planet_radius);
-		float cos_sun_angle = dot(sample_down, to_sun);
-        float y = cos_sun_angle * 0.5f + 0.5f;
+        float cos_sun_angle = dot(up, to_sun);
+        float y = max(min(cos_sun_angle * 0.5f + 0.5f, 1.0f), 0.0f);
 		// The transmittance texture also contains lookups for going back to the surface,
 		// so the sun below the horizon can't pick up those samples, hence the conditional.
-		float3 t_sun = select(cos_sun_angle <= 0.0f,
-			transmittance.Sample(transmittance_sampler, float2(h, y)).rgb,
-			0.0f.xxx);
-		
-		// Sample transmission to the view point.
-        float z = dot(sample_down, -view_dir) * 0.5f + 0.5f;
-		float3 t_view = transmittance.Sample(transmittance_sampler, float2(h, z)).rgb;
+        float3 t_sun = transmittance.Sample(transmittance_sampler, float2(h, y)).rgb;
+        
+        // Density values.
+        float p_r = exp(-height / constants.rayleigh_params.w);
+        float p_m = exp(-height / constants.mie_params.w);
+        
+        // Extinction values - density times the base coefficients.
+        float3 e_r = p_r * constants.rayleigh_params.xyz;
+        float3 e_m = p_m * constants.mie_params.xyz;
+        
+        // Absorbtion values. Note there is no Rayleigh absorption, only scattering.
+        float3 a_m = p_m * 4.4e-6f.xxx;
+        float3 a_o = constants.ozone_params.xyz * max(0.0f, 1.0f - abs(height - constants.ozone_params.w) / 15000.0f);
+        
+        // Scattering values. Extinction times the phase function times the transmittance of the light through the medium to this point.
+        float3 s_r = e_r * rayleigh_phase * t_sun;
+        float3 s_m = e_m * mie_phase * t_sun;
+        float3 scatter = s_r + s_m;
+        
+        // Total extinction is the sum of all extinction an absorption values.
+        float3 extinction = e_r + e_m + a_m + a_o;
+        float3 t_sample = exp(-extinction * sample_length);
+        
+        // Evaluate the integral along the current segment. This is a single step of the integral
+        // in equation 1 of Hillaire20, which is more accurate than inscatter * sample_length.
+        float3 scatter_int = (scatter - (scatter * t_sample)) / extinction;
+        
+        luminance += scatter_int * t_view;
+        
+        // The transmission to the view is updated with the transmission value for this step.
+        t_view *= t_sample;
 
-        float p_r = exp(-height / constants.rayleigh_params.w) * sample_length;
-        float p_m = exp(-height / constants.mie_params.w) * sample_length;
-
-        rayleigh_atten += (t_sun * t_view) * p_r;
-        mie_atten += (t_sun * t_view) * p_m;
     }
-    
-    float3 result = rayleigh_atten * constants.rayleigh_params.xyz * rayleigh_phase;
-    result += mie_atten * constants.mie_params.xyz * mie_phase;
 	
-	return float4(result, 1.0f);
+	return float4(luminance, 1.0f);
 }

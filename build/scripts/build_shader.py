@@ -45,18 +45,16 @@ def build_sm6(hlsl_file, type, output_dir):
 	
 	file_params = []
 	if type == 'vps':
-		file_params.append([basename + "_vert.cso", "vs_main", "vs_6_0"])
-		file_params.append([basename + "_frag.cso", "ps_main", "ps_6_0"])
+		file_params.append([basename + "_vert.cso", "vs_main", "vs_6_0", basename + "_vert.pdb"])
+		file_params.append([basename + "_frag.cso", "ps_main", "ps_6_0", basename + "_frag.pdb"])
 	elif type == 'cs':
-		file_params.append([basename + "_comp.cso", "cs_main", "cs_6_0"])
-	vertex_file = basename + "_vert.cso"
-	fragment_file = basename + "_frag.cso"
+		file_params.append([basename + "_comp.cso", "cs_main", "cs_6_0", basename + "_comp.pdb"])
 	
 	print("Converting %s to %s." % (hlsl_file, " and ".join([p[0] for p in file_params])))
 	
 	# Run conversions.
 	for params in file_params:
-		subprocess.call([converter, "-E", params[1], "-T", params[2], "-Fo", os.path.join(output_dir, params[0]), hlsl_file])
+		subprocess.call([converter, "-E", params[1], "-T", params[2], "-Fo", os.path.join(output_dir, params[0]), "-Zi", "-Qsource_in_debug_module", "-Fd", os.path.join(output_dir, params[3]), hlsl_file])
 
 if __name__ == "__main__":
 	usage = [__file__, "<input file>", "<target> (glsl|spirv|dxil)", "<type> (vps|cs)", "<output director>"]
