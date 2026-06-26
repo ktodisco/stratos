@@ -26,6 +26,9 @@ public:
 	st_dx12_graphics_context(const class st_window* window);
 	~st_dx12_graphics_context();
 
+	// New API.
+	std::unique_ptr<st_device> create_device(const st_device_desc& desc) override { return nullptr; }
+
 	void acquire() override;
 	void release() override;
 

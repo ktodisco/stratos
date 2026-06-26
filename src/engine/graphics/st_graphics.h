@@ -10,12 +10,13 @@
 
 #include <math/st_vec4f.h>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
-#define ST_GRAPHICS_API_OPENGL
+//#define ST_GRAPHICS_API_OPENGL
 #define ST_GRAPHICS_API_DX12
-#define ST_GRAPHICS_API_VULKAN
+//#define ST_GRAPHICS_API_VULKAN
 
 // TODO: Find an ideal way to represent these.
 #define k_max_frames 2
@@ -418,6 +419,39 @@ struct st_clear_value
 	};
 };
 
+struct st_range
+{
+	size_t begin;
+	size_t end;
+};
+
+struct st_dispatch_args
+{
+	uint32_t group_count_x = 0;
+	uint32_t group_count_y = 0;
+	uint32_t group_count_z = 0;
+};
+
+struct st_device_desc
+{
+	// TODO.
+};
+
+struct st_command_queue_desc
+{
+	// TODO.
+};
+
+struct st_command_allocator_desc
+{
+	// TODO.
+};
+
+struct st_command_list_desc
+{
+	// TODO.
+};
+
 struct st_buffer_desc
 {
 	uint32_t _count = 0;
@@ -537,20 +571,131 @@ struct st_vertex_format : public st_resource
 	uint32_t _vertex_size;
 };
 
-struct st_range
+class st_device
 {
-	size_t begin;
-	size_t end;
+public:
+	virtual ~st_device() {}
+
+	// Commands.
+	virtual std::unique_ptr<class st_command_queue> create_command_queue(const st_command_queue_desc& desc) = 0;
+	virtual std::unique_ptr<class st_command_allocator> create_command_allocator(const st_command_allocator_desc& desc) = 0;
+	virtual std::unique_ptr<class st_command_list> create_command_list(const st_command_list_desc& desc) = 0;
+
+	// Swap chain.
+	virtual std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) = 0;
+	virtual void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) = 0;
+	virtual st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) = 0;
+	virtual st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) = 0;
+	virtual e_st_swap_chain_status acquire_backbuffer(st_swap_chain* swap_chain) = 0;
+
+	// Textures.
+	virtual std::unique_ptr<st_texture> create_texture(const st_texture_desc& desc) = 0;
+	virtual void set_texture_name(st_texture* texture, std::string name) = 0;
+	virtual std::unique_ptr<st_texture_view> create_texture_view(const st_texture_view_desc& desc) = 0;
+
+	// Samplers.
+	virtual std::unique_ptr<st_sampler> create_sampler(const st_sampler_desc& desc) = 0;
+
+	// Buffers.
+	virtual std::unique_ptr<st_buffer> create_buffer(const st_buffer_desc& desc) = 0;
+	virtual std::unique_ptr<st_buffer_view> create_buffer_view(const st_buffer_view_desc& desc) = 0;
+	virtual void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) = 0;
+	virtual void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) = 0;
+	virtual void set_buffer_name(st_buffer* buffer, std::string name) = 0;
+
+	// Resource tables.
+	// TODO: This would take a root signature object. In the vk backend it would pull the descriptor layouts
+	// from that root signature.
+	// I especially don't like this because there isn't any barrier to forgetting to use one or the other.
+	// The new API would look like a create and a generic set_resources which has overloads for texture
+	// and buffer views, and each takes the root signature and the slot the resources are going to.
+	virtual std::unique_ptr<st_resource_table> create_resource_table() = 0;
+	virtual std::unique_ptr<st_resource_table> create_resource_table_compute() = 0;
+	virtual void set_constant_buffers(st_resource_table* table, uint32_t count, const st_buffer_view** cbs) = 0;
+	virtual void set_textures(
+		st_resource_table* table,
+		uint32_t count,
+		const st_texture_view** textures,
+		const st_sampler** samplers) = 0;
+	virtual void set_buffers(st_resource_table* table, uint32_t count, const st_buffer_view** buffers) = 0;
+	virtual void set_uavs(st_resource_table* table, uint32_t count, const st_texture_view** textures) = 0;
+	virtual void update_textures(st_resource_table* table, uint32_t count, const st_texture_view** views) = 0;
+
+	// Shaders.
+	virtual std::unique_ptr<st_shader> create_shader(const char* filename, e_st_shader_type_flags type) = 0;
+
+	// Pipelines.
+	virtual std::unique_ptr<st_pipeline> create_graphics_pipeline(const struct st_graphics_state_desc& desc) = 0;
+	virtual std::unique_ptr<st_pipeline> create_compute_pipeline(const struct st_compute_state_desc& desc) = 0;
+
+	// Geometry.
+	virtual std::unique_ptr<st_vertex_format> create_vertex_format(
+		const struct st_vertex_attribute* attributes,
+		uint32_t attribute_count) = 0;
+
+	// Render passes.
+	virtual std::unique_ptr<st_render_pass> create_render_pass(const st_render_pass_desc& desc) = 0;
+
+	// Framebuffers.
+	virtual std::unique_ptr<st_framebuffer> create_framebuffer(const st_framebuffer_desc& desc) = 0;
 };
 
-struct st_dispatch_args
+class st_command_queue
 {
-	uint32_t group_count_x = 0;
-	uint32_t group_count_y = 0;
-	uint32_t group_count_z = 0;
+public:
+	virtual ~st_command_queue() {}
+
+	virtual void execute(class st_command_list* command_list) = 0;
+	virtual void present(struct st_swapchain* swap_chain) = 0;
+
+	virtual void wait_for_idle() = 0;
 };
 
-#include <cstdint>
+class st_command_allocator
+{
+public:
+	virtual ~st_command_allocator() {}
+};
+
+class st_command_list
+{
+public:
+	virtual ~st_command_list() {}
+
+	virtual void set_pipeline(const st_pipeline* state) = 0;
+	virtual void set_compute_pipeline(const st_pipeline* state) = 0;
+	virtual void set_viewport(const st_viewport& viewport) = 0;
+	virtual void set_scissor(int left, int top, int right, int bottom) = 0;
+	virtual void set_blend_factor(float r, float g, float b, float a) = 0;
+
+	virtual void draw(const struct st_static_drawcall& drawcall) = 0;
+	virtual void draw(const struct st_dynamic_drawcall& drawcall) = 0;
+
+	// Compute.
+	virtual void dispatch(const st_dispatch_args& args) = 0;
+
+	// Debug.
+	virtual void begin_marker(const std::string& marker) = 0;
+	virtual void end_marker() = 0;
+
+	// Textures.
+	virtual void transition(st_texture* texture, e_st_texture_state new_state) = 0;
+
+	// Buffers.
+	virtual void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) = 0;
+
+	// Resource tables.
+	virtual void bind_resources(st_resource_table* table) = 0;
+	virtual void bind_compute_resources(st_resource_table* table) = 0;
+
+	// Render passes.
+	virtual void begin_render_pass(
+		st_render_pass* pass,
+		st_framebuffer* framebuffer,
+		const st_clear_value* clear_values,
+		const uint8_t clear_count) = 0;
+	virtual void end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer) = 0;
+};
 
 template<typename T>
 static T align_value(T value, uint32_t alignment)

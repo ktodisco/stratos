@@ -15,6 +15,10 @@ class st_graphics_context
 public:
 	virtual ~st_graphics_context() {}
 
+	// New API.
+	virtual std::unique_ptr<st_device> create_device(const st_device_desc& desc) = 0;
+
+	// Old API.
 	virtual void acquire() = 0;
 	virtual void release() = 0;
 
