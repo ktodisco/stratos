@@ -9,7 +9,6 @@
 #include <graphics/st_graphics.h>
 
 #include <memory>
-#include <vector>
 
 /*
 ** A render pass that draws the UI elements.

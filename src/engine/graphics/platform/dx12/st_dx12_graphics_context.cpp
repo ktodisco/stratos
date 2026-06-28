@@ -11,6 +11,7 @@
 #include <core/st_core.h>
 
 #include <graphics/platform/dx12/st_dx12_conversion.h>
+#include <graphics/platform/dx12/st_dx12_device.h>
 
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/st_drawcall.h>
@@ -375,6 +376,56 @@ st_dx12_graphics_context::~st_dx12_graphics_context()
 		}
 	}
 #endif
+}
+
+std::unique_ptr<st_device> st_dx12_graphics_context::create_device(const st_device_desc& desc)
+{
+	// Enumerate the adapters in the machine.
+	std::vector<Microsoft::WRL::ComPtr<IDXGIAdapter1>> adapters;
+	Microsoft::WRL::ComPtr<IDXGIAdapter1> adapter;
+	for (uint32_t adapter_itr = 0;
+		_dxgi_factory->EnumAdapters1(adapter_itr, &adapter) != DXGI_ERROR_NOT_FOUND;
+		++adapter_itr)
+	{
+		adapters.push_back(adapter);
+	}
+
+	// Choose the adapter with the most dedicated memory.
+	Microsoft::WRL::ComPtr<IDXGIAdapter1> hardware_adapter;
+	size_t max_memory = 0;
+	for (uint32_t adapter_itr = 0; adapter_itr < adapters.size(); ++adapter_itr)
+	{
+		DXGI_ADAPTER_DESC1 desc;
+		adapters[adapter_itr]->GetDesc1(&desc);
+
+		if (desc.DedicatedVideoMemory > max_memory);
+		{
+			hardware_adapter = adapters[adapter_itr];
+			max_memory = desc.DedicatedVideoMemory;
+
+			// Naively take the first one. At the time of development, this is commonly
+			// the dedicated graphics card.
+			break;
+		}
+	}
+
+	ID3D12Device* d3d12_device;
+
+	// Create the device and command queue.
+	HRESULT result = D3D12CreateDevice(
+		hardware_adapter.Get(),
+		D3D_FEATURE_LEVEL_12_1,
+		__uuidof(ID3D12Device),
+		(void**)&d3d12_device);
+
+	std::unique_ptr<st_dx12_device> device = std::make_unique<st_dx12_device>(d3d12_device, this);
+
+	if (result != S_OK)
+	{
+		assert(false);
+	}
+
+	return std::move(device);
 }
 
 void st_dx12_graphics_context::acquire()

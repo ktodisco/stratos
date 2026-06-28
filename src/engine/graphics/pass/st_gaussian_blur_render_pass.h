@@ -9,7 +9,6 @@
 #include <graphics/pass/st_fullscreen_render_pass.h>
 
 #include <memory>
-#include <vector>
 
 class st_gaussian_blur_render_pass : public st_fullscreen_render_pass
 {

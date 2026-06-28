@@ -449,7 +449,7 @@ struct st_command_allocator_desc
 
 struct st_command_list_desc
 {
-	// TODO.
+	class st_command_allocator* allocator;
 };
 
 struct st_buffer_desc
@@ -497,6 +497,8 @@ struct st_swap_chain_desc
 	uint32_t _height = 0;
 	e_st_format _format = st_format_unknown;
 	e_st_color_space _color_space = st_color_space_srgb;
+
+	class st_command_queue* command_queue;
 };
 
 struct st_texture_desc
@@ -646,7 +648,7 @@ public:
 	virtual ~st_command_queue() {}
 
 	virtual void execute(class st_command_list* command_list) = 0;
-	virtual void present(struct st_swapchain* swap_chain) = 0;
+	virtual void present(struct st_swap_chain* swap_chain) = 0;
 
 	virtual void wait_for_idle() = 0;
 };
@@ -655,12 +657,17 @@ class st_command_allocator
 {
 public:
 	virtual ~st_command_allocator() {}
+
+	virtual void reset() = 0;
 };
 
 class st_command_list
 {
 public:
 	virtual ~st_command_list() {}
+
+	virtual void begin(class st_command_allocator* command_allocator) = 0;
+	virtual void end() = 0;
 
 	virtual void set_pipeline(const st_pipeline* state) = 0;
 	virtual void set_compute_pipeline(const st_pipeline* state) = 0;
