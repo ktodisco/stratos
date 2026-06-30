@@ -126,6 +126,21 @@ std::unique_ptr<class st_command_list> st_dx12_device::create_command_list(const
 	return std::move(command_list);
 }
 
+std::unique_ptr<struct st_fence> st_dx12_device::create_fence(const st_fence_desc& desc)
+{
+	std::unique_ptr<st_dx12_fence> fence = std::make_unique<st_dx12_fence>();
+
+	HRESULT result = _d3d_device->CreateFence(fence->_fence_value, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&fence->_fence);
+	fence->_fence_value++;
+
+	if (result != S_OK)
+	{
+		assert(false);
+	}
+
+	return std::move(fence);
+}
+
 std::unique_ptr<st_swap_chain> st_dx12_device::create_swap_chain(const st_swap_chain_desc& desc)
 {
 	std::unique_ptr<st_dx12_swap_chain> sc = std::make_unique<st_dx12_swap_chain>();

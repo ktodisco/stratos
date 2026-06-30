@@ -24,6 +24,9 @@ public:
 	std::unique_ptr<class st_command_allocator> create_command_allocator(const st_command_allocator_desc& desc) override;
 	std::unique_ptr<class st_command_list> create_command_list(const st_command_list_desc& desc) override;
 
+	// Synchronization.
+	std::unique_ptr<struct st_fence> create_fence(const st_fence_desc& desc) override;
+
 	// Swap chain.
 	std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) override;
 	void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) override;

@@ -468,6 +468,10 @@ struct st_buffer_view_desc
 	uint32_t _element_count = k_whole_size;
 };
 
+struct st_fence_desc
+{
+};
+
 struct st_sampler_desc
 {
 	e_st_filter _min_filter = st_filter_nearest;
@@ -559,6 +563,7 @@ struct st_framebuffer_desc
 
 struct st_buffer : public st_resource {};
 struct st_buffer_view : public st_resource {};
+struct st_fence : public st_resource {};
 struct st_framebuffer : public st_resource {};
 struct st_pipeline : public st_resource {};
 struct st_render_pass : public st_resource {};
@@ -582,6 +587,9 @@ public:
 	virtual std::unique_ptr<class st_command_queue> create_command_queue(const st_command_queue_desc& desc) = 0;
 	virtual std::unique_ptr<class st_command_allocator> create_command_allocator(const st_command_allocator_desc& desc) = 0;
 	virtual std::unique_ptr<class st_command_list> create_command_list(const st_command_list_desc& desc) = 0;
+
+	// Synchronization.
+	virtual std::unique_ptr<struct st_fence> create_fence(const st_fence_desc& desc) = 0;
 
 	// Swap chain.
 	virtual std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) = 0;
@@ -647,10 +655,10 @@ class st_command_queue
 public:
 	virtual ~st_command_queue() {}
 
+	virtual void signal(struct st_fence* fence) = 0;
+	virtual void wait(struct st_fence* fence) = 0;
 	virtual void execute(class st_command_list* command_list) = 0;
 	virtual void present(struct st_swap_chain* swap_chain) = 0;
-
-	virtual void wait_for_idle() = 0;
 };
 
 class st_command_allocator

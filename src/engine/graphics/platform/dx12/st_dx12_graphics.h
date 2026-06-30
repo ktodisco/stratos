@@ -47,6 +47,14 @@ struct st_dx12_buffer_view : public st_buffer_view
 	class st_dx12_descriptor_heap* _heap;
 };
 
+struct st_dx12_fence : public st_fence
+{
+	~st_dx12_fence() { _fence = nullptr; }
+
+	Microsoft::WRL::ComPtr<ID3D12Fence> _fence;
+	uint64_t _fence_value = 0;
+};
+
 struct st_dx12_framebuffer : public st_framebuffer
 {
 	~st_dx12_framebuffer()
