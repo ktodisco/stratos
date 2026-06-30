@@ -9,7 +9,6 @@
 
 #include <framework/st_camera.h>
 #include <framework/st_compiler_defines.h>
-#include <framework/st_global_resources.h>
 #include <framework/st_input.h>
 #include <framework/st_scene.h>
 #include <framework/st_sim.h>
@@ -25,7 +24,6 @@
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/st_light_component.h>
 #include <graphics/st_graphics_context.h>
-#include <graphics/st_shader_manager.h>
 
 #include <gui/st_button.h>
 #include <gui/st_checkbox.h>
@@ -92,13 +90,6 @@ int main(int argc, const char** argv)
 
 	// Create the graphics context for the window.
 	std::unique_ptr<st_graphics_context> graphics = st_graphics_context::create(api, window.get());
-
-	// Create resources shared by many systems of the application.
-	create_global_resources(graphics.get());
-
-	// Create the shader manager, loading all the shaders.
-	std::unique_ptr<st_shader_manager> shader_manager =
-		std::make_unique<st_shader_manager>(graphics.get());
 
 	// Create objects for phases of the frame: sim, physics, and output.
 	std::unique_ptr<st_sim> sim = std::make_unique<st_sim>();
@@ -172,8 +163,6 @@ int main(int argc, const char** argv)
 	output = nullptr;
 
 	st_job::shutdown();
-
-	destroy_global_resources();
 
 	delete g_font;
 

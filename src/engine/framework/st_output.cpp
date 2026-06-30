@@ -7,6 +7,7 @@
 #include <framework/st_output.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_global_resources.h>
 
 #include <graphics/material/st_material.h>
 #include <graphics/pass/st_atmosphere_pass.h>
@@ -20,6 +21,7 @@
 #include <graphics/pass/st_ui_render_pass.h>
 #include <graphics/st_graphics_context.h>
 #include <graphics/st_render_texture.h>
+#include <graphics/st_shader_manager.h>
 
 #include <gui/st_imgui.h>
 
@@ -39,6 +41,29 @@ st_output* st_output::_this = nullptr;
 st_output::st_output(const st_window* window, st_graphics_context* context) :
 	_window(window), _width(window->get_width()), _height(window->get_height()), _graphics_context(context)
 {
+	// Create resources shared by many systems of the application.
+	create_global_resources(context);
+
+	// Create the shader manager, loading all the shaders.
+	_shader_manager = std::make_unique<st_shader_manager>(context);
+
+	// Create the device and graphics command structures.
+	st_device_desc device_desc;
+	_device = context->create_device(device_desc);
+
+	st_command_queue_desc cq_desc;
+	_command_queue = _device->create_command_queue(cq_desc);
+
+	for (int f = 0; f < k_max_frames; ++f)
+	{
+		st_command_allocator_desc ca_desc;
+		_command_allocators[f] = _device->create_command_allocator(ca_desc);
+
+		st_command_list_desc cl_desc;
+		cl_desc.allocator = _command_allocators[f].get();
+		_command_lists[f] = _device->create_command_list(cl_desc);
+	}
+
 	// Create the swap chain first.
 	{
 		_backbuffer_format = choose_backbuffer_format();
@@ -64,6 +89,16 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 
 st_output::~st_output()
 {
+	destroy_global_resources();
+
+	for (int f = 0; f < k_max_frames; ++f)
+	{
+		_command_lists[f] = nullptr;
+		_command_allocators[f] = nullptr;
+	}
+	_command_queue = nullptr;
+	_device = nullptr;
+
 	_this = nullptr;
 }
 

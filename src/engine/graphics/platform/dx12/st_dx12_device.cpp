@@ -58,12 +58,29 @@ st_dx12_device::st_dx12_device(ID3D12Device* device, st_dx12_graphics_context* c
 
 st_dx12_device::~st_dx12_device()
 {
+	_graphics_signature = nullptr;
+	_compute_signature = nullptr;
+	_command_list = nullptr;
+	_upload_buffer = nullptr;
+
+#if _DEBUG
+	_static_sampler_heap->report_leaks();
+	_dsv_heap->report_leaks();
+	_rtv_heap->report_leaks();
+	_resource_heap->report_leaks();
+#endif
+
+	_static_sampler_heap = nullptr;
+	_dsv_heap = nullptr;
+	_rtv_heap = nullptr;
+	_resource_heap = nullptr;
+
 	_d3d_device = nullptr;
 }
 
 std::unique_ptr<class st_command_queue> st_dx12_device::create_command_queue(const st_command_queue_desc& desc)
 {
-	ID3D12CommandQueue* d3d_queue;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> d3d_queue;
 
 	D3D12_COMMAND_QUEUE_DESC queue_desc = {};
 	queue_desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -78,14 +95,14 @@ std::unique_ptr<class st_command_queue> st_dx12_device::create_command_queue(con
 		assert(false);
 	}
 
-	std::unique_ptr<st_dx12_command_queue> queue = std::make_unique<st_dx12_command_queue>(d3d_queue);
+	std::unique_ptr<st_dx12_command_queue> queue = std::make_unique<st_dx12_command_queue>(d3d_queue.Get());
 
 	return std::move(queue);
 }
 
 std::unique_ptr<class st_command_allocator> st_dx12_device::create_command_allocator(const st_command_allocator_desc& desc)
 {
-	ID3D12CommandAllocator* d3d_allocator;
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> d3d_allocator;
 
 	HRESULT result = _d3d_device->CreateCommandAllocator(
 		D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -97,7 +114,7 @@ std::unique_ptr<class st_command_allocator> st_dx12_device::create_command_alloc
 		assert(false);
 	}
 
-	std::unique_ptr<st_dx12_command_allocator> command_allocator = std::make_unique<st_dx12_command_allocator>(d3d_allocator);
+	std::unique_ptr<st_dx12_command_allocator> command_allocator = std::make_unique<st_dx12_command_allocator>(d3d_allocator.Get());
 
 	return std::move(command_allocator);
 }
@@ -106,7 +123,7 @@ std::unique_ptr<class st_command_list> st_dx12_device::create_command_list(const
 {
 	st_dx12_command_allocator* command_allocator = static_cast<st_dx12_command_allocator*>(desc.allocator);
 
-	ID3D12GraphicsCommandList* d3d_command_list;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> d3d_command_list;
 
 	HRESULT result = _d3d_device->CreateCommandList(
 		0,
@@ -121,7 +138,7 @@ std::unique_ptr<class st_command_list> st_dx12_device::create_command_list(const
 		assert(false);
 	}
 
-	std::unique_ptr<st_dx12_command_list> command_list = std::make_unique<st_dx12_command_list>(d3d_command_list, this);
+	std::unique_ptr<st_dx12_command_list> command_list = std::make_unique<st_dx12_command_list>(d3d_command_list.Get(), this);
 
 	return std::move(command_list);
 }

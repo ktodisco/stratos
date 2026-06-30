@@ -54,6 +54,15 @@ st_dx12_command_list::st_dx12_command_list(ID3D12GraphicsCommandList* command_li
 
 st_dx12_command_list::~st_dx12_command_list()
 {
+	for (uint32_t h_itr = 0; h_itr < k_max_frames; ++h_itr)
+	{
+		_cbv_srv_heap[h_itr]->empty();
+		_sampler_heap[h_itr]->empty();
+
+		_cbv_srv_heap[h_itr] = nullptr;
+		_sampler_heap[h_itr] = nullptr;
+	}
+
 	_d3d_command_list = nullptr;
 }
 

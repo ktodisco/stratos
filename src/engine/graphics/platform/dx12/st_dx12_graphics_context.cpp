@@ -409,16 +409,16 @@ std::unique_ptr<st_device> st_dx12_graphics_context::create_device(const st_devi
 		}
 	}
 
-	ID3D12Device* d3d12_device;
+	Microsoft::WRL::ComPtr<ID3D12Device> d3d_device;
 
 	// Create the device and command queue.
 	HRESULT result = D3D12CreateDevice(
 		hardware_adapter.Get(),
 		D3D_FEATURE_LEVEL_12_1,
 		__uuidof(ID3D12Device),
-		(void**)&d3d12_device);
+		(void**)&d3d_device);
 
-	std::unique_ptr<st_dx12_device> device = std::make_unique<st_dx12_device>(d3d12_device, this);
+	std::unique_ptr<st_dx12_device> device = std::make_unique<st_dx12_device>(d3d_device.Get(), this);
 
 	if (result != S_OK)
 	{

@@ -63,6 +63,17 @@ private:
 	std::unique_ptr<struct st_swap_chain> _swap_chain;
 	bool _out_of_date = false;
 
+	// Application graphics systems.
+	std::unique_ptr<class st_shader_manager> _shader_manager;
+
+	// Core graphics objects.
+	std::unique_ptr<class st_device> _device;
+	std::unique_ptr<class st_command_queue> _command_queue;
+	std::unique_ptr<class st_command_allocator> _command_allocators[k_max_frames];
+	std::unique_ptr<class st_command_list> _command_lists[k_max_frames];
+	std::unique_ptr<struct st_fence> _fence;
+	uint32_t _frame_index = 0;
+
 	// Atmospherics.
 	std::unique_ptr<class st_render_texture> _transmittance;
 	std::unique_ptr<class st_render_texture> _sky_view;
