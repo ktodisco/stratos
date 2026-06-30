@@ -7,7 +7,9 @@
 #include <graphics/pass/st_ui_render_pass.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 
+#include <graphics/st_graphics.h>
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_constant_color_material.h>
 #include <graphics/st_drawcall.h>
@@ -21,7 +23,7 @@
 
 st_ui_render_pass::st_ui_render_pass(const st_window* window, st_render_texture* target)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	_target_format = target->get_format();
 
@@ -32,7 +34,7 @@ st_ui_render_pass::st_ui_render_pass(const st_window* window, st_render_texture*
 		desc._attachment_count = 1;
 		desc._viewport = { 0.0f, 0.0f, float(target->get_width()), float(target->get_height()), 0.0f, 1.0f };
 
-		_pass = context->create_render_pass(desc);
+		_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -42,13 +44,13 @@ st_ui_render_pass::st_ui_render_pass(const st_window* window, st_render_texture*
 		desc._targets = &target_desc;
 		desc._target_count = 1;
 
-		_framebuffer = context->create_framebuffer(desc);
+		_framebuffer = device->create_framebuffer(desc);
 	}
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32_float, 1));
-	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
+	_vertex_format = device->create_vertex_format(attributes.data(), attributes.size());
 
 	// Set up the default UI material.
 	_default_material = std::make_unique<st_constant_color_material>();
@@ -64,9 +66,9 @@ st_ui_render_pass::st_ui_render_pass(const st_window* window, st_render_texture*
 	default_state_desc._render_target_formats[0] = _target_format;
 	default_state_desc._primitive_topology_type = st_primitive_topology_type_line;
 
-	_default_state = context->create_graphics_pipeline(default_state_desc);
+	_default_state = device->create_graphics_pipeline(default_state_desc);
 
-	st_imgui::initialize(window, context, _target_format, _pass.get());
+	st_imgui::initialize(window, _target_format, _pass.get());
 }
 
 st_ui_render_pass::~st_ui_render_pass()

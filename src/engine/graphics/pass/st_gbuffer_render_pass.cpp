@@ -7,10 +7,11 @@
 #include <graphics/pass/st_gbuffer_render_pass.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 
 #include <graphics/material/st_material.h>
 #include <graphics/st_drawcall.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
@@ -23,7 +24,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	st_render_texture* third_buffer,
 	st_render_texture* depth_buffer)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	// Cache the output formats to use in pipeline state setup.
 	_formats[0] = albedo_buffer->get_format();
@@ -44,7 +45,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 		desc._depth_attachment = { depth_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store };
 		desc._viewport = { 0.0f, 0.0f, float(albedo_buffer->get_width()), float(albedo_buffer->get_height()), 0.0f, 1.0f };
 
-		_pass = context->create_render_pass(desc);
+		_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -60,7 +61,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 		desc._target_count = std::size(targets);
 		desc._depth_target = { depth_buffer->get_texture(), depth_buffer->get_target_view() };
 
-		_framebuffer = context->create_framebuffer(desc);
+		_framebuffer = device->create_framebuffer(desc);
 	}
 }
 

@@ -188,7 +188,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
     }
 }
 
-static void ImGui_ImplStratos_CreateFontsTexture(st_graphics_context* ctx)
+static void ImGui_ImplStratos_CreateFontsTexture(st_device* device)
 {
     // Build texture atlas
     ImGuiIO& io = ImGui::GetIO();
@@ -198,7 +198,7 @@ static void ImGui_ImplStratos_CreateFontsTexture(st_graphics_context* ctx)
 
     // Upload texture to graphics system
     {
-        ctx->begin_loading();
+        //ctx->begin_loading();
 
         st_texture_desc desc;
         desc._width = width;
@@ -208,30 +208,28 @@ static void ImGui_ImplStratos_CreateFontsTexture(st_graphics_context* ctx)
         desc._usage = e_st_texture_usage::sampled;
         desc._initial_state = st_texture_state_pixel_shader_read;
         desc._data = pixels;
-        g_font_texture = ctx->create_texture(desc);
-        ctx->set_texture_name(g_font_texture.get(), "ImGui Font");
-        ctx->end_loading();
+        g_font_texture = device->create_texture(desc);
+        device->set_texture_name(g_font_texture.get(), "ImGui Font");
+        //ctx->end_loading();
 
 		st_texture_view_desc view_desc;
 		view_desc._texture = g_font_texture.get();
 		view_desc._format = st_format_r8g8b8a8_unorm;
 		view_desc._first_mip = 0;
 		view_desc._mips = 1;
-        g_font_texture_view = ctx->create_texture_view(view_desc);
+        g_font_texture_view = device->create_texture_view(view_desc);
     }
 
     // Store our identifier
     io.Fonts->TexID = (ImTextureID)g_font_texture_view.get();
 }
 
-bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
+bool ImGui_ImplStratos_CreateDeviceObjects(st_device* device)
 {
-	ctx->acquire();
-
     if (g_pipeline)
         ImGui_ImplStratos_InvalidateDeviceObjects();
 
-    ImGui_ImplStratos_CreateFontsTexture(ctx);
+    ImGui_ImplStratos_CreateFontsTexture(device);
 
     // Create the constants and resource table
     {
@@ -239,18 +237,18 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
         desc._count = 1;
         desc._element_size = sizeof(imgui_cb);
         desc._usage = e_st_buffer_usage::uniform;
-        g_constant_buffer = ctx->create_buffer(desc);
+        g_constant_buffer = device->create_buffer(desc);
 
 		st_buffer_view_desc view_desc;
 		view_desc._buffer = g_constant_buffer.get();
-		g_constant_buffer_view = ctx->create_buffer_view(view_desc);
+		g_constant_buffer_view = device->create_buffer_view(view_desc);
 
-        g_resource_table = ctx->create_resource_table();
+        g_resource_table = device->create_resource_table();
         const st_texture_view* textures[] = { g_font_texture_view.get() };
         const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
-        ctx->set_textures(g_resource_table.get(), 1, textures, samplers);
+        device->set_textures(g_resource_table.get(), 1, textures, samplers);
         const st_buffer_view* cbs[] = { g_constant_buffer_view.get() };
-        ctx->set_constant_buffers(g_resource_table.get(), 1, cbs);
+        device->set_constant_buffers(g_resource_table.get(), 1, cbs);
     }
 
     std::vector<st_vertex_attribute> attributes;
@@ -259,7 +257,7 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
     attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 1));
     attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r8g8b8a8_unorm, 2));
 
-    g_vertex_format = ctx->create_vertex_format(attributes.data(), 3);
+    g_vertex_format = device->create_vertex_format(attributes.data(), 3);
 
     st_graphics_state_desc desc;
     desc._primitive_topology_type = st_primitive_topology_type_triangle;
@@ -293,9 +291,7 @@ bool ImGui_ImplStratos_CreateDeviceObjects(st_graphics_context* ctx)
     desc._depth_stencil_desc._depth_compare = st_compare_func_always;
     desc._depth_stencil_desc._stencil_enable = false;
 
-    g_pipeline = ctx->create_graphics_pipeline(desc);
-
-	ctx->release();
+    g_pipeline = device->create_graphics_pipeline(desc);
 
     return true;
 }
@@ -347,8 +343,8 @@ void ImGui_ImplStratos_Shutdown()
     g_frameIndex = UINT_MAX;
 }
 
-void ImGui_ImplStratos_NewFrame(st_graphics_context* ctx)
+void ImGui_ImplStratos_NewFrame(st_device* device)
 {
     if (!g_pipeline)
-        ImGui_ImplStratos_CreateDeviceObjects(ctx);
+        ImGui_ImplStratos_CreateDeviceObjects(device);
 }

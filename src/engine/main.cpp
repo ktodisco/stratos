@@ -123,7 +123,7 @@ int main(int argc, const char** argv)
 			camera->resize(window->get_width(), window->get_height());
 		}
 
-		st_imgui::new_frame();
+		st_imgui::new_frame(st_output::get_device());
 
 		// Pump messages.
 		if (!window->update())

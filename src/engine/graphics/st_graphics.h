@@ -648,6 +648,9 @@ public:
 
 	// Framebuffers.
 	virtual std::unique_ptr<st_framebuffer> create_framebuffer(const st_framebuffer_desc& desc) = 0;
+
+	// Informational.
+	virtual void get_desc(const st_texture* texture, st_texture_desc* out_desc) = 0;
 };
 
 class st_command_queue

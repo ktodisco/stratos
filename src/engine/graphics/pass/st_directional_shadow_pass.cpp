@@ -7,11 +7,12 @@
 #include <graphics/pass/st_directional_shadow_pass.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 
 #include <graphics/light/st_directional_light.h>
 #include <graphics/material/st_material.h>
 #include <graphics/st_drawcall.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
@@ -22,14 +23,14 @@
 st_directional_shadow_pass::st_directional_shadow_pass(st_render_texture* target) :
 	_target(target)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_render_pass_desc desc;
 		desc._depth_attachment = { target->get_format(), e_st_load_op::clear, e_st_store_op::store };
 		desc._viewport = { 0.0f, 0.0f, float(target->get_width()), float(target->get_height()), 0.0f, 1.0f };
 
-		_pass = context->create_render_pass(desc);
+		_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -37,7 +38,7 @@ st_directional_shadow_pass::st_directional_shadow_pass(st_render_texture* target
 		desc._pass = _pass.get();
 		desc._depth_target = { target->get_texture(), target->get_target_view() };
 
-		_framebuffer = context->create_framebuffer(desc);
+		_framebuffer = device->create_framebuffer(desc);
 	}
 }
 

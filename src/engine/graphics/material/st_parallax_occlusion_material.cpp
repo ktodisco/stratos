@@ -12,7 +12,7 @@
 
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
 
@@ -24,20 +24,20 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	const char* normal_texture) :
 	st_material(e_st_render_pass_type::gbuffer)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_parallax_occlusion_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_parallax_occlusion_buffer = context->create_buffer(desc);
+		_parallax_occlusion_buffer = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _parallax_occlusion_buffer.get();
-		_pobv = context->create_buffer_view(desc);
+		_pobv = device->create_buffer_view(desc);
 	}
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
@@ -45,24 +45,24 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 
 	{
 		st_texture_desc albedo_desc;
-		context->get_desc(_albedo_texture.get(), &albedo_desc);
+		device->get_desc(_albedo_texture.get(), &albedo_desc);
 		st_texture_view_desc desc;
 		desc._texture = _albedo_texture.get();
 		desc._format = albedo_desc._format;
 		desc._first_mip = 0;
 		desc._mips = albedo_desc._levels;
-		_albedo_view = context->create_texture_view(desc);
+		_albedo_view = device->create_texture_view(desc);
 	}
 
 	{
 		st_texture_desc normal_desc;
-		context->get_desc(_normal_texture.get(), &normal_desc);
+		device->get_desc(_normal_texture.get(), &normal_desc);
 		st_texture_view_desc desc;
 		desc._texture = _normal_texture.get();
 		desc._format = normal_desc._format;
 		desc._first_mip = 0;
 		desc._mips = normal_desc._levels;
-		_normal_view = context->create_texture_view(desc);
+		_normal_view = device->create_texture_view(desc);
 	}
 
 	std::vector<st_vertex_attribute> attributes;
@@ -71,7 +71,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, st_format_r32g32b32_float, 2));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32a32_float, 3));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 4));
-	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
+	_vertex_format = device->create_vertex_format(attributes.data(), attributes.size());
 
 	st_output* output = st_output::get();
 
@@ -83,11 +83,11 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 	desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 	output->get_target_formats(e_st_render_pass_type::gbuffer, desc);
 
-	_pipeline = context->create_graphics_pipeline(desc);
+	_pipeline = device->create_graphics_pipeline(desc);
 
-	_resource_table = context->create_resource_table();
+	_resource_table = device->create_resource_table();
 	const st_buffer_view* cbs[] = { _pobv.get() };
-	context->set_constant_buffers(_resource_table.get(), 1, cbs);
+	device->set_constant_buffers(_resource_table.get(), 1, cbs);
 	const st_texture_view* textures[] = {
 		_albedo_view.get(),
 		_normal_view.get()
@@ -96,7 +96,7 @@ st_parallax_occlusion_material::st_parallax_occlusion_material(
 		_global_resources->_trilinear_clamp_sampler.get(),
 		_global_resources->_trilinear_clamp_sampler.get(),
 	};
-	context->set_textures(_resource_table.get(), std::size(textures), textures, samplers);
+	device->set_textures(_resource_table.get(), std::size(textures), textures, samplers);
 }
 
 st_parallax_occlusion_material::~st_parallax_occlusion_material()

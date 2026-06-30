@@ -6,6 +6,9 @@
 
 #include <graphics/pass/st_fullscreen_render_pass.h>
 
+#include <framework/st_output.h>
+
+#include <graphics/st_graphics.h>
 #include <graphics/st_graphics_context.h>
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_material.h>
@@ -18,7 +21,7 @@ st_fullscreen_render_pass::st_fullscreen_render_pass()
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 1));
-	_vertex_format = st_graphics_context::get()->create_vertex_format(attributes.data(), attributes.size());
+	_vertex_format = st_output::get_device()->create_vertex_format(attributes.data(), attributes.size());
 
 	// TODO: UVs are defined here as a workaround for no custom defines in the shader build pipeline.
 	// This can be moved back to the vertex shader once api defines are possible there.

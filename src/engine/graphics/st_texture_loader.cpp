@@ -8,7 +8,9 @@
 
 #include <core/st_core.h>
 
-#include <graphics/st_graphics_context.h>
+#include <framework/st_output.h>
+
+#include <graphics/st_graphics.h>
 
 #include <stb_image.h>
 
@@ -68,7 +70,7 @@ std::unique_ptr<st_texture> load_stb_texture(const char* fullpath)
 	desc._usage = e_st_texture_usage::sampled;
 	desc._initial_state = st_texture_state_pixel_shader_read;
 	desc._data = data;
-	std::unique_ptr<st_texture> ret = st_graphics_context::get()->create_texture(desc);
+	std::unique_ptr<st_texture> ret = st_output::get_device()->create_texture(desc);
 
 	stbi_image_free(data);
 
@@ -180,7 +182,7 @@ std::unique_ptr<st_texture> load_dds_texture(const char* fullpath)
 	desc._usage = e_st_texture_usage::sampled;
 	desc._initial_state = st_texture_state_pixel_shader_read;
 	desc._data = bit_data;
-	auto texture = st_graphics_context::get()->create_texture(desc);
+	auto texture = st_output::get_device()->create_texture(desc);
 
 	return std::move(texture);
 }

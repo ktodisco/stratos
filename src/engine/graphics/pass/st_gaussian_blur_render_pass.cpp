@@ -7,7 +7,9 @@
 #include <graphics/pass/st_gaussian_blur_render_pass.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 
+#include <graphics/st_graphics.h>
 #include <graphics/geometry/st_geometry.h>
 #include <graphics/material/st_gaussian_blur_material.h>
 #include <graphics/st_pipeline_state_desc.h>
@@ -18,11 +20,11 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	// Set up the intermediate render target between the two blur passes.
 	_intermediate_target = std::make_unique<st_render_texture>(
-		context,
+		device,
 		source_buffer->get_width(),
 		source_buffer->get_height(),
 		source_buffer->get_format(),
@@ -41,7 +43,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		desc._attachment_count = std::size(attachments);
 		desc._viewport = { 0.0f, 0.0f, float(_intermediate_target->get_width()), float(_intermediate_target->get_height()), 0.0f, 1.0f };
 
-		_vertical_blur_pass = context->create_render_pass(desc);
+		_vertical_blur_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -51,7 +53,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		desc._targets = &target;
 		desc._target_count = 1;
 
-		_vertical_blur_framebuffer = context->create_framebuffer(desc);
+		_vertical_blur_framebuffer = device->create_framebuffer(desc);
 	}
 
 	{
@@ -64,7 +66,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		desc._attachment_count = std::size(attachments);
 		desc._viewport = { 0.0f, 0.0f, float(target_buffer->get_width()), float(target_buffer->get_height()), 0.0f, 1.0f };
 
-		_horizontal_blur_pass = context->create_render_pass(desc);
+		_horizontal_blur_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -74,7 +76,7 @@ st_gaussian_blur_render_pass::st_gaussian_blur_render_pass(
 		desc._targets = &target;
 		desc._target_count = 1;
 
-		_horizontal_blur_framebuffer = context->create_framebuffer(desc);
+		_horizontal_blur_framebuffer = device->create_framebuffer(desc);
 	}
 
 	_vertical_blur_material = std::make_unique<st_gaussian_blur_vertical_material>(

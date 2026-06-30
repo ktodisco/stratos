@@ -45,6 +45,7 @@ public:
 	void get_target_formats(e_st_render_pass_type type, struct st_graphics_state_desc& desc);
 
 	static st_output* get() { return _this; }
+	static class st_device* get_device() { return get()->_device.get(); }
 
 private:
 

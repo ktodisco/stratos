@@ -7,9 +7,10 @@
 #include <graphics/material/st_fullscreen_material.h>
 
 #include <framework/st_global_resources.h>
+#include <framework/st_output.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 
@@ -21,10 +22,10 @@ st_fullscreen_material::st_fullscreen_material(
 	st_material(e_st_render_pass_type::passthrough),
 	_texture(texture)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	st_texture_desc target_desc;
-	context->get_desc(target, &target_desc);
+	device->get_desc(target, &target_desc);
 
 	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_fullscreen);
@@ -35,12 +36,12 @@ st_fullscreen_material::st_fullscreen_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target_desc._format;
 
-	_pipeline = context->create_graphics_pipeline(desc);
+	_pipeline = device->create_graphics_pipeline(desc);
 
-	_resource_table = context->create_resource_table();
+	_resource_table = device->create_resource_table();
 	const st_texture_view* t = _texture->get_resource_view();
 	const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
-	context->set_textures(_resource_table.get(), 1, &t, samplers);
+	device->set_textures(_resource_table.get(), 1, &t, samplers);
 }
 
 st_fullscreen_material::~st_fullscreen_material()

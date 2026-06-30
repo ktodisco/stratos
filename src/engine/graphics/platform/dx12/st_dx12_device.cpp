@@ -1122,4 +1122,17 @@ std::unique_ptr<st_framebuffer> st_dx12_device::create_framebuffer(const st_fram
 	return std::move(framebuffer);
 }
 
+void st_dx12_device::get_desc(const st_texture* texture_, st_texture_desc* out_desc)
+{
+	assert(out_desc);
+	const st_dx12_texture* texture = static_cast<const st_dx12_texture*>(texture_);
+	out_desc->_format = texture->_format;
+	out_desc->_width = texture->_width;
+	out_desc->_height = texture->_height;
+	out_desc->_depth = texture->_depth;
+	out_desc->_levels = texture->_levels;
+	out_desc->_usage = texture->_usage;
+	// TODO: Depth and others.
+}
+
 #endif

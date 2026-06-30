@@ -7,9 +7,10 @@
 #include <graphics/material/st_tonemap_material.h>
 
 #include <framework/st_global_resources.h>
+#include <framework/st_output.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 
@@ -23,7 +24,7 @@ st_tonemap_material::st_tonemap_material(
 	_texture(texture),
 	_bloom(bloom)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	st_graphics_state_desc desc;
 	desc._shader = st_shader_manager::get()->get_shader(st_shader_tonemap);
@@ -34,9 +35,9 @@ st_tonemap_material::st_tonemap_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_graphics_pipeline(desc);
+	_pipeline = device->create_graphics_pipeline(desc);
 
-	_resource_table = context->create_resource_table();
+	_resource_table = device->create_resource_table();
 	const st_texture_view* textures[] =
 	{
 		_texture->get_resource_view(),
@@ -47,7 +48,7 @@ st_tonemap_material::st_tonemap_material(
 		_global_resources->_trilinear_clamp_sampler.get(),
 		_global_resources->_trilinear_clamp_sampler.get()
 	};
-	context->set_textures(_resource_table.get(), 2, textures, samplers);
+	device->set_textures(_resource_table.get(), 2, textures, samplers);
 }
 
 st_tonemap_material::~st_tonemap_material()

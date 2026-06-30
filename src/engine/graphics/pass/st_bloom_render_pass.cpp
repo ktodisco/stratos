@@ -7,12 +7,13 @@
 #include <graphics/pass/st_bloom_render_pass.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 
 #include <graphics/geometry/st_geometry.h>
 #include <graphics/material/st_bloom_material.h>
 #include <graphics/pass/st_gaussian_blur_render_pass.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
@@ -20,11 +21,11 @@ st_bloom_render_pass::st_bloom_render_pass(
 	st_render_texture* source_buffer,
 	st_render_texture* target_buffer)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		_threshold_target = std::make_unique<st_render_texture>(
-			context,
+			device,
 			source_buffer->get_width(),
 			source_buffer->get_height(),
 			source_buffer->get_format(),
@@ -42,7 +43,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		desc._attachment_count = std::size(attachments);
 		desc._viewport = { 0.0f, 0.0f, float(_threshold_target->get_width()), float(_threshold_target->get_height()), 0.0f, 1.0f };
 
-		_threshold_pass = context->create_render_pass(desc);
+		_threshold_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -52,7 +53,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		desc._targets = &target;
 		desc._target_count = 1;
 
-		_threshold_framebuffer = context->create_framebuffer(desc);
+		_threshold_framebuffer = device->create_framebuffer(desc);
 	}
 
 	_threshold_material = std::make_unique<st_bloom_threshold_material>(
@@ -65,7 +66,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 	for (uint32_t d = 0; d < k_num_downsamples; ++d)
 	{
 		_downsample_targets[d] = std::make_unique<st_render_texture>(
-			context,
+			device,
 			source_buffer->get_width() >> (d + 1),
 			source_buffer->get_height() >> (d + 1),
 			source_buffer->get_format(),
@@ -76,7 +77,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 
 		uint32_t u = (k_num_downsamples - 1 - d);
 		_upsample_targets[u] = std::make_unique<st_render_texture>(
-			context,
+			device,
 			source_buffer->get_width() >> (d + 1),
 			source_buffer->get_height() >> (d + 1),
 			source_buffer->get_format(),
@@ -98,7 +99,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		pass_desc._attachment_count = std::size(attachments);
 		pass_desc._viewport = { 0.0f, 0.0f, float(_downsample_targets[d]->get_width()), float(_downsample_targets[d]->get_height()), 0.0f, 1.0f };
 
-		_downsample_passes[d] = context->create_render_pass(pass_desc);
+		_downsample_passes[d] = device->create_render_pass(pass_desc);
 
 		st_target_desc target = { _downsample_targets[d]->get_texture(), _downsample_targets[d]->get_target_view() };
 		st_framebuffer_desc framebuffer_desc;
@@ -106,7 +107,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		framebuffer_desc._targets = &target;
 		framebuffer_desc._target_count = 1;
 
-		_downsample_framebuffers[d] = context->create_framebuffer(framebuffer_desc);
+		_downsample_framebuffers[d] = device->create_framebuffer(framebuffer_desc);
 
 		_downsample_materials[d] = std::make_unique<st_bloom_downsample_material>(
 			(d == 0) ? _threshold_target.get() : _downsample_targets[d - 1].get(),
@@ -142,7 +143,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		pass_desc._attachment_count = std::size(attachments);
 		pass_desc._viewport = { 0.0f, 0.0f, float(_upsample_targets[u + 1]->get_width()), float(_upsample_targets[u + 1]->get_height()), 0.0f, 1.0f };
 
-		_upsample_passes[u] = context->create_render_pass(pass_desc);
+		_upsample_passes[u] = device->create_render_pass(pass_desc);
 
 		st_target_desc target = { _upsample_targets[u + 1]->get_texture(), _upsample_targets[u + 1]->get_target_view() };
 		st_framebuffer_desc framebuffer_desc;
@@ -150,7 +151,7 @@ st_bloom_render_pass::st_bloom_render_pass(
 		framebuffer_desc._targets = &target;
 		framebuffer_desc._target_count = 1;
 
-		_upsample_framebuffers[u] = context->create_framebuffer(framebuffer_desc);
+		_upsample_framebuffers[u] = device->create_framebuffer(framebuffer_desc);
 
 		_upsample_materials[u] = std::make_unique<st_bloom_upsample_material>(
 			(u == 0) ? _upsample_targets[u].get() : _downsample_targets[k_num_downsamples - 1 - u].get(),

@@ -7,6 +7,7 @@
 #include <graphics/pass/st_deferred_light_render_pass.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 
 #include <graphics/geometry/st_geometry.h>
 #include <graphics/light/st_directional_light.h>
@@ -14,7 +15,7 @@
 #include <graphics/material/st_deferred_light_material.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
 
@@ -28,20 +29,20 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 	st_render_texture* directional_shadow_map,
 	st_render_texture* output_buffer)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_deferred_light_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_constant_buffer = context->create_buffer(desc);
+		_constant_buffer = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _constant_buffer.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	{
@@ -49,14 +50,14 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		desc._count = 1;
 		desc._element_size = sizeof(st_sphere_light_data);
 		desc._usage = e_st_buffer_usage::storage | e_st_buffer_usage::transfer_dest;
-		_light_buffer = context->create_buffer(desc);
-		context->set_buffer_name(_light_buffer.get(), "Light Buffer");
+		_light_buffer = device->create_buffer(desc);
+		device->set_buffer_name(_light_buffer.get(), "Light Buffer");
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _light_buffer.get();
-		_lbv = context->create_buffer_view(desc);
+		_lbv = device->create_buffer_view(desc);
 	}
 
 	{
@@ -69,7 +70,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		desc._attachment_count = std::size(attachments);
 		desc._viewport = { 0.0f, 0.0f, float(output_buffer->get_width()), float(output_buffer->get_height()), 0.0f, 1.0f };
 
-		_pass = context->create_render_pass(desc);
+		_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -79,7 +80,7 @@ st_deferred_light_render_pass::st_deferred_light_render_pass(
 		desc._targets = &target;
 		desc._target_count = 1;
 
-		_framebuffer = context->create_framebuffer(desc);
+		_framebuffer = device->create_framebuffer(desc);
 	}
 
 	_material = std::make_unique<st_deferred_light_material>(

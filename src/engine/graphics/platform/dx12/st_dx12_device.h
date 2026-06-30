@@ -85,6 +85,9 @@ public:
 	// Framebuffers.
 	std::unique_ptr<st_framebuffer> create_framebuffer(const st_framebuffer_desc& desc) override;
 
+	// Informational.
+	void get_desc(const st_texture* texture, st_texture_desc* out_desc) override;
+
 	// Internal functions.
 	ID3D12Device* get() { return _d3d_device.Get(); }
 	st_dx12_descriptor_heap* get_resource_heap() { return _resource_heap.get(); }

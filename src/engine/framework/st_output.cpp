@@ -241,7 +241,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 	_tonemap_target = nullptr;
 
 	_directional_shadow_map = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		2048,
 		2048,
 		st_format_d24_unorm_s8_uint,
@@ -251,7 +251,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		"Directional Shadow Map");
 
 	_gbuffer_albedo_target = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r8g8b8a8_unorm,
@@ -260,7 +260,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 1.0f }),
 		"Gbuffer Albedo");
 	_gbuffer_normal_target = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r16g16_float,
@@ -269,7 +269,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Gbuffer Normal");
 	_gbuffer_third_target = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r11g11b10_float,
@@ -278,7 +278,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		st_vec4f({ 0.0f, 0.0f, 0.0f, 0.0f }),
 		"Gbuffer Third");
 	_depth_stencil_target = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		_window->get_width(),
 		_window->get_height(),
 		st_format_d24_unorm_s8_uint,
@@ -288,7 +288,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		"Gbuffer Depth");
 
 	_deferred_target = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r16g16b16a16_float,
@@ -298,7 +298,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		"Deferred Target");
 
 	_bloom_target = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		_window->get_width() / 2,
 		_window->get_height() / 2,
 		st_format_r16g16b16a16_float,
@@ -308,7 +308,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		"Bloom Target");
 
 	_tonemap_target = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		_window->get_width(),
 		_window->get_height(),
 		st_format_r11g11b10_float,
@@ -318,7 +318,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		"Tonemap Target");
 
 	_transmittance = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		64,
 		256,
 		st_format_r8g8b8a8_unorm,
@@ -328,7 +328,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		"Atmosphere Transmittance");
 
 	_sky_view = std::make_unique<st_render_texture>(
-		context,
+		_device.get(),
 		192,
 		104,
 		st_format_r11g11b10_float,

@@ -10,10 +10,11 @@
 
 #include <framework/st_frame_params.h>
 #include <framework/st_global_resources.h>
+#include <framework/st_output.h>
 
 #include <graphics/light/st_directional_light.h>
 
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
@@ -84,28 +85,28 @@ static void build_constants(st_atmosphere_constants& constants, const st_frame_p
 st_atmosphere_transmission_pass::st_atmosphere_transmission_pass(st_render_texture* transmittance)
 	: _transmittance(transmittance)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
-	context->get_desc(_transmittance->get_texture(), &_transmittance_desc);
+	device->get_desc(_transmittance->get_texture(), &_transmittance_desc);
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_atmosphere_constants);
 		desc._usage = e_st_buffer_usage::uniform;
-		_cb = context->create_buffer(desc);
+		_cb = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _cb.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	{
 		st_compute_state_desc desc;
 		desc._shader = st_shader_manager::get()->get_shader(st_shader_atmosphere_transmission);
-		_pipeline = context->create_compute_pipeline(desc);
+		_pipeline = device->create_compute_pipeline(desc);
 	}
 
 	{
@@ -114,15 +115,15 @@ st_atmosphere_transmission_pass::st_atmosphere_transmission_pass(st_render_textu
 		desc._format = _transmittance->get_format();
 		desc._mips = 1;
 		desc._usage = e_st_view_usage::unordered_access;
-		_uav = context->create_texture_view(desc);
+		_uav = device->create_texture_view(desc);
 	}
 
 	{
 		const st_buffer_view* cbs[] = { _cbv.get() };
 		const st_texture_view* uavs[] = { _uav.get() };
-		_resources = context->create_resource_table_compute();
-		context->set_constant_buffers(_resources.get(), _countof(cbs), cbs);
-		context->set_uavs(_resources.get(), _countof(uavs), uavs);
+		_resources = device->create_resource_table_compute();
+		device->set_constant_buffers(_resources.get(), _countof(cbs), cbs);
+		device->set_uavs(_resources.get(), _countof(uavs), uavs);
 	}
 }
 
@@ -167,20 +168,20 @@ void st_atmosphere_transmission_pass::compute(st_graphics_context* context, cons
 st_atmosphere_sky_pass::st_atmosphere_sky_pass(st_render_texture* transmittance, st_render_texture* target)
 	: _transmittance(transmittance), _target(target)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_atmosphere_constants);
 		desc._usage = e_st_buffer_usage::uniform;
-		_cb = context->create_buffer(desc);
+		_cb = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _cb.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	{
@@ -193,7 +194,7 @@ st_atmosphere_sky_pass::st_atmosphere_sky_pass(st_render_texture* transmittance,
 		desc._attachment_count = std::size(attachments);
 		desc._viewport = { 0.0f, 0.0f, float(target->get_width()), float(target->get_height()), 0.0f, 1.0f };
 
-		_pass = context->create_render_pass(desc);
+		_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -203,7 +204,7 @@ st_atmosphere_sky_pass::st_atmosphere_sky_pass(st_render_texture* transmittance,
 		desc._targets = &target;
 		desc._target_count = 1;
 
-		_framebuffer = context->create_framebuffer(desc);
+		_framebuffer = device->create_framebuffer(desc);
 	}
 
 	{
@@ -215,16 +216,16 @@ st_atmosphere_sky_pass::st_atmosphere_sky_pass(st_render_texture* transmittance,
 		desc._render_target_count = 1;
 		desc._render_target_formats[0] = target->get_format();
 		desc._blend_desc._target_blend[0]._blend = false;
-		_pipeline = context->create_graphics_pipeline(desc);
+		_pipeline = device->create_graphics_pipeline(desc);
 	}
 
 	{
 		const st_buffer_view* cbs[] = { _cbv.get() };
 		const st_texture_view* srvs[] = { _transmittance->get_resource_view() };
 		const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
-		_resources = context->create_resource_table();
-		context->set_constant_buffers(_resources.get(), _countof(cbs), cbs);
-		context->set_textures(_resources.get(), _countof(srvs), srvs, samplers);
+		_resources = device->create_resource_table();
+		device->set_constant_buffers(_resources.get(), _countof(cbs), cbs);
+		device->set_textures(_resources.get(), _countof(srvs), srvs, samplers);
 	}
 }
 
@@ -279,20 +280,20 @@ st_atmosphere_render_pass::st_atmosphere_render_pass(
 	_transmittance(transmittance),
 	_sky_view(sky_view)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_atmosphere_constants);
 		desc._usage = e_st_buffer_usage::uniform;
-		_cb = context->create_buffer(desc);
+		_cb = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _cb.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	{
@@ -306,7 +307,7 @@ st_atmosphere_render_pass::st_atmosphere_render_pass(
 		desc._depth_attachment = { depth->get_format(), e_st_load_op::load, e_st_store_op::dont_care };
 		desc._viewport = { 0.0f, 0.0f, float(target->get_width()), float(target->get_height()), 0.0f, 1.0f };
 
-		_pass = context->create_render_pass(desc);
+		_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -317,7 +318,7 @@ st_atmosphere_render_pass::st_atmosphere_render_pass(
 		desc._target_count = 1;
 		desc._depth_target = { depth->get_texture(), depth->get_target_view() };
 
-		_framebuffer = context->create_framebuffer(desc);
+		_framebuffer = device->create_framebuffer(desc);
 	}
 
 	{
@@ -334,7 +335,7 @@ st_atmosphere_render_pass::st_atmosphere_render_pass(
 		desc._blend_desc._target_blend[0]._blend_op = st_blend_op_add;
 		desc._blend_desc._target_blend[0]._src_blend = st_blend_one;
 		desc._blend_desc._target_blend[0]._dst_blend = st_blend_zero;
-		_pipeline = context->create_graphics_pipeline(desc);
+		_pipeline = device->create_graphics_pipeline(desc);
 	}
 
 	{
@@ -349,9 +350,9 @@ st_atmosphere_render_pass::st_atmosphere_render_pass(
 			_global_resources->_trilinear_clamp_sampler.get()
 		};
 		const st_buffer_view* cbs[] = { _cbv.get() };
-		_resources = context->create_resource_table();
-		context->set_constant_buffers(_resources.get(), _countof(cbs), cbs);
-		context->set_textures(_resources.get(), _countof(textures), textures, samplers);
+		_resources = device->create_resource_table();
+		device->set_constant_buffers(_resources.get(), _countof(cbs), cbs);
+		device->set_textures(_resources.get(), _countof(textures), textures, samplers);
 	}
 }
 

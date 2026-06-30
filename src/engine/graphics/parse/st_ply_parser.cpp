@@ -6,9 +6,11 @@
 
 #include <graphics/parse/st_ply_parser.h>
 
+#include <framework/st_output.h>
+
 #include <graphics/geometry/st_model_data.h>
 #include <graphics/geometry/st_vertex_attribute.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 
 #include <cassert>
 #include <fstream>
@@ -267,5 +269,5 @@ void ply_to_model(const char* filename, struct st_model_data* model)
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32a32_float, 3));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 4));
 
-	model->_vertex_format = st_graphics_context::get()->create_vertex_format(attributes.data(), attributes.size());
+	model->_vertex_format = st_output::get_device()->create_vertex_format(attributes.data(), attributes.size());
 }

@@ -14,7 +14,7 @@
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/material/st_material.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_shader_manager.h>
 
 #include <math/st_vec2f.h>
@@ -84,7 +84,7 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 	desc._usage = e_st_texture_usage::sampled;
 	desc._initial_state = st_texture_state_pixel_shader_read;
 	desc._data = image_data;
-	_texture = st_graphics_context::get()->create_texture(desc);
+	_texture = st_output::get_device()->create_texture(desc);
 	delete[] image_data;
 
 	_material = std::make_unique<st_font_material>(_texture.get());
@@ -167,37 +167,37 @@ st_font_material::st_font_material(st_texture* texture) :
 	st_material(e_st_render_pass_type::ui),
 	_texture(texture)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_font_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_constant_buffer = context->create_buffer(desc);
+		_constant_buffer = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _constant_buffer.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	{
 		st_texture_desc texture_desc;
-		context->get_desc(_texture, &texture_desc);
+		device->get_desc(_texture, &texture_desc);
 		st_texture_view_desc desc;
 		desc._texture = _texture;
 		desc._format = texture_desc._format;
 		desc._first_mip = 0;
 		desc._mips = texture_desc._levels;
-		_view = context->create_texture_view(desc);
+		_view = device->create_texture_view(desc);
 	}
 
 	std::vector<st_vertex_attribute> attributes;
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_position, st_format_r32g32b32_float, 0));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 1));
-	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
+	_vertex_format = device->create_vertex_format(attributes.data(), attributes.size());
 
 	st_output* output = st_output::get();
 
@@ -215,17 +215,17 @@ st_font_material::st_font_material(st_texture* texture) :
 	desc._depth_stencil_format = st_format_d24_unorm_s8_uint;
 	output->get_target_formats(e_st_render_pass_type::ui, desc);
 
-	_pipeline = context->create_graphics_pipeline(desc);
+	_pipeline = device->create_graphics_pipeline(desc);
 
-	_resource_table = context->create_resource_table();
+	_resource_table = device->create_resource_table();
 	const st_buffer_view* cbs[] = { _cbv.get() };
-	context->set_constant_buffers(_resource_table.get(), 1, cbs);
+	device->set_constant_buffers(_resource_table.get(), 1, cbs);
 
 	if (_texture)
 	{
 		const st_texture_view* textures[] = { _view.get() };
 		const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
-		context->set_textures(_resource_table.get(), 1, textures, samplers);
+		device->set_textures(_resource_table.get(), 1, textures, samplers);
 	}
 }
 

@@ -7,9 +7,10 @@
 #include <graphics/material/st_bloom_material.h>
 
 #include <framework/st_global_resources.h>
+#include <framework/st_output.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 
@@ -42,20 +43,20 @@ st_bloom_threshold_material::st_bloom_threshold_material(
 	_texture(source),
 	_cutoff(cutoff)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_bloom_threshold_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_cb = context->create_buffer(desc);
+		_cb = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _cb.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	st_graphics_state_desc desc;
@@ -67,14 +68,14 @@ st_bloom_threshold_material::st_bloom_threshold_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_graphics_pipeline(desc);
+	_pipeline = device->create_graphics_pipeline(desc);
 
-	_resource_table = context->create_resource_table();
+	_resource_table = device->create_resource_table();
 	const st_texture_view* textures[]{ _texture->get_resource_view() };
 	const st_sampler* samplers[]{ _global_resources->_trilinear_clamp_sampler.get() };
-	context->set_textures(_resource_table.get(), 1, textures, samplers);
+	device->set_textures(_resource_table.get(), 1, textures, samplers);
 	const st_buffer_view* cbs[]{ _cbv.get() };
-	context->set_constant_buffers(_resource_table.get(), 1, cbs);
+	device->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_bloom_threshold_material::~st_bloom_threshold_material()
@@ -111,20 +112,20 @@ st_bloom_downsample_material::st_bloom_downsample_material(
 	st_material(e_st_render_pass_type::bloom),
 	_texture(source)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_bloom_downsample_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_cb = context->create_buffer(desc);
+		_cb = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _cb.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	st_graphics_state_desc desc;
@@ -136,14 +137,14 @@ st_bloom_downsample_material::st_bloom_downsample_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_graphics_pipeline(desc);
+	_pipeline = device->create_graphics_pipeline(desc);
 
-	_resource_table = context->create_resource_table();
+	_resource_table = device->create_resource_table();
 	const st_texture_view* textures[] { _texture->get_resource_view() };
 	const st_sampler* samplers[] { _global_resources->_trilinear_clamp_sampler.get() };
-	context->set_textures(_resource_table.get(), 1, textures, samplers);
+	device->set_textures(_resource_table.get(), 1, textures, samplers);
 	const st_buffer_view* cbs[] { _cbv.get() };
-	context->set_constant_buffers(_resource_table.get(), 1, cbs);
+	device->set_constant_buffers(_resource_table.get(), 1, cbs);
 
 	_target_size = st_vec2f { float(target->get_width()), float(target->get_height()) };
 }
@@ -190,20 +191,20 @@ st_bloom_upsample_material::st_bloom_upsample_material(
 	_blur(blur),
 	_step(step)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_bloom_upsample_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_cb = context->create_buffer(desc);
+		_cb = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _cb.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	st_graphics_state_desc desc;
@@ -215,9 +216,9 @@ st_bloom_upsample_material::st_bloom_upsample_material(
 	desc._render_target_count = 1;
 	desc._render_target_formats[0] = target->get_format();
 
-	_pipeline = context->create_graphics_pipeline(desc);
+	_pipeline = device->create_graphics_pipeline(desc);
 
-	_resource_table = context->create_resource_table();
+	_resource_table = device->create_resource_table();
 	const st_sampler* samplers[] =
 	{
 		_global_resources->_trilinear_clamp_sampler.get(),
@@ -228,9 +229,9 @@ st_bloom_upsample_material::st_bloom_upsample_material(
 		_blur->get_resource_view(),
 		_step->get_resource_view(),
 	};
-	context->set_textures(_resource_table.get(), 2, textures, samplers);
+	device->set_textures(_resource_table.get(), 2, textures, samplers);
 	const st_buffer_view* cbs[]{ _cbv.get() };
-	context->set_constant_buffers(_resource_table.get(), 1, cbs);
+	device->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_bloom_upsample_material::~st_bloom_upsample_material()

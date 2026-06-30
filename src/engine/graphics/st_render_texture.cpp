@@ -6,10 +6,10 @@
 
 #include <graphics/st_render_texture.h>
 
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 
 st_render_texture::st_render_texture(
-	st_graphics_context* context,
+	st_device* device,
 	uint32_t width,
 	uint32_t height,
 	e_st_format format,
@@ -26,8 +26,8 @@ st_render_texture::st_render_texture(
 	desc._usage = usage;
 	desc._initial_state = initial_state;
 	desc._clear = clear;
-	_texture = context->create_texture(desc);
-	context->set_texture_name(_texture.get(), name);
+	_texture = device->create_texture(desc);
+	device->set_texture_name(_texture.get(), name);
 
 	if (usage & e_st_texture_usage::color_target ||
 		usage & e_st_texture_usage::depth_target)
@@ -38,7 +38,7 @@ st_render_texture::st_render_texture(
 		rtv_desc._first_mip = 0;
 		rtv_desc._mips = 1;
 		rtv_desc._usage = e_st_view_usage::render_target;
-		_rtv = context->create_texture_view(rtv_desc);
+		_rtv = device->create_texture_view(rtv_desc);
 	}
 
 	st_texture_view_desc srv_desc;
@@ -46,7 +46,7 @@ st_render_texture::st_render_texture(
 	srv_desc._format = _format;
 	srv_desc._first_mip = 0;
 	srv_desc._mips = 1;
-	_srv = context->create_texture_view(srv_desc);
+	_srv = device->create_texture_view(srv_desc);
 }
 
 st_render_texture::~st_render_texture()

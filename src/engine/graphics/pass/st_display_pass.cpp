@@ -8,8 +8,9 @@
 
 #include <framework/st_frame_params.h>
 #include <framework/st_global_resources.h>
+#include <framework/st_output.h>
 
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
@@ -27,24 +28,24 @@ struct st_display_constants
 st_display_pass::st_display_pass(st_render_texture* source, st_swap_chain* swap_chain) :
 	_source(source)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_display_constants);
 		desc._usage = e_st_buffer_usage::uniform;
-		_cb = context->create_buffer(desc);
+		_cb = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _cb.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
 	st_texture_desc target_desc;
-	context->get_desc(context->get_backbuffer(swap_chain, 0), &target_desc);
+	device->get_desc(device->get_backbuffer(swap_chain, 0), &target_desc);
 
 	{
 		st_attachment_desc attachments[] =
@@ -56,21 +57,21 @@ st_display_pass::st_display_pass(st_render_texture* source, st_swap_chain* swap_
 		desc._attachment_count = std::size(attachments);
 		desc._viewport = { 0.0f, 0.0f, float(target_desc._width), float(target_desc._height), 0.0f, 1.0f };
 
-		_pass = context->create_render_pass(desc);
+		_pass = device->create_render_pass(desc);
 	}
 
 	for (uint32_t i = 0; i < std::size(_framebuffers); ++i)
 	{
 		st_target_desc t_desc = {
-			context->get_backbuffer(swap_chain, i),
-			context->get_backbuffer_view(swap_chain, i)
+			device->get_backbuffer(swap_chain, i),
+			device->get_backbuffer_view(swap_chain, i)
 		};
 		st_framebuffer_desc desc;
 		desc._pass = _pass.get();
 		desc._targets = &t_desc;
 		desc._target_count = 1;
 
-		_framebuffers[i] = context->create_framebuffer(desc);
+		_framebuffers[i] = device->create_framebuffer(desc);
 	}
 
 	{
@@ -81,16 +82,16 @@ st_display_pass::st_display_pass(st_render_texture* source, st_swap_chain* swap_
 		desc._render_target_count = 1;
 		desc._render_target_formats[0] = target_desc._format;
 		desc._blend_desc._target_blend[0]._blend = false;
-		_pipeline = context->create_graphics_pipeline(desc);
+		_pipeline = device->create_graphics_pipeline(desc);
 	}
 
 	{
 		const st_texture_view* textures[] = { _source->get_resource_view() };
 		const st_sampler* samplers[] = { _global_resources->_trilinear_clamp_sampler.get() };
 		const st_buffer_view* cbs[] = { _cbv.get() };
-		_resources = context->create_resource_table();
-		context->set_constant_buffers(_resources.get(), _countof(cbs), cbs);
-		context->set_textures(_resources.get(), _countof(textures), textures, samplers);
+		_resources = device->create_resource_table();
+		device->set_constant_buffers(_resources.get(), _countof(cbs), cbs);
+		device->set_textures(_resources.get(), _countof(textures), textures, samplers);
 	}
 }
 
