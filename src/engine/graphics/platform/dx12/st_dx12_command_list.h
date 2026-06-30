@@ -41,6 +41,7 @@ public:
 	void end_marker() override;
 
 	// Textures.
+	void upload(st_texture* texture, void* data) override;
 	void transition(st_texture* texture, e_st_texture_state new_state) override;
 
 	// Buffers.
@@ -84,6 +85,11 @@ private:
 
 	D3D12_CPU_DESCRIPTOR_HANDLE _bound_depth_stencil;
 	D3D12_CPU_DESCRIPTOR_HANDLE _bound_targets[8] = {};
+
+	// Data upload heap.
+	std::unique_ptr<st_buffer> _upload_buffer;
+	void* _upload_buffer_head = nullptr;
+	size_t _upload_buffer_offset = 0;
 
 	uint32_t _frame_index = 0;
 };

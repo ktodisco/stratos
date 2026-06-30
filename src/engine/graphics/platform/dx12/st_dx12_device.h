@@ -94,6 +94,8 @@ public:
 	st_dx12_descriptor_heap* get_rtv_heap() { return _rtv_heap.get(); }
 	st_dx12_descriptor_heap* get_dsv_heap() { return _dsv_heap.get(); }
 	st_dx12_descriptor_heap* get_static_sampler_heap() { return _static_sampler_heap.get(); }
+	ID3D12RootSignature* get_graphics_layout() { return _graphics_signature.Get(); }
+	ID3D12RootSignature* get_compute_layout() { return _compute_signature.Get(); }
 
 private:
 
@@ -106,18 +108,12 @@ private:
 	// TODO: Delete these.
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> _graphics_signature;
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> _compute_signature;
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> _command_list;
 
 	// Heap used for loaded resources.
 	std::unique_ptr<st_dx12_descriptor_heap> _resource_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _rtv_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _dsv_heap;
 	std::unique_ptr<st_dx12_descriptor_heap> _static_sampler_heap;
-
-	// Data upload heap.
-	Microsoft::WRL::ComPtr<ID3D12Resource> _upload_buffer;
-	void* _upload_buffer_head = nullptr;
-	size_t _upload_buffer_offset = 0;
 };
 
 #endif

@@ -697,6 +697,12 @@ public:
 	virtual void end_marker() = 0;
 
 	// Textures.
+	// TODO: This is a band-aid.
+	// Both modern APIs follow the same pattern: transfer the data to a gpu-readable
+	// upload buffer of device-created resources, then issue copy commands on the
+	// command list to transfer this to the resource. The goal would be to break this
+	// out into parts that are possible to do from above the platform api level.
+	virtual void upload(st_texture* texture, void* data) = 0;
 	virtual void transition(st_texture* texture, e_st_texture_state new_state) = 0;
 
 	// Buffers.

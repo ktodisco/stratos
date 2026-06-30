@@ -82,9 +82,14 @@ st_font::st_font(const char* path, float char_height, int image_width, int image
 	desc._levels = 1;
 	desc._format = st_format_r8_unorm;
 	desc._usage = e_st_texture_usage::sampled;
-	desc._initial_state = st_texture_state_pixel_shader_read;
+	desc._initial_state = st_texture_state_copy_dest;
 	desc._data = image_data;
 	_texture = st_output::get_device()->create_texture(desc);
+
+	st_command_list* upload_command_list = st_output::get_upload_command_list();
+	upload_command_list->upload(_texture.get(), image_data);
+	upload_command_list->transition(_texture.get(), st_texture_state_pixel_shader_read);
+
 	delete[] image_data;
 
 	_material = std::make_unique<st_font_material>(_texture.get());

@@ -45,7 +45,8 @@ public:
 	void get_target_formats(e_st_render_pass_type type, struct st_graphics_state_desc& desc);
 
 	static st_output* get() { return _this; }
-	static class st_device* get_device() { return get()->_device.get(); }
+	static class st_device* get_device() { return _this->_device.get(); }
+	static class st_command_list* get_upload_command_list() { return _this->_upload_command_lists[_this->_frame_index].get(); }
 
 private:
 
@@ -72,6 +73,7 @@ private:
 	std::unique_ptr<class st_command_queue> _command_queue;
 	std::unique_ptr<class st_command_allocator> _command_allocators[k_max_frames];
 	std::unique_ptr<class st_command_list> _command_lists[k_max_frames];
+	std::unique_ptr<class st_command_list> _upload_command_lists[k_max_frames];
 	std::unique_ptr<struct st_fence> _fence;
 	uint32_t _frame_index = 0;
 

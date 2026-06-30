@@ -41,6 +41,8 @@ st_output* st_output::_this = nullptr;
 st_output::st_output(const st_window* window, st_graphics_context* context) :
 	_window(window), _width(window->get_width()), _height(window->get_height()), _graphics_context(context)
 {
+	_this = this;
+
 	// Create resources shared by many systems of the application.
 	create_global_resources(context);
 
@@ -62,7 +64,14 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		st_command_list_desc cl_desc;
 		cl_desc.allocator = _command_allocators[f].get();
 		_command_lists[f] = _device->create_command_list(cl_desc);
+
+		st_command_list_desc upload_desc;
+		upload_desc.allocator = _command_allocators[f].get();
+		_upload_command_lists[f] = _device->create_command_list(upload_desc);
 	}
+
+	// Immediately begin recording an upload command list.
+	_upload_command_lists[_frame_index]->begin(_command_allocators[_frame_index].get());
 
 	// Create the swap chain first.
 	{
@@ -83,8 +92,6 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 
 	recreate_textures(_graphics_context);
 	recreate_passes(_graphics_context);
-
-	_this = this;
 }
 
 st_output::~st_output()

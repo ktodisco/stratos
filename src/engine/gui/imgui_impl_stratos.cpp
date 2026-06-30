@@ -5,6 +5,7 @@
 #include "imgui_impl_stratos.h"
 
 #include <framework/st_global_resources.h>
+#include <framework/st_output.h>
 
 #include <graphics/st_drawcall.h>
 #include <graphics/st_graphics.h>
@@ -198,19 +199,20 @@ static void ImGui_ImplStratos_CreateFontsTexture(st_device* device)
 
     // Upload texture to graphics system
     {
-        //ctx->begin_loading();
-
         st_texture_desc desc;
         desc._width = width;
         desc._height = height;
         desc._levels = 1;
         desc._format = st_format_r8g8b8a8_unorm;
         desc._usage = e_st_texture_usage::sampled;
-        desc._initial_state = st_texture_state_pixel_shader_read;
+        desc._initial_state = st_texture_state_copy_dest;
         desc._data = pixels;
         g_font_texture = device->create_texture(desc);
         device->set_texture_name(g_font_texture.get(), "ImGui Font");
-        //ctx->end_loading();
+
+		st_command_list* upload_command_list = st_output::get_upload_command_list();
+		upload_command_list->upload(g_font_texture.get(), pixels);
+		upload_command_list->transition(g_font_texture.get(), st_texture_state_pixel_shader_read);
 
 		st_texture_view_desc view_desc;
 		view_desc._texture = g_font_texture.get();

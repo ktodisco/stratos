@@ -50,6 +50,12 @@ st_dx12_command_list::st_dx12_command_list(ID3D12GraphicsCommandList* command_li
 	index_buffer_desc._count = k_dynamic_buffer_size;
 	index_buffer_desc._usage = e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest;
 	_dynamic_index_buffer = device->create_buffer(index_buffer_desc);
+
+	st_buffer_desc upload_buffer_desc;
+	upload_buffer_desc._element_size = sizeof(uint8_t);
+	upload_buffer_desc._count = 128 * 1024 * 1024;
+	upload_buffer_desc._usage = e_st_buffer_usage::transfer_dest | e_st_buffer_usage::transfer_source;
+	_upload_buffer = device->create_buffer(upload_buffer_desc);
 }
 
 st_dx12_command_list::~st_dx12_command_list()
@@ -71,12 +77,20 @@ void st_dx12_command_list::begin(st_command_allocator* command_allocator_)
 	st_dx12_command_allocator* command_allocator = static_cast<st_dx12_command_allocator*>(command_allocator_);
 
 	_d3d_command_list->Reset(command_allocator->get(), nullptr);
+	_d3d_command_list->SetGraphicsRootSignature(_device->get_graphics_layout());
+	_d3d_command_list->SetComputeRootSignature(_device->get_compute_layout());
 
 	_frame_index = (_frame_index + 1) % k_max_frames;
+
+	_device->map(_upload_buffer.get(), 0, { 0, 0 }, &_upload_buffer_head);
 }
 
 void st_dx12_command_list::end()
 {
+	_upload_buffer_offset = 0;
+	_upload_buffer_head = nullptr;
+	_device->unmap(_upload_buffer.get(), 0, { 0, 0 });
+
 	_d3d_command_list->Close();
 }
 
@@ -255,6 +269,125 @@ void st_dx12_command_list::begin_marker(const std::string& marker)
 void st_dx12_command_list::end_marker()
 {
 	PIXEndEvent(_d3d_command_list.Get());
+}
+
+void st_dx12_command_list::upload(st_texture* texture_, void* data)
+{
+	st_dx12_texture* texture = static_cast<st_dx12_texture*>(texture_);
+
+	DXGI_FORMAT dx_format = convert_format(texture->_format);
+
+	D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE;
+	if (texture->_usage & e_st_texture_usage::color_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	if (texture->_usage & e_st_texture_usage::depth_target) flags |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	if (texture->_usage & e_st_texture_usage::storage) flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+	// TODO: This must match the same construction in dx12_device, so... find a better way.
+	D3D12_RESOURCE_DESC texture_desc{};
+	texture_desc.MipLevels = texture->_levels;
+	texture_desc.Format = dx_format;
+	texture_desc.Width = texture->_width;
+	texture_desc.Height = texture->_height;
+	texture_desc.DepthOrArraySize = texture->_depth;
+	texture_desc.Flags = flags;
+	texture_desc.SampleDesc.Count = 1;
+	texture_desc.SampleDesc.Quality = 0;
+	texture_desc.Dimension =  texture->_depth > 1 ?
+		D3D12_RESOURCE_DIMENSION_TEXTURE3D :
+		D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+	uint8_t* bits = reinterpret_cast<uint8_t*>(data);
+	for (uint32_t level = 0; level < texture->_levels; ++level)
+	{
+		uint32_t level_width = texture->_width >> level;
+		uint32_t level_height = texture->_height >> level;
+
+		size_t row_bytes;
+		size_t num_bytes;
+		get_surface_info(
+			level_width,
+			level_height,
+			texture->_format,
+			&num_bytes,
+			&row_bytes,
+			nullptr);
+
+		D3D12_SUBRESOURCE_DATA res =
+		{
+			bits,
+			static_cast<LONG_PTR>(row_bytes),
+			static_cast<LONG_PTR>(num_bytes)
+		};
+
+		subresources.push_back(res);
+
+		bits += num_bytes;
+	}
+
+	size_t alloc_size = (sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(uint32_t) + sizeof(uint64_t)) * texture->_levels;
+	auto layouts = reinterpret_cast<D3D12_PLACED_SUBRESOURCE_FOOTPRINT*>(malloc(alloc_size));
+
+	uint64_t* row_sizes_bytes = reinterpret_cast<uint64_t*>(layouts + texture->_levels);
+	uint32_t* row_count = reinterpret_cast<uint32_t*>(row_sizes_bytes + texture->_levels);
+	uint64_t required_size = 0;
+	_device->get()->GetCopyableFootprints(&texture_desc, 0, texture->_levels, 0, layouts, row_count, row_sizes_bytes, &required_size);
+
+	_upload_buffer_offset = align_value(_upload_buffer_offset, D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT);
+	size_t initial_offset = _upload_buffer_offset;
+
+	for (uint32_t i = 0; i < texture->_levels; ++i)
+	{
+		if (row_sizes_bytes[i] > size_t(-1))
+		{
+			assert(false);
+		}
+
+		D3D12_MEMCPY_DEST DestData =
+		{
+			reinterpret_cast<uint8_t*>(_upload_buffer_head) + _upload_buffer_offset,
+			layouts[i].Footprint.RowPitch,
+			size_t(layouts[i].Footprint.RowPitch) * size_t(row_count[i])
+		};
+
+		MemcpySubresource(&DestData, &subresources[i], static_cast<size_t>(row_sizes_bytes[i]), row_count[i], layouts[i].Footprint.Depth);
+
+		_upload_buffer_offset += DestData.SlicePitch * layouts[i].Footprint.Depth;
+
+		// The offset of the layout needs to be adjusted by the amount we've written into the upload buffer
+		// to this point in the frame, for when it's used as a copy location below.
+		layouts[i].Offset += initial_offset;
+	}
+
+	st_dx12_buffer* upload_buffer = static_cast<st_dx12_buffer*>(_upload_buffer.get());
+
+	for (uint32_t i = 0; i < texture->_levels; ++i)
+	{
+		// Copy the upload heap to the texture 2D.
+		D3D12_TEXTURE_COPY_LOCATION dest_location
+		{
+			*texture->_handle.GetAddressOf(),
+			D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
+			i
+		};
+
+		D3D12_TEXTURE_COPY_LOCATION src_location
+		{
+			upload_buffer->_buffer.Get(),
+			D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
+			layouts[i]
+		};
+
+		_d3d_command_list->CopyTextureRegion(
+			&dest_location,
+			0,
+			0,
+			0,
+			&src_location,
+			nullptr);
+	}
+
+	free(layouts);
 }
 
 void st_dx12_command_list::transition(st_texture* texture_, e_st_texture_state new_state)

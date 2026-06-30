@@ -28,7 +28,6 @@ extern char g_root_path[256];
 st_dx12_device::st_dx12_device(ID3D12Device* device, st_dx12_graphics_context* context)
 	: _d3d_device(device), _context(context)
 {
-
 	// Create descriptor heaps.
 	_resource_heap = std::make_unique<st_dx12_descriptor_heap>(
 		_d3d_device.Get(),
@@ -54,14 +53,116 @@ st_dx12_device::st_dx12_device(ID3D12Device* device, st_dx12_graphics_context* c
 		k_max_samplers,
 		D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER,
 		D3D12_DESCRIPTOR_HEAP_FLAG_NONE);
+
+	// Create a default root signature.
+	D3D12_FEATURE_DATA_ROOT_SIGNATURE feature_data = {};
+	feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+
+	if (_d3d_device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &feature_data, sizeof(feature_data)) != S_OK)
+	{
+		feature_data.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+	}
+
+	{
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 8, 0);
+
+		CD3DX12_ROOT_PARAMETER1 root_parameters[4];
+		root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+		root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+		root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_PIXEL);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
+		root_signature_desc.Init_1_1(
+			_countof(root_parameters),
+			root_parameters,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		Microsoft::WRL::ComPtr<ID3DBlob> signature;
+		Microsoft::WRL::ComPtr<ID3DBlob> error;
+		HRESULT result = D3DX12SerializeVersionedRootSignature(
+			&root_signature_desc,
+			feature_data.HighestVersion,
+			&signature,
+			&error);
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+
+		result = _d3d_device->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			__uuidof(ID3D12RootSignature),
+			(void**)&_graphics_signature);
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+	}
+
+	// Create a default compute root signature.
+	{
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[4];
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE | D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0);
+
+		CD3DX12_ROOT_PARAMETER1 root_parameters[4];
+		root_parameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_ALL);
+		root_parameters[3].InitAsDescriptorTable(1, &ranges[3], D3D12_SHADER_VISIBILITY_ALL);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC root_signature_desc;
+		root_signature_desc.Init_1_1(
+			_countof(root_parameters),
+			root_parameters,
+			0,
+			nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+		Microsoft::WRL::ComPtr<ID3DBlob> signature;
+		Microsoft::WRL::ComPtr<ID3DBlob> error;
+		HRESULT result = D3DX12SerializeVersionedRootSignature(
+			&root_signature_desc,
+			feature_data.HighestVersion,
+			&signature,
+			&error);
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+
+		result = _d3d_device->CreateRootSignature(
+			0,
+			signature->GetBufferPointer(),
+			signature->GetBufferSize(),
+			__uuidof(ID3D12RootSignature),
+			(void**)&_compute_signature);
+
+		if (result != S_OK)
+		{
+			assert(false);
+		}
+	}
 }
 
 st_dx12_device::~st_dx12_device()
 {
 	_graphics_signature = nullptr;
 	_compute_signature = nullptr;
-	_command_list = nullptr;
-	_upload_buffer = nullptr;
 
 #if _DEBUG
 	_static_sampler_heap->report_leaks();
@@ -137,6 +238,9 @@ std::unique_ptr<class st_command_list> st_dx12_device::create_command_list(const
 	{
 		assert(false);
 	}
+
+	// The command list starts open, so close it first.
+	d3d_command_list->Close();
 
 	std::unique_ptr<st_dx12_command_list> command_list = std::make_unique<st_dx12_command_list>(d3d_command_list.Get(), this);
 
@@ -389,7 +493,7 @@ std::unique_ptr<st_texture> st_dx12_device::create_texture(const st_texture_desc
 		&heap_properties,
 		D3D12_HEAP_FLAG_NONE,
 		&texture_desc,
-		D3D12_RESOURCE_STATE_COPY_DEST,
+		convert_resource_state(desc._initial_state),
 		is_target ? &clear_value : nullptr,
 		__uuidof(ID3D12Resource),
 		(void**)texture->_handle.GetAddressOf());
@@ -398,106 +502,6 @@ std::unique_ptr<st_texture> st_dx12_device::create_texture(const st_texture_desc
 	{
 		assert(false);
 	}
-
-	if (desc._data)
-	{
-		std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-		uint8_t* bits = reinterpret_cast<uint8_t*>(desc._data);
-		for (uint32_t level = 0; level < desc._levels; ++level)
-		{
-			uint32_t level_width = desc._width >> level;
-			uint32_t level_height = desc._height >> level;
-
-			size_t row_bytes;
-			size_t num_bytes;
-			get_surface_info(
-				level_width,
-				level_height,
-				desc._format,
-				&num_bytes,
-				&row_bytes,
-				nullptr);
-
-			D3D12_SUBRESOURCE_DATA res =
-			{
-				bits,
-				static_cast<LONG_PTR>(row_bytes),
-				static_cast<LONG_PTR>(num_bytes)
-			};
-
-			subresources.push_back(res);
-
-			bits += num_bytes;
-		}
-
-		size_t alloc_size = (sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(uint32_t) + sizeof(uint64_t)) * desc._levels;
-		auto layouts = reinterpret_cast<D3D12_PLACED_SUBRESOURCE_FOOTPRINT*>(malloc(alloc_size));
-
-		uint64_t* row_sizes_bytes = reinterpret_cast<uint64_t*>(layouts + desc._levels);
-		uint32_t* row_count = reinterpret_cast<uint32_t*>(row_sizes_bytes + desc._levels);
-		uint64_t required_size = 0;
-		_d3d_device->GetCopyableFootprints(&texture_desc, 0, desc._levels, 0, layouts, row_count, row_sizes_bytes, &required_size);
-
-		_upload_buffer_offset = align_value(_upload_buffer_offset, D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT);
-		size_t initial_offset = _upload_buffer_offset;
-
-		for (uint32_t i = 0; i < desc._levels; ++i)
-		{
-			if (row_sizes_bytes[i] > size_t(-1))
-			{
-				assert(false);
-			}
-
-			D3D12_MEMCPY_DEST DestData =
-			{
-				reinterpret_cast<uint8_t*>(_upload_buffer_head) + _upload_buffer_offset,
-				layouts[i].Footprint.RowPitch,
-				size_t(layouts[i].Footprint.RowPitch) * size_t(row_count[i])
-			};
-
-			MemcpySubresource(&DestData, &subresources[i], static_cast<size_t>(row_sizes_bytes[i]), row_count[i], layouts[i].Footprint.Depth);
-
-			_upload_buffer_offset += DestData.SlicePitch * layouts[i].Footprint.Depth;
-
-			// The offset of the layout needs to be adjusted by the amount we've written into the upload buffer
-			// to this point in the frame, for when it's used as a copy location below.
-			layouts[i].Offset += initial_offset;
-		}
-
-		for (uint32_t i = 0; i < desc._levels; ++i)
-		{
-			// Copy the upload heap to the texture 2D.
-			D3D12_TEXTURE_COPY_LOCATION dest_location
-			{
-				*texture->_handle.GetAddressOf(),
-				D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX,
-				i
-			};
-
-			D3D12_TEXTURE_COPY_LOCATION src_location
-			{
-				_upload_buffer.Get(),
-				D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT,
-				layouts[i]
-			};
-
-			_command_list->CopyTextureRegion(
-				&dest_location,
-				0,
-				0,
-				0,
-				&src_location,
-				nullptr);
-		}
-
-		free(layouts);
-	}
-
-	_command_list->ResourceBarrier(1,
-		&CD3DX12_RESOURCE_BARRIER::Transition(
-			*texture->_handle.GetAddressOf(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			convert_resource_state(desc._initial_state)));
 
 	texture->_state = desc._initial_state;
 
