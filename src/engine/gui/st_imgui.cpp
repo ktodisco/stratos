@@ -8,6 +8,7 @@
 
 #include <framework/st_camera.h>
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 #include <framework/st_sim.h>
 
 #include <graphics/st_drawcall.h>
@@ -109,11 +110,10 @@ void st_imgui::new_frame(st_device* device)
 	ImGui::NewFrame();
 }
 
-void st_imgui::draw(const st_frame_params* params)
+void st_imgui::draw(st_command_list* command_list, const st_frame_params* params)
 {
 	ImGui::Render();
-	// TODO: This needs to take a command list.
-	ImGui_ImplStratos_RenderDrawData(ImGui::GetDrawData(), nullptr);
+	ImGui_ImplStratos_RenderDrawData(ImGui::GetDrawData(), st_output::get_device(), command_list);
 }
 
 void st_imgui::draw_axes_widget(st_frame_params* params)

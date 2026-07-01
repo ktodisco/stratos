@@ -102,32 +102,32 @@ st_tonemap_render_pass::~st_tonemap_render_pass()
 }
 
 void st_tonemap_render_pass::render(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	const st_frame_params* params)
 {
-	st_render_marker marker(context, "st_tonemap_render_pass::render");
+	st_render_marker marker(command_list, "st_tonemap_render_pass::render");
 
 	st_mat4f identity;
 	identity.make_identity();
 
 	st_tonemap_constants data;
 	data._is_hdr = params->_color_space == st_color_space_st2084;
-	context->update_buffer(_cb.get(), &data, 0, 1);
+	command_list->update_buffer(_cb.get(), &data, 0, 1);
 
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
-	context->set_pipeline(_pipeline.get());
+	command_list->set_pipeline(_pipeline.get());
 
-	context->transition(_source->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_bloom->get_texture(), st_texture_state_pixel_shader_read);
-	context->bind_resources(_resource_table.get());
+	command_list->transition(_source->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_bloom->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->bind_resources(_resource_table.get());
 
 	st_clear_value clears[] =
 	{
 		st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 	};
 
-	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -135,7 +135,7 @@ void st_tonemap_render_pass::render(
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_pass.get(), _framebuffer.get());
+	command_list->end_render_pass(_pass.get(), _framebuffer.get());
 }

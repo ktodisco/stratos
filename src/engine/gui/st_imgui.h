@@ -22,7 +22,7 @@ public:
 	static void update(struct st_frame_params* params, class st_sim* sim, class st_camera* camera);
 
 	static void new_frame(class st_device* device);
-	static void draw(const struct st_frame_params* params);
+	static void draw(class st_command_list* command_list, const struct st_frame_params* params);
 
 private:
 	static void draw_axes_widget(struct st_frame_params* params);

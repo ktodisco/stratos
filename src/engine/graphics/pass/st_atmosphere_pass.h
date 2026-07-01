@@ -19,7 +19,7 @@ public:
 	st_atmosphere_transmission_pass(class st_render_texture* transmittance);
 	~st_atmosphere_transmission_pass();
 
-	void compute(class st_graphics_context* context, const struct st_frame_params* params);
+	void compute(class st_command_list* command_list, const struct st_frame_params* params);
 
 private:
 	std::unique_ptr<struct st_buffer> _cb;
@@ -39,7 +39,7 @@ public:
 	st_atmosphere_sky_pass(class st_render_texture* transmittance, class st_render_texture* target);
 	~st_atmosphere_sky_pass();
 
-	void render(class st_graphics_context* context, const struct st_frame_params* params);
+	void render(class st_command_list* command_list, const struct st_frame_params* params);
 
 private:
 	std::unique_ptr<struct st_buffer> _cb;
@@ -65,7 +65,7 @@ public:
 		class st_render_texture* sky_view);
 	~st_atmosphere_render_pass();
 
-	void render(class st_graphics_context* context, const struct st_frame_params* params);
+	void render(class st_command_list* command_list, const struct st_frame_params* params);
 
 private:
 	std::unique_ptr<struct st_buffer> _cb;

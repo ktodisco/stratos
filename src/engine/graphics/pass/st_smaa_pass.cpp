@@ -62,9 +62,9 @@ st_smaa_pass::~st_smaa_pass()
 {
 }
 
-void st_smaa_pass::render(class st_graphics_context* context, const struct st_frame_params* params)
+void st_smaa_pass::render(class st_command_list* command_list, const struct st_frame_params* params)
 {
-	st_render_marker marker(context, __FUNCTION__);
+	st_render_marker marker(command_list, __FUNCTION__);
 
 	st_smaa_constants data;
 	data._dimensions = st_vec4f {
@@ -74,13 +74,13 @@ void st_smaa_pass::render(class st_graphics_context* context, const struct st_fr
 		1.0f / _edges_target->get_height()
 	};
 	data._is_hdr = params->_color_space == st_color_space_st2084;
-	context->update_buffer(_cb.get(), &data, 0, 1);
+	command_list->update_buffer(_cb.get(), &data, 0, 1);
 
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
-	_render_edges_pass(context, params);
-	_render_weights_pass(context, params);
-	_render_blend_pass(context, params);
+	_render_edges_pass(command_list, params);
+	_render_weights_pass(command_list, params);
+	_render_blend_pass(command_list, params);
 }
 
 void st_smaa_pass::_create_edges_pass(st_device* device)
@@ -297,17 +297,17 @@ void st_smaa_pass::_create_blend_pass(st_device* device)
 	}
 }
 
-void st_smaa_pass::_render_edges_pass(class st_graphics_context* context, const struct st_frame_params* params)
+void st_smaa_pass::_render_edges_pass(class st_command_list* command_list, const struct st_frame_params* params)
 {
-	st_render_marker marker(context, "edges");
+	st_render_marker marker(command_list, "edges");
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->transition(_source_buffer->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_source_buffer->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->set_pipeline(_edges_pipeline.get());
-	context->bind_resources(_edges_resources.get());
+	command_list->set_pipeline(_edges_pipeline.get());
+	command_list->bind_resources(_edges_resources.get());
 
 	st_clear_value clears[] =
 	{
@@ -315,7 +315,7 @@ void st_smaa_pass::_render_edges_pass(class st_graphics_context* context, const 
 		_stencil_buffer->get_clear_value()
 	};
 
-	context->begin_render_pass(_edges_pass.get(), _edges_framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_edges_pass.get(), _edges_framebuffer.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -323,22 +323,22 @@ void st_smaa_pass::_render_edges_pass(class st_graphics_context* context, const 
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_edges_pass.get(), _edges_framebuffer.get());
+	command_list->end_render_pass(_edges_pass.get(), _edges_framebuffer.get());
 }
 
-void st_smaa_pass::_render_weights_pass(class st_graphics_context* context, const struct st_frame_params* params)
+void st_smaa_pass::_render_weights_pass(class st_command_list* command_list, const struct st_frame_params* params)
 {
-	st_render_marker marker(context, "weights");
+	st_render_marker marker(command_list, "weights");
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->transition(_edges_target->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_edges_target->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->set_pipeline(_weights_pipeline.get());
-	context->bind_resources(_weights_resources.get());
+	command_list->set_pipeline(_weights_pipeline.get());
+	command_list->bind_resources(_weights_resources.get());
 
 	st_clear_value clears[] =
 	{
@@ -346,7 +346,7 @@ void st_smaa_pass::_render_weights_pass(class st_graphics_context* context, cons
 		_stencil_buffer->get_clear_value()
 	};
 
-	context->begin_render_pass(_weights_pass.get(), _weights_framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_weights_pass.get(), _weights_framebuffer.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -354,24 +354,24 @@ void st_smaa_pass::_render_weights_pass(class st_graphics_context* context, cons
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_weights_pass.get(), _weights_framebuffer.get());
+	command_list->end_render_pass(_weights_pass.get(), _weights_framebuffer.get());
 }
 
-void st_smaa_pass::_render_blend_pass(class st_graphics_context* context, const struct st_frame_params* params)
+void st_smaa_pass::_render_blend_pass(class st_command_list* command_list, const struct st_frame_params* params)
 {
-	st_render_marker marker(context, "blend");
+	st_render_marker marker(command_list, "blend");
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->transition(_weights_target->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_weights_target->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->set_pipeline(_blend_pipeline.get());
-	context->bind_resources(_blend_resources.get());
+	command_list->set_pipeline(_blend_pipeline.get());
+	command_list->bind_resources(_blend_resources.get());
 
-	context->begin_render_pass(_blend_pass.get(), _blend_framebuffer.get(), nullptr, 0);
+	command_list->begin_render_pass(_blend_pass.get(), _blend_framebuffer.get(), nullptr, 0);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -379,7 +379,7 @@ void st_smaa_pass::_render_blend_pass(class st_graphics_context* context, const 
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_blend_pass.get(), _blend_framebuffer.get());
+	command_list->end_render_pass(_blend_pass.get(), _blend_framebuffer.get());
 }

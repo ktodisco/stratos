@@ -181,27 +181,27 @@ st_bloom_render_pass::~st_bloom_render_pass()
 }
 
 void st_bloom_render_pass::render(
-	st_graphics_context* context,
+	class st_command_list* command_list,
 	const st_frame_params* params)
 {
-	st_render_marker marker(context, "st_bloom_render_pass::render");
+	st_render_marker marker(command_list, "st_bloom_render_pass::render");
 
 	st_mat4f identity;
 	identity.make_identity();
 
 	// Threshold.
 	{
-		st_render_marker threshold_marker(context, "threshold pass");
-		context->set_scissor(0, 0, _threshold_target->get_width(), _threshold_target->get_height());
+		st_render_marker threshold_marker(command_list, "threshold pass");
+		command_list->set_scissor(0, 0, _threshold_target->get_width(), _threshold_target->get_height());
 
-		_threshold_material->bind(context, e_st_render_pass_type::bloom, params, identity, identity, identity);
+		_threshold_material->bind(command_list, e_st_render_pass_type::bloom, params, identity, identity, identity);
 
 		st_clear_value clears[] =
 		{
 			_threshold_target->get_clear_value(),
 		};
 
-		context->begin_render_pass(_threshold_pass.get(), _threshold_framebuffer.get(), clears, std::size(clears));
+		command_list->begin_render_pass(_threshold_pass.get(), _threshold_framebuffer.get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -209,25 +209,25 @@ void st_bloom_render_pass::render(
 		_fullscreen_quad->draw(draw_call);
 		draw_call._draw_mode = st_primitive_topology_triangles;
 
-		context->draw(draw_call);
+		command_list->draw(draw_call);
 
-		context->end_render_pass(_threshold_pass.get(), _threshold_framebuffer.get());
+		command_list->end_render_pass(_threshold_pass.get(), _threshold_framebuffer.get());
 	}
 
 	// Downsamples.
 	for (uint32_t d = 0; d < k_num_downsamples; ++d)
 	{
-		st_render_marker downsample_marker(context, "downsample pass");
-		context->set_scissor(0, 0, _downsample_targets[d]->get_width(), _downsample_targets[d]->get_height());
+		st_render_marker downsample_marker(command_list, "downsample pass");
+		command_list->set_scissor(0, 0, _downsample_targets[d]->get_width(), _downsample_targets[d]->get_height());
 
-		_downsample_materials[d]->bind(context, e_st_render_pass_type::bloom, params, identity, identity, identity);
+		_downsample_materials[d]->bind(command_list, e_st_render_pass_type::bloom, params, identity, identity, identity);
 
 		st_clear_value clears[] =
 		{
 			_downsample_targets[d]->get_clear_value(),
 		};
 
-		context->begin_render_pass(_downsample_passes[d].get(), _downsample_framebuffers[d].get(), clears, std::size(clears));
+		command_list->begin_render_pass(_downsample_passes[d].get(), _downsample_framebuffers[d].get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -235,27 +235,27 @@ void st_bloom_render_pass::render(
 		_fullscreen_quad->draw(draw_call);
 		draw_call._draw_mode = st_primitive_topology_triangles;
 
-		context->draw(draw_call);
+		command_list->draw(draw_call);
 
-		context->end_render_pass(_downsample_passes[d].get(), _downsample_framebuffers[d].get());
+		command_list->end_render_pass(_downsample_passes[d].get(), _downsample_framebuffers[d].get());
 	}
 
 	// Blur and upsample.
 	for (uint32_t u = 0; u < (k_num_downsamples - 1); ++u)
 	{
-		_blur_passes[u]->render(context, params);
+		_blur_passes[u]->render(command_list, params);
 
-		st_render_marker downsample_marker(context, "upsample pass");
-		context->set_scissor(0, 0, _upsample_targets[u + 1]->get_width(), _upsample_targets[u + 1]->get_height());
+		st_render_marker downsample_marker(command_list, "upsample pass");
+		command_list->set_scissor(0, 0, _upsample_targets[u + 1]->get_width(), _upsample_targets[u + 1]->get_height());
 
-		_upsample_materials[u]->bind(context, e_st_render_pass_type::bloom, params, identity, identity, identity);
+		_upsample_materials[u]->bind(command_list, e_st_render_pass_type::bloom, params, identity, identity, identity);
 
 		st_clear_value clears[] =
 		{
 			_upsample_targets[u + 1]->get_clear_value(),
 		};
 
-		context->begin_render_pass(_upsample_passes[u].get(), _upsample_framebuffers[u].get(), clears, std::size(clears));
+		command_list->begin_render_pass(_upsample_passes[u].get(), _upsample_framebuffers[u].get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -263,11 +263,11 @@ void st_bloom_render_pass::render(
 		_fullscreen_quad->draw(draw_call);
 		draw_call._draw_mode = st_primitive_topology_triangles;
 
-		context->draw(draw_call);
+		command_list->draw(draw_call);
 
-		context->end_render_pass(_upsample_passes[u].get(), _upsample_framebuffers[u].get());
+		command_list->end_render_pass(_upsample_passes[u].get(), _upsample_framebuffers[u].get());
 	}
 
 	// Finally, blur the last target.
-	_blur_passes[k_num_downsamples - 1]->render(context, params);
+	_blur_passes[k_num_downsamples - 1]->render(command_list, params);
 }

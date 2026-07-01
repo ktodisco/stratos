@@ -73,7 +73,7 @@ st_unlit_texture_material::~st_unlit_texture_material()
 }
 
 void st_unlit_texture_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	enum e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
@@ -84,7 +84,7 @@ void st_unlit_texture_material::bind(
 
 	st_view_cb cb_data{};
 	cb_data._mvp = mvp;
-	context->update_buffer(_view_buffer.get(), &cb_data, 0, 1);
+	command_list->update_buffer(_view_buffer.get(), &cb_data, 0, 1);
 
-	context->bind_resources(_resource_table.get());
+	command_list->bind_resources(_resource_table.get());
 }

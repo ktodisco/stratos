@@ -58,16 +58,16 @@ st_tonemap_material::~st_tonemap_material()
 }
 
 void st_tonemap_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	context->set_pipeline(_pipeline.get());
+	command_list->set_pipeline(_pipeline.get());
 
-	context->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_bloom->get_texture(), st_texture_state_pixel_shader_read);
-	context->bind_resources(_resource_table.get());
+	command_list->transition(_texture->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_bloom->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->bind_resources(_resource_table.get());
 }

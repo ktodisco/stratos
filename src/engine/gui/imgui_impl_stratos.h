@@ -16,7 +16,7 @@ struct D3D12_GPU_DESCRIPTOR_HANDLE;
 IMGUI_IMPL_API bool     ImGui_ImplStratos_Init(int num_frames_in_flight, e_st_format rtv_format, struct st_render_pass* pass);
 IMGUI_IMPL_API void     ImGui_ImplStratos_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplStratos_NewFrame(class st_device* device);
-IMGUI_IMPL_API void     ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, class st_graphics_context* ctx);
+IMGUI_IMPL_API void     ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, class st_device* ctx, class st_command_list* cmd);
 
 // Use if you want to reset your rendering device without losing ImGui state.
 IMGUI_IMPL_API void     ImGui_ImplStratos_InvalidateDeviceObjects();

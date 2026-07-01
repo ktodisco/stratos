@@ -39,6 +39,10 @@ public:
 	st_output(const st_window* window, class st_graphics_context* graphics);
 	~st_output();
 
+	// TODO: This is a hack.
+	void begin_loading();
+	void submit_loading();
+
 	bool update_swap_chain();
 	void update(struct st_frame_params* params);
 

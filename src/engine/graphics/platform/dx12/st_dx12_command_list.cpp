@@ -82,6 +82,11 @@ void st_dx12_command_list::begin(st_command_allocator* command_allocator_)
 
 	_frame_index = (_frame_index + 1) % k_max_frames;
 
+	_cbv_srv_heap[_frame_index]->empty();
+	_sampler_heap[_frame_index]->empty();
+	ID3D12DescriptorHeap* heaps[] = { _cbv_srv_heap[_frame_index]->get(), _sampler_heap[_frame_index]->get() };
+	_d3d_command_list->SetDescriptorHeaps(_countof(heaps), heaps);
+
 	_device->map(_upload_buffer.get(), 0, { 0, 0 }, &_upload_buffer_head);
 }
 

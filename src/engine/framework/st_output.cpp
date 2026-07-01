@@ -56,6 +56,9 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 	st_command_queue_desc cq_desc;
 	_command_queue = _device->create_command_queue(cq_desc);
 
+	st_fence_desc fence_desc;
+	_fence = _device->create_fence(fence_desc);
+
 	for (int f = 0; f < k_max_frames; ++f)
 	{
 		st_command_allocator_desc ca_desc;
@@ -71,7 +74,7 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 	}
 
 	// Immediately begin recording an upload command list.
-	_upload_command_lists[_frame_index]->begin(_command_allocators[_frame_index].get());
+	begin_loading();
 
 	// Create the swap chain first.
 	{
@@ -154,25 +157,43 @@ bool st_output::update_swap_chain()
 	return recreated;
 }
 
+void st_output::begin_loading()
+{
+	_upload_command_lists[_frame_index]->begin(_command_allocators[_frame_index].get());
+}
+
+void st_output::submit_loading()
+{
+	_upload_command_lists[_frame_index]->end();
+	_command_queue->execute(_upload_command_lists[_frame_index].get());
+}
+
 void st_output::update(st_frame_params* params)
 {
-	_graphics_context->acquire();
+	submit_loading();
 
-	_graphics_context->begin_frame();
-	params->_frame_index = _graphics_context->get_frame_index();
+	_frame_index = (_frame_index + 1) % k_max_frames;
+
+	st_command_allocator* command_allocator = _command_allocators[_frame_index].get();
+	st_command_list* command_list = _command_lists[_frame_index].get();
+
+	command_allocator->reset();
+	command_list->begin(command_allocator);
+
+	params->_frame_index = _frame_index;
 	params->_color_space = _backbuffer_color_space;
 
-	_atmosphere_transmission->compute(_graphics_context, params);
-	_atmosphere_sky->render(_graphics_context, params);
+	_atmosphere_transmission->compute(command_list, params);
+	_atmosphere_sky->render(command_list, params);
 
-	_directional_shadow_pass->render(_graphics_context, params);
-	_gbuffer_pass->render(_graphics_context, params);
-	_deferred_pass->render(_graphics_context, params);
-	_atmosphere_pass->render(_graphics_context, params);
-	_bloom_pass->render(_graphics_context, params);
-	_tonemap_pass->render(_graphics_context, params);
-	_smaa_pass->render(_graphics_context, params);
-	_ui_pass->render(_graphics_context, params);
+	_directional_shadow_pass->render(command_list, params);
+	_gbuffer_pass->render(command_list, params);
+	_deferred_pass->render(command_list, params);
+	_atmosphere_pass->render(command_list, params);
+	_bloom_pass->render(command_list, params);
+	_tonemap_pass->render(command_list, params);
+	_smaa_pass->render(command_list, params);
+	_ui_pass->render(command_list, params);
 
 	e_st_swap_chain_status status = _graphics_context->acquire_backbuffer(_swap_chain.get());
 	if (status != e_st_swap_chain_status::current)
@@ -181,21 +202,28 @@ void st_output::update(st_frame_params* params)
 		return;
 	}
 
-	_graphics_context->transition(
-		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
+	command_list->transition(
+		_device->get_backbuffer(_swap_chain.get(), params->_frame_index),
 		st_texture_state_render_target);
 
-	_display_pass->render(_graphics_context, params);
+	_display_pass->render(command_list, params);
 
 	// Swap the frame buffers and release the context.
-	_graphics_context->transition(
-		_graphics_context->get_backbuffer(_swap_chain.get(), params->_frame_index),
+	command_list->transition(
+		_device->get_backbuffer(_swap_chain.get(), params->_frame_index),
 		st_texture_state_present);
 
-	_graphics_context->end_frame();
-	_graphics_context->present(_swap_chain.get());
+	command_list->end();
 
-	_graphics_context->release();
+	_command_queue->execute(command_list);
+	_command_queue->present(_swap_chain.get());
+	_command_queue->signal(_fence.get());
+
+	// TODO: This is really wait-for-idle for now.
+	_command_queue->wait(_fence.get());
+
+	// Already open the upload command list for the next frame.
+	begin_loading();
 }
 
 void st_output::get_target_formats(e_st_render_pass_type type, st_graphics_state_desc& desc)

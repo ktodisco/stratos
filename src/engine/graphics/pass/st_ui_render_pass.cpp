@@ -76,40 +76,40 @@ st_ui_render_pass::~st_ui_render_pass()
 	st_imgui::shutdown();
 }
 
-void st_ui_render_pass::render(st_graphics_context* context, const st_frame_params* params)
+void st_ui_render_pass::render(st_command_list* command_list, const st_frame_params* params)
 {
-	st_render_marker marker(context, "st_ui_render_pass::render");
+	st_render_marker marker(command_list, "st_ui_render_pass::render");
 
 	st_mat4f ortho;
 	ortho.make_orthographic(0.0f, (float)params->_width, (float)params->_height, 0.0f, 0.1f, 10000.0f);
 	st_mat4f view;
 	view.make_lookat_rh(st_vec3f::z_vector(), -st_vec3f::z_vector(), st_vec3f::y_vector());
 
-	context->begin_render_pass(_pass.get(), _framebuffer.get(), nullptr, 0);
+	command_list->begin_render_pass(_pass.get(), _framebuffer.get(), nullptr, 0);
 
-	draw_dynamic(context, params, ortho, view);
-	st_imgui::draw(params);
+	draw_dynamic(command_list, params, ortho, view);
+	st_imgui::draw(command_list, params);
 
-	context->end_render_pass(_pass.get(), _framebuffer.get());
+	command_list->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 void st_ui_render_pass::draw_dynamic(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	const st_frame_params* params,
 	const struct st_mat4f& proj,
 	const struct st_mat4f& view)
 {
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
 	for (auto& d : params->_gui_drawcalls)
 	{
-		st_render_marker draw_marker(context, d._name);
+		st_render_marker draw_marker(command_list, d._name);
 
-		context->set_pipeline(_default_state.get());
+		command_list->set_pipeline(_default_state.get());
 		_default_material->set_color(d._color);
-		_default_material->bind(context, e_st_render_pass_type::ui, params, proj, view, d._transform);
+		_default_material->bind(command_list, e_st_render_pass_type::ui, params, proj, view, d._transform);
 
-		context->draw(d);
+		command_list->draw(d);
 	}
 }
 

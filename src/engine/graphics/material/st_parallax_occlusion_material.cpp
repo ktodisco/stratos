@@ -114,14 +114,14 @@ st_parallax_occlusion_material::~st_parallax_occlusion_material()
 }
 
 void st_parallax_occlusion_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	context->set_pipeline(_pipeline.get());
+	command_list->set_pipeline(_pipeline.get());
 
 	st_mat4f mvp = transform * view * proj;
 	st_mat4f transform_t = transform;
@@ -130,7 +130,7 @@ void st_parallax_occlusion_material::bind(
 	pom_cb._model = transform_t;
 	pom_cb._mvp = mvp;
 	pom_cb._eye = st_vec4f(params->_eye, 0.0f);
-	context->update_buffer(_parallax_occlusion_buffer.get(), &pom_cb, 0, 1);
+	command_list->update_buffer(_parallax_occlusion_buffer.get(), &pom_cb, 0, 1);
 
-	context->bind_resources(_resource_table.get());
+	command_list->bind_resources(_resource_table.get());
 }

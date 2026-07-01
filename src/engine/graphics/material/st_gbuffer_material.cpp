@@ -152,7 +152,7 @@ st_gbuffer_material::~st_gbuffer_material()
 }
 
 void st_gbuffer_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
@@ -163,24 +163,24 @@ void st_gbuffer_material::bind(
 
 	if (pass_type == e_st_render_pass_type::shadow)
 	{
-		context->set_pipeline(_shadow_pipeline.get());
+		command_list->set_pipeline(_shadow_pipeline.get());
 
 		st_shadow_cb shadow_cb{};
 		shadow_cb._mvp = mvp;
-		context->update_buffer(_shadow_buffer.get(), &shadow_cb, 0, 1);
+		command_list->update_buffer(_shadow_buffer.get(), &shadow_cb, 0, 1);
 
-		context->bind_resources(_shadow_resources.get());
+		command_list->bind_resources(_shadow_resources.get());
 	}
 	else if (pass_type == e_st_render_pass_type::gbuffer)
 	{
-		context->set_pipeline(_gbuffer_pipeline.get());
+		command_list->set_pipeline(_gbuffer_pipeline.get());
 
 		st_gbuffer_cb gbuffer_cb{};
 		gbuffer_cb._model = transform;
 		gbuffer_cb._mvp = mvp;
 		gbuffer_cb._emissive = _emissive;
-		context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
+		command_list->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
 
-		context->bind_resources(_gbuffer_resources.get());
+		command_list->bind_resources(_gbuffer_resources.get());
 	}
 }

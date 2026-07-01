@@ -44,7 +44,7 @@ st_constant_color_material::~st_constant_color_material()
 }
 
 void st_constant_color_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
@@ -56,7 +56,7 @@ void st_constant_color_material::bind(
 	st_constant_color_cb cb_data{};
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
-	context->update_buffer(_color_buffer.get(), &cb_data, 0, 1);
+	command_list->update_buffer(_color_buffer.get(), &cb_data, 0, 1);
 
-	context->bind_resources(_resource_table.get());
+	command_list->bind_resources(_resource_table.get());
 }

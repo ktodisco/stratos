@@ -104,25 +104,25 @@ st_display_pass::~st_display_pass()
 	_cb = nullptr;
 }
 
-void st_display_pass::render(class st_graphics_context* context, const st_frame_params* params)
+void st_display_pass::render(class st_command_list* command_list, const st_frame_params* params)
 {
-	st_render_marker marker(context, __FUNCTION__);
+	st_render_marker marker(command_list, __FUNCTION__);
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
 	st_display_constants constants;
 	constants._is_hdr = (params->_color_space == st_color_space_st2084);
-	context->update_buffer(_cb.get(), &constants, 0, 1);
+	command_list->update_buffer(_cb.get(), &constants, 0, 1);
 
-	context->transition(_source->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_source->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->set_pipeline(_pipeline.get());
-	context->bind_resources(_resources.get());
+	command_list->set_pipeline(_pipeline.get());
+	command_list->bind_resources(_resources.get());
 
-	context->begin_render_pass(_pass.get(), _framebuffers[params->_frame_index].get(), nullptr, 0);
+	command_list->begin_render_pass(_pass.get(), _framebuffers[params->_frame_index].get(), nullptr, 0);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -130,7 +130,7 @@ void st_display_pass::render(class st_graphics_context* context, const st_frame_
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_pass.get(), _framebuffers[params->_frame_index].get());
+	command_list->end_render_pass(_pass.get(), _framebuffers[params->_frame_index].get());
 }

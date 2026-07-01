@@ -20,7 +20,7 @@ public:
 	//virtual bool init() override;
 
 	virtual void bind(
-		class st_graphics_context* context,
+		class st_command_list* command_list,
 		enum e_st_render_pass_type pass_type,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,

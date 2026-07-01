@@ -49,7 +49,7 @@ struct VERTEX_CONSTANT_BUFFER
 
 // Render function
 // (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
-void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context* ctx)
+void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_device* device, st_command_list* cmd)
 {
     // FIXME: I'm assuming that this only gets called once per frame!
     // If not, we can't just re-allocate the IB or VB, we'll have to do a proper allocator.
@@ -70,7 +70,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
         desc._count = g_VertexBufferSize;
         desc._element_size = sizeof(ImDrawVert);
         desc._usage = e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest;
-        frameResources->VB = ctx->create_buffer(desc);
+        frameResources->VB = device->create_buffer(desc);
 
         g_pVB = frameResources->VB.get();
         frameResources->VertexBufferSize = g_VertexBufferSize;
@@ -85,7 +85,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
         desc._count = g_IndexBufferSize;
         desc._element_size = sizeof(ImDrawIdx);
         desc._usage = e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest;
-        frameResources->IB = ctx->create_buffer(desc);
+        frameResources->IB = device->create_buffer(desc);
 
         g_pIB = frameResources->IB.get();
         frameResources->IndexBufferSize = g_IndexBufferSize;
@@ -99,13 +99,13 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
 
         uint8_t* head = nullptr;
-        ctx->map(g_pVB, 0, { 0, 0 }, (void**)&head);
+        device->map(g_pVB, 0, { 0, 0 }, (void**)&head);
         memcpy(head + vtx_offset, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-        ctx->unmap(g_pVB, 0, { 0, 0 });
+        device->unmap(g_pVB, 0, { 0, 0 });
 
-        ctx->map(g_pIB, 0, { 0, 0 }, (void**)&head);
+        device->map(g_pIB, 0, { 0, 0 }, (void**)&head);
         memcpy(head + idx_offset, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-        ctx->unmap(g_pIB, 0, { 0, 0 });
+        device->unmap(g_pIB, 0, { 0, 0 });
 
         vtx_offset += cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
         idx_offset += cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
@@ -119,10 +119,10 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
     vp._min_depth = 0.0f;
     vp._max_depth = 1.0f;
     vp._x = vp._y = 0.0f;
-    ctx->set_viewport(vp);
+    cmd->set_viewport(vp);
 
     // Some backends require the pipeline be set before updating constants.
-    ctx->set_pipeline(g_pipeline.get());
+    cmd->set_pipeline(g_pipeline.get());
 
     // Setup orthographic projection matrix into our constant buffer
     // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right).
@@ -139,7 +139,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
             0.0f, 0.0f, 0.0f, 1.0f,
         };
 
-        ctx->update_buffer(g_constant_buffer.get(), mvp.data, 0, 1);
+        cmd->update_buffer(g_constant_buffer.get(), mvp.data, 0, 1);
     }
 
     st_static_drawcall dc;
@@ -148,7 +148,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
     dc._index_buffer = g_pIB;
 
     // Setup render state
-    ctx->set_blend_factor(0.0f, 0.0f, 0.0f, 0.0f);
+    cmd->set_blend_factor(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Render command lists
     vtx_offset = 0;
@@ -167,11 +167,11 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
             else
             {
                 const st_texture_view* view = static_cast<const st_texture_view*>(pcmd->TextureId);
-                ctx->update_textures(g_resource_table.get(), 1, &view);
+                device->update_textures(g_resource_table.get(), 1, &view);
 
-                ctx->bind_resources(g_resource_table.get());
+                cmd->bind_resources(g_resource_table.get());
 
-                ctx->set_scissor(
+                cmd->set_scissor(
                     int(pcmd->ClipRect.x - pos.x),
                     int(pcmd->ClipRect.y - pos.y),
                     int(pcmd->ClipRect.z - pos.x),
@@ -181,7 +181,7 @@ void ImGui_ImplStratos_RenderDrawData(ImDrawData* draw_data, st_graphics_context
                 dc._vertex_offset = vtx_offset;
                 dc._index_count = pcmd->ElemCount;
 
-                ctx->draw(dc);
+                cmd->draw(dc);
             }
             idx_offset += pcmd->ElemCount;
         }

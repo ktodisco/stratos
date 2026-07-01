@@ -87,20 +87,20 @@ st_deferred_light_material::~st_deferred_light_material()
 }
 
 void st_deferred_light_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	context->set_pipeline(_pipeline.get());
+	command_list->set_pipeline(_pipeline.get());
 
-	context->transition(_albedo->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_normal->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_third->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_depth->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_directional_shadow_map->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_albedo->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_normal->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_third->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_depth->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_directional_shadow_map->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->bind_resources(_resource_table.get());
+	command_list->bind_resources(_resource_table.get());
 }

@@ -69,11 +69,11 @@ st_gbuffer_render_pass::~st_gbuffer_render_pass()
 {
 }
 
-void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame_params* params)
+void st_gbuffer_render_pass::render(st_command_list* command_list, const st_frame_params* params)
 {
-	st_render_marker marker(context, "st_gbuffer_render_pass::render");
+	st_render_marker marker(command_list, "st_gbuffer_render_pass::render");
 
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
 	st_clear_value clears[] =
 	{
@@ -83,12 +83,12 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 		st_depth_stencil_clear_value { 1.0f, 0 }
 	};
 
-	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
 	// Draw all static geometry.
 	for (auto& d : params->_static_drawcalls)
 	{
-		st_render_marker draw_marker(context, d._name.c_str());
+		st_render_marker draw_marker(command_list, d._name.c_str());
 
 		if (!d._material)
 		{
@@ -96,13 +96,13 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 		}
 		else if (d._material->supports_pass(e_st_render_pass_type::gbuffer))
 		{
-			d._material->bind(context, e_st_render_pass_type::gbuffer, params, params->_projection, params->_view, d._transform);
+			d._material->bind(command_list, e_st_render_pass_type::gbuffer, params, params->_projection, params->_view, d._transform);
 		}
 
-		context->draw(d);
+		command_list->draw(d);
 	}
 
-	context->end_render_pass(_pass.get(), _framebuffer.get());
+	command_list->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 void st_gbuffer_render_pass::get_target_formats(struct st_graphics_state_desc& desc)

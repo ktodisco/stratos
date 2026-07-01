@@ -96,26 +96,26 @@ st_gaussian_blur_render_pass::~st_gaussian_blur_render_pass()
 }
 
 void st_gaussian_blur_render_pass::render(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	const st_frame_params* params)
 {
-	st_render_marker marker(context, "st_gaussian_blur_render_pass::render");
+	st_render_marker marker(command_list, "st_gaussian_blur_render_pass::render");
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->set_scissor(0, 0, _intermediate_target->get_width(), _intermediate_target->get_height());
+	command_list->set_scissor(0, 0, _intermediate_target->get_width(), _intermediate_target->get_height());
 
 	{
-		st_render_marker marker(context, "Vertical Blur");
+		st_render_marker marker(command_list, "Vertical Blur");
 
-		_vertical_blur_material->bind(context, e_st_render_pass_type::gaussian, params, identity, identity, identity);
+		_vertical_blur_material->bind(command_list, e_st_render_pass_type::gaussian, params, identity, identity, identity);
 
 		st_clear_value clears[] =
 		{
 			_intermediate_target->get_clear_value(),
 		};
-		context->begin_render_pass(_vertical_blur_pass.get(), _vertical_blur_framebuffer.get(), clears, std::size(clears));
+		command_list->begin_render_pass(_vertical_blur_pass.get(), _vertical_blur_framebuffer.get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -123,21 +123,21 @@ void st_gaussian_blur_render_pass::render(
 		_fullscreen_quad->draw(draw_call);
 		draw_call._draw_mode = st_primitive_topology_triangles;
 
-		context->draw(draw_call);
+		command_list->draw(draw_call);
 
-		context->end_render_pass(_vertical_blur_pass.get(), _vertical_blur_framebuffer.get());
+		command_list->end_render_pass(_vertical_blur_pass.get(), _vertical_blur_framebuffer.get());
 	}
 
 	{
-		st_render_marker marker(context, "Horizontal Blur");
+		st_render_marker marker(command_list, "Horizontal Blur");
 
-		_horizontal_blur_material->bind(context, e_st_render_pass_type::gaussian, params, identity, identity, identity);
+		_horizontal_blur_material->bind(command_list, e_st_render_pass_type::gaussian, params, identity, identity, identity);
 
 		st_clear_value clears[] =
 		{
 			st_vec4f { 0.0f, 0.0f, 0.0f, 1.0f },
 		};
-		context->begin_render_pass(_horizontal_blur_pass.get(), _horizontal_blur_framebuffer.get(), clears, std::size(clears));
+		command_list->begin_render_pass(_horizontal_blur_pass.get(), _horizontal_blur_framebuffer.get(), clears, std::size(clears));
 
 		st_static_drawcall draw_call;
 		draw_call._name = "fullscreen_quad";
@@ -145,8 +145,8 @@ void st_gaussian_blur_render_pass::render(
 		_fullscreen_quad->draw(draw_call);
 		draw_call._draw_mode = st_primitive_topology_triangles;
 
-		context->draw(draw_call);
+		command_list->draw(draw_call);
 
-		context->end_render_pass(_horizontal_blur_pass.get(), _horizontal_blur_framebuffer.get());
+		command_list->end_render_pass(_horizontal_blur_pass.get(), _horizontal_blur_framebuffer.get());
 	}
 }

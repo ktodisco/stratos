@@ -137,31 +137,31 @@ st_atmosphere_transmission_pass::~st_atmosphere_transmission_pass()
 	_resources = nullptr;
 }
 
-void st_atmosphere_transmission_pass::compute(st_graphics_context* context, const st_frame_params* params)
+void st_atmosphere_transmission_pass::compute(st_command_list* command_list, const st_frame_params* params)
 {
 	// TODO: This does not need to be generated every frame, but to test it a proper
 	// hashing utility is needed to hash the atmospheric parameters.
 
-	st_render_marker marker(context, __FUNCTION__);
+	st_render_marker marker(command_list, __FUNCTION__);
 
 	st_atmosphere_constants constants;
 	build_constants(constants, params);
 	constants._radii_dims.z = 1.0f / _transmittance_desc._width;
 	constants._radii_dims.w = 1.0f / _transmittance_desc._height;
 
-	context->update_buffer(_cb.get(), &constants, 0, 1);
+	command_list->update_buffer(_cb.get(), &constants, 0, 1);
 
-	context->transition(_transmittance->get_texture(), st_texture_state_unordered_access);
+	command_list->transition(_transmittance->get_texture(), st_texture_state_unordered_access);
 
-	context->set_compute_pipeline(_pipeline.get());
-	context->bind_compute_resources(_resources.get());
+	command_list->set_compute_pipeline(_pipeline.get());
+	command_list->bind_compute_resources(_resources.get());
 
 	{
 		st_dispatch_args args;
 		args.group_count_x = (_transmittance_desc._width + 31) / 32;
 		args.group_count_y = (_transmittance_desc._height + 31) / 32;
 		args.group_count_z = 1;
-		context->dispatch(args);
+		command_list->dispatch(args);
 	}
 }
 
@@ -234,32 +234,32 @@ st_atmosphere_sky_pass::~st_atmosphere_sky_pass()
 
 }
 
-void st_atmosphere_sky_pass::render(st_graphics_context* context, const st_frame_params* params)
+void st_atmosphere_sky_pass::render(st_command_list* command_list, const st_frame_params* params)
 {
-	st_render_marker marker(context, __FUNCTION__);
+	st_render_marker marker(command_list, __FUNCTION__);
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
 	st_atmosphere_constants constants;
 	build_constants(constants, params);
 
-	context->update_buffer(_cb.get(), &constants, 0, 1);
+	command_list->update_buffer(_cb.get(), &constants, 0, 1);
 
-	context->transition(_transmittance->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_target->get_texture(), st_texture_state_render_target);
+	command_list->transition(_transmittance->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_target->get_texture(), st_texture_state_render_target);
 
-	context->set_pipeline(_pipeline.get());
-	context->bind_resources(_resources.get());
+	command_list->set_pipeline(_pipeline.get());
+	command_list->bind_resources(_resources.get());
 
 	st_clear_value clears[] =
 	{
 		_target->get_clear_value(),
 	};
 
-	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -267,9 +267,9 @@ void st_atmosphere_sky_pass::render(st_graphics_context* context, const st_frame
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_pass.get(), _framebuffer.get());
+	command_list->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 st_atmosphere_render_pass::st_atmosphere_render_pass(
@@ -365,26 +365,26 @@ st_atmosphere_render_pass::~st_atmosphere_render_pass()
 	_cb = nullptr;
 }
 
-void st_atmosphere_render_pass::render(class st_graphics_context* context, const st_frame_params* params)
+void st_atmosphere_render_pass::render(class st_command_list* command_list, const st_frame_params* params)
 {
-	st_render_marker marker(context, __FUNCTION__);
+	st_render_marker marker(command_list, __FUNCTION__);
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
 	st_atmosphere_constants constants;
 	build_constants(constants, params);
 
-	context->update_buffer(_cb.get(), &constants, 0, 1);
+	command_list->update_buffer(_cb.get(), &constants, 0, 1);
 
-	context->transition(_sky_view->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_sky_view->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->set_pipeline(_pipeline.get());
-	context->bind_resources(_resources.get());
+	command_list->set_pipeline(_pipeline.get());
+	command_list->bind_resources(_resources.get());
 
-	context->begin_render_pass(_pass.get(), _framebuffer.get(), nullptr, 0);
+	command_list->begin_render_pass(_pass.get(), _framebuffer.get(), nullptr, 0);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -392,7 +392,7 @@ void st_atmosphere_render_pass::render(class st_graphics_context* context, const
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_pass.get(), _framebuffer.get());
+	command_list->end_render_pass(_pass.get(), _framebuffer.get());
 }

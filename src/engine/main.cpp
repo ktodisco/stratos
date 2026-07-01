@@ -111,9 +111,7 @@ int main(int argc, const char** argv)
 	window->show();
 
 	// TODO: HACK: Commit all loaded resources.
-	graphics->end_frame();
-	// TODO: Break this up into commit()?
-	graphics->execute();
+	//output->submit_loading();
 
 	// Main loop:
 	while (true)

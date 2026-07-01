@@ -47,27 +47,27 @@ st_directional_shadow_pass::~st_directional_shadow_pass()
 	_pass = nullptr;
 }
 
-void st_directional_shadow_pass::render(st_graphics_context* context, const st_frame_params* params)
+void st_directional_shadow_pass::render(st_command_list* command_list, const st_frame_params* params)
 {
-	st_render_marker marker(context, "st_directional_shadow_pass::render");
+	st_render_marker marker(command_list, "st_directional_shadow_pass::render");
 
-	context->set_scissor(0, 0, _target->get_width(), _target->get_height());
+	command_list->set_scissor(0, 0, _target->get_width(), _target->get_height());
 
 	st_clear_value clears[] =
 	{
 		_target->get_clear_value()
 	};
 
-	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
 	for (auto& d : params->_static_drawcalls)
 	{
-		st_render_marker draw_marker(context, d._name.c_str());
+		st_render_marker draw_marker(command_list, d._name.c_str());
 
 		if (d._material->supports_pass(e_st_render_pass_type::shadow))
 		{
 			d._material->bind(
-				context,
+				command_list,
 				e_st_render_pass_type::shadow,
 				params,
 				params->_sun_projection,
@@ -75,10 +75,10 @@ void st_directional_shadow_pass::render(st_graphics_context* context, const st_f
 				d._transform);
 		}
 
-		context->draw(d);
+		command_list->draw(d);
 	}
 
-	context->end_render_pass(_pass.get(), _framebuffer.get());
+	command_list->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 void st_directional_shadow_pass::get_target_formats(st_graphics_state_desc& desc)
