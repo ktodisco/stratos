@@ -19,14 +19,15 @@ public:
 
 	void signal(struct st_fence* fence) override;
 	void wait(struct st_fence* fence) override;
+	void wait_for_idle(struct st_fence* fence) override;
 	void execute(class st_command_list* command_list) override;
 	void present(struct st_swap_chain* swap_chain) override;
 
-	ID3D12CommandQueue* get() { return _command_queue.Get(); }
+	ID3D12CommandQueue* get() { return _d3d_command_queue.Get(); }
 
 private:
 
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _command_queue;
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _d3d_command_queue;
 	HANDLE _fence_event;
 };
 

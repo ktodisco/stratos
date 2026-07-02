@@ -39,10 +39,6 @@ public:
 	st_output(const st_window* window, class st_graphics_context* graphics);
 	~st_output();
 
-	// TODO: This is a hack.
-	void begin_loading();
-	void submit_loading();
-
 	bool update_swap_chain();
 	void update(struct st_frame_params* params);
 
@@ -56,8 +52,8 @@ private:
 
 	e_st_format choose_backbuffer_format();
 
-	void recreate_textures(class st_graphics_context* context);
-	void recreate_passes(class st_graphics_context* context);
+	void recreate_textures();
+	void recreate_passes();
 
 	const st_window* _window;
 	uint32_t _width;
@@ -77,6 +73,7 @@ private:
 	std::unique_ptr<class st_command_queue> _command_queue;
 	std::unique_ptr<class st_command_allocator> _command_allocators[k_max_frames];
 	std::unique_ptr<class st_command_list> _command_lists[k_max_frames];
+	std::unique_ptr<class st_command_allocator> _upload_command_allocators[k_max_frames];
 	std::unique_ptr<class st_command_list> _upload_command_lists[k_max_frames];
 	std::unique_ptr<struct st_fence> _fence;
 	uint32_t _frame_index = 0;

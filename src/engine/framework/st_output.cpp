@@ -43,9 +43,6 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 {
 	_this = this;
 
-	// Create resources shared by many systems of the application.
-	create_global_resources(context);
-
 	// Create the shader manager, loading all the shaders.
 	_shader_manager = std::make_unique<st_shader_manager>(context);
 
@@ -68,13 +65,16 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		cl_desc.allocator = _command_allocators[f].get();
 		_command_lists[f] = _device->create_command_list(cl_desc);
 
+		st_command_allocator_desc upload_alloc_desc;
+		_upload_command_allocators[f] = _device->create_command_allocator(upload_alloc_desc);
+
 		st_command_list_desc upload_desc;
-		upload_desc.allocator = _command_allocators[f].get();
+		upload_desc.allocator = _upload_command_allocators[f].get();
 		_upload_command_lists[f] = _device->create_command_list(upload_desc);
 	}
 
-	// Immediately begin recording an upload command list.
-	begin_loading();
+	// Create resources shared by many systems of the application.
+	create_global_resources(_device.get());
 
 	// Create the swap chain first.
 	{
@@ -89,12 +89,19 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		desc._format = _backbuffer_format;
 		desc._color_space = _backbuffer_color_space;
 		desc._window_handle = _window->get_window_handle();
+		desc._command_queue = _command_queue.get();
 
-		_swap_chain = context->create_swap_chain(desc);
+		_swap_chain = _device->create_swap_chain(desc);
 	}
 
-	recreate_textures(_graphics_context);
-	recreate_passes(_graphics_context);
+	_frame_index = _device->get_backbuffer_index(_swap_chain.get());
+
+	// Immediately begin recording an upload command list.
+	_upload_command_allocators[_frame_index]->reset();
+	_upload_command_lists[_frame_index]->begin(_upload_command_allocators[_frame_index].get());
+
+	recreate_textures();
+	recreate_passes();
 }
 
 st_output::~st_output()
@@ -114,6 +121,7 @@ st_output::~st_output()
 
 bool st_output::update_swap_chain()
 {
+	// TODO: This needs to be updated to the new API.
 	bool recreated = false;
 
 	if (_out_of_date ||
@@ -141,8 +149,8 @@ bool st_output::update_swap_chain()
 		_graphics_context->acquire();
 		_graphics_context->begin_frame();
 
-		recreate_textures(_graphics_context);
-		recreate_passes(_graphics_context);
+		recreate_textures();
+		recreate_passes();
 
 		_graphics_context->end_frame();
 		_graphics_context->execute();
@@ -157,23 +165,8 @@ bool st_output::update_swap_chain()
 	return recreated;
 }
 
-void st_output::begin_loading()
-{
-	_upload_command_lists[_frame_index]->begin(_command_allocators[_frame_index].get());
-}
-
-void st_output::submit_loading()
-{
-	_upload_command_lists[_frame_index]->end();
-	_command_queue->execute(_upload_command_lists[_frame_index].get());
-}
-
 void st_output::update(st_frame_params* params)
 {
-	submit_loading();
-
-	_frame_index = (_frame_index + 1) % k_max_frames;
-
 	st_command_allocator* command_allocator = _command_allocators[_frame_index].get();
 	st_command_list* command_list = _command_lists[_frame_index].get();
 
@@ -195,7 +188,7 @@ void st_output::update(st_frame_params* params)
 	_smaa_pass->render(command_list, params);
 	_ui_pass->render(command_list, params);
 
-	e_st_swap_chain_status status = _graphics_context->acquire_backbuffer(_swap_chain.get());
+	e_st_swap_chain_status status = _device->acquire_backbuffer(_swap_chain.get());
 	if (status != e_st_swap_chain_status::current)
 	{
 		_out_of_date = true;
@@ -215,15 +208,21 @@ void st_output::update(st_frame_params* params)
 
 	command_list->end();
 
+	_upload_command_lists[_frame_index]->end();
+	_command_queue->execute(_upload_command_lists[_frame_index].get());
 	_command_queue->execute(command_list);
 	_command_queue->present(_swap_chain.get());
-	_command_queue->signal(_fence.get());
 
-	// TODO: This is really wait-for-idle for now.
-	_command_queue->wait(_fence.get());
+	_frame_index = _device->get_backbuffer_index(_swap_chain.get());
 
-	// Already open the upload command list for the next frame.
-	begin_loading();
+	// TODO: Better parallelization.
+	// What actually needs to happen here is signal is called with a _frame_end fence,
+	// and then we provide that fence whenever we call wait_for_idle elsewhere.
+	_command_queue->wait_for_idle(_fence.get());
+
+	// Already begin recording the next upload commands.
+	_upload_command_allocators[_frame_index]->reset();
+	_upload_command_lists[_frame_index]->begin(_upload_command_allocators[_frame_index].get());
 }
 
 void st_output::get_target_formats(e_st_render_pass_type type, st_graphics_state_desc& desc)
@@ -262,7 +261,7 @@ e_st_format st_output::choose_backbuffer_format()
 	return st_format_r8g8b8a8_unorm;
 }
 
-void st_output::recreate_textures(class st_graphics_context* context)
+void st_output::recreate_textures()
 {
 	_transmittance = nullptr;
 	_sky_view = nullptr;
@@ -373,7 +372,7 @@ void st_output::recreate_textures(class st_graphics_context* context)
 		"Sky View");
 }
 
-void st_output::recreate_passes(class st_graphics_context* context)
+void st_output::recreate_passes()
 {
 	_atmosphere_transmission = nullptr;
 	_atmosphere_sky = nullptr;

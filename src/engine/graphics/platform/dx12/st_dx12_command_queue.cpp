@@ -13,7 +13,7 @@
 #include <cassert>
 
 st_dx12_command_queue::st_dx12_command_queue(ID3D12CommandQueue* command_queue)
-	: _command_queue(command_queue)
+	: _d3d_command_queue(command_queue)
 {
 	_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (_fence_event == nullptr)
@@ -27,25 +27,40 @@ st_dx12_command_queue::st_dx12_command_queue(ID3D12CommandQueue* command_queue)
 
 st_dx12_command_queue::~st_dx12_command_queue()
 {
-	_command_queue = nullptr;
+	_d3d_command_queue = nullptr;
 }
 
-void st_dx12_command_queue::signal(struct st_fence* fence_)
+void st_dx12_command_queue::signal(st_fence* fence_)
 {
 	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
 
 	const uint64_t fence_value = fence->_fence_value;
-	_command_queue->Signal(fence->_fence.Get(), fence_value);
+	_d3d_command_queue->Signal(fence->_fence.Get(), fence_value);
 	fence->_fence_value++;
 }
 
-void st_dx12_command_queue::wait(struct st_fence* fence_)
+void st_dx12_command_queue::wait(st_fence* fence_)
 {
 	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
+	_d3d_command_queue->Wait(fence->_fence.Get(), fence->_fence_value);
 
 	if (fence->_fence->GetCompletedValue() < (fence->_fence_value - 1))
 	{
 		fence->_fence->SetEventOnCompletion(fence->_fence_value, _fence_event);
+		WaitForSingleObject(_fence_event, INFINITE);
+	}
+}
+
+void st_dx12_command_queue::wait_for_idle(st_fence* fence_)
+{
+	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
+	const uint64_t fence_value = fence->_fence_value;
+	_d3d_command_queue->Signal(fence->_fence.Get(), fence_value);
+	fence->_fence_value++;
+
+	if (fence->_fence->GetCompletedValue() < fence_value)
+	{
+		fence->_fence->SetEventOnCompletion(fence_value, _fence_event);
 		WaitForSingleObject(_fence_event, INFINITE);
 	}
 }
@@ -55,7 +70,7 @@ void st_dx12_command_queue::execute(st_command_list* command_list_)
 	st_dx12_command_list* command_list = static_cast<st_dx12_command_list*>(command_list_);
 
 	ID3D12CommandList* command_lists[] = { command_list->get() };
-	_command_queue->ExecuteCommandLists(_countof(command_lists), command_lists);
+	_d3d_command_queue->ExecuteCommandLists(_countof(command_lists), command_lists);
 }
 
 void st_dx12_command_queue::present(st_swap_chain* swap_chain_)

@@ -7,7 +7,6 @@
 */
 
 #include <graphics/st_graphics.h>
-#include <graphics/st_graphics_context.h>
 
 #include <memory>
 
@@ -20,5 +19,5 @@ struct st_global_resources
 
 extern std::unique_ptr<st_global_resources> _global_resources;
 
-void create_global_resources(st_graphics_context* context);
+void create_global_resources(class st_device* device);
 void destroy_global_resources();

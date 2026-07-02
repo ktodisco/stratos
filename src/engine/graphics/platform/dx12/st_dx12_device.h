@@ -32,6 +32,7 @@ public:
 	void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) override;
 	st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) override;
 	st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) override;
+	uint32_t get_backbuffer_index(st_swap_chain* swap_chain) override;
 	e_st_swap_chain_status acquire_backbuffer(st_swap_chain* swap_chain) override;
 
 	// Textures.

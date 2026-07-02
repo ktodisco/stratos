@@ -266,7 +266,7 @@ std::unique_ptr<st_swap_chain> st_dx12_device::create_swap_chain(const st_swap_c
 {
 	std::unique_ptr<st_dx12_swap_chain> sc = std::make_unique<st_dx12_swap_chain>();
 
-	st_dx12_command_queue* command_queue = static_cast<st_dx12_command_queue*>(desc.command_queue);
+	st_dx12_command_queue* command_queue = static_cast<st_dx12_command_queue*>(desc._command_queue);
 
 	DXGI_SWAP_CHAIN_DESC1 swap_chain_desc = {};
 	swap_chain_desc.BufferCount = desc._buffer_count;
@@ -420,6 +420,12 @@ st_texture_view* st_dx12_device::get_backbuffer_view(st_swap_chain* swap_chain_,
 {
 	st_dx12_swap_chain* swap_chain = static_cast<st_dx12_swap_chain*>(swap_chain_);
 	return swap_chain->_backbuffer_views[index].get();
+}
+
+uint32_t st_dx12_device::get_backbuffer_index(st_swap_chain* swap_chain_)
+{
+	st_dx12_swap_chain* swap_chain = static_cast<st_dx12_swap_chain*>(swap_chain_);
+	return swap_chain->_swap_chain_3->GetCurrentBackBufferIndex();
 }
 
 e_st_swap_chain_status st_dx12_device::acquire_backbuffer(st_swap_chain* swap_chain_)

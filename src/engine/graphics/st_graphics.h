@@ -502,7 +502,7 @@ struct st_swap_chain_desc
 	e_st_format _format = st_format_unknown;
 	e_st_color_space _color_space = st_color_space_srgb;
 
-	class st_command_queue* command_queue;
+	class st_command_queue* _command_queue;
 };
 
 struct st_texture_desc
@@ -596,6 +596,7 @@ public:
 	virtual void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) = 0;
 	virtual st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) = 0;
 	virtual st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) = 0;
+	virtual uint32_t get_backbuffer_index(st_swap_chain* swap_chain) = 0;
 	virtual e_st_swap_chain_status acquire_backbuffer(st_swap_chain* swap_chain) = 0;
 
 	// Textures.
@@ -660,6 +661,7 @@ public:
 
 	virtual void signal(struct st_fence* fence) = 0;
 	virtual void wait(struct st_fence* fence) = 0;
+	virtual void wait_for_idle(struct st_fence* fence) = 0;
 	virtual void execute(class st_command_list* command_list) = 0;
 	virtual void present(struct st_swap_chain* swap_chain) = 0;
 };
