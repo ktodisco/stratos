@@ -9,8 +9,6 @@
 #include <framework/st_frame_params.h>
 #include <framework/st_input.h>
 
-#include <graphics/st_graphics_context.h>
-
 #include <math/st_math.h>
 
 #include <imgui.h>

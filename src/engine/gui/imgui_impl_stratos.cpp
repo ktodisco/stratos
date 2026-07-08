@@ -9,7 +9,6 @@
 
 #include <graphics/st_drawcall.h>
 #include <graphics/st_graphics.h>
-#include <graphics/st_graphics_context.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/geometry/st_vertex_attribute.h>
