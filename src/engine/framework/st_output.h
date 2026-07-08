@@ -52,6 +52,8 @@ private:
 
 	e_st_format choose_backbuffer_format();
 
+	void destroy_textures();
+	void destroy_passes();
 	void recreate_textures();
 	void recreate_passes();
 

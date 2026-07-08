@@ -157,12 +157,12 @@ int main(int argc, const char** argv)
 		output->update(&params);
 	}
 
+	delete g_font;
+
 	scene = nullptr;
 	output = nullptr;
 
 	st_job::shutdown();
-
-	delete g_font;
 
 	return 0;
 }

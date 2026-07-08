@@ -43,9 +43,6 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 {
 	_this = this;
 
-	// Create the shader manager, loading all the shaders.
-	_shader_manager = std::make_unique<st_shader_manager>(context);
-
 	// Create the device and graphics command structures.
 	st_device_desc device_desc;
 	_device = context->create_device(device_desc);
@@ -72,6 +69,9 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 		upload_desc.allocator = _upload_command_allocators[f].get();
 		_upload_command_lists[f] = _device->create_command_list(upload_desc);
 	}
+
+	// Create the shader manager, loading all the shaders.
+	_shader_manager = std::make_unique<st_shader_manager>(_device.get());
 
 	// Create resources shared by many systems of the application.
 	create_global_resources(_device.get());
@@ -106,7 +106,11 @@ st_output::st_output(const st_window* window, st_graphics_context* context) :
 
 st_output::~st_output()
 {
+	destroy_passes();
+	destroy_textures();
 	destroy_global_resources();
+
+	_swap_chain = nullptr;
 
 	for (int f = 0; f < k_max_frames; ++f)
 	{
@@ -274,7 +278,7 @@ e_st_format st_output::choose_backbuffer_format()
 	return st_format_r8g8b8a8_unorm;
 }
 
-void st_output::recreate_textures()
+void st_output::destroy_textures()
 {
 	_transmittance = nullptr;
 	_sky_view = nullptr;
@@ -286,6 +290,26 @@ void st_output::recreate_textures()
 	_deferred_target = nullptr;
 	_bloom_target = nullptr;
 	_tonemap_target = nullptr;
+}
+
+void st_output::destroy_passes()
+{
+	_atmosphere_transmission = nullptr;
+	_atmosphere_sky = nullptr;
+	_atmosphere_pass = nullptr;
+	_directional_shadow_pass = nullptr;
+	_gbuffer_pass = nullptr;
+	_deferred_pass = nullptr;
+	_bloom_pass = nullptr;
+	_tonemap_pass = nullptr;
+	_smaa_pass = nullptr;
+	_ui_pass = nullptr;
+	_display_pass = nullptr;
+}
+
+void st_output::recreate_textures()
+{
+	destroy_textures();
 
 	_directional_shadow_map = std::make_unique<st_render_texture>(
 		_device.get(),
@@ -387,17 +411,7 @@ void st_output::recreate_textures()
 
 void st_output::recreate_passes()
 {
-	_atmosphere_transmission = nullptr;
-	_atmosphere_sky = nullptr;
-	_atmosphere_pass = nullptr;
-	_directional_shadow_pass = nullptr;
-	_gbuffer_pass = nullptr;
-	_deferred_pass = nullptr;
-	_bloom_pass = nullptr;
-	_tonemap_pass = nullptr;
-	_smaa_pass = nullptr;
-	_ui_pass = nullptr;
-	_display_pass = nullptr;
+	destroy_passes();
 
 	_atmosphere_transmission = std::make_unique<st_atmosphere_transmission_pass>(
 		_transmittance.get());

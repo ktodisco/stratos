@@ -62,11 +62,14 @@ public:
 	void report_leaks() const;
 
 private:
+	void sanity_check() const;
+
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> _heap;
-	uint32_t _descriptor_size;
-	uint32_t _size;
+	uint32_t _descriptor_size = 0;
+	uint32_t _size = 0;
 
 	std::list<std::unique_ptr<st_descriptor_free_block>> _free_blocks;
+	uint32_t _allocated_count = 0;
 };
 
 #endif

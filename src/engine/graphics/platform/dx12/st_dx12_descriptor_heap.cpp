@@ -52,6 +52,7 @@ st_dx12_cpu_descriptor_handle st_dx12_descriptor_heap::allocate_handle()
 	uint32_t index = block->_index;
 	block->_index++;
 	block->_size--;
+	_allocated_count++;
 
 	if (block->_size == 0)
 	{
@@ -63,6 +64,10 @@ st_dx12_cpu_descriptor_handle st_dx12_descriptor_heap::allocate_handle()
 		get_handle_cpu(index),
 		index
 	};
+
+#if _DEBUG
+	sanity_check();
+#endif
 
 	return handle;
 }
@@ -136,6 +141,12 @@ void st_dx12_descriptor_heap::deallocate_handle(uint32_t offset)
 		(*block)->_index = offset;
 		(*block)->_size = 1;
 	}
+
+	_allocated_count--;
+
+#if _DEBUG
+	sanity_check();
+#endif
 }
 
 void st_dx12_descriptor_heap::empty()
@@ -146,6 +157,8 @@ void st_dx12_descriptor_heap::empty()
 	_free_blocks.push_front(std::make_unique<st_descriptor_free_block>());
 	_free_blocks.front()->_index = 0;
 	_free_blocks.front()->_size = _size;
+
+	_allocated_count = 0;
 }
 
 ID3D12DescriptorHeap* st_dx12_descriptor_heap::get() const
@@ -178,6 +191,17 @@ void st_dx12_descriptor_heap::report_leaks() const
 {
 	assert(_free_blocks.size() == 1);
 	assert(_free_blocks.front()->_size == _size);
+}
+
+void st_dx12_descriptor_heap::sanity_check() const
+{
+	uint32_t total_count = _allocated_count;
+	for (auto& block : _free_blocks)
+	{
+		total_count += block->_size;
+	}
+
+	assert(total_count == _size);
 }
 
 #endif
