@@ -30,37 +30,26 @@ st_dx12_command_queue::~st_dx12_command_queue()
 	_d3d_command_queue = nullptr;
 }
 
-void st_dx12_command_queue::signal(st_fence* fence_)
+void st_dx12_command_queue::signal(st_fence* fence_, uint64_t value)
 {
 	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
 
-	const uint64_t fence_value = fence->_fence_value;
-	_d3d_command_queue->Signal(fence->_fence.Get(), fence_value);
-	fence->_fence_value++;
+	_d3d_command_queue->Signal(fence->_fence.Get(), value);
 }
 
-void st_dx12_command_queue::wait(st_fence* fence_)
+void st_dx12_command_queue::wait(st_fence* fence_, uint64_t value)
 {
 	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
-	_d3d_command_queue->Wait(fence->_fence.Get(), fence->_fence_value);
-
-	if (fence->_fence->GetCompletedValue() < (fence->_fence_value - 1))
-	{
-		fence->_fence->SetEventOnCompletion(fence->_fence_value, _fence_event);
-		WaitForSingleObject(_fence_event, INFINITE);
-	}
+	_d3d_command_queue->Wait(fence->_fence.Get(), value);
 }
 
-void st_dx12_command_queue::wait_for_idle(st_fence* fence_)
+void st_dx12_command_queue::wait_for_idle(st_fence* fence_, uint64_t value)
 {
 	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
-	const uint64_t fence_value = fence->_fence_value;
-	_d3d_command_queue->Signal(fence->_fence.Get(), fence_value);
-	fence->_fence_value++;
 
-	if (fence->_fence->GetCompletedValue() < fence_value)
+	if (fence->_fence->GetCompletedValue() < value)
 	{
-		fence->_fence->SetEventOnCompletion(fence_value, _fence_event);
+		fence->_fence->SetEventOnCompletion(value, _fence_event);
 		WaitForSingleObject(_fence_event, INFINITE);
 	}
 }

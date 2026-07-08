@@ -121,14 +121,13 @@ st_output::~st_output()
 
 bool st_output::update_swap_chain()
 {
-	// TODO: This needs to be updated to the new API.
 	bool recreated = false;
 
 	if (_out_of_date ||
 		_window->get_width() != _width ||
 		_window->get_height() != _height)
 	{
-		_graphics_context->wait_for_idle();
+		_command_queue->wait_for_idle(_fence.get(), _frame_counter - 1);
 
 		{
 			_backbuffer_format = choose_backbuffer_format();
@@ -143,18 +142,22 @@ bool st_output::update_swap_chain()
 			desc._color_space = _backbuffer_color_space;
 			desc._window_handle = _window->get_window_handle();
 
-			_graphics_context->reconfigure_swap_chain(desc, _swap_chain.get());
+			_device->reconfigure_swap_chain(desc, _swap_chain.get());
 		}
-
-		_graphics_context->acquire();
-		_graphics_context->begin_frame();
 
 		recreate_textures();
 		recreate_passes();
 
-		_graphics_context->end_frame();
-		_graphics_context->execute();
-		_graphics_context->release();
+		_upload_command_lists[_frame_index]->end();
+		_command_queue->execute(_upload_command_lists[_frame_index].get());
+		_command_queue->signal(_fence.get(), _frame_counter);
+		_command_queue->wait_for_idle(_fence.get(), _frame_counter);
+		_frame_counter++;
+
+		_frame_index = _device->get_backbuffer_index(_swap_chain.get());
+
+		_upload_command_allocators[_frame_index]->reset();
+		_upload_command_lists[_frame_index]->begin(_upload_command_allocators[_frame_index].get());
 
 		_width = _window->get_width();
 		_height = _window->get_height();
@@ -189,36 +192,46 @@ void st_output::update(st_frame_params* params)
 	_ui_pass->render(command_list, params);
 
 	e_st_swap_chain_status status = _device->acquire_backbuffer(_swap_chain.get());
-	if (status != e_st_swap_chain_status::current)
+	if (status == e_st_swap_chain_status::current)
+	{
+		_out_of_date = false;
+
+		command_list->transition(
+			_device->get_backbuffer(_swap_chain.get(), params->_frame_index),
+			st_texture_state_render_target);
+
+		_display_pass->render(command_list, params);
+
+		// Swap the frame buffers and release the context.
+		command_list->transition(
+			_device->get_backbuffer(_swap_chain.get(), params->_frame_index),
+			st_texture_state_present);
+	}
+	else
 	{
 		_out_of_date = true;
-		return;
 	}
-
-	command_list->transition(
-		_device->get_backbuffer(_swap_chain.get(), params->_frame_index),
-		st_texture_state_render_target);
-
-	_display_pass->render(command_list, params);
-
-	// Swap the frame buffers and release the context.
-	command_list->transition(
-		_device->get_backbuffer(_swap_chain.get(), params->_frame_index),
-		st_texture_state_present);
 
 	command_list->end();
 
 	_upload_command_lists[_frame_index]->end();
 	_command_queue->execute(_upload_command_lists[_frame_index].get());
 	_command_queue->execute(command_list);
-	_command_queue->present(_swap_chain.get());
 
-	_frame_index = _device->get_backbuffer_index(_swap_chain.get());
+	if (!_out_of_date)
+		_command_queue->present(_swap_chain.get());
+
+	_command_queue->signal(_fence.get(), _frame_counter);
+
+	if (!_out_of_date)
+		_frame_index = _device->get_backbuffer_index(_swap_chain.get());
 
 	// TODO: Better parallelization.
 	// What actually needs to happen here is signal is called with a _frame_end fence,
 	// and then we provide that fence whenever we call wait_for_idle elsewhere.
-	_command_queue->wait_for_idle(_fence.get());
+	_command_queue->wait_for_idle(_fence.get(), _frame_counter);
+
+	_frame_counter++;
 
 	// Already begin recording the next upload commands.
 	_upload_command_allocators[_frame_index]->reset();

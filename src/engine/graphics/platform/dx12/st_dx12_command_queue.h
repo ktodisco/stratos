@@ -17,9 +17,9 @@ public:
 	st_dx12_command_queue(ID3D12CommandQueue* command_queue);
 	~st_dx12_command_queue();
 
-	void signal(struct st_fence* fence) override;
-	void wait(struct st_fence* fence) override;
-	void wait_for_idle(struct st_fence* fence) override;
+	void signal(struct st_fence* fence, uint64_t value) override;
+	void wait(struct st_fence* fence, uint64_t value) override;
+	void wait_for_idle(struct st_fence* fence, uint64_t value) override;
 	void execute(class st_command_list* command_list) override;
 	void present(struct st_swap_chain* swap_chain) override;
 

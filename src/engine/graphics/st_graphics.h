@@ -659,9 +659,9 @@ class st_command_queue
 public:
 	virtual ~st_command_queue() {}
 
-	virtual void signal(struct st_fence* fence) = 0;
-	virtual void wait(struct st_fence* fence) = 0;
-	virtual void wait_for_idle(struct st_fence* fence) = 0;
+	virtual void signal(struct st_fence* fence, uint64_t value) = 0;
+	virtual void wait(struct st_fence* fence, uint64_t value) = 0;
+	virtual void wait_for_idle(struct st_fence* fence, uint64_t value) = 0;
 	virtual void execute(class st_command_list* command_list) = 0;
 	virtual void present(struct st_swap_chain* swap_chain) = 0;
 };

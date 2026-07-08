@@ -251,8 +251,7 @@ std::unique_ptr<struct st_fence> st_dx12_device::create_fence(const st_fence_des
 {
 	std::unique_ptr<st_dx12_fence> fence = std::make_unique<st_dx12_fence>();
 
-	HRESULT result = _d3d_device->CreateFence(fence->_fence_value, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&fence->_fence);
-	fence->_fence_value++;
+	HRESULT result = _d3d_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, __uuidof(ID3D12Fence), (void**)&fence->_fence);
 
 	if (result != S_OK)
 	{

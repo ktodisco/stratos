@@ -52,7 +52,6 @@ struct st_dx12_fence : public st_fence
 	~st_dx12_fence() { _fence = nullptr; }
 
 	Microsoft::WRL::ComPtr<ID3D12Fence> _fence;
-	uint64_t _fence_value = 0;
 };
 
 struct st_dx12_framebuffer : public st_framebuffer
