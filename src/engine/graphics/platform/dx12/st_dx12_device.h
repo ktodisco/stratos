@@ -26,6 +26,7 @@ public:
 
 	// Synchronization.
 	std::unique_ptr<struct st_fence> create_fence(const st_fence_desc& desc) override;
+	void wait(struct st_fence* fence, uint64_t value) override;
 
 	// Swap chain.
 	std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) override;

@@ -590,6 +590,7 @@ public:
 
 	// Synchronization.
 	virtual std::unique_ptr<struct st_fence> create_fence(const st_fence_desc& desc) = 0;
+	virtual void wait(struct st_fence* fence, uint64_t value) = 0;
 
 	// Swap chain.
 	virtual std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) = 0;
@@ -661,7 +662,6 @@ public:
 
 	virtual void signal(struct st_fence* fence, uint64_t value) = 0;
 	virtual void wait(struct st_fence* fence, uint64_t value) = 0;
-	virtual void wait_for_idle(struct st_fence* fence, uint64_t value) = 0;
 	virtual void execute(class st_command_list* command_list) = 0;
 	virtual void present(struct st_swap_chain* swap_chain) = 0;
 };

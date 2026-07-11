@@ -131,7 +131,7 @@ bool st_output::update_swap_chain()
 		_window->get_width() != _width ||
 		_window->get_height() != _height)
 	{
-		_command_queue->wait_for_idle(_fence.get(), _frame_counter - 1);
+		_device->wait(_fence.get(), _frame_counter - 1);
 
 		{
 			_backbuffer_format = choose_backbuffer_format();
@@ -155,7 +155,7 @@ bool st_output::update_swap_chain()
 		_upload_command_lists[_frame_index]->end();
 		_command_queue->execute(_upload_command_lists[_frame_index].get());
 		_command_queue->signal(_fence.get(), _frame_counter);
-		_command_queue->wait_for_idle(_fence.get(), _frame_counter);
+		_device->wait(_fence.get(), _frame_counter);
 		_frame_counter++;
 
 		_frame_index = _device->get_backbuffer_index(_swap_chain.get());
@@ -233,7 +233,7 @@ void st_output::update(st_frame_params* params)
 	// TODO: Better parallelization.
 	// What actually needs to happen here is signal is called with a _frame_end fence,
 	// and then we provide that fence whenever we call wait_for_idle elsewhere.
-	_command_queue->wait_for_idle(_fence.get(), _frame_counter);
+	_device->wait(_fence.get(), _frame_counter);
 
 	_frame_counter++;
 

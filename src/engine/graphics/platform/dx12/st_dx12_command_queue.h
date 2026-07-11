@@ -19,7 +19,6 @@ public:
 
 	void signal(struct st_fence* fence, uint64_t value) override;
 	void wait(struct st_fence* fence, uint64_t value) override;
-	void wait_for_idle(struct st_fence* fence, uint64_t value) override;
 	void execute(class st_command_list* command_list) override;
 	void present(struct st_swap_chain* swap_chain) override;
 
@@ -28,7 +27,6 @@ public:
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> _d3d_command_queue;
-	HANDLE _fence_event;
 };
 
 #endif

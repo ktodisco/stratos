@@ -261,6 +261,18 @@ std::unique_ptr<struct st_fence> st_dx12_device::create_fence(const st_fence_des
 	return std::move(fence);
 }
 
+void st_dx12_device::wait(st_fence* fence_, uint64_t value)
+{
+	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
+
+	if (fence->_fence->GetCompletedValue() < value)
+	{
+		HANDLE fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);;
+		fence->_fence->SetEventOnCompletion(value, fence_event);
+		WaitForSingleObject(fence_event, INFINITE);
+	}
+}
+
 std::unique_ptr<st_swap_chain> st_dx12_device::create_swap_chain(const st_swap_chain_desc& desc)
 {
 	std::unique_ptr<st_dx12_swap_chain> sc = std::make_unique<st_dx12_swap_chain>();

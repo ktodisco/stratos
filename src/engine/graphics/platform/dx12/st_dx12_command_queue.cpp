@@ -15,14 +15,6 @@
 st_dx12_command_queue::st_dx12_command_queue(ID3D12CommandQueue* command_queue)
 	: _d3d_command_queue(command_queue)
 {
-	_fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-	if (_fence_event == nullptr)
-	{
-		if (GetLastError() != S_OK)
-		{
-			assert(false);
-		}
-	}
 }
 
 st_dx12_command_queue::~st_dx12_command_queue()
@@ -41,17 +33,6 @@ void st_dx12_command_queue::wait(st_fence* fence_, uint64_t value)
 {
 	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
 	_d3d_command_queue->Wait(fence->_fence.Get(), value);
-}
-
-void st_dx12_command_queue::wait_for_idle(st_fence* fence_, uint64_t value)
-{
-	st_dx12_fence* fence = static_cast<st_dx12_fence*>(fence_);
-
-	if (fence->_fence->GetCompletedValue() < value)
-	{
-		fence->_fence->SetEventOnCompletion(value, _fence_event);
-		WaitForSingleObject(_fence_event, INFINITE);
-	}
 }
 
 void st_dx12_command_queue::execute(st_command_list* command_list_)
