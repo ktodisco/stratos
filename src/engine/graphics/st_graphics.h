@@ -16,7 +16,7 @@
 
 //#define ST_GRAPHICS_API_OPENGL
 #define ST_GRAPHICS_API_DX12
-//#define ST_GRAPHICS_API_VULKAN
+#define ST_GRAPHICS_API_VULKAN
 
 // TODO: Find an ideal way to represent these.
 #define k_max_frames 2

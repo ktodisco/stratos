@@ -515,6 +515,11 @@ st_vk_graphics_context::~st_vk_graphics_context()
 	FreeLibrary((HMODULE)_vk_library);
 }
 
+std::unique_ptr<st_device> st_vk_graphics_context::create_device(const st_device_desc& desc)
+{
+	return nullptr;
+}
+
 void st_vk_graphics_context::set_pipeline(const st_pipeline* pipeline_)
 {
 	const st_vk_pipeline* pipeline = static_cast<const st_vk_pipeline*>(pipeline_);

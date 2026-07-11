@@ -28,6 +28,9 @@ public:
 	st_vk_graphics_context(const class st_window* window);
 	~st_vk_graphics_context();
 
+	// New API.
+	std::unique_ptr<st_device> create_device(const st_device_desc& desc) override;
+
 	void acquire() override {}
 	void release() override {}
 
