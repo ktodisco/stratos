@@ -110,14 +110,21 @@ st_output::~st_output()
 	destroy_textures();
 	destroy_global_resources();
 
+	_fence = nullptr;
 	_swap_chain = nullptr;
 
 	for (int f = 0; f < k_max_frames; ++f)
 	{
 		_command_lists[f] = nullptr;
 		_command_allocators[f] = nullptr;
+
+		_upload_command_lists[f] = nullptr;
+		_upload_command_allocators[f] = nullptr;
 	}
 	_command_queue = nullptr;
+
+	_shader_manager = nullptr;
+
 	_device = nullptr;
 
 	_this = nullptr;

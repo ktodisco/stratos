@@ -518,6 +518,7 @@ struct st_texture_desc
 
 	st_clear_value _clear = st_vec4f::zero_vector();
 
+	// TODO: Is this used anymore?
 	void* _data = nullptr;
 };
 

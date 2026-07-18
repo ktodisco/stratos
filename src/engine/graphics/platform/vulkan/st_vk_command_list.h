@@ -63,6 +63,7 @@ public:
 private:
 
 	vk::CommandBuffer _command_buffer;
+	vk::CommandPool* _command_pool;
 	st_vk_device* _device;
 
 	vk::DescriptorPool _descriptor_pool;

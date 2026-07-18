@@ -79,7 +79,8 @@ private:
 	std::unique_ptr<class st_command_list> _upload_command_lists[k_max_frames];
 	std::unique_ptr<struct st_fence> _fence;
 	uint32_t _frame_index = 0;
-	uint64_t _frame_counter = 0;
+	// Start on frame 1, to avoid signaling a fence with an equal value to initialization.
+	uint64_t _frame_counter = 1;
 
 	// Atmospherics.
 	std::unique_ptr<class st_render_texture> _transmittance;

@@ -74,7 +74,7 @@ st_vk_device::st_vk_device(const st_device_desc& desc, vk::Instance* instance)
 	VK_VALIDATE(_gpu.enumerateDeviceExtensionProperties(nullptr, &extension_count, extensions.data()));
 	
 	std::vector<const char*> extension_names;
-	extension_names.resize(extension_count);
+	extension_names.reserve(extension_count);
 	for (auto& extension : extensions)
 	{
 #if _DEBUG
@@ -154,7 +154,11 @@ st_vk_device::st_vk_device(const st_device_desc& desc, vk::Instance* instance)
 		.setQueueCount(1)
 		.setPQueuePriorities(priorities);
 
+	vk::PhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore = vk::PhysicalDeviceTimelineSemaphoreFeatures()
+		.setTimelineSemaphore(vk::True);
+
 	vk::DeviceCreateInfo device_info = vk::DeviceCreateInfo()
+		.setPNext(&timeline_semaphore)
 		.setQueueCreateInfoCount(1)
 		.setPQueueCreateInfos(&queues)
 		.setEnabledLayerCount(0)
@@ -328,6 +332,17 @@ st_vk_device::st_vk_device(const st_device_desc& desc, vk::Instance* instance)
 st_vk_device::~st_vk_device()
 {
 	VK_VALIDATE(_device.waitIdle());
+
+	_device.destroyDescriptorPool(_descriptor_pool, nullptr);
+	_device.destroyPipelineLayout(_compute_signature, nullptr);
+	_device.destroyPipelineLayout(_graphics_signature, nullptr);
+	for (uint32_t i = 0; i < _countof(_compute_layouts); ++i)
+		_device.destroyDescriptorSetLayout(_compute_layouts[i], nullptr);
+	for (uint32_t i = 0; i < _countof(_graphics_layouts); ++i)
+		_device.destroyDescriptorSetLayout(_graphics_layouts[i], nullptr);
+
+	_device.destroyFence(_acquire_fence, nullptr);
+
 	_device.destroy(nullptr);
 }
 
@@ -351,11 +366,31 @@ std::unique_ptr<class st_command_list> st_vk_device::create_command_list(const s
 
 std::unique_ptr<struct st_fence> st_vk_device::create_fence(const st_fence_desc& desc)
 {
-	return nullptr;
+	std::unique_ptr<st_vk_fence> fence = std::make_unique<st_vk_fence>();
+	fence->_device = &_device;
+
+	vk::SemaphoreTypeCreateInfo semaphore_type = vk::SemaphoreTypeCreateInfo()
+		.setInitialValue(0)
+		.setSemaphoreType(vk::SemaphoreType::eTimeline);
+
+	vk::SemaphoreCreateInfo create_info = vk::SemaphoreCreateInfo()
+		.setPNext(&semaphore_type);
+
+	VK_VALIDATE(_device.createSemaphore(&create_info, nullptr, &fence->_semaphore));
+
+	return std::move(fence);
 }
 
 void st_vk_device::wait(st_fence* fence_, uint64_t value)
 {
+	st_vk_fence* fence = static_cast<st_vk_fence*>(fence_);
+
+	vk::SemaphoreWaitInfo wait_info = vk::SemaphoreWaitInfo()
+		.setPSemaphores(&fence->_semaphore)
+		.setPValues(&value)
+		.setSemaphoreCount(1);
+
+	VK_VALIDATE(_device.waitSemaphores(&wait_info, UINT64_MAX));
 }
 
 void st_vk_device::create_swap_chain_internal(const st_swap_chain_desc& desc, st_vk_swap_chain* swap_chain)
@@ -540,6 +575,12 @@ std::unique_ptr<st_texture> st_vk_device::create_texture(const st_texture_desc& 
 	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &texture->_memory));
 	VK_VALIDATE(_device.bindImageMemory(texture->_handle, texture->_memory, 0));
 
+	// TODO: Because textures must be in the undefined state when created (Why? Other APIs do
+	// not require this.) a different means of getting the texture into the intended initial
+	// state is required. Right now this manifests as validation errors for the main render
+	// targets on the first frame.
+	texture->_state = desc._initial_state;
+
 	return std::move(texture);
 }
 
@@ -651,8 +692,8 @@ std::unique_ptr<st_buffer> st_vk_device::create_buffer(const st_buffer_desc& des
 	vk::MemoryRequirements memory_reqs;
 	_device.getBufferMemoryRequirements(buffer->_buffer, &memory_reqs);
 
-	uint32_t memory_index = _device_memory_index;
-	if (desc._usage & e_st_buffer_usage::transfer_dest) memory_index = _mapped_memory_index;
+	// Always using host visible memory for buffers, because all use cases so far map and copy from the host.
+	uint32_t memory_index = _mapped_memory_index;
 
 	vk::MemoryAllocateInfo allocate_info = vk::MemoryAllocateInfo()
 		.setAllocationSize(memory_reqs.size)
@@ -1114,12 +1155,18 @@ std::unique_ptr<st_pipeline> st_vk_device::create_graphics_pipeline(const st_gra
 
 	const st_vk_vertex_format* vertex_format = static_cast<const st_vk_vertex_format*>(desc._vertex_format);
 
+	vk::PipelineViewportStateCreateInfo viewport_state = vk::PipelineViewportStateCreateInfo()
+		.setViewportCount(0)
+		.setPViewports(nullptr)
+		.setScissorCount(0)
+		.setPScissors(nullptr);
+
 	vk::GraphicsPipelineCreateInfo create_info = vk::GraphicsPipelineCreateInfo()
 		.setStageCount(stages.size())
 		.setPStages(stages.data())
 		.setPVertexInputState(&vertex_format->_input_layout)
 		.setPInputAssemblyState(&input_assembly)
-		.setPViewportState(nullptr)
+		.setPViewportState(&viewport_state)
 		.setRenderPass(render_pass->_render_pass)
 		.setPRasterizationState(&raster)
 		.setPMultisampleState(&multisample)

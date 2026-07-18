@@ -18,10 +18,11 @@ st_vk_command_list::st_vk_command_list(const st_command_list_desc& desc, st_vk_d
 	: _device(device)
 {
 	st_vk_command_allocator* command_allocator = static_cast<st_vk_command_allocator*>(desc.allocator);
+	_command_pool = command_allocator->get();
 
 	vk::CommandBufferAllocateInfo command_buffer_info = vk::CommandBufferAllocateInfo()
 		.setCommandBufferCount(1)
-		.setCommandPool(*command_allocator->get())
+		.setCommandPool(*_command_pool)
 		.setLevel(vk::CommandBufferLevel::ePrimary);
 
 	VK_VALIDATE(_device->get()->allocateCommandBuffers(&command_buffer_info, &_command_buffer));
@@ -82,7 +83,19 @@ st_vk_command_list::st_vk_command_list(const st_command_list_desc& desc, st_vk_d
 
 st_vk_command_list::~st_vk_command_list()
 {
-	_command_buffer = nullptr;
+	_dynamic_index_buffer = nullptr;
+	_dynamic_vertex_buffer = nullptr;
+	_upload_buffer = nullptr;
+
+	for (uint32_t i = 0; i < _countof(_descriptor_set_pool); ++i)
+	{
+		_descriptor_set_pool[i].clear();
+	}
+
+	_device->get()->destroyDescriptorPool(_descriptor_pool, nullptr);
+
+	_device->get()->freeCommandBuffers(*_command_pool, 1, &_command_buffer);
+	_command_pool = nullptr;
 }
 
 void st_vk_command_list::begin(st_command_allocator* command_allocator_)
@@ -91,6 +104,8 @@ void st_vk_command_list::begin(st_command_allocator* command_allocator_)
 		.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 	VK_VALIDATE(_command_buffer.begin(&begin_info));
+
+	_device->map(_upload_buffer.get(), 0, { 0, 0 }, &_upload_buffer_head);
 
 	_dynamic_vertex_bytes_written = 0;
 	_dynamic_index_bytes_written = 0;
@@ -109,6 +124,10 @@ void st_vk_command_list::begin(st_command_allocator* command_allocator_)
 
 void st_vk_command_list::end()
 {
+	_upload_buffer_offset = 0;
+	_upload_buffer_head = nullptr;
+	_device->unmap(_upload_buffer.get(), 0, { 0, 0 });
+
 	VK_VALIDATE(_command_buffer.end());
 
 	_frame_index = (_frame_index + 1) % k_max_frames;
@@ -218,16 +237,21 @@ void st_vk_command_list::dispatch(const st_dispatch_args& args)
 
 void st_vk_command_list::begin_marker(const std::string& marker)
 {
-	// TODO: Check marker availability?
-	vk::DebugMarkerMarkerInfoEXT marker_info = vk::DebugMarkerMarkerInfoEXT()
-		.setPMarkerName(marker.c_str());
+	if (_device->has_markers())
+	{
+		vk::DebugMarkerMarkerInfoEXT marker_info = vk::DebugMarkerMarkerInfoEXT()
+			.setPMarkerName(marker.c_str());
 
-	_command_buffer.debugMarkerBeginEXT(&marker_info);
+		_command_buffer.debugMarkerBeginEXT(&marker_info);
+	}
 }
 
 void st_vk_command_list::end_marker()
 {
-	_command_buffer.debugMarkerEndEXT();
+	if (_device->has_markers())
+	{
+		_command_buffer.debugMarkerEndEXT();
+	}
 }
 
 void st_vk_command_list::upload(st_texture* texture_, void* data)
@@ -265,7 +289,7 @@ void st_vk_command_list::upload(st_texture* texture_, void* data)
 
 		memcpy(
 			reinterpret_cast<uint8_t*>(_upload_buffer_head) + _upload_buffer_offset,
-			reinterpret_cast<uint8_t*>(desc._data) + offset,
+			reinterpret_cast<uint8_t*>(data) + offset,
 			num_bytes);
 
 		vk::ImageSubresourceLayers subresource = vk::ImageSubresourceLayers()
@@ -290,6 +314,42 @@ void st_vk_command_list::upload(st_texture* texture_, void* data)
 
 	st_vk_buffer* upload_buffer = static_cast<st_vk_buffer*>(_upload_buffer.get());
 
+	vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+
+	if (desc._format == st_format_d16_unorm ||
+		desc._format == st_format_d32_float)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth;
+	}
+	else if (desc._format == st_format_d24_unorm_s8_uint)
+	{
+		aspect = vk::ImageAspectFlagBits::eDepth |
+			vk::ImageAspectFlagBits::eStencil;
+	}
+
+	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
+		.setAspectMask(aspect)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1)
+		.setBaseMipLevel(0)
+		.setLevelCount(desc._levels);
+	vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
+		.setImage(texture->_handle)
+		.setOldLayout(vk::ImageLayout::eUndefined)
+		.setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+		.setSubresourceRange(range);
+
+	_command_buffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		0,
+		nullptr,
+		0,
+		nullptr,
+		1,
+		&barrier);
+
 	_command_buffer.copyBufferToImage(
 		upload_buffer->_buffer,
 		texture->_handle,
@@ -297,18 +357,9 @@ void st_vk_command_list::upload(st_texture* texture_, void* data)
 		regions.size(),
 		regions.data());
 
-	vk::ImageSubresourceRange range = vk::ImageSubresourceRange()
-		.setAspectMask(vk::ImageAspectFlagBits::eColor)
-		.setBaseArrayLayer(0)
-		.setLayerCount(1)
-		.setBaseMipLevel(0)
-		.setLevelCount(desc._levels);
+	barrier.setOldLayout(vk::ImageLayout::eTransferDstOptimal);
+	barrier.setNewLayout(convert_resource_state(texture->_state));
 
-	vk::ImageMemoryBarrier barrier = vk::ImageMemoryBarrier()
-		.setImage(texture->_handle)
-		.setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-		.setNewLayout(convert_resource_state(desc._initial_state))
-		.setSubresourceRange(range);
 	_command_buffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,
 		vk::PipelineStageFlagBits::eTransfer,
@@ -377,11 +428,12 @@ void st_vk_command_list::update_buffer(st_buffer* buffer_, void* data, const uin
 {
 	st_vk_buffer* buffer = static_cast<st_vk_buffer*>(buffer_);
 
-	_command_buffer.updateBuffer(
-		buffer->_buffer,
-		offset,
-		align_value(count * buffer->_element_size, 4),
-		data);
+	uint8_t* out_data;
+	_device->map(buffer, 0, { 0, 0 }, (void**)&out_data);
+
+	memcpy(out_data + offset, data, count * buffer->_element_size);
+
+	_device->unmap(buffer, 0, { 0, 0 });
 }
 
 void st_vk_command_list::bind_resources(st_resource_table* table_)

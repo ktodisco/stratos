@@ -93,6 +93,7 @@ public:
 	vk::DescriptorSetLayout* get_compute_layout(e_st_descriptor_slot slot) { return &_compute_layouts[slot]; }
 	vk::PipelineLayout* get_graphics_signature() { return &_graphics_signature; };
 	vk::PipelineLayout* get_compute_signature() { return &_compute_signature; };
+	bool has_markers() { return _has_markers; }
 
 private:
 
