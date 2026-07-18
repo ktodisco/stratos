@@ -64,6 +64,13 @@ struct st_vk_buffer_view : public st_buffer_view, public st_vk_resource
 	uint32_t _element_count;
 };
 
+struct st_vk_fence : public st_fence, public st_vk_resource
+{
+	~st_vk_fence() { _device->destroySemaphore(_semaphore, nullptr); }
+
+	vk::Semaphore _semaphore;
+};
+
 struct st_vk_framebuffer : public st_framebuffer, public st_vk_resource
 {
 	~st_vk_framebuffer()

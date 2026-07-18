@@ -14,7 +14,7 @@ class st_vk_command_queue : public st_command_queue
 {
 public:
 
-	st_vk_command_queue(vk::Queue* queue);
+	st_vk_command_queue(const st_command_queue_desc& desc, vk::Device* device, uint32_t queue_family_index);
 	~st_vk_command_queue();
 
 	void signal(struct st_fence* fence, uint64_t value) override;
@@ -24,7 +24,10 @@ public:
 
 private:
 
-	vk::Queue* _queue;
+	vk::Device* _device;
+	vk::Queue _queue;
+
+	uint32_t _frame_index = 0;
 };
 
 #endif

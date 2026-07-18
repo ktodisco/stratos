@@ -9,6 +9,7 @@
 #if defined(ST_GRAPHICS_API_VULKAN)
 
 #include <graphics/platform/vulkan/st_vk_conversion.h>
+#include <graphics/platform/vulkan/st_vk_device.h>
 
 #include <graphics/geometry/st_vertex_attribute.h>
 
@@ -517,7 +518,8 @@ st_vk_graphics_context::~st_vk_graphics_context()
 
 std::unique_ptr<st_device> st_vk_graphics_context::create_device(const st_device_desc& desc)
 {
-	return nullptr;
+	std::unique_ptr<st_vk_device> device = std::make_unique<st_vk_device>(desc, &_instance);
+	return std::move(device);
 }
 
 void st_vk_graphics_context::set_pipeline(const st_pipeline* pipeline_)

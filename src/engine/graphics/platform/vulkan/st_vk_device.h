@@ -14,7 +14,7 @@ class st_vk_device : public st_device
 {
 public:
 
-	st_vk_device(vk::Device* device);
+	st_vk_device(const st_device_desc& desc, vk::Instance* instance);
 	~st_vk_device();
 
 	// Commands.
@@ -88,9 +88,38 @@ public:
 	// Informational.
 	void get_desc(const st_texture* texture, st_texture_desc* out_desc) override;
 
+	vk::Device* get() { return &_device; }
+	vk::DescriptorSetLayout* get_graphics_layout(e_st_descriptor_slot slot) { return &_graphics_layouts[slot]; }
+	vk::DescriptorSetLayout* get_compute_layout(e_st_descriptor_slot slot) { return &_compute_layouts[slot]; }
+	vk::PipelineLayout* get_graphics_signature() { return &_graphics_signature; };
+	vk::PipelineLayout* get_compute_signature() { return &_compute_signature; };
+
 private:
 
-	vk::Device* _device;
+	void create_swap_chain_internal(const st_swap_chain_desc& desc, st_vk_swap_chain* swap_chain);
+
+	vk::PhysicalDevice _gpu;
+	vk::PhysicalDeviceProperties _caps;
+	vk::Device _device;
+
+	vk::Fence _acquire_fence;
+
+	vk::Instance* _instance;
+
+	uint32_t _device_memory_index = UINT_MAX;
+	uint32_t _mapped_memory_index = UINT_MAX;
+	uint32_t _queue_family_index = UINT_MAX;
+
+	// TODO: These can be deleted after making a resource signature api.
+	vk::DescriptorSetLayout _graphics_layouts[st_descriptor_slot_count];
+	vk::DescriptorSetLayout _compute_layouts[st_descriptor_slot_count];
+	vk::PipelineLayout _graphics_signature;
+	vk::PipelineLayout _compute_signature;
+	vk::DescriptorPool _descriptor_pool;
+
+	uint32_t _frame_index = 0;
+
+	bool _has_markers = false;
 };
 
 #endif
