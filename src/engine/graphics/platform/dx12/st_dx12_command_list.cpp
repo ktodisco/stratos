@@ -88,6 +88,10 @@ void st_dx12_command_list::begin(st_command_allocator* command_allocator_)
 	_d3d_command_list->SetDescriptorHeaps(_countof(heaps), heaps);
 
 	_device->map(_upload_buffer.get(), 0, { 0, 0 }, &_upload_buffer_head);
+
+	_dynamic_vertex_bytes_written = 0;
+	_dynamic_index_bytes_written = 0;
+	_upload_buffer_offset = 0;
 }
 
 void st_dx12_command_list::end()
