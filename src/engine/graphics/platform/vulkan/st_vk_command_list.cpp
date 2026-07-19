@@ -358,7 +358,7 @@ void st_vk_command_list::upload(st_texture* texture_, void* data)
 		regions.data());
 
 	barrier.setOldLayout(vk::ImageLayout::eTransferDstOptimal);
-	barrier.setNewLayout(convert_resource_state(texture->_state));
+	barrier.setNewLayout(convert_resource_state(texture->_initial_state));
 
 	_command_buffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eTransfer,

@@ -213,7 +213,6 @@ void st_output::update(st_frame_params* params)
 
 		_display_pass->render(command_list, params);
 
-		// Swap the frame buffers and release the context.
 		command_list->transition(
 			_device->get_backbuffer(_swap_chain.get(), params->_frame_index),
 			st_texture_state_present);
@@ -230,7 +229,7 @@ void st_output::update(st_frame_params* params)
 	_command_queue->execute(command_list);
 
 	if (!_out_of_date)
-		_command_queue->present(_swap_chain.get());
+		_command_queue->present(_swap_chain.get(), _frame_index);
 
 	_command_queue->signal(_fence.get(), _frame_counter);
 

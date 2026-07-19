@@ -43,16 +43,11 @@ void st_dx12_command_queue::execute(st_command_list* command_list_)
 	_d3d_command_queue->ExecuteCommandLists(_countof(command_lists), command_lists);
 }
 
-void st_dx12_command_queue::present(st_swap_chain* swap_chain_)
+void st_dx12_command_queue::present(st_swap_chain* swap_chain_, uint32_t index)
 {
 	st_dx12_swap_chain* swap_chain = static_cast<st_dx12_swap_chain*>(swap_chain_);
 
 	swap_chain->_swap_chain_3->Present(1, 0);
-
-	// TODO: What to do about this?
-	/*
-	_frame_index = swap_chain->_swap_chain_3->GetCurrentBackBufferIndex();
-	*/
 }
 
 #endif

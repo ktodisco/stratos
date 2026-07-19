@@ -20,7 +20,7 @@ public:
 	void signal(struct st_fence* fence, uint64_t value) override;
 	void wait(struct st_fence* fence, uint64_t value) override;
 	void execute(class st_command_list* command_list) override;
-	void present(struct st_swap_chain* swap_chain) override;
+	void present(struct st_swap_chain* swap_chain, uint32_t index) override;
 
 	ID3D12CommandQueue* get() { return _d3d_command_queue.Get(); }
 

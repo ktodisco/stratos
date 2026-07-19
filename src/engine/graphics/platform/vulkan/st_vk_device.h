@@ -118,7 +118,8 @@ private:
 	vk::PipelineLayout _compute_signature;
 	vk::DescriptorPool _descriptor_pool;
 
-	uint32_t _frame_index = 0;
+	uint32_t _backbuffer_index = 0;
+	e_st_swap_chain_status _backbuffer_status = e_st_swap_chain_status::current;
 
 	bool _has_markers = false;
 };

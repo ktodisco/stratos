@@ -664,7 +664,7 @@ public:
 	virtual void signal(struct st_fence* fence, uint64_t value) = 0;
 	virtual void wait(struct st_fence* fence, uint64_t value) = 0;
 	virtual void execute(class st_command_list* command_list) = 0;
-	virtual void present(struct st_swap_chain* swap_chain) = 0;
+	virtual void present(struct st_swap_chain* swap_chain, uint32_t index) = 0;
 };
 
 class st_command_allocator

@@ -9,13 +9,14 @@
 #if defined(ST_GRAPHICS_API_VULKAN)
 
 #include <graphics/platform/vulkan/st_vk_command_list.h>
+#include <graphics/platform/vulkan/st_vk_device.h>
 
 #include <cassert>
 
-st_vk_command_queue::st_vk_command_queue(const st_command_queue_desc& desc, vk::Device* device, uint32_t queue_family_index)
+st_vk_command_queue::st_vk_command_queue(const st_command_queue_desc& desc, st_vk_device* device, uint32_t queue_family_index)
 	: _device(device)
 {
-	_device->getQueue(queue_family_index, 0, &_queue);
+	_device->get()->getQueue(queue_family_index, 0, &_queue);
 }
 
 st_vk_command_queue::~st_vk_command_queue()
@@ -68,18 +69,16 @@ void st_vk_command_queue::execute(st_command_list* command_list_)
 	VK_VALIDATE(_queue.submit(1, &submit_info, VK_NULL_HANDLE));
 }
 
-void st_vk_command_queue::present(st_swap_chain* swap_chain_)
+void st_vk_command_queue::present(st_swap_chain* swap_chain_, uint32_t index)
 {
 	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
 
 	vk::PresentInfoKHR present_info = vk::PresentInfoKHR()
 		.setSwapchainCount(1)
 		.setPSwapchains(&swap_chain->_swap_chain)
-		.setPImageIndices(&_frame_index);
+		.setPImageIndices(&index);
 
 	VK_VALIDATE(_queue.presentKHR(&present_info));
-
-	_frame_index = (_frame_index + 1) % k_max_frames;
 }
 
 #endif

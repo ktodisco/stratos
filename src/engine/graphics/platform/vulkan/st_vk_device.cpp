@@ -348,7 +348,7 @@ st_vk_device::~st_vk_device()
 
 std::unique_ptr<class st_command_queue> st_vk_device::create_command_queue(const st_command_queue_desc& desc)
 {
-	std::unique_ptr<st_vk_command_queue> queue = std::make_unique<st_vk_command_queue>(desc, &_device, _queue_family_index);
+	std::unique_ptr<st_vk_command_queue> queue = std::make_unique<st_vk_command_queue>(desc, this, _queue_family_index);
 	return std::move(queue);
 }
 
@@ -502,29 +502,29 @@ st_texture_view* st_vk_device::get_backbuffer_view(st_swap_chain* swap_chain_, u
 
 uint32_t st_vk_device::get_backbuffer_index(st_swap_chain* swap_chain_)
 {
-	return _frame_index;
-}
-
-e_st_swap_chain_status st_vk_device::acquire_backbuffer(st_swap_chain* swap_chain_)
-{
 	st_vk_swap_chain* swap_chain = static_cast<st_vk_swap_chain*>(swap_chain_);
 
-	e_st_swap_chain_status status = e_st_swap_chain_status::current;
+	_backbuffer_status = e_st_swap_chain_status::current;
 
 	vk::Result result = _device.acquireNextImageKHR(
 		swap_chain->_swap_chain,
 		std::numeric_limits<uint64_t>::max(),
 		vk::Semaphore(nullptr),
 		_acquire_fence,
-		&_frame_index);
+		&_backbuffer_index);
 	// TODO: Anything special with suboptimalKHR here?
 	if (result == vk::Result::eErrorOutOfDateKHR)
-		status = e_st_swap_chain_status::out_of_date;
+		_backbuffer_status = e_st_swap_chain_status::out_of_date;
 
+	return _backbuffer_index;
+}
+
+e_st_swap_chain_status st_vk_device::acquire_backbuffer(st_swap_chain* swap_chain_)
+{
 	VK_VALIDATE(_device.waitForFences(1, &_acquire_fence, true, std::numeric_limits<uint64_t>::max()));
 	VK_VALIDATE(_device.resetFences(1, &_acquire_fence));
 
-	return status;
+	return _backbuffer_status;
 }
 
 std::unique_ptr<st_texture> st_vk_device::create_texture(const st_texture_desc& desc)
@@ -536,6 +536,7 @@ std::unique_ptr<st_texture> st_vk_device::create_texture(const st_texture_desc& 
 	texture->_levels = desc._levels;
 	texture->_format = desc._format;
 	texture->_usage = desc._usage;
+	texture->_initial_state = desc._initial_state;
 
 	vk::ImageUsageFlags flags;
 
@@ -575,11 +576,9 @@ std::unique_ptr<st_texture> st_vk_device::create_texture(const st_texture_desc& 
 	VK_VALIDATE(_device.allocateMemory(&allocate_info, nullptr, &texture->_memory));
 	VK_VALIDATE(_device.bindImageMemory(texture->_handle, texture->_memory, 0));
 
-	// TODO: Because textures must be in the undefined state when created (Why? Other APIs do
-	// not require this.) a different means of getting the texture into the intended initial
-	// state is required. Right now this manifests as validation errors for the main render
-	// targets on the first frame.
-	texture->_state = desc._initial_state;
+	// The texture is created in the undefined state. The initial state is cached so it
+	// can be transitioned later.
+	texture->_state = st_texture_state_common;
 
 	return std::move(texture);
 }
