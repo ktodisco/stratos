@@ -14,7 +14,7 @@
 #include <memory>
 #include <string>
 
-//#define ST_GRAPHICS_API_OPENGL
+#define ST_GRAPHICS_API_OPENGL
 #define ST_GRAPHICS_API_DX12
 #define ST_GRAPHICS_API_VULKAN
 

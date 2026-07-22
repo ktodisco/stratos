@@ -10,73 +10,51 @@
 
 #if defined(ST_GRAPHICS_API_OPENGL)
 
-#include <graphics/st_graphics_context.h>
-
-#include <memory>
-
-class st_gl_graphics_context : public st_graphics_context
+class st_gl_device : public st_device
 {
 public:
 
-	st_gl_graphics_context(const class st_window* window);
-	~st_gl_graphics_context();
+	st_gl_device();
+	~st_gl_device();
 
-	// New API.
-	std::unique_ptr<st_device> create_device(const st_device_desc& desc) override;
+	// Commands.
+	std::unique_ptr<class st_command_queue> create_command_queue(const st_command_queue_desc& desc) override;
+	std::unique_ptr<class st_command_allocator> create_command_allocator(const st_command_allocator_desc& desc) override;
+	std::unique_ptr<class st_command_list> create_command_list(const st_command_list_desc& desc) override;
 
-	void acquire() override;
-	void release() override;
-
-	void set_pipeline(const st_pipeline* state) override;
-	void set_compute_pipeline(const st_pipeline* state) override;
-	void set_viewport(const st_viewport& viewport) override;
-	void set_scissor(int left, int top, int right, int bottom) override;
-	void set_blend_factor(float r, float g, float b, float a) override {}
-
-	void draw(const struct st_static_drawcall& drawcall) override;
-	void draw(const struct st_dynamic_drawcall& drawcall) override;
-
-	// Compute.
-	void dispatch(const st_dispatch_args& args) override;
+	// Synchronization.
+	std::unique_ptr<struct st_fence> create_fence(const st_fence_desc& desc) override;
+	void wait(struct st_fence* fence, uint64_t value) override;
 
 	// Swap chain.
 	std::unique_ptr<st_swap_chain> create_swap_chain(const st_swap_chain_desc& desc) override;
 	void reconfigure_swap_chain(const st_swap_chain_desc& desc, st_swap_chain* swap_chain) override;
 	st_texture* get_backbuffer(st_swap_chain* swap_chain, uint32_t index) override;
 	st_texture_view* get_backbuffer_view(st_swap_chain* swap_chain, uint32_t index) override;
-	e_st_swap_chain_status acquire_backbuffer(st_swap_chain* swap_chain) override { return e_st_swap_chain_status::current; }
-
-	void begin_loading() override {};
-	void end_loading() override {};
-	void begin_frame() override {};
-	void end_frame() override {};
-	void execute() override {};
-	void present(st_swap_chain* swap_chain) override;
-	void wait_for_idle() override;
-
-	void begin_marker(const std::string& marker) override;
-	void end_marker() override;
+	uint32_t get_backbuffer_index(st_swap_chain* swap_chain) override;
+	e_st_swap_chain_status acquire_backbuffer(st_swap_chain* swap_chain) override;
 
 	// Textures.
 	std::unique_ptr<st_texture> create_texture(const st_texture_desc& desc) override;
 	void set_texture_name(st_texture* texture, std::string name) override;
-	void transition(
-		st_texture* texture,
-		e_st_texture_state new_state) override {};
 	std::unique_ptr<st_texture_view> create_texture_view(const st_texture_view_desc& desc) override;
 
 	// Samplers.
 	std::unique_ptr<st_sampler> create_sampler(const st_sampler_desc& desc) override;
 
 	// Buffers.
-	std::unique_ptr<st_buffer> create_buffer(const st_buffer_desc& usage) override;
+	std::unique_ptr<st_buffer> create_buffer(const st_buffer_desc& desc) override;
 	std::unique_ptr<st_buffer_view> create_buffer_view(const st_buffer_view_desc& desc) override;
 	void map(st_buffer* buffer, uint32_t subresource, const st_range& range, void** outData) override;
 	void unmap(st_buffer* buffer, uint32_t subresource, const st_range& range) override;
-	void update_buffer(st_buffer* buffer, void* data, const uint32_t offset, const uint32_t count) override;
 	void set_buffer_name(st_buffer* buffer, std::string name) override;
 
 	// Resource tables.
+	// TODO: This would take a root signature object. In the vk backend it would pull the descriptor layouts
+	// from that root signature.
+	// I especially don't like this because there isn't any barrier to forgetting to use one or the other.
+	// The new API would look like a create and a generic set_resources which has overloads for texture
+	// and buffer views, and each takes the root signature and the slot the resources are going to.
 	std::unique_ptr<st_resource_table> create_resource_table() override;
 	std::unique_ptr<st_resource_table> create_resource_table_compute() override;
 	void set_constant_buffers(st_resource_table* table, uint32_t count, const st_buffer_view** cbs) override;
@@ -88,8 +66,6 @@ public:
 	void set_buffers(st_resource_table* table, uint32_t count, const st_buffer_view** buffers) override;
 	void set_uavs(st_resource_table* table, uint32_t count, const st_texture_view** textures) override;
 	void update_textures(st_resource_table* table, uint32_t count, const st_texture_view** views) override;
-	void bind_resources(st_resource_table* table) override;
-	void bind_compute_resources(st_resource_table* table) override;
 
 	// Shaders.
 	std::unique_ptr<st_shader> create_shader(const char* filename, e_st_shader_type_flags type) override;
@@ -105,40 +81,12 @@ public:
 
 	// Render passes.
 	std::unique_ptr<st_render_pass> create_render_pass(const st_render_pass_desc& desc) override;
-	void begin_render_pass(
-		st_render_pass* pass,
-		st_framebuffer* framebuffer,
-		const st_clear_value* clear_values,
-		const uint8_t clear_count) override;
-	void end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer) override;
 
 	// Framebuffers.
 	std::unique_ptr<st_framebuffer> create_framebuffer(const st_framebuffer_desc& desc) override;
 
 	// Informational.
-	e_st_graphics_api get_api() { return e_st_graphics_api::opengl; }
 	void get_desc(const st_texture* texture, st_texture_desc* out_desc) override;
-	void get_supported_formats(
-		const class st_window* window,
-		std::vector<e_st_format>& formats) override;
-
-private:
-	void set_depth_state(bool enable, GLenum func);
-	void set_stencil_state(const st_depth_stencil_desc& desc);
-	void set_cull_state(bool enable, GLenum mode);
-	void set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor);
-	void set_depth_mask(bool enable);
-
-	const class st_gl_shader* get_bound_shader() const { return _bound_shader; }
-
-private:
-
-	HDC _device_context;
-	HGLRC _gl_context;
-
-	// Active draw state.
-	const class st_gl_shader* _bound_shader = nullptr;
-	const struct st_gl_pipeline* _bound_pipeline = nullptr;
 };
 
 #endif

@@ -102,6 +102,11 @@ st_gl_graphics_context::~st_gl_graphics_context()
 	wglDeleteContext(_gl_context);
 }
 
+std::unique_ptr<st_device> st_gl_graphics_context::create_device(const st_device_desc& desc)
+{
+	return nullptr;
+}
+
 void st_gl_graphics_context::acquire()
 {
 	// Acquire for current thread.
