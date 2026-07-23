@@ -71,6 +71,7 @@ struct st_gl_buffer_view : public st_buffer_view
 
 struct st_gl_fence : public st_fence
 {
+	GLsync _sync;
 };
 
 struct st_gl_framebuffer : public st_framebuffer

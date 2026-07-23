@@ -17,12 +17,23 @@ st_gl_command_queue::~st_gl_command_queue()
 {
 }
 
-void st_gl_command_queue::signal(st_fence* fence, uint64_t value)
+void st_gl_command_queue::signal(st_fence* fence_, uint64_t value)
 {
+	st_gl_fence* fence = static_cast<st_gl_fence*>(fence_);
+
+	if (fence->_sync != nullptr)
+	{
+		glDeleteSync(fence->_sync);
+	}
+
+	fence->_sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }
 
-void st_gl_command_queue::wait(st_fence* fence, uint64_t value)
+void st_gl_command_queue::wait(st_fence* fence_, uint64_t value)
 {
+	st_gl_fence* fence = static_cast<st_gl_fence*>(fence_);
+
+	glWaitSync(fence->_sync, 0, GL_TIMEOUT_IGNORED);
 }
 
 void st_gl_command_queue::execute(st_command_list* command_list)

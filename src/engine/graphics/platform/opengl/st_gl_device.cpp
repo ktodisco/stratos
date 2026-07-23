@@ -51,8 +51,11 @@ std::unique_ptr<st_fence> st_gl_device::create_fence(const st_fence_desc& desc)
 	return std::move(fence);
 }
 
-void st_gl_device::wait(st_fence* fence, uint64_t value)
+void st_gl_device::wait(st_fence* fence_, uint64_t value)
 {
+	st_gl_fence* fence = static_cast<st_gl_fence*>(fence_);
+
+	glClientWaitSync(fence->_sync, GL_SYNC_FLUSH_COMMANDS_BIT, UINT64_MAX);
 }
 
 std::unique_ptr<st_swap_chain> st_gl_device::create_swap_chain(const st_swap_chain_desc& desc)
@@ -132,7 +135,7 @@ uint32_t st_gl_device::get_backbuffer_index(st_swap_chain* swap_chain)
 e_st_swap_chain_status st_gl_device::acquire_backbuffer(st_swap_chain* swap_chain)
 {
 	// TODO.
-	return e_st_swap_chain_status::out_of_date;
+	return e_st_swap_chain_status::current;
 }
 
 std::unique_ptr<st_texture> st_gl_device::create_texture(const st_texture_desc& desc)
