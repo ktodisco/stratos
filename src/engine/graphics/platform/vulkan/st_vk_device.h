@@ -95,6 +95,9 @@ public:
 	vk::PipelineLayout* get_compute_signature() { return &_compute_signature; };
 	bool has_markers() { return _has_markers; }
 
+	// API-specific.
+	vk::PhysicalDevice* get_physical_device() { return &_gpu; }
+
 private:
 
 	void create_swap_chain_internal(const st_swap_chain_desc& desc, st_vk_swap_chain* swap_chain);

@@ -266,7 +266,7 @@ e_st_format st_output::choose_backbuffer_format()
 	std::vector<e_st_format> formats;
 	formats.reserve(4);
 
-	_graphics_context->get_supported_formats(_window, formats);
+	_graphics_context->get_supported_formats(_window, _device.get(), formats);
 
 	// Order of preference for backbuffer formats. HDR first, SDR second.
 	e_st_format format_order[] = {
