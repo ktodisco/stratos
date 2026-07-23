@@ -14,7 +14,7 @@ class st_gl_command_list : public st_command_list
 {
 public:
 
-	st_gl_command_list();
+	st_gl_command_list(class st_gl_device* device);
 	~st_gl_command_list();
 
 	void begin(class st_command_allocator* command_allocator) override;
@@ -59,6 +59,19 @@ public:
 		const st_clear_value* clear_values,
 		const uint8_t clear_count) override;
 	void end_render_pass(st_render_pass* pass, st_framebuffer* framebuffer) override;
+
+private:
+	void set_depth_state(bool enable, GLenum func);
+	void set_stencil_state(const st_depth_stencil_desc& desc);
+	void set_cull_state(bool enable, GLenum mode);
+	void set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor);
+	void set_depth_mask(bool enable);
+
+	// Active draw state.
+	const class st_gl_shader* _bound_shader = nullptr;
+	const struct st_gl_pipeline* _bound_pipeline = nullptr;
+
+	class st_gl_device* _device = nullptr;
 };
 
 #endif

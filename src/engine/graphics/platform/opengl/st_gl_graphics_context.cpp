@@ -10,6 +10,7 @@
 
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/platform/opengl/st_gl_conversion.h>
+#include <graphics/platform/opengl/st_gl_device.h>
 #include <graphics/platform/opengl/st_gl_shader.h>
 #include <graphics/st_drawcall.h>
 #include <graphics/st_pipeline_state_desc.h>
@@ -104,7 +105,8 @@ st_gl_graphics_context::~st_gl_graphics_context()
 
 std::unique_ptr<st_device> st_gl_graphics_context::create_device(const st_device_desc& desc)
 {
-	return nullptr;
+	std::unique_ptr<st_gl_device> device = std::make_unique<st_gl_device>(_device_context);
+	return std::move(device);
 }
 
 void st_gl_graphics_context::acquire()
@@ -669,7 +671,7 @@ void st_gl_graphics_context::bind_resources(st_resource_table* table_)
 {
 	st_gl_resource_table* table = static_cast<st_gl_resource_table*>(table_);
 
-	const st_gl_shader* shader = get_bound_shader();
+	const st_gl_shader* shader = _bound_shader;
 
 	for (uint32_t i = 0; i < table->_srvs.size(); ++i)
 	{

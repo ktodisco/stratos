@@ -129,8 +129,6 @@ private:
 	void set_blend_state(bool enable, GLenum src_factor, GLenum dst_factor);
 	void set_depth_mask(bool enable);
 
-	const class st_gl_shader* get_bound_shader() const { return _bound_shader; }
-
 private:
 
 	HDC _device_context;

@@ -14,7 +14,7 @@ class st_gl_device : public st_device
 {
 public:
 
-	st_gl_device();
+	st_gl_device(HDC context);
 	~st_gl_device();
 
 	// Commands.
@@ -87,6 +87,10 @@ public:
 
 	// Informational.
 	void get_desc(const st_texture* texture, st_texture_desc* out_desc) override;
+
+private:
+
+	HDC _device_context;
 };
 
 #endif
