@@ -128,13 +128,12 @@ st_texture_view* st_gl_device::get_backbuffer_view(st_swap_chain* swap_chain_, u
 
 uint32_t st_gl_device::get_backbuffer_index(st_swap_chain* swap_chain)
 {
-	// TODO.
+	// TODO: What would it mean to triple-buffer?
 	return 0;
 }
 
 e_st_swap_chain_status st_gl_device::acquire_backbuffer(st_swap_chain* swap_chain)
 {
-	// TODO.
 	return e_st_swap_chain_status::current;
 }
 

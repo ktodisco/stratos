@@ -415,10 +415,6 @@ void st_dx12_device::reconfigure_swap_chain(const st_swap_chain_desc& desc, st_s
 		swap_chain->_backbuffers.push_back(std::move(tex));
 		swap_chain->_backbuffer_views.push_back(std::move(view));
 	}
-
-	// TODO: What to do with this?
-	// Update the current frame index.
-	//_frame_index = swap_chain->_swap_chain_3->GetCurrentBackBufferIndex();
 }
 
 st_texture* st_dx12_device::get_backbuffer(st_swap_chain* swap_chain_, uint32_t index)
