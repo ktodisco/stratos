@@ -45,13 +45,17 @@ public:
 	void get_target_formats(e_st_render_pass_type type, struct st_graphics_state_desc& desc);
 
 	static st_output* get() { return _this; }
+	static class st_device* get_device() { return _this->_device.get(); }
+	static class st_command_list* get_upload_command_list() { return _this->_upload_command_lists[_this->_frame_index].get(); }
 
 private:
 
 	e_st_format choose_backbuffer_format();
 
-	void recreate_textures(class st_graphics_context* context);
-	void recreate_passes(class st_graphics_context* context);
+	void destroy_textures();
+	void destroy_passes();
+	void recreate_textures();
+	void recreate_passes();
 
 	const st_window* _window;
 	uint32_t _width;
@@ -62,6 +66,21 @@ private:
 
 	std::unique_ptr<struct st_swap_chain> _swap_chain;
 	bool _out_of_date = false;
+
+	// Application graphics systems.
+	std::unique_ptr<class st_shader_manager> _shader_manager;
+
+	// Core graphics objects.
+	std::unique_ptr<class st_device> _device;
+	std::unique_ptr<class st_command_queue> _command_queue;
+	std::unique_ptr<class st_command_allocator> _command_allocators[k_max_frames];
+	std::unique_ptr<class st_command_list> _command_lists[k_max_frames];
+	std::unique_ptr<class st_command_allocator> _upload_command_allocators[k_max_frames];
+	std::unique_ptr<class st_command_list> _upload_command_lists[k_max_frames];
+	std::unique_ptr<struct st_fence> _fence;
+	uint32_t _frame_index = 0;
+	// Start on frame 1, to avoid signaling a fence with an equal value to initialization.
+	uint64_t _frame_counter = 1;
 
 	// Atmospherics.
 	std::unique_ptr<class st_render_texture> _transmittance;

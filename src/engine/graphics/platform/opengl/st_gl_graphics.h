@@ -69,6 +69,11 @@ struct st_gl_buffer_view : public st_buffer_view
 	const st_buffer_view_desc _desc;
 };
 
+struct st_gl_fence : public st_fence
+{
+	GLsync _sync;
+};
+
 struct st_gl_framebuffer : public st_framebuffer
 {
 	~st_gl_framebuffer() { glDeleteFramebuffers(1, &_handle); }

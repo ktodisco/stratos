@@ -19,16 +19,16 @@ public:
 		class st_render_texture* target_buffer);
 	~st_smaa_pass();
 
-	void render(class st_graphics_context* context, const struct st_frame_params* params);
+	void render(class st_command_list* command_list, const struct st_frame_params* params);
 
 private:
-	void _create_edges_pass(class st_graphics_context* context);
-	void _create_weights_pass(class st_graphics_context* context);
-	void _create_blend_pass(class st_graphics_context* context);
+	void _create_edges_pass(class st_device* device);
+	void _create_weights_pass(class st_device* device);
+	void _create_blend_pass(class st_device* device);
 
-	void _render_edges_pass(class st_graphics_context* context, const struct st_frame_params* params);
-	void _render_weights_pass(class st_graphics_context* context, const struct st_frame_params* params);
-	void _render_blend_pass(class st_graphics_context* context, const struct st_frame_params* params);
+	void _render_edges_pass(class st_command_list* command_list, const struct st_frame_params* params);
+	void _render_weights_pass(class st_command_list* command_list, const struct st_frame_params* params);
+	void _render_blend_pass(class st_command_list* command_list, const struct st_frame_params* params);
 
 private:
 	st_render_texture* _source_buffer = nullptr;

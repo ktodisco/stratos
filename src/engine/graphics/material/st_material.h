@@ -26,7 +26,7 @@ public:
 	st_material(e_st_render_pass_type_flags passes) : _supported_passes(passes) {}
 	virtual ~st_material() {}
 	virtual void bind(
-		class st_graphics_context* context,
+		class st_command_list* command_list,
 		enum e_st_render_pass_type pass_type,
 		const struct st_frame_params* params,
 		const st_mat4f& proj,

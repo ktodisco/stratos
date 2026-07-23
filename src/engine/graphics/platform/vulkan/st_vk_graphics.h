@@ -64,6 +64,13 @@ struct st_vk_buffer_view : public st_buffer_view, public st_vk_resource
 	uint32_t _element_count;
 };
 
+struct st_vk_fence : public st_fence, public st_vk_resource
+{
+	~st_vk_fence() { _device->destroySemaphore(_semaphore, nullptr); }
+
+	vk::Semaphore _semaphore;
+};
+
 struct st_vk_framebuffer : public st_framebuffer, public st_vk_resource
 {
 	~st_vk_framebuffer()
@@ -196,6 +203,7 @@ struct st_vk_texture : public st_texture, public st_vk_resource
 	uint32_t _levels = 1;
 	e_st_format _format = st_format_unknown;
 	e_st_texture_usage_flags _usage = static_cast<e_st_texture_usage_flags>(0);
+	e_st_texture_state _initial_state = st_texture_state_common;
 	e_st_texture_state _state = st_texture_state_common;
 };
 

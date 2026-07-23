@@ -19,7 +19,7 @@ public:
 	st_display_pass(class st_render_texture* source, struct st_swap_chain* swap_chain);
 	~st_display_pass();
 
-	void render(class st_graphics_context* context, const struct st_frame_params* params);
+	void render(class st_command_list* command_list, const struct st_frame_params* params);
 
 private:
 	std::unique_ptr<struct st_buffer> _cb;

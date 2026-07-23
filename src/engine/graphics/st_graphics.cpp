@@ -32,15 +32,21 @@ std::unique_ptr<st_graphics_context> st_graphics_context::create(e_st_graphics_a
 	
 	switch (api)
 	{
+#if defined(ST_GRAPHICS_API_DX12)
 	case e_st_graphics_api::dx12:
 		context = std::make_unique<st_dx12_graphics_context>(window);
 		break;
+#endif
+#if defined(ST_GRAPHICS_API_OPENGL)
 	case e_st_graphics_api::opengl:
 		context = std::make_unique<st_gl_graphics_context>(window);
 		break;
+#endif
+#if defined(ST_GRAPHICS_API_VULKAN)
 	case e_st_graphics_api::vulkan:
 		context = std::make_unique<st_vk_graphics_context>(window);
 		break;
+#endif
 	default:
 		break;
 	}

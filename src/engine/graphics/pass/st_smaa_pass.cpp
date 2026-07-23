@@ -8,7 +8,9 @@
 
 #include <framework/st_frame_params.h>
 #include <framework/st_global_resources.h>
+#include <framework/st_output.h>
 
+#include <graphics/st_graphics.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
@@ -31,7 +33,7 @@ st_smaa_pass::st_smaa_pass(
 	st_render_texture* target_buffer)
 	: _source_buffer(source_buffer), _stencil_buffer(stencil_buffer), _target_buffer(target_buffer)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
@@ -39,7 +41,7 @@ st_smaa_pass::st_smaa_pass(
 		desc._element_size = sizeof(st_smaa_constants);
 		desc._usage = e_st_buffer_usage::uniform;
 
-		_cb = context->create_buffer(desc);
+		_cb = device->create_buffer(desc);
 	}
 
 	{
@@ -48,21 +50,21 @@ st_smaa_pass::st_smaa_pass(
 		desc._element_count = 1;
 		desc._usage = e_st_view_usage::shader_resource;
 
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
-	_create_edges_pass(context);
-	_create_weights_pass(context);
-	_create_blend_pass(context);
+	_create_edges_pass(device);
+	_create_weights_pass(device);
+	_create_blend_pass(device);
 }
 
 st_smaa_pass::~st_smaa_pass()
 {
 }
 
-void st_smaa_pass::render(class st_graphics_context* context, const struct st_frame_params* params)
+void st_smaa_pass::render(class st_command_list* command_list, const struct st_frame_params* params)
 {
-	st_render_marker marker(context, __FUNCTION__);
+	st_render_marker marker(command_list, __FUNCTION__);
 
 	st_smaa_constants data;
 	data._dimensions = st_vec4f {
@@ -72,19 +74,19 @@ void st_smaa_pass::render(class st_graphics_context* context, const struct st_fr
 		1.0f / _edges_target->get_height()
 	};
 	data._is_hdr = params->_color_space == st_color_space_st2084;
-	context->update_buffer(_cb.get(), &data, 0, 1);
+	command_list->update_buffer(_cb.get(), &data, 0, 1);
 
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
-	_render_edges_pass(context, params);
-	_render_weights_pass(context, params);
-	_render_blend_pass(context, params);
+	_render_edges_pass(command_list, params);
+	_render_weights_pass(command_list, params);
+	_render_blend_pass(command_list, params);
 }
 
-void st_smaa_pass::_create_edges_pass(st_graphics_context* context)
+void st_smaa_pass::_create_edges_pass(st_device* device)
 {
 	_edges_target = std::make_unique<st_render_texture>(
-		context,
+		device,
 		_source_buffer->get_width(),
 		_source_buffer->get_height(),
 		st_format_r16g16_float,
@@ -101,7 +103,7 @@ void st_smaa_pass::_create_edges_pass(st_graphics_context* context)
 		desc._depth_attachment = { _stencil_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store };
 		desc._viewport = { 0.0f, 0.0f, float(_edges_target->get_width()), float(_edges_target->get_height()), 0.0f, 1.0f };
 
-		_edges_pass = context->create_render_pass(desc);
+		_edges_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -112,7 +114,7 @@ void st_smaa_pass::_create_edges_pass(st_graphics_context* context)
 		desc._target_count = 1;
 		desc._depth_target = { _stencil_buffer->get_texture(), _stencil_buffer->get_target_view() };
 
-		_edges_framebuffer = context->create_framebuffer(desc);
+		_edges_framebuffer = device->create_framebuffer(desc);
 	}
 
 	{
@@ -132,23 +134,23 @@ void st_smaa_pass::_create_edges_pass(st_graphics_context* context)
 		desc._render_target_formats[0] = _edges_target->get_format();
 		desc._depth_stencil_format = _stencil_buffer->get_format();
 
-		_edges_pipeline = context->create_graphics_pipeline(desc);
+		_edges_pipeline = device->create_graphics_pipeline(desc);
 	}
 
 	{
-		_edges_resources = context->create_resource_table();
+		_edges_resources = device->create_resource_table();
 		const st_buffer_view* cbv = _cbv.get();
 		const st_texture_view* srv = _source_buffer->get_resource_view();
 		const st_sampler* sampler = _global_resources->_point_clamp_sampler.get();
-		context->set_constant_buffers(_edges_resources.get(), 1, &cbv);
-		context->set_textures(_edges_resources.get(), 1, &srv, &sampler);
+		device->set_constant_buffers(_edges_resources.get(), 1, &cbv);
+		device->set_textures(_edges_resources.get(), 1, &srv, &sampler);
 	}
 }
 
-void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
+void st_smaa_pass::_create_weights_pass(st_device* device)
 {
 	_weights_target = std::make_unique<st_render_texture>(
-		context,
+		device,
 		_edges_target->get_width(),
 		_edges_target->get_height(),
 		st_format_r8g8b8a8_unorm,
@@ -162,7 +164,7 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 
 	{
 		st_texture_desc area_desc;
-		context->get_desc(_area_tex.get(), &area_desc);
+		device->get_desc(_area_tex.get(), &area_desc);
 
 		st_texture_view_desc desc;
 		desc._texture = _area_tex.get();
@@ -170,12 +172,12 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 		desc._mips = 1;
 		desc._usage = e_st_view_usage::shader_resource;
 
-		_area_tex_view = context->create_texture_view(desc);
+		_area_tex_view = device->create_texture_view(desc);
 	}
 
 	{
 		st_texture_desc search_desc;
-		context->get_desc(_search_tex.get(), &search_desc);
+		device->get_desc(_search_tex.get(), &search_desc);
 
 		st_texture_view_desc desc;
 		desc._texture = _search_tex.get();
@@ -183,7 +185,7 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 		desc._mips = 1;
 		desc._usage = e_st_view_usage::shader_resource;
 
-		_search_tex_view = context->create_texture_view(desc);
+		_search_tex_view = device->create_texture_view(desc);
 	}
 
 	{
@@ -194,7 +196,7 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 		desc._depth_attachment = { _stencil_buffer->get_format(), e_st_load_op::load, e_st_store_op::dont_care };
 		desc._viewport = { 0.0f, 0.0f, float(_weights_target->get_width()), float(_weights_target->get_height()), 0.0f, 1.0f };
 
-		_weights_pass = context->create_render_pass(desc);
+		_weights_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -205,7 +207,7 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 		desc._target_count = 1;
 		desc._depth_target = { _stencil_buffer->get_texture(), _stencil_buffer->get_target_view() };
 
-		_weights_framebuffer = context->create_framebuffer(desc);
+		_weights_framebuffer = device->create_framebuffer(desc);
 	}
 
 	{
@@ -223,11 +225,11 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 		desc._render_target_formats[0] = _weights_target->get_format();
 		desc._depth_stencil_format = _stencil_buffer->get_format();
 
-		_weights_pipeline = context->create_graphics_pipeline(desc);
+		_weights_pipeline = device->create_graphics_pipeline(desc);
 	}
 
 	{
-		_weights_resources = context->create_resource_table();
+		_weights_resources = device->create_resource_table();
 		const st_buffer_view* cbv = _cbv.get();
 		const st_texture_view* srvs[] = {
 			_edges_target->get_resource_view(),
@@ -239,12 +241,12 @@ void st_smaa_pass::_create_weights_pass(st_graphics_context* context)
 			_global_resources->_point_clamp_sampler.get(),
 			_global_resources->_trilinear_clamp_sampler.get()
 		};
-		context->set_constant_buffers(_weights_resources.get(), 1, &cbv);
-		context->set_textures(_weights_resources.get(), std::size(srvs), srvs, samplers);
+		device->set_constant_buffers(_weights_resources.get(), 1, &cbv);
+		device->set_textures(_weights_resources.get(), std::size(srvs), srvs, samplers);
 	}
 }
 
-void st_smaa_pass::_create_blend_pass(st_graphics_context* context)
+void st_smaa_pass::_create_blend_pass(st_device* device)
 {
 	{
 		st_attachment_desc attachment = { _target_buffer->get_format(), e_st_load_op::dont_care, e_st_store_op::store };
@@ -253,7 +255,7 @@ void st_smaa_pass::_create_blend_pass(st_graphics_context* context)
 		desc._attachment_count = 1;
 		desc._viewport = { 0.0f, 0.0f, float(_target_buffer->get_width()), float(_target_buffer->get_height()), 0.0f, 1.0f };
 
-		_blend_pass = context->create_render_pass(desc);
+		_blend_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -263,7 +265,7 @@ void st_smaa_pass::_create_blend_pass(st_graphics_context* context)
 		desc._targets = &target;
 		desc._target_count = 1;
 
-		_blend_framebuffer = context->create_framebuffer(desc);
+		_blend_framebuffer = device->create_framebuffer(desc);
 	}
 
 	{
@@ -276,11 +278,11 @@ void st_smaa_pass::_create_blend_pass(st_graphics_context* context)
 		desc._render_target_count = 1;
 		desc._render_target_formats[0] = _target_buffer->get_format();
 
-		_blend_pipeline = context->create_graphics_pipeline(desc);
+		_blend_pipeline = device->create_graphics_pipeline(desc);
 	}
 
 	{
-		_blend_resources = context->create_resource_table();
+		_blend_resources = device->create_resource_table();
 		const st_buffer_view* cbv = _cbv.get();
 		const st_texture_view* srvs[] = {
 			_source_buffer->get_resource_view(),
@@ -290,22 +292,22 @@ void st_smaa_pass::_create_blend_pass(st_graphics_context* context)
 			_global_resources->_trilinear_clamp_sampler.get(),
 			_global_resources->_point_clamp_sampler.get()
 		};
-		context->set_constant_buffers(_blend_resources.get(), 1, &cbv);
-		context->set_textures(_blend_resources.get(), std::size(srvs), srvs, samplers);
+		device->set_constant_buffers(_blend_resources.get(), 1, &cbv);
+		device->set_textures(_blend_resources.get(), std::size(srvs), srvs, samplers);
 	}
 }
 
-void st_smaa_pass::_render_edges_pass(class st_graphics_context* context, const struct st_frame_params* params)
+void st_smaa_pass::_render_edges_pass(class st_command_list* command_list, const struct st_frame_params* params)
 {
-	st_render_marker marker(context, "edges");
+	st_render_marker marker(command_list, "edges");
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->transition(_source_buffer->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_source_buffer->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->set_pipeline(_edges_pipeline.get());
-	context->bind_resources(_edges_resources.get());
+	command_list->set_pipeline(_edges_pipeline.get());
+	command_list->bind_resources(_edges_resources.get());
 
 	st_clear_value clears[] =
 	{
@@ -313,7 +315,7 @@ void st_smaa_pass::_render_edges_pass(class st_graphics_context* context, const 
 		_stencil_buffer->get_clear_value()
 	};
 
-	context->begin_render_pass(_edges_pass.get(), _edges_framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_edges_pass.get(), _edges_framebuffer.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -321,22 +323,22 @@ void st_smaa_pass::_render_edges_pass(class st_graphics_context* context, const 
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_edges_pass.get(), _edges_framebuffer.get());
+	command_list->end_render_pass(_edges_pass.get(), _edges_framebuffer.get());
 }
 
-void st_smaa_pass::_render_weights_pass(class st_graphics_context* context, const struct st_frame_params* params)
+void st_smaa_pass::_render_weights_pass(class st_command_list* command_list, const struct st_frame_params* params)
 {
-	st_render_marker marker(context, "weights");
+	st_render_marker marker(command_list, "weights");
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->transition(_edges_target->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_edges_target->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->set_pipeline(_weights_pipeline.get());
-	context->bind_resources(_weights_resources.get());
+	command_list->set_pipeline(_weights_pipeline.get());
+	command_list->bind_resources(_weights_resources.get());
 
 	st_clear_value clears[] =
 	{
@@ -344,7 +346,7 @@ void st_smaa_pass::_render_weights_pass(class st_graphics_context* context, cons
 		_stencil_buffer->get_clear_value()
 	};
 
-	context->begin_render_pass(_weights_pass.get(), _weights_framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_weights_pass.get(), _weights_framebuffer.get(), clears, std::size(clears));
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -352,24 +354,24 @@ void st_smaa_pass::_render_weights_pass(class st_graphics_context* context, cons
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_weights_pass.get(), _weights_framebuffer.get());
+	command_list->end_render_pass(_weights_pass.get(), _weights_framebuffer.get());
 }
 
-void st_smaa_pass::_render_blend_pass(class st_graphics_context* context, const struct st_frame_params* params)
+void st_smaa_pass::_render_blend_pass(class st_command_list* command_list, const struct st_frame_params* params)
 {
-	st_render_marker marker(context, "blend");
+	st_render_marker marker(command_list, "blend");
 
 	st_mat4f identity;
 	identity.make_identity();
 
-	context->transition(_weights_target->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_weights_target->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->set_pipeline(_blend_pipeline.get());
-	context->bind_resources(_blend_resources.get());
+	command_list->set_pipeline(_blend_pipeline.get());
+	command_list->bind_resources(_blend_resources.get());
 
-	context->begin_render_pass(_blend_pass.get(), _blend_framebuffer.get(), nullptr, 0);
+	command_list->begin_render_pass(_blend_pass.get(), _blend_framebuffer.get(), nullptr, 0);
 
 	st_static_drawcall draw_call;
 	draw_call._name = "fullscreen_quad";
@@ -377,7 +379,7 @@ void st_smaa_pass::_render_blend_pass(class st_graphics_context* context, const 
 	_fullscreen_quad->draw(draw_call);
 	draw_call._draw_mode = st_primitive_topology_triangles;
 
-	context->draw(draw_call);
+	command_list->draw(draw_call);
 
-	context->end_render_pass(_blend_pass.get(), _blend_framebuffer.get());
+	command_list->end_render_pass(_blend_pass.get(), _blend_framebuffer.get());
 }

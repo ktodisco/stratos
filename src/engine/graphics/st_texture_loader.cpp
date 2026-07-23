@@ -8,7 +8,9 @@
 
 #include <core/st_core.h>
 
-#include <graphics/st_graphics_context.h>
+#include <framework/st_output.h>
+
+#include <graphics/st_graphics.h>
 
 #include <stb_image.h>
 
@@ -66,9 +68,13 @@ std::unique_ptr<st_texture> load_stb_texture(const char* fullpath)
 	desc._levels = 1;
 	desc._format = st_format_r8g8b8a8_unorm;
 	desc._usage = e_st_texture_usage::sampled;
-	desc._initial_state = st_texture_state_pixel_shader_read;
+	desc._initial_state = st_texture_state_copy_dest;
 	desc._data = data;
-	std::unique_ptr<st_texture> ret = st_graphics_context::get()->create_texture(desc);
+	std::unique_ptr<st_texture> ret = st_output::get_device()->create_texture(desc);
+
+	st_command_list* upload_command_list = st_output::get_upload_command_list();
+	upload_command_list->upload(ret.get(), data);
+	upload_command_list->transition(ret.get(), st_texture_state_pixel_shader_read);
 
 	stbi_image_free(data);
 
@@ -178,9 +184,13 @@ std::unique_ptr<st_texture> load_dds_texture(const char* fullpath)
 	desc._levels = std::max(header->mipMapCount, 1u);
 	desc._format = get_st_format(header->ddspf);
 	desc._usage = e_st_texture_usage::sampled;
-	desc._initial_state = st_texture_state_pixel_shader_read;
+	desc._initial_state = st_texture_state_copy_dest;
 	desc._data = bit_data;
-	auto texture = st_graphics_context::get()->create_texture(desc);
+	auto texture = st_output::get_device()->create_texture(desc);
+
+	st_command_list* upload_command_list = st_output::get_upload_command_list();
+	upload_command_list->upload(texture.get(), bit_data);
+	upload_command_list->transition(texture.get(), st_texture_state_pixel_shader_read);
 
 	return std::move(texture);
 }

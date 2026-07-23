@@ -9,7 +9,6 @@
 #include <graphics/st_graphics.h>
 
 #include <memory>
-#include <vector>
 
 /*
 ** A render pass that draws the UI elements.
@@ -20,13 +19,13 @@ public:
 	st_ui_render_pass(const class st_window* window, class st_render_texture* target);
 	~st_ui_render_pass();
 
-	void render(class st_graphics_context* context, const struct st_frame_params* params);
+	void render(class st_command_list* command_list, const struct st_frame_params* params);
 
 	void get_target_formats(struct st_graphics_state_desc& desc);
 
 private:
 	void draw_dynamic(
-		class st_graphics_context* context,
+		class st_command_list* command_list,
 		const struct st_frame_params* params,
 		const struct st_mat4f& proj,
 		const struct st_mat4f& view);

@@ -8,8 +8,10 @@
 
 #include <graphics/geometry/st_geometry.h>
 
+#include <framework/st_output.h>
+
 #include <graphics/st_drawcall.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 
 st_geometry::st_geometry(
 	const struct st_vertex_format* format,
@@ -22,20 +24,20 @@ st_geometry::st_geometry(
 	// Create the vertex buffer resource.
 	const uint32_t vertex_buffer_size = vertex_count * vertex_size;
 
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = vertex_count;
 		desc._element_size = vertex_size;
 		desc._usage = e_st_buffer_usage::vertex | e_st_buffer_usage::transfer_dest;
-		_vertex_buffer = context->create_buffer(desc);
+		_vertex_buffer = device->create_buffer(desc);
 	}
 
 	uint8_t* head;
-	context->map(_vertex_buffer.get(), 0, { 0, 0 }, (void**)&head);
+	device->map(_vertex_buffer.get(), 0, { 0, 0 }, (void**)&head);
 	memcpy(head, vertex_data, vertex_count * vertex_size);
-	context->unmap(_vertex_buffer.get(), 0, { 0, 0 });
+	device->unmap(_vertex_buffer.get(), 0, { 0, 0 });
 
 	// Create the index buffer resource.
 	_index_count = index_count;
@@ -46,12 +48,12 @@ st_geometry::st_geometry(
 		desc._count = index_count;
 		desc._element_size = sizeof(uint16_t);
 		desc._usage = e_st_buffer_usage::index | e_st_buffer_usage::transfer_dest;
-		_index_buffer = context->create_buffer(desc);
+		_index_buffer = device->create_buffer(desc);
 	}
 
-	context->map(_index_buffer.get(), 0, { 0, 0 }, (void**)&head);
+	device->map(_index_buffer.get(), 0, { 0, 0 }, (void**)&head);
 	memcpy(head, index_data, index_count * sizeof(uint16_t));
-	context->unmap(_index_buffer.get(), 0, { 0, 0 });
+	device->unmap(_index_buffer.get(), 0, { 0, 0 });
 }
 
 st_geometry::~st_geometry()

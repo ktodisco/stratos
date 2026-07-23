@@ -7,10 +7,11 @@
 #include <graphics/pass/st_gbuffer_render_pass.h>
 
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 
 #include <graphics/material/st_material.h>
 #include <graphics/st_drawcall.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_pipeline_state_desc.h>
 #include <graphics/st_render_marker.h>
 #include <graphics/st_render_texture.h>
@@ -23,7 +24,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 	st_render_texture* third_buffer,
 	st_render_texture* depth_buffer)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	// Cache the output formats to use in pipeline state setup.
 	_formats[0] = albedo_buffer->get_format();
@@ -44,7 +45,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 		desc._depth_attachment = { depth_buffer->get_format(), e_st_load_op::clear, e_st_store_op::store };
 		desc._viewport = { 0.0f, 0.0f, float(albedo_buffer->get_width()), float(albedo_buffer->get_height()), 0.0f, 1.0f };
 
-		_pass = context->create_render_pass(desc);
+		_pass = device->create_render_pass(desc);
 	}
 
 	{
@@ -60,7 +61,7 @@ st_gbuffer_render_pass::st_gbuffer_render_pass(
 		desc._target_count = std::size(targets);
 		desc._depth_target = { depth_buffer->get_texture(), depth_buffer->get_target_view() };
 
-		_framebuffer = context->create_framebuffer(desc);
+		_framebuffer = device->create_framebuffer(desc);
 	}
 }
 
@@ -68,11 +69,11 @@ st_gbuffer_render_pass::~st_gbuffer_render_pass()
 {
 }
 
-void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame_params* params)
+void st_gbuffer_render_pass::render(st_command_list* command_list, const st_frame_params* params)
 {
-	st_render_marker marker(context, "st_gbuffer_render_pass::render");
+	st_render_marker marker(command_list, "st_gbuffer_render_pass::render");
 
-	context->set_scissor(0, 0, params->_width, params->_height);
+	command_list->set_scissor(0, 0, params->_width, params->_height);
 
 	st_clear_value clears[] =
 	{
@@ -82,12 +83,12 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 		st_depth_stencil_clear_value { 1.0f, 0 }
 	};
 
-	context->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
+	command_list->begin_render_pass(_pass.get(), _framebuffer.get(), clears, std::size(clears));
 
 	// Draw all static geometry.
 	for (auto& d : params->_static_drawcalls)
 	{
-		st_render_marker draw_marker(context, d._name.c_str());
+		st_render_marker draw_marker(command_list, d._name.c_str());
 
 		if (!d._material)
 		{
@@ -95,13 +96,13 @@ void st_gbuffer_render_pass::render(st_graphics_context* context, const st_frame
 		}
 		else if (d._material->supports_pass(e_st_render_pass_type::gbuffer))
 		{
-			d._material->bind(context, e_st_render_pass_type::gbuffer, params, params->_projection, params->_view, d._transform);
+			d._material->bind(command_list, e_st_render_pass_type::gbuffer, params, params->_projection, params->_view, d._transform);
 		}
 
-		context->draw(d);
+		command_list->draw(d);
 	}
 
-	context->end_render_pass(_pass.get(), _framebuffer.get());
+	command_list->end_render_pass(_pass.get(), _framebuffer.get());
 }
 
 void st_gbuffer_render_pass::get_target_formats(struct st_graphics_state_desc& desc)

@@ -6,32 +6,34 @@
 
 #include <graphics/material/st_constant_color_material.h>
 
+#include <framework/st_output.h>
+
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_shader_manager.h>
 
 st_constant_color_material::st_constant_color_material() :
 	st_material(e_st_render_pass_type::ui)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_constant_color_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_color_buffer = context->create_buffer(desc);
+		_color_buffer = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _color_buffer.get();
-		_cbv = context->create_buffer_view(desc);
+		_cbv = device->create_buffer_view(desc);
 	}
 
-	_resource_table = context->create_resource_table();
+	_resource_table = device->create_resource_table();
 	const st_buffer_view* cbs[] = { _cbv.get() };
-	context->set_constant_buffers(_resource_table.get(), 1, cbs);
+	device->set_constant_buffers(_resource_table.get(), 1, cbs);
 }
 
 st_constant_color_material::~st_constant_color_material()
@@ -41,7 +43,7 @@ st_constant_color_material::~st_constant_color_material()
 }
 
 void st_constant_color_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
@@ -53,7 +55,7 @@ void st_constant_color_material::bind(
 	st_constant_color_cb cb_data{};
 	cb_data._mvp = mvp;
 	cb_data._color = _color;
-	context->update_buffer(_color_buffer.get(), &cb_data, 0, 1);
+	command_list->update_buffer(_color_buffer.get(), &cb_data, 0, 1);
 
-	context->bind_resources(_resource_table.get());
+	command_list->bind_resources(_resource_table.get());
 }

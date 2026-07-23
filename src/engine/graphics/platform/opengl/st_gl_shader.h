@@ -102,6 +102,7 @@ private:
 class st_gl_shader : public st_shader
 {
 	friend class st_gl_graphics_context;
+	friend class st_gl_command_list;
 
 public:
 	st_gl_shader(const char* name, e_st_shader_type_flags type);

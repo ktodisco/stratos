@@ -7,9 +7,10 @@
 #include <graphics/material/st_deferred_light_material.h>
 
 #include <framework/st_global_resources.h>
+#include <framework/st_output.h>
 
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_render_texture.h>
 #include <graphics/st_shader_manager.h>
 
@@ -31,7 +32,7 @@ st_deferred_light_material::st_deferred_light_material(
 	_depth(depth_texture),
 	_directional_shadow_map(directional_shadow_map)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_graphics_state_desc desc;
@@ -43,12 +44,12 @@ st_deferred_light_material::st_deferred_light_material(
 		desc._render_target_count = 1;
 		desc._render_target_formats[0] = output_texture->get_format();
 
-		_pipeline = context->create_graphics_pipeline(desc);
+		_pipeline = device->create_graphics_pipeline(desc);
 	}
 
-	_resource_table = context->create_resource_table();
-	context->set_constant_buffers(_resource_table.get(), 1, &constants);
-	context->set_buffers(_resource_table.get(), 1, &light_buffer);
+	_resource_table = device->create_resource_table();
+	device->set_constant_buffers(_resource_table.get(), 1, &constants);
+	device->set_buffers(_resource_table.get(), 1, &light_buffer);
 
 	{
 		st_sampler_desc desc;
@@ -58,7 +59,7 @@ st_deferred_light_material::st_deferred_light_material(
 		desc._address_u = st_address_mode_wrap;
 		desc._address_v = st_address_mode_wrap;
 
-		_shadow_sampler = context->create_sampler(desc);
+		_shadow_sampler = device->create_sampler(desc);
 	}
 
 	const st_texture_view* textures[] = {
@@ -75,7 +76,7 @@ st_deferred_light_material::st_deferred_light_material(
 		_global_resources->_trilinear_clamp_sampler.get(),
 		_shadow_sampler.get(),
 	};
-	context->set_textures(_resource_table.get(), std::size(textures), textures, samplers);
+	device->set_textures(_resource_table.get(), std::size(textures), textures, samplers);
 }
 
 st_deferred_light_material::~st_deferred_light_material()
@@ -86,20 +87,20 @@ st_deferred_light_material::~st_deferred_light_material()
 }
 
 void st_deferred_light_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
 	const st_mat4f& view,
 	const st_mat4f& transform)
 {
-	context->set_pipeline(_pipeline.get());
+	command_list->set_pipeline(_pipeline.get());
 
-	context->transition(_albedo->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_normal->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_third->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_depth->get_texture(), st_texture_state_pixel_shader_read);
-	context->transition(_directional_shadow_map->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_albedo->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_normal->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_third->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_depth->get_texture(), st_texture_state_pixel_shader_read);
+	command_list->transition(_directional_shadow_map->get_texture(), st_texture_state_pixel_shader_read);
 
-	context->bind_resources(_resource_table.get());
+	command_list->bind_resources(_resource_table.get());
 }

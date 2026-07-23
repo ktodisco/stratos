@@ -18,7 +18,7 @@ class st_render_texture
 public:
 
 	st_render_texture(
-		class st_graphics_context* context,
+		class st_device* device,
 		uint32_t width,
 		uint32_t height,
 		e_st_format format,

@@ -10,7 +10,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <vector>
 
 class st_geometry
 {

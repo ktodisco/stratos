@@ -16,7 +16,7 @@
 #include <GL/GLU.h>
 #include <GL/wglew.h>
 
-GLenum topology_type_mappings[] =
+static GLenum topology_type_mappings[] =
 {
 	GL_POINTS, // st_primitive_topology_type_point
 	GL_LINES, // st_primitive_topology_type_line
@@ -28,7 +28,7 @@ inline GLenum convert_topology_type(e_st_primitive_topology_type type)
 	return topology_type_mappings[type];
 }
 
-GLenum topology_mappings[] =
+static GLenum topology_mappings[] =
 {
 	GL_POINTS, // st_primitive_topology_points
 	GL_LINES, // st_primitive_topology_lines
@@ -44,7 +44,7 @@ inline GLenum convert_topology(e_st_primitive_topology topology)
 // those of DXGI, several of which OGL has no equivalent for.
 #define GL_UNKNOWN_FORMAT 0xf000000 | __LINE__
 
-GLint format_mappings[] =
+static GLint format_mappings[] =
 {
 	GLU_UNKNOWN, // st_format_unknown
 	GL_UNKNOWN_FORMAT, // st_format_r32g32b32a32_typeless
@@ -173,7 +173,7 @@ inline GLint convert_format(e_st_format format)
 	return format_mappings[format];
 }
 
-GLenum blend_mappings[] =
+static GLenum blend_mappings[] =
 {
 	GL_ZERO, // st_blend_zero
 	GL_ONE, // st_blend_one
@@ -199,7 +199,7 @@ inline GLenum convert_blend(e_st_blend blend)
 	return blend_mappings[blend];
 }
 
-GLenum blend_op_mappings[] =
+static GLenum blend_op_mappings[] =
 {
 	GL_FUNC_ADD, // st_blend_op_add
 	GL_FUNC_SUBTRACT, // st_blend_op_sub
@@ -213,7 +213,7 @@ inline GLenum convert_blend_op(e_st_blend_op blend_op)
 	return blend_op_mappings[blend_op];
 }
 
-GLenum logic_op_mappings[] =
+static GLenum logic_op_mappings[] =
 {
 	GL_CLEAR, // st_logic_op_clear
 	GL_SET, // st_logic_op_set
@@ -238,7 +238,7 @@ inline GLenum convert_logic_op(e_st_logic_op logic_op)
 	return logic_op_mappings[logic_op];
 }
 
-GLenum fill_mode_mappings[] =
+static GLenum fill_mode_mappings[] =
 {
 	GL_LINE, // st_fill_mode_wireframe
 	GL_FILL, // st_fill_mode_solid
@@ -249,7 +249,7 @@ inline GLenum convert_fill_mode(e_st_fill_mode fill_mode)
 	return fill_mode_mappings[fill_mode];
 }
 
-GLenum cull_mode_mappings[] =
+static GLenum cull_mode_mappings[] =
 {
 	GL_NONE, // st_cull_mode_none - this is an invalid enum for glCullFace intentionally.
 	GL_FRONT, // st_cull_mode_front
@@ -261,7 +261,7 @@ inline GLenum convert_cull_mode(e_st_cull_mode cull_mode)
 	return cull_mode_mappings[cull_mode];
 }
 
-GLenum depth_write_mask_mappings[] =
+static GLenum depth_write_mask_mappings[] =
 {
 	GL_ZERO, // st_depth_write_mask_zero
 	GL_ONE, // st_depth_write_mask_all
@@ -272,7 +272,7 @@ inline GLenum convert_depth_write_mask(e_st_depth_write_mask write_mask)
 	return depth_write_mask_mappings[write_mask];
 }
 
-GLenum compare_func_mappings[] =
+static GLenum compare_func_mappings[] =
 {
 	GL_NEVER, // st_compare_func_never
 	GL_LESS, // st_compare_func_less
@@ -289,7 +289,7 @@ inline GLenum convert_compare_func(e_st_compare_func compare_func)
 	return compare_func_mappings[compare_func];
 }
 
-GLenum stencil_op_mappings[] =
+static GLenum stencil_op_mappings[] =
 {
 	GL_KEEP, // st_stencil_op_keep
 	GL_ZERO, // st_stencil_op_zero
@@ -306,7 +306,7 @@ inline GLenum convert_stencil_op(e_st_stencil_op stencil_op)
 	return stencil_op_mappings[stencil_op];
 }
 
-GLenum address_mode_mappings[] =
+static GLenum address_mode_mappings[] =
 {
 	GL_REPEAT,
 	GL_MIRRORED_REPEAT,

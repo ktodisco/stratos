@@ -8,7 +8,7 @@
 
 std::unique_ptr<st_global_resources> _global_resources = nullptr;
 
-void create_global_resources(st_graphics_context* context)
+void create_global_resources(st_device* device)
 {
 	_global_resources = std::make_unique<st_global_resources>();
 
@@ -21,7 +21,7 @@ void create_global_resources(st_graphics_context* context)
 		desc._address_v = st_address_mode_clamp;
 		desc._address_w = st_address_mode_clamp;
 
-		_global_resources->_trilinear_clamp_sampler = context->create_sampler(desc);
+		_global_resources->_trilinear_clamp_sampler = device->create_sampler(desc);
 	}
 
 	{
@@ -33,7 +33,7 @@ void create_global_resources(st_graphics_context* context)
 		desc._address_v = st_address_mode_wrap;
 		desc._address_w = st_address_mode_wrap;
 
-		_global_resources->_trilinear_wrap_sampler = context->create_sampler(desc);
+		_global_resources->_trilinear_wrap_sampler = device->create_sampler(desc);
 	}
 
 	{
@@ -45,7 +45,7 @@ void create_global_resources(st_graphics_context* context)
 		desc._address_v = st_address_mode_clamp;
 		desc._address_w = st_address_mode_clamp;
 
-		_global_resources->_point_clamp_sampler = context->create_sampler(desc);
+		_global_resources->_point_clamp_sampler = device->create_sampler(desc);
 	}
 }
 

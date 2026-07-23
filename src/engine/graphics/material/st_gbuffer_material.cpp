@@ -11,7 +11,7 @@
 
 #include <graphics/geometry/st_vertex_attribute.h>
 #include <graphics/st_pipeline_state_desc.h>
-#include <graphics/st_graphics_context.h>
+#include <graphics/st_graphics.h>
 #include <graphics/st_shader_manager.h>
 #include <graphics/st_texture_loader.h>
 
@@ -23,20 +23,20 @@ st_gbuffer_material::st_gbuffer_material(
 	const char* mre_texture) :
 	st_material(e_st_render_pass_type::shadow | e_st_render_pass_type::gbuffer)
 {
-	st_graphics_context* context = st_graphics_context::get();
+	st_device* device = st_output::get_device();
 
 	{
 		st_buffer_desc desc;
 		desc._count = 1;
 		desc._element_size = sizeof(st_gbuffer_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_gbuffer_buffer = context->create_buffer(desc);
+		_gbuffer_buffer = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _gbuffer_buffer.get();
-		_gbv = context->create_buffer_view(desc);
+		_gbv = device->create_buffer_view(desc);
 	}
 
 	{
@@ -44,13 +44,13 @@ st_gbuffer_material::st_gbuffer_material(
 		desc._count = 1;
 		desc._element_size = sizeof(st_shadow_cb);
 		desc._usage = e_st_buffer_usage::uniform;
-		_shadow_buffer = context->create_buffer(desc);
+		_shadow_buffer = device->create_buffer(desc);
 	}
 
 	{
 		st_buffer_view_desc desc;
 		desc._buffer = _shadow_buffer.get();
-		_sbv = context->create_buffer_view(desc);
+		_sbv = device->create_buffer_view(desc);
 	}
 
 	_albedo_texture = st_texture_loader::load(albedo_texture);
@@ -58,24 +58,24 @@ st_gbuffer_material::st_gbuffer_material(
 
 	{
 		st_texture_desc albedo_desc;
-		context->get_desc(_albedo_texture.get(), &albedo_desc);
+		device->get_desc(_albedo_texture.get(), &albedo_desc);
 		st_texture_view_desc desc;
 		desc._texture = _albedo_texture.get();
 		desc._format = albedo_desc._format;
 		desc._first_mip = 0;
 		desc._mips = albedo_desc._levels;
-		_albedo_view = context->create_texture_view(desc);
+		_albedo_view = device->create_texture_view(desc);
 	}
 
 	{
 		st_texture_desc mre_desc;
-		context->get_desc(_mre_texture.get(), &mre_desc);
+		device->get_desc(_mre_texture.get(), &mre_desc);
 		st_texture_view_desc desc;
 		desc._texture = _mre_texture.get();
 		desc._format = mre_desc._format;
 		desc._first_mip = 0;
 		desc._mips = mre_desc._levels;
-		_mre_view = context->create_texture_view(desc);
+		_mre_view = device->create_texture_view(desc);
 	}
 
 	std::vector<st_vertex_attribute> attributes;
@@ -84,7 +84,7 @@ st_gbuffer_material::st_gbuffer_material(
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_tangent, st_format_r32g32b32_float, 2));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_color, st_format_r32g32b32a32_float, 3));
 	attributes.push_back(st_vertex_attribute(st_vertex_attribute_uv, st_format_r32g32_float, 4));
-	_vertex_format = context->create_vertex_format(attributes.data(), attributes.size());
+	_vertex_format = device->create_vertex_format(attributes.data(), attributes.size());
 
 	st_output* output = st_output::get();
 
@@ -98,7 +98,7 @@ st_gbuffer_material::st_gbuffer_material(
 		desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 		output->get_target_formats(e_st_render_pass_type::gbuffer, desc);
 
-		_gbuffer_pipeline = context->create_graphics_pipeline(desc);
+		_gbuffer_pipeline = device->create_graphics_pipeline(desc);
 	}
 	{
 		st_graphics_state_desc desc;
@@ -108,13 +108,13 @@ st_gbuffer_material::st_gbuffer_material(
 		desc._depth_stencil_desc._depth_compare = e_st_compare_func::st_compare_func_less;
 		output->get_target_formats(e_st_render_pass_type::shadow, desc);
 
-		_shadow_pipeline = context->create_graphics_pipeline(desc);
+		_shadow_pipeline = device->create_graphics_pipeline(desc);
 	}
 
 	{
-		_gbuffer_resources = context->create_resource_table();
+		_gbuffer_resources = device->create_resource_table();
 		const st_buffer_view* cbs[] = { _gbv.get() };
-		context->set_constant_buffers(_gbuffer_resources.get(), 1, cbs);
+		device->set_constant_buffers(_gbuffer_resources.get(), 1, cbs);
 
 		const st_texture_view* textures[] = {
 			_albedo_view.get(),
@@ -124,12 +124,12 @@ st_gbuffer_material::st_gbuffer_material(
 			_global_resources->_trilinear_wrap_sampler.get(),
 			_global_resources->_trilinear_wrap_sampler.get(),
 		};
-		context->set_textures(_gbuffer_resources.get(), std::size(textures), textures, samplers);
+		device->set_textures(_gbuffer_resources.get(), std::size(textures), textures, samplers);
 	}
 	{
-		_shadow_resources = context->create_resource_table();
+		_shadow_resources = device->create_resource_table();
 		const st_buffer_view* cbs[] = { _sbv.get() };
-		context->set_constant_buffers(_shadow_resources.get(), 1, cbs);
+		device->set_constant_buffers(_shadow_resources.get(), 1, cbs);
 	}
 }
 
@@ -152,7 +152,7 @@ st_gbuffer_material::~st_gbuffer_material()
 }
 
 void st_gbuffer_material::bind(
-	st_graphics_context* context,
+	st_command_list* command_list,
 	e_st_render_pass_type pass_type,
 	const st_frame_params* params,
 	const st_mat4f& proj,
@@ -163,24 +163,24 @@ void st_gbuffer_material::bind(
 
 	if (pass_type == e_st_render_pass_type::shadow)
 	{
-		context->set_pipeline(_shadow_pipeline.get());
+		command_list->set_pipeline(_shadow_pipeline.get());
 
 		st_shadow_cb shadow_cb{};
 		shadow_cb._mvp = mvp;
-		context->update_buffer(_shadow_buffer.get(), &shadow_cb, 0, 1);
+		command_list->update_buffer(_shadow_buffer.get(), &shadow_cb, 0, 1);
 
-		context->bind_resources(_shadow_resources.get());
+		command_list->bind_resources(_shadow_resources.get());
 	}
 	else if (pass_type == e_st_render_pass_type::gbuffer)
 	{
-		context->set_pipeline(_gbuffer_pipeline.get());
+		command_list->set_pipeline(_gbuffer_pipeline.get());
 
 		st_gbuffer_cb gbuffer_cb{};
 		gbuffer_cb._model = transform;
 		gbuffer_cb._mvp = mvp;
 		gbuffer_cb._emissive = _emissive;
-		context->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
+		command_list->update_buffer(_gbuffer_buffer.get(), &gbuffer_cb, 0, 1);
 
-		context->bind_resources(_gbuffer_resources.get());
+		command_list->bind_resources(_gbuffer_resources.get());
 	}
 }

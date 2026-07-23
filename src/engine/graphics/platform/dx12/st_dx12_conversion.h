@@ -13,7 +13,7 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
-D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_type_mappings[] =
+static D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_type_mappings[] =
 {
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT, // st_primitive_topology_type_point
 	D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE, // st_primitive_topology_type_line
@@ -25,7 +25,7 @@ inline D3D12_PRIMITIVE_TOPOLOGY_TYPE convert_topology_type(e_st_primitive_topolo
 	return topology_type_mappings[type];
 }
 
-D3D12_PRIMITIVE_TOPOLOGY topology_mappings[] =
+static D3D12_PRIMITIVE_TOPOLOGY topology_mappings[] =
 {
 	D3D_PRIMITIVE_TOPOLOGY_POINTLIST, // st_primitive_topology_points
 	D3D_PRIMITIVE_TOPOLOGY_LINELIST, // st_primitive_topology_lines
@@ -37,7 +37,7 @@ inline D3D12_PRIMITIVE_TOPOLOGY convert_topology(e_st_primitive_topology topolog
 	return topology_mappings[topology];
 }
 
-DXGI_FORMAT format_mappings[] =
+static DXGI_FORMAT format_mappings[] =
 {
 	DXGI_FORMAT_UNKNOWN, // st_format_unknown
 	DXGI_FORMAT_R32G32B32A32_TYPELESS, // st_format_r32g32b32a32_typeless
@@ -166,7 +166,7 @@ inline DXGI_FORMAT convert_format(e_st_format format)
 	return format_mappings[format];
 }
 
-DXGI_COLOR_SPACE_TYPE color_space_mappings[] =
+static DXGI_COLOR_SPACE_TYPE color_space_mappings[] =
 {
 	DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,
 	DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020,
@@ -177,7 +177,7 @@ inline DXGI_COLOR_SPACE_TYPE convert_color_space(e_st_color_space space)
 	return color_space_mappings[space];
 }
 
-D3D12_BLEND blend_mappings[] =
+static D3D12_BLEND blend_mappings[] =
 {
 	D3D12_BLEND_ZERO, // st_blend_zero
 	D3D12_BLEND_ONE, // st_blend_one
@@ -203,7 +203,7 @@ inline D3D12_BLEND convert_blend(e_st_blend blend)
 	return blend_mappings[blend];
 }
 
-D3D12_BLEND_OP blend_op_mappings[] =
+static D3D12_BLEND_OP blend_op_mappings[] =
 {
 	D3D12_BLEND_OP_ADD, // st_blend_op_add
 	D3D12_BLEND_OP_SUBTRACT, // st_blend_op_sub
@@ -217,7 +217,7 @@ inline D3D12_BLEND_OP convert_blend_op(e_st_blend_op blend_op)
 	return blend_op_mappings[blend_op];
 }
 
-D3D12_LOGIC_OP logic_op_mappings[] =
+static D3D12_LOGIC_OP logic_op_mappings[] =
 {
 	D3D12_LOGIC_OP_CLEAR, // st_logic_op_clear
 	D3D12_LOGIC_OP_SET, // st_logic_op_set
@@ -242,7 +242,7 @@ inline D3D12_LOGIC_OP convert_logic_op(e_st_logic_op logic_op)
 	return logic_op_mappings[logic_op];
 }
 
-D3D12_FILL_MODE fill_mode_mappings[] =
+static D3D12_FILL_MODE fill_mode_mappings[] =
 {
 	D3D12_FILL_MODE_WIREFRAME, // st_fill_mode_wireframe
 	D3D12_FILL_MODE_SOLID, // st_fill_mode_solid
@@ -253,7 +253,7 @@ inline D3D12_FILL_MODE convert_fill_mode(e_st_fill_mode fill_mode)
 	return fill_mode_mappings[fill_mode];
 }
 
-D3D12_CULL_MODE cull_mode_mappings[] =
+static D3D12_CULL_MODE cull_mode_mappings[] =
 {
 	D3D12_CULL_MODE_NONE, // st_cull_mode_none
 	D3D12_CULL_MODE_FRONT, // st_cull_mode_front
@@ -265,7 +265,7 @@ inline D3D12_CULL_MODE convert_cull_mode(e_st_cull_mode cull_mode)
 	return cull_mode_mappings[cull_mode];
 }
 
-D3D12_DEPTH_WRITE_MASK depth_write_mask_mappings[] =
+static D3D12_DEPTH_WRITE_MASK depth_write_mask_mappings[] =
 {
 	D3D12_DEPTH_WRITE_MASK_ZERO, // st_depth_write_mask_zero
 	D3D12_DEPTH_WRITE_MASK_ALL, // st_depth_write_mask_all
@@ -276,7 +276,7 @@ inline D3D12_DEPTH_WRITE_MASK convert_depth_write_mask(e_st_depth_write_mask wri
 	return depth_write_mask_mappings[write_mask];
 }
 
-D3D12_COMPARISON_FUNC comparison_func_mappings[] =
+static D3D12_COMPARISON_FUNC comparison_func_mappings[] =
 {
 	D3D12_COMPARISON_FUNC_NEVER, // st_compare_func_never
 	D3D12_COMPARISON_FUNC_LESS, // st_compare_func_less
@@ -293,7 +293,7 @@ inline D3D12_COMPARISON_FUNC convert_comparison_func(e_st_compare_func compare_f
 	return comparison_func_mappings[compare_func];
 }
 
-D3D12_STENCIL_OP stencil_op_mappings[] =
+static D3D12_STENCIL_OP stencil_op_mappings[] =
 {
 	D3D12_STENCIL_OP_KEEP, // st_stencil_op_keep
 	D3D12_STENCIL_OP_ZERO, // st_stencil_op_zero
@@ -310,7 +310,7 @@ inline D3D12_STENCIL_OP convert_stencil_op(e_st_stencil_op stencil_op)
 	return stencil_op_mappings[stencil_op];
 }
 
-D3D12_RESOURCE_STATES resource_state_mappings[] =
+static D3D12_RESOURCE_STATES resource_state_mappings[] =
 {
 	D3D12_RESOURCE_STATE_COMMON, // st_texture_state_common
 	D3D12_RESOURCE_STATE_RENDER_TARGET, // st_texture_state_render_target
@@ -330,7 +330,7 @@ inline D3D12_RESOURCE_STATES convert_resource_state(e_st_texture_state state)
 	return resource_state_mappings[state];
 }
 
-D3D12_TEXTURE_ADDRESS_MODE address_mode_mappings[] =
+static D3D12_TEXTURE_ADDRESS_MODE address_mode_mappings[] =
 {
 	D3D12_TEXTURE_ADDRESS_MODE_WRAP,
 	D3D12_TEXTURE_ADDRESS_MODE_MIRROR,

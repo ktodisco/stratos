@@ -8,6 +8,7 @@
 
 #include <framework/st_camera.h>
 #include <framework/st_frame_params.h>
+#include <framework/st_output.h>
 #include <framework/st_sim.h>
 
 #include <graphics/st_drawcall.h>
@@ -23,18 +24,14 @@
 
 #include <examples/imgui_impl_win32.h>
 
-st_graphics_context* st_imgui::_context = nullptr;
 bool st_imgui::_open = true;
 bool st_imgui::_axes_widget = false;
 
 void st_imgui::initialize(
 	const st_window* window,
-	st_graphics_context* context,
 	e_st_format rtv_format,
 	st_render_pass* pass)
 {
-	_context = context;
-
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
@@ -49,8 +46,6 @@ void st_imgui::shutdown()
 	ImGui_ImplStratos_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
-
-	_context = nullptr;
 }
 
 void st_imgui::update(st_frame_params* params, st_sim* sim, st_camera* camera)
@@ -108,17 +103,17 @@ void st_imgui::update(st_frame_params* params, st_sim* sim, st_camera* camera)
 	ImGui::End();
 }
 
-void st_imgui::new_frame()
+void st_imgui::new_frame(st_device* device)
 {
-	ImGui_ImplStratos_NewFrame(_context);
+	ImGui_ImplStratos_NewFrame(device);
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 }
 
-void st_imgui::draw(const st_frame_params* params)
+void st_imgui::draw(st_command_list* command_list, const st_frame_params* params)
 {
 	ImGui::Render();
-	ImGui_ImplStratos_RenderDrawData(ImGui::GetDrawData(), _context);
+	ImGui_ImplStratos_RenderDrawData(ImGui::GetDrawData(), st_output::get_device(), command_list);
 }
 
 void st_imgui::draw_axes_widget(st_frame_params* params)

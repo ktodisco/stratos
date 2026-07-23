@@ -47,6 +47,13 @@ struct st_dx12_buffer_view : public st_buffer_view
 	class st_dx12_descriptor_heap* _heap;
 };
 
+struct st_dx12_fence : public st_fence
+{
+	~st_dx12_fence() { _fence = nullptr; }
+
+	Microsoft::WRL::ComPtr<ID3D12Fence> _fence;
+};
+
 struct st_dx12_framebuffer : public st_framebuffer
 {
 	~st_dx12_framebuffer()
@@ -79,6 +86,7 @@ struct st_dx12_render_pass : public st_render_pass
 
 struct st_dx12_resource_table : public st_resource_table
 {
+	// TODO: These vectors can go away with application-defined layouts, because the exact number of each resource will be known.
 	std::vector<st_dx12_descriptor> _cbvs;
 	std::vector<st_dx12_descriptor> _srvs;
 	std::vector<st_dx12_descriptor> _uavs;
